@@ -1,5 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -73,6 +74,82 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       ..clearSnackBars()
       ..showSnackBar(SnackBar(content: Text(m)));
   }
+
+  // --- The radio's own alert outputs (D8.24) ---------------------------
+  //
+  // `get/set buzzer` and `get/set vibration` are the two commands the whitelist
+  // ships: they change what the radio does on its own, with no app involved,
+  // which is why they are here and not on a settings page a user would find by
+  // accident. Nothing is sent by opening the fold — every frame is channel
+  // time — so the read is the button.
+  RadioCliResult? _buzzer;
+  RadioCliResult? _vibration;
+  bool _alertsReading = false;
+
+  Future<void> _readAlerts(MeshcoreController mc) async {
+    if (_alertsReading || !mc.isReady) return;
+    setState(() => _alertsReading = true);
+    try {
+      // Each value is shown as it arrives: one read that is slow, or that times
+      // out, must not hold the other row at "asking the radio" for six more
+      // seconds.
+      final RadioCliResult b =
+          await mc.runRadioCli(const BuzzerCommand.read(), correlation: 'b1');
+      if (!mounted) return;
+      setState(() => _buzzer = b);
+      final RadioCliResult v =
+          await mc.runRadioCli(const VibrationCommand.read(), correlation: 'v1');
+      if (!mounted) return;
+      setState(() => _vibration = v);
+    } finally {
+      if (mounted) setState(() => _alertsReading = false);
+    }
+  }
+
+  /// Send one `set`, then read the value back.
+  ///
+  /// The re-read is the proof: the radio clamps and may refuse, and a screen
+  /// that showed what was asked for instead of what was stored would be lying
+  /// about the radio's own alerting.
+  Future<void> _setAlert(MeshcoreController mc,
+      {required bool buzzer, required bool enable}) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ScaffoldMessengerState sm = ScaffoldMessenger.of(context);
+    final RadioCliResult r = await mc.runRadioCli(
+      buzzer ? BuzzerCommand(enable) : VibrationCommand(enable),
+      correlation: buzzer ? 'b2' : 'v2',
+    );
+    if (!mounted) return;
+    setState(() {
+      if (buzzer) {
+        _buzzer = r;
+      } else {
+        _vibration = r;
+      }
+    });
+    sm
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(_alertOutcome(l, r))));
+    await _readAlerts(mc);
+  }
+
+  /// What to say about one CLI answer. A refusal names the firmware's cause,
+  /// because "refused (bad state)" is actionable and "refused" is not.
+  String _alertOutcome(AppLocalizations l, RadioCliResult r) => switch (r) {
+        RadioCliAnswered(:final String text) =>
+          text.isEmpty ? l.diagnosticsAlertDone : l.diagnosticsAlertSaid(text),
+        RadioCliRejected(:final int? code, :final String text) =>
+          text.isEmpty
+              ? l.diagnosticsAlertRefused(
+                  failureText(l, Failure.deviceError(code)))
+              : l.diagnosticsAlertRefusedSaid(
+                  failureText(l, Failure.deviceError(code)), text),
+        RadioCliSilent(:final String partial) => partial.isEmpty
+            ? l.diagnosticsAlertSilent
+            : l.diagnosticsAlertSilentPartial(partial),
+        RadioCliBusy() => l.diagnosticsAlertBusy,
+        RadioCliUnavailable() => l.diagnosticsAlertUnavailable,
+      };
 
   /// `CMD_REBOOT`: no reply, the link drops, the reconnect brings it back.
   ///
@@ -213,6 +290,57 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.rowGap),
           child: Text(t, style: mmSectionLabelStyle(skin)),
         );
+    // One alert output: what the radio says it is, and the two explicit choices.
+    // Two buttons rather than one toggle on purpose (D8.24): a mute rule must
+    // never be able to unmute silently, so the on/off intent is the label the
+    // user pressed. The button that matches the current state is disabled, so a
+    // second tap cannot re-assert what is already set.
+    Widget alertRow({required bool buzzer}) {
+      final String name =
+          buzzer ? l.diagnosticsBuzzer : l.diagnosticsVibration;
+      final RadioCliResult? r = buzzer ? _buzzer : _vibration;
+      final bool? state = r is RadioCliAnswered ? r.onOff : null;
+      final String said = r == null
+          ? (_alertsReading
+              ? l.diagnosticsAlertReading
+              : l.diagnosticsAlertNotRead)
+          : _alertOutcome(l, r);
+      final String id = buzzer ? 'buzzer' : 'vibration';
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('$name — $said',
+                key: ValueKey<String>('radio-alert-$id-said'),
+                style: TextStyle(
+                    color: r is RadioCliRejected ? cs.error : cs.onSurface,
+                    fontSize: skin.type.sizeBody,
+                    fontFamily: skin.type.bodyFamily,
+                    height: 1.35)),
+            const SizedBox(height: 6),
+            Wrap(spacing: 8, children: <Widget>[
+              MmAction(
+                key: ValueKey<String>('radio-alert-$id-on'),
+                label: l.diagnosticsAlertOn,
+                dense: true,
+                onPressed: !mc.isReady || state == true
+                    ? null
+                    : () => _setAlert(mc, buzzer: buzzer, enable: true),
+              ),
+              MmAction(
+                key: ValueKey<String>('radio-alert-$id-off'),
+                label: l.diagnosticsAlertOff,
+                dense: true,
+                onPressed: !mc.isReady || state == false
+                    ? null
+                    : () => _setAlert(mc, buzzer: buzzer, enable: false),
+              ),
+            ]),
+          ],
+        ),
+      );
+    }
 
     final String stateText = switch (mc.state) {
           MeshcoreConnectionState.disconnected => l.diagnosticsStateDisconnected,
@@ -471,6 +599,42 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                       ),
                     ],
                   ),
+                ),
+                // The radio's own alert outputs. Folded inside the developer
+                // section on purpose: this changes what the radio does with no
+                // app involved, and every frame it costs is channel time, so
+                // nothing here is sent by opening a fold.
+                section(l.diagnosticsSectionRadioAlerts),
+                Column(
+                  key: const Key('radio-alerts'),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                      child: Text(l.diagnosticsRadioAlertsWhy,
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontSize: skin.type.sizeSm,
+                              fontFamily: skin.type.bodyFamily,
+                              height: 1.35)),
+                    ),
+                    alertRow(buzzer: true),
+                    alertRow(buzzer: false),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: MmAction(
+                          key: const Key('radio-alerts-read'),
+                          label: l.diagnosticsAlertRead,
+                          dense: true,
+                          onPressed: !mc.isReady || _alertsReading
+                              ? null
+                              : () => _readAlerts(mc),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 // Where the position the app acts on actually came from,
                 // in raw numbers. This readout used to sit on the dashboard

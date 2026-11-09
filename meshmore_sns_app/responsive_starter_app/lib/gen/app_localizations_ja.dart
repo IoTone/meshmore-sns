@@ -6039,4 +6039,64 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deviceRepeatUnknown => '中継: —';
+
+  @override
+  String get diagnosticsSectionRadioAlerts => '無線機のアラート';
+
+  @override
+  String get diagnosticsRadioAlertsWhy =>
+      '無線機自身のブザーと振動で、無線機のルールに従って鳴ります。このアプリからは鳴らしません。スマートフォンが離れていても無線機側に設定が残ります。';
+
+  @override
+  String get diagnosticsBuzzer => 'ブザー';
+
+  @override
+  String get diagnosticsVibration => '振動';
+
+  @override
+  String get diagnosticsAlertNotRead => '未取得';
+
+  @override
+  String get diagnosticsAlertReading => '無線機に問い合わせ中';
+
+  @override
+  String get diagnosticsAlertRead => '無線機に問い合わせる';
+
+  @override
+  String get diagnosticsAlertOn => 'オン';
+
+  @override
+  String get diagnosticsAlertOff => 'オフ';
+
+  @override
+  String get diagnosticsAlertDone => '無線機が受け付けました。';
+
+  @override
+  String diagnosticsAlertSaid(String text) {
+    return '無線機の応答: $text';
+  }
+
+  @override
+  String diagnosticsAlertRefused(String cause) {
+    return '無線機が拒否しました: $cause';
+  }
+
+  @override
+  String diagnosticsAlertRefusedSaid(String cause, String text) {
+    return '無線機が拒否しました: $cause。応答: $text';
+  }
+
+  @override
+  String get diagnosticsAlertSilent => '6秒以内に応答がありません。無線機が実行した可能性はあります。';
+
+  @override
+  String diagnosticsAlertSilentPartial(String text) {
+    return '6秒以内に応答がありません。応答: $text';
+  }
+
+  @override
+  String get diagnosticsAlertBusy => '別のコマンドがまだ応答待ちです。';
+
+  @override
+  String get diagnosticsAlertUnavailable => '接続がないため、何も送信していません。';
 }

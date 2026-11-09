@@ -4299,5 +4299,53 @@
     }
   },
   "deviceRepeatNone": "repeat: none reported",
-  "deviceRepeatUnknown": "repeat: —"
+  "deviceRepeatUnknown": "repeat: —",
+  "diagnosticsSectionRadioAlerts": "Radio alerts",
+  "diagnosticsRadioAlertsWhy": "The radio's own buzzer and vibration, for its own rules. Nothing in this app triggers them, and the radio keeps them while the phone is away.",
+  "diagnosticsBuzzer": "Buzzer",
+  "diagnosticsVibration": "Vibration",
+  "diagnosticsAlertNotRead": "not read yet",
+  "diagnosticsAlertReading": "asking the radio",
+  "diagnosticsAlertRead": "Ask the radio",
+  "diagnosticsAlertOn": "On",
+  "diagnosticsAlertOff": "Off",
+  "diagnosticsAlertDone": "The radio accepted it.",
+  "diagnosticsAlertSaid": "The radio said: {text}",
+  "@diagnosticsAlertSaid": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "diagnosticsAlertRefused": "The radio refused: {cause}",
+  "@diagnosticsAlertRefused": {
+    "placeholders": {
+      "cause": {
+        "type": "String"
+      }
+    }
+  },
+  "diagnosticsAlertRefusedSaid": "The radio refused: {cause}. It said: {text}",
+  "@diagnosticsAlertRefusedSaid": {
+    "placeholders": {
+      "cause": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "diagnosticsAlertSilent": "No answer inside six seconds. The radio may still have run it.",
+  "diagnosticsAlertSilentPartial": "No answer inside six seconds. It said: {text}",
+  "@diagnosticsAlertSilentPartial": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "diagnosticsAlertBusy": "Another command is still waiting for its answer.",
+  "diagnosticsAlertUnavailable": "No usable link, so nothing was sent."
 }

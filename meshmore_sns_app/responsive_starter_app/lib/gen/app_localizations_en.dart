@@ -6297,4 +6297,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRepeatUnknown => 'repeat: —';
+
+  @override
+  String get diagnosticsSectionRadioAlerts => 'Radio alerts';
+
+  @override
+  String get diagnosticsRadioAlertsWhy =>
+      'The radio\'s own buzzer and vibration, for its own rules. Nothing in this app triggers them, and the radio keeps them while the phone is away.';
+
+  @override
+  String get diagnosticsBuzzer => 'Buzzer';
+
+  @override
+  String get diagnosticsVibration => 'Vibration';
+
+  @override
+  String get diagnosticsAlertNotRead => 'not read yet';
+
+  @override
+  String get diagnosticsAlertReading => 'asking the radio';
+
+  @override
+  String get diagnosticsAlertRead => 'Ask the radio';
+
+  @override
+  String get diagnosticsAlertOn => 'On';
+
+  @override
+  String get diagnosticsAlertOff => 'Off';
+
+  @override
+  String get diagnosticsAlertDone => 'The radio accepted it.';
+
+  @override
+  String diagnosticsAlertSaid(String text) {
+    return 'The radio said: $text';
+  }
+
+  @override
+  String diagnosticsAlertRefused(String cause) {
+    return 'The radio refused: $cause';
+  }
+
+  @override
+  String diagnosticsAlertRefusedSaid(String cause, String text) {
+    return 'The radio refused: $cause. It said: $text';
+  }
+
+  @override
+  String get diagnosticsAlertSilent =>
+      'No answer inside six seconds. The radio may still have run it.';
+
+  @override
+  String diagnosticsAlertSilentPartial(String text) {
+    return 'No answer inside six seconds. It said: $text';
+  }
+
+  @override
+  String get diagnosticsAlertBusy =>
+      'Another command is still waiting for its answer.';
+
+  @override
+  String get diagnosticsAlertUnavailable =>
+      'No usable link, so nothing was sent.';
 }

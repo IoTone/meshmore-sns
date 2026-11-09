@@ -2789,5 +2789,22 @@
     }
   },
   "deviceRepeatNone": "中継: 報告なし",
-  "deviceRepeatUnknown": "中継: —"
+  "deviceRepeatUnknown": "中継: —",
+  "diagnosticsSectionRadioAlerts": "無線機のアラート",
+  "diagnosticsRadioAlertsWhy": "無線機自身のブザーと振動で、無線機のルールに従って鳴ります。このアプリからは鳴らしません。スマートフォンが離れていても無線機側に設定が残ります。",
+  "diagnosticsBuzzer": "ブザー",
+  "diagnosticsVibration": "振動",
+  "diagnosticsAlertNotRead": "未取得",
+  "diagnosticsAlertReading": "無線機に問い合わせ中",
+  "diagnosticsAlertRead": "無線機に問い合わせる",
+  "diagnosticsAlertOn": "オン",
+  "diagnosticsAlertOff": "オフ",
+  "diagnosticsAlertDone": "無線機が受け付けました。",
+  "diagnosticsAlertSaid": "無線機の応答: {text}",
+  "diagnosticsAlertRefused": "無線機が拒否しました: {cause}",
+  "diagnosticsAlertRefusedSaid": "無線機が拒否しました: {cause}。応答: {text}",
+  "diagnosticsAlertSilent": "6秒以内に応答がありません。無線機が実行した可能性はあります。",
+  "diagnosticsAlertSilentPartial": "6秒以内に応答がありません。応答: {text}",
+  "diagnosticsAlertBusy": "別のコマンドがまだ応答待ちです。",
+  "diagnosticsAlertUnavailable": "接続がないため、何も送信していません。"
 }

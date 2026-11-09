@@ -2129,6 +2129,7 @@ class MeshcoreController extends ChangeNotifier {
       if (id == _toolSendMarker ||
           id == _advertSendMarker ||
           id == _rawSendMarker ||
+          id == _cliMarker ||
           id == _configMarker ||
           id == _channelDataMarker) {
         continue;
@@ -2299,6 +2300,10 @@ class MeshcoreController extends ChangeNotifier {
         _completeRawSend(f);
         return;
       }
+      if (p.id == _cliMarker) {
+        _completeCli(f);
+        return;
+      }
       if (p.id == _advertSendMarker) {
         return;
       }
@@ -2332,6 +2337,10 @@ class MeshcoreController extends ChangeNotifier {
       }
       if (p.id == _rawSendMarker) {
         _completeRawSend(f);
+        return;
+      }
+      if (p.id == _cliMarker) {
+        _completeCli(f);
         return;
       }
       if (p.id == _contactAddMarker) {
@@ -5044,6 +5053,91 @@ class MeshcoreController extends ChangeNotifier {
     }
   }
 
+  // --- The radio's own alert outputs ------------------------------------
+  //
+  // `CMD_RUN_CLI_COMMAND` (0x42) is the radio's whole shell, which is why the
+  // app never sends text through it. `packages/meshcore` already models a
+  // closed whitelist of commands (`RadioCliCommand`, D8.24) and refuses
+  // everything else, including `remote`; this is the half that reaches the
+  // radio, and the only way to build a frame is one of those typed objects.
+  //
+  // Two things make the answer awkward. The reply is zero or more
+  // `RESP_CODE_CLI_REPLY` (0x1D) frames and then a bare OK or ERR, so the text
+  // and the verdict arrive separately. And the OK/ERR carries no tag, so it is
+  // claimed through the ledger like every other command — the two-character
+  // correlation prefix only tags the text lines.
+
+  /// Marker id in [_ledger] for a CLI command waiting for its OK/ERR.
+  static const String _cliMarker = '\u0000cli';
+
+  bool _cliInFlight = false;
+  Completer<MeshcoreInbound>? _cliAnswer;
+
+  /// True while a CLI command is waiting for its answers.
+  bool get cliBusy => _cliInFlight;
+
+  /// Run one whitelisted CLI command and collect what the radio says.
+  ///
+  /// One command at a time: the reply text is matched only by the two-character
+  /// prefix this call chose, and two overlapping calls would interleave their
+  /// lines with no way to tell them apart. A second call while one is waiting is
+  /// refused rather than queued, because the caller is a tap.
+  Future<RadioCliResult> runRadioCli(
+    RadioCliCommand command, {
+    Duration timeout = const Duration(seconds: 6),
+    String correlation = 'a1',
+  }) async {
+    if (!isReady) return const RadioCliUnavailable();
+    if (_cliInFlight) return const RadioCliBusy();
+    if (!RadioCliCommand.isCorrelationTag(correlation)) {
+      throw ArgumentError.value(
+          correlation, 'correlation', 'not a two-character tag');
+    }
+    _cliInFlight = true;
+    final Completer<MeshcoreInbound> answer = Completer<MeshcoreInbound>();
+    _cliAnswer = answer;
+    final List<String> lines = <String>[];
+    StreamSubscription<MeshcoreInbound>? watch;
+    _registerMarker(_cliMarker, CommandAnswer.ok);
+    try {
+      watch = inboundFrames.listen((MeshcoreInbound f) {
+        if (f is! CliReplyFrame) return;
+        final String text = f.text;
+        if (!text.startsWith(correlation)) return;
+        final String line = text.substring(correlation.length).trim();
+        if (line.isNotEmpty) lines.add(line);
+      });
+      await send(command.bytes(correlation: correlation), gated: true);
+      final MeshcoreInbound verdict = await answer.future.timeout(timeout);
+      final String said = lines.join('\n');
+      if (verdict is ErrorFrame) {
+        return RadioCliRejected(code: verdict.code, text: said);
+      }
+      return RadioCliAnswered(text: said);
+    } on TimeoutException {
+      // The text that did arrive is still worth showing: a radio that streams
+      // half an answer and then goes quiet has told the reader something.
+      return RadioCliSilent(partial: lines.join('\n'));
+    } catch (e) {
+      return RadioCliUnavailable(detail: '$e');
+    } finally {
+      // Not awaited: a broadcast subscription stops delivering the moment
+      // `cancel` is called, and the returned future is a formality. Awaiting it
+      // held the caller's continuation open in a widget test's zone until the
+      // test ended, which made the screen look as if it never answered.
+      unawaited(watch?.cancel());
+      _cliAnswer = null;
+      _dropPending(_cliMarker);
+      _cliInFlight = false;
+    }
+  }
+
+  void _completeCli(MeshcoreInbound f) {
+    final Completer<MeshcoreInbound>? c = _cliAnswer;
+    _cliAnswer = null;
+    if (c != null && !c.isCompleted) c.complete(f);
+  }
+
   // --- The radio's pairing PIN ------------------------------------------
   //
   // `CMD_SET_DEVICE_PIN` (0x25): 0 clears the PIN, otherwise exactly six digits.
@@ -5806,4 +5900,105 @@ class MeshcoreController extends ChangeNotifier {
     unawaited(_connection.dispose());
     super.dispose();
   }
+}
+
+/// What came back from one radio CLI command.
+///
+/// The firmware answers `CMD_RUN_CLI_COMMAND` with zero or more text frames and
+/// then a bare answer, so there are five outcomes and each one is a different
+/// thing to tell the reader. None of them is a bool: "the radio said nothing"
+/// and "the radio refused" are not the same fact, and a screen that renders them
+/// as one teaches the user to distrust both.
+sealed class RadioCliResult {
+  const RadioCliResult();
+
+  /// The radio's own words, when it said any. Present on every outcome that
+  /// carried text, including a refusal and a half-finished answer.
+  String get text;
+}
+
+/// The radio ran the command and closed the answer with `OK`.
+final class RadioCliAnswered extends RadioCliResult {
+  const RadioCliAnswered({required this.text});
+
+  @override
+  final String text;
+
+  /// The on/off state the reply states, when it states one plainly.
+  ///
+  /// This is a convenience over the radio's own text, not a second parser of the
+  /// CLI: the last whole word that is `on`/`off`/`true`/`false` wins, and
+  /// anything else is `null` so the screen shows the verbatim text rather than
+  /// guessing. A firmware that answers "buzzer: disabled" therefore reads as
+  /// unknown until someone teaches this rule that word — deliberately, because a
+  /// wrong state is worse than no state on a control that changes a radio.
+  bool? get onOff {
+    final List<String> words = text
+        .toLowerCase()
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((String w) => w.isNotEmpty)
+        .toList();
+    for (final String w in words.reversed) {
+      if (w == 'on' || w == 'true' || w == '1') return true;
+      if (w == 'off' || w == 'false' || w == '0') return false;
+    }
+    return null;
+  }
+
+  @override
+  String toString() => 'RadioCliAnswered("$text")';
+}
+
+/// The radio refused the command, with its own error code when it sent one.
+final class RadioCliRejected extends RadioCliResult {
+  const RadioCliRejected({required this.code, required this.text});
+
+  final int? code;
+
+  @override
+  final String text;
+
+  @override
+  String toString() => 'RadioCliRejected(err $code, "$text")';
+}
+
+/// Nothing closed the answer inside the window. The link may still be fine and
+/// the radio still working: a command that produces no output is answered by the
+/// same OK as one that produces ten lines, so silence is a missing answer, not a
+/// verdict.
+final class RadioCliSilent extends RadioCliResult {
+  const RadioCliSilent({this.partial = ''});
+
+  /// The lines that did arrive before the window closed, if any.
+  final String partial;
+
+  @override
+  String get text => partial;
+
+  @override
+  String toString() => 'RadioCliSilent("$partial")';
+}
+
+/// A command is already waiting for its answer, so this one was not sent.
+final class RadioCliBusy extends RadioCliResult {
+  const RadioCliBusy();
+
+  @override
+  String get text => '';
+
+  @override
+  String toString() => 'RadioCliBusy()';
+}
+
+/// There is no usable link: not connected, or the send failed.
+final class RadioCliUnavailable extends RadioCliResult {
+  const RadioCliUnavailable({this.detail = ''});
+
+  final String detail;
+
+  @override
+  String get text => '';
+
+  @override
+  String toString() => 'RadioCliUnavailable("$detail")';
 }

@@ -10533,6 +10533,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'repeat: —'**
   String get deviceRepeatUnknown;
+
+  /// No description provided for @diagnosticsSectionRadioAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Radio alerts'**
+  String get diagnosticsSectionRadioAlerts;
+
+  /// No description provided for @diagnosticsRadioAlertsWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio\'s own buzzer and vibration, for its own rules. Nothing in this app triggers them, and the radio keeps them while the phone is away.'**
+  String get diagnosticsRadioAlertsWhy;
+
+  /// No description provided for @diagnosticsBuzzer.
+  ///
+  /// In en, this message translates to:
+  /// **'Buzzer'**
+  String get diagnosticsBuzzer;
+
+  /// No description provided for @diagnosticsVibration.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibration'**
+  String get diagnosticsVibration;
+
+  /// No description provided for @diagnosticsAlertNotRead.
+  ///
+  /// In en, this message translates to:
+  /// **'not read yet'**
+  String get diagnosticsAlertNotRead;
+
+  /// No description provided for @diagnosticsAlertReading.
+  ///
+  /// In en, this message translates to:
+  /// **'asking the radio'**
+  String get diagnosticsAlertReading;
+
+  /// No description provided for @diagnosticsAlertRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the radio'**
+  String get diagnosticsAlertRead;
+
+  /// No description provided for @diagnosticsAlertOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get diagnosticsAlertOn;
+
+  /// No description provided for @diagnosticsAlertOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get diagnosticsAlertOff;
+
+  /// No description provided for @diagnosticsAlertDone.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio accepted it.'**
+  String get diagnosticsAlertDone;
+
+  /// No description provided for @diagnosticsAlertSaid.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio said: {text}'**
+  String diagnosticsAlertSaid(String text);
+
+  /// No description provided for @diagnosticsAlertRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio refused: {cause}'**
+  String diagnosticsAlertRefused(String cause);
+
+  /// No description provided for @diagnosticsAlertRefusedSaid.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio refused: {cause}. It said: {text}'**
+  String diagnosticsAlertRefusedSaid(String cause, String text);
+
+  /// No description provided for @diagnosticsAlertSilent.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer inside six seconds. The radio may still have run it.'**
+  String get diagnosticsAlertSilent;
+
+  /// No description provided for @diagnosticsAlertSilentPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'No answer inside six seconds. It said: {text}'**
+  String diagnosticsAlertSilentPartial(String text);
+
+  /// No description provided for @diagnosticsAlertBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Another command is still waiting for its answer.'**
+  String get diagnosticsAlertBusy;
+
+  /// No description provided for @diagnosticsAlertUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No usable link, so nothing was sent.'**
+  String get diagnosticsAlertUnavailable;
 }
 
 class _AppLocalizationsDelegate
