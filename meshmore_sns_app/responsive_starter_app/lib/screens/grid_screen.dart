@@ -19,7 +19,6 @@ import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
 import 'elevation_profile_view.dart';
-import 'fabric_survey_view.dart';
 import 'mesh_tree_view.dart';
 import 'node_detail_sheet.dart';
 import 'sns_cells_view.dart';
@@ -41,7 +40,6 @@ import 'package:meshcore/meshcore.dart';
 /// to the shell's tabs (R109).
 enum _GridViewMode {
   radial,
-  fabric,
   weather,
   tree,
   snsCells,
@@ -58,7 +56,6 @@ enum _GridViewMode {
 /// view they do not have.
 const List<_GridViewMode> _allViews = <_GridViewMode>[
   _GridViewMode.radial,
-  _GridViewMode.fabric,
   _GridViewMode.weather,
   _GridViewMode.tree,
   _GridViewMode.elevation,
@@ -76,10 +73,7 @@ extension on _GridViewMode {
   /// stepper, so a toggle there would lock the shell's swipe and hand the drag
   /// to nothing. The views that draw to fit never need the toggle either.
   bool get pansHorizontally => switch (this) {
-        _GridViewMode.fabric ||
-        _GridViewMode.tree ||
-        _GridViewMode.snsCells =>
-          true,
+        _GridViewMode.tree || _GridViewMode.snsCells => true,
         _GridViewMode.radial ||
         _GridViewMode.elevation ||
         _GridViewMode.weather =>
@@ -162,7 +156,50 @@ class GridScreen extends StatefulWidget {
     (label: 'Wide', km: 5.0),
     (label: 'City', km: 25.0),
     (label: 'Region', km: 300.0),
+    // Auto frames whatever is actually in hand instead of a fixed window:
+    // the bulk of the located nodes sit just inside the rim and the outliers
+    // clamp to it. Appended rather than inserted, because `scaleIndex` is
+    // persisted and an index that changes meaning would silently re-scale
+    // every stored preference.
+    (label: 'Auto', km: 0),
   ];
+
+  /// The index of the [rangeStops] entry that frames the mesh automatically.
+  static int get autoScaleIndex => rangeStops.length - 1;
+
+  /// What share of the located nodes Auto keeps inside the rim.
+  ///
+  /// Nine in ten, so the furthest tenth clamps to the edge — which is what an
+  /// edge is for — while the rest are spread across the body rather than
+  /// huddled at the centre. A percentile rather than the maximum, because one
+  /// node at 40 km would otherwise squash forty nodes into a dot.
+  static const double autoPercentile = 0.9;
+
+  /// Where the percentile lands inside the radius. Reads as "just inside the
+  /// rim" with the ring labels still legible.
+  static const double autoAnchor = 0.86;
+
+  /// The outer radius, in km, that frames [distancesKm].
+  ///
+  /// Pure and static so the arithmetic is testable without a canvas or a
+  /// controller: everything else about the radar is drawing.
+  @visibleForTesting
+  static double? autoRangeKm(List<double> distancesKm) {
+    if (distancesKm.isEmpty) return null;
+    final List<double> sorted = List<double>.of(distancesKm)..sort();
+    // Below five nodes a percentile is just noise, so frame the furthest one.
+    final int at = sorted.length >= 5
+        ? ((sorted.length - 1) * autoPercentile).round()
+        : sorted.length - 1;
+    final double anchor = sorted[at];
+    if (anchor <= 0) return null; // every node is on top of us
+    // An exact radius rather than a rounded one. Rounding to a "nice" number
+    // was tried and is worse than it sounds: the ladder's own steps are up to
+    // a third wide, so a frame aimed at 86 % lands anywhere from 65 % to 100 %
+    // — sometimes with nothing near the rim at all. The ring labels carry one
+    // decimal instead, which is cheaper than a radius nobody asked for.
+    return (anchor / autoAnchor).clamp(0.01, 2000.0);
+  }
 
   /// Selectable cadences for the **Play** refresh timer. Pause is
   /// the default; Play with the smallest interval is effectively
@@ -225,9 +262,11 @@ class _GridScreenState extends State<GridScreen>
   Timer? _refreshTimer;
 
   /// Index into [GridScreen.rangeStops] for the outer-ring scale.
-  /// Default stays at **Wide** (5 km) even though City/Region sit
-  /// beyond it on the slider.
-  int _scaleIndex = GridScreen.rangeStops.indexWhere((s) => s.label == 'Wide');
+  ///
+  /// The default is **Auto**, which frames whatever nodes are in hand; the
+  /// fixed stops stay for a user who wants a ring that means the same distance
+  /// twice in a row.
+  int _scaleIndex = GridScreen.autoScaleIndex;
 
   @override
   void initState() {
@@ -265,7 +304,6 @@ class _GridScreenState extends State<GridScreen>
   void _savePrefs() {
     GridPrefsStore.save(GridPrefs(
       scaleIndex: _scaleIndex,
-      live: _live,
       intervalSec: _interval.inSeconds,
     ));
   }
@@ -323,7 +361,6 @@ class _GridScreenState extends State<GridScreen>
   /// counts about something the view does not show.
   bool get _plotsNodes => switch (_viewMode) {
         _GridViewMode.radial ||
-        _GridViewMode.fabric ||
         _GridViewMode.tree ||
         _GridViewMode.snsCells =>
           true,
@@ -333,7 +370,6 @@ class _GridScreenState extends State<GridScreen>
   /// Views that render a legend, so the info button exists only there.
   bool get _hasLegend => switch (_viewMode) {
         _GridViewMode.radial ||
-        _GridViewMode.fabric ||
         _GridViewMode.elevation ||
         _GridViewMode.tree ||
         _GridViewMode.snsCells =>
@@ -451,7 +487,6 @@ class _GridScreenState extends State<GridScreen>
 
   static IconData _iconForMode(_GridViewMode m) => switch (m) {
         _GridViewMode.radial => Icons.radar,
-        _GridViewMode.fabric => Icons.view_quilt,
         _GridViewMode.elevation => Icons.terrain,
         _GridViewMode.tree => Icons.account_tree,
         _GridViewMode.snsCells => Icons.local_fire_department,
@@ -460,7 +495,6 @@ class _GridScreenState extends State<GridScreen>
 
   static String _longLabel(_GridViewMode m, AppLocalizations l) => switch (m) {
         _GridViewMode.radial => l.gridViewRadial,
-        _GridViewMode.fabric => l.gridViewFabric,
         _GridViewMode.elevation => l.gridViewElevation,
         _GridViewMode.tree => l.gridViewTree,
         _GridViewMode.snsCells => l.gridViewSnsCells,
@@ -472,7 +506,6 @@ class _GridScreenState extends State<GridScreen>
   /// that needs a paragraph to explain itself is the wrong view.
   static String _purposeFor(_GridViewMode m, AppLocalizations l) => switch (m) {
         _GridViewMode.radial => l.gridPurposeRadial,
-        _GridViewMode.fabric => l.gridPurposeCoverage,
         _GridViewMode.weather => l.gridPurposeWeather,
         _GridViewMode.tree => l.gridPurposeTree,
         _GridViewMode.snsCells => l.gridPurposeSnsCells,
@@ -524,18 +557,36 @@ class _GridScreenState extends State<GridScreen>
       4 => l.gridRangeArea,
       5 => l.gridRangeWide,
       6 => l.gridRangeCity,
-      _ => l.gridRangeRegion,
+      7 => l.gridRangeRegion,
+      _ => l.gridRangeAuto,
     };
   }
 
-  /// The outer-ring scale in km for the current stop. Most stops use
-  /// their fixed km; the **Region** stop (the last) instead frames the
-  /// farthest located node so it shows the whole known mesh extent,
-  /// falling back to the stop's km when no node has a location.
+  /// The outer-ring scale in km for the current stop.
+  ///
+  /// **Auto** (the default) frames the mesh in hand: the ninth decile of the
+  /// located distances lands at 86 % of the radius, so the bulk of the nodes
+  /// spread across the body and the furthest tenth clamps to the rim.
+  /// **Region** frames the single furthest node. Every other stop is a fixed
+  /// window, so the ring means the same distance twice in a row.
   double _effectiveScaleKm(
       double? selfLat, double? selfLon, List<DiscoveredNode> visible) {
-    final double base = GridScreen.rangeStops[_scaleIndex].km;
-    final bool isRegion = _scaleIndex == GridScreen.rangeStops.length - 1;
+    final bool isAuto = _scaleIndex == GridScreen.autoScaleIndex;
+    final double base = isAuto
+        ? GridScreen.defaultRangeKm
+        : GridScreen.rangeStops[_scaleIndex].km;
+    if (isAuto) {
+      if (selfLat == null || selfLon == null) return base;
+      final double? framed =
+          GridScreen.autoRangeKm(<double>[for (final DiscoveredNode n in visible)
+            if (n.hasLocation)
+              geo.haversineMeters(selfLat, selfLon, n.latitude!, n.longitude!) /
+                  1000.0]);
+      // Nothing located to frame: the rings fall back to a stated fixed
+      // window rather than inventing a scale from signal-strength guesses.
+      return framed ?? base;
+    }
+    final bool isRegion = _scaleIndex == GridScreen.rangeStops.length - 2;
     if (!isRegion || selfLat == null || selfLon == null) return base;
     double maxKm = 0;
     for (final DiscoveredNode n in visible) {
@@ -807,22 +858,6 @@ class _GridScreenState extends State<GridScreen>
           // under its Swipe ⇄ Pan state (R109).
           Expanded(
               child: switch (_viewMode) {
-            _GridViewMode.fabric => Stack(
-                children: <Widget>[
-                  FabricSurveyView(
-                    filteredNodes: visible,
-                    frozen: !_live && _userInteracted,
-                    interactive: _panMode,
-                  ),
-                  if (_legendVisible)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      top: 0,
-                      child: _FabricLegend(cs: cs, l: l),
-                    ),
-                ],
-              ),
             _GridViewMode.elevation => Stack(
                 children: <Widget>[
                   ElevationProfileView(filteredNodes: visible),
@@ -1381,7 +1416,21 @@ class _GridPainter extends CustomPainter {
       old.reduceMotion != reduceMotion ||
       old.rippleAt != rippleAt ||
       old.scaleKm != scaleKm ||
-      old.type != type;
+      old.type != type ||
+      // The self fix, the clock and the recency window all move markers: a
+      // "refresh location from device" that lands while the node list is
+      // unchanged (the common case — the nodes did not move, we did) used to
+      // leave every marker where the old fix put it, because none of the
+      // three was compared. The colours are here for the same reason: a
+      // preset switch repaints the ring, and a stale accent is a wrong mark.
+      old.selfLat != selfLat ||
+      old.selfLon != selfLon ||
+      old.nowUnix != nowUnix ||
+      old.windowSec != windowSec ||
+      old.accent != accent ||
+      old.subtle != subtle ||
+      old.ringStroke != ringStroke ||
+      old.base != base;
 }
 
 /// R50 — info-button legend specifically for the Mesh Tree view.
@@ -1468,75 +1517,6 @@ class _TreeLegend extends StatelessWidget {
 /// Different from the radial legend ([_GridLegend]) and the tree
 /// legend ([_TreeLegend]) — explains the coverage quilt cells,
 /// recency tiers, and the peer markers.
-class _FabricLegend extends StatelessWidget {
-  const _FabricLegend({required this.cs, required this.l});
-  final ColorScheme cs;
-  final AppLocalizations l;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget row(IconData icon, String text, {Color? colour}) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Icon(icon, size: 14, color: colour ?? cs.primary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(text,
-                    style: TextStyle(
-                        color: cs.onSurface,
-                        fontSize: context.skin.type.sizeBody,
-                        height: 1.35)),
-              ),
-            ],
-          ),
-        );
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: mmRadius(context, 8),
-        border: Border.all(color: cs.outline.withValues(alpha: .35)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(l.fabricLegendTitle,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: context.skin.type.sizeSm,
-                  letterSpacing: 3)),
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(l.fabricLegendDesc,
-                style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: context.skin.type.sizeBody,
-                    height: 1.35)),
-          ),
-          row(Icons.grid_view, l.fabricCellShort, colour: cs.secondary),
-          row(Icons.gradient, l.fabricRecencyShort, colour: cs.secondary),
-          row(Icons.place, l.fabricMarkerShort, colour: cs.tertiary),
-          row(Icons.my_location, l.gridLegendSelfShort, colour: cs.primary),
-          _LegendMore(title: l.gridLegendMore, lines: <String>[
-            l.fabricLegendDesc,
-            l.fabricLegendCell,
-            l.fabricLegendRecency,
-            l.fabricLegendMarker,
-            l.fabricLegendSelf,
-            l.fabricLegendReset,
-          ]),
-        ],
-      ),
-    );
-  }
-}
-
-/// Info-button legend for the Fujiさん elevation view.
 class _FujiLegend extends StatelessWidget {
   const _FujiLegend({required this.cs, required this.l});
   final ColorScheme cs;

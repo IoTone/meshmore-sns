@@ -13,7 +13,6 @@ import 'dart:typed_data';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/elevation_profile_view.dart';
 import 'package:meshmore_sns_app/screens/meshbook_view.dart';
-import 'package:meshmore_sns_app/screens/fabric_survey_view.dart';
 import 'package:meshmore_sns_app/screens/weather_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -85,33 +84,6 @@ void main() {
     await _drain(t, mc);
   });
 
-  testWidgets('the survey states its count and how old it is',
-      (WidgetTester t) async {
-    await t.binding.setSurfaceSize(const Size(320, 780));
-    addTearDown(() => t.binding.setSurfaceSize(null));
-    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
-    final MeshcoreController mc = _controller(fake);
-    await mc.connect();
-
-    await t.pumpWidget(_host(mc, const FabricSurveyStatStrip(
-      cellCount: 0,
-      newestAgo: null,
-    )));
-    // Nothing recorded: the strip says so instead of implying an empty mesh.
-    expect(find.text(_en.fabricNothingYet), findsOneWidget);
-    expect(t.takeException(), isNull);
-
-    await t.pumpWidget(_host(mc, const FabricSurveyStatStrip(
-      cellCount: 12,
-      newestAgo: '12m ago',
-    )));
-    expect(find.text(_en.fabricCoverageCount(12)), findsOneWidget);
-    expect(find.text(_en.fabricNewestCell('12m ago')), findsOneWidget);
-    expect(t.takeException(), isNull,
-        reason: '320 dp with a two-line strip must not overflow');
-    await _drain(t, mc);
-  });
-
   testWidgets('the altitude view can ask the peers that have no altitude',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(360, 780));
@@ -124,13 +96,11 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 50));
 
-    // The action exists for the case it was written for: a node we know that
-    // has no altitude yet. With nobody to ask it is absent rather than
-    // disabled, so the screen never offers a no-op.
-    expect(find.byKey(const ValueKey<String>('elevation-ask-nodes')),
-        findsNothing);
-    // The axis says what it is: a stagger, not a distance.
-    expect(find.text(_en.elevationNotADistance), findsOneWidget);
+    // Nobody has reported an altitude, so the chart would draw only the
+    // reference objects: the view says which it is instead of looking broken.
+    expect(find.text(_en.elevationEmpty), findsOneWidget);
+    // And with nobody to ask, the action is absent rather than a dead button.
+    expect(find.text(_en.elevationAskNodes), findsNothing);
     expect(t.takeException(), isNull,
         reason: '320 dp at the default scale must not overflow');
     await _drain(t, mc);
@@ -156,7 +126,6 @@ void main() {
           mc,
           switch (name) {
             'weather' => const WeatherView(),
-            'survey' => const FabricSurveyView(),
             'meshbook' => const MeshbookView(),
             _ => const ElevationProfileView(),
           },

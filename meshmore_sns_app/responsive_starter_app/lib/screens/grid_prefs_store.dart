@@ -14,25 +14,26 @@ import '../util/prefs.dart';
 class GridPrefs {
   const GridPrefs({
     this.scaleIndex = -1, // -1 = use the screen's default
-    this.live = false,
     this.intervalSec = 15,
   });
 
   final int scaleIndex;
-  // `north` is still written by older builds; the radar has no orientation
-  // any more, so it is ignored rather than migrated.
-  final bool live;
+
+  /// The play interval, in seconds.
+  ///
+  /// The play/pause state itself is deliberately not stored: a saved "playing"
+  /// would start polling the radio on a screen nobody chose to open. `live`
+  /// used to be written here and read by nothing, which is worse than either
+  /// choice — a field that looks like state and is not.
   final int intervalSec;
 
   Map<String, Object?> toJson() => <String, Object?>{
         'scale': scaleIndex,
-        'live': live,
         'iv': intervalSec,
       };
 
   static GridPrefs fromJson(Map<String, dynamic> j) => GridPrefs(
         scaleIndex: (j['scale'] as num?)?.toInt() ?? -1,
-        live: j['live'] as bool? ?? false,
         intervalSec: (j['iv'] as num?)?.toInt() ?? 15,
       );
 }

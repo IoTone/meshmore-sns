@@ -13,7 +13,6 @@ import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/chat_screen.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/dm_screen.dart';
-import 'package:meshmore_sns_app/screens/fabric_survey_view.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
 import 'package:meshmore_sns_app/ui/mm_audio_toggle.dart';
@@ -88,19 +87,6 @@ void expectMin48(WidgetTester t, String tooltip) {
   final Size s = _sizeOf(t, tooltip);
   expect(s.width, greaterThanOrEqualTo(48), reason: '$tooltip width');
   expect(s.height, greaterThanOrEqualTo(48), reason: '$tooltip height');
-}
-
-/// A layout overflow would surface as a FlutterError mentioning
-/// "overflowed". Rendering a FlutterMap in this harness also throws an
-/// unrelated null-check inside the map package (no tile/ticker setup),
-/// so any other exception is drained, not failed on.
-void _noOverflow(WidgetTester t) {
-  Object? e;
-  while ((e = t.takeException()) != null) {
-    expect('$e', isNot(contains('overflowed')),
-        reason: 'a control row overflowed');
-    debugPrint('drained (not overflow): ${'$e'.split('\n').first}');
-  }
 }
 
 Future<void> _drain(WidgetTester t, MeshcoreController mc) async {
@@ -188,27 +174,4 @@ void main() {
     await _drain(t, mc);
   });
 
-  testWidgets('fabric-survey zoom / recentre / tiles / reset are >= 48x48',
-      (WidgetTester t) async {
-    await t.binding.setSurfaceSize(const Size(360, 780));
-    addTearDown(() => t.binding.setSurfaceSize(null));
-    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
-    final MeshcoreController mc = _mc(fake);
-    await t.pumpWidget(_app(mc, const FabricSurveyView()));
-    await mc.connect();
-    fake.emit(selfInfoFrameAt(lat: 38.925, lon: -104.772826));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 50));
-    for (final String tip in <String>[
-      _en.gridZoomTighter,
-      _en.gridZoomWider,
-      _en.streetMapRecenter,
-      _en.mapHideTiles,
-      _en.fabricResetTooltip,
-    ]) {
-      expectMin48(t, tip);
-    }
-    _noOverflow(t);
-    await _drain(t, mc);
-  });
 }

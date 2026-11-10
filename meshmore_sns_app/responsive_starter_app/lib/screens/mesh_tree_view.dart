@@ -432,7 +432,7 @@ class _HopSlider extends StatelessWidget {
           Icon(Icons.account_tree, size: 14, color: cs.primary),
           const SizedBox(width: 6),
           SizedBox(
-            width: 84,
+            width: 96,
             child: Text(
               label,
               style: TextStyle(

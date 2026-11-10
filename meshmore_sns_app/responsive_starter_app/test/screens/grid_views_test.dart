@@ -10,7 +10,6 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/elevation_profile_view.dart';
-import 'package:meshmore_sns_app/screens/fabric_survey_view.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
 import 'package:meshmore_sns_app/screens/mesh_tree_view.dart';
 import 'package:meshmore_sns_app/screens/sns_cells_view.dart';
@@ -63,7 +62,7 @@ void main() {
     shellDragClaim.reset();
   });
 
-  testWidgets('the picker lists every view at one level, plus the map hand-off',
+  testWidgets('the picker lists every view at one level, and no map hand-off',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(800, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -79,7 +78,6 @@ void main() {
     // Every view in one list. "Radar" appears twice: the toolbar shows the
     // current view's name and the sheet lists it.
     expect(find.text('Radar'), findsNWidgets(2));
-    expect(find.text('Coverage'), findsOneWidget);
     expect(find.text('Weather'), findsOneWidget);
     expect(find.text('Mesh tree'), findsOneWidget);
     expect(find.text('Altitude'), findsOneWidget);
@@ -107,7 +105,6 @@ void main() {
     await t.pump();
 
     const Map<String, String> purposes = <String, String>{
-      'Coverage': 'Where the mesh has answered, cell by cell.',
       'Weather':
           'Temperature, humidity and pressure, from nodes that report them.',
     };
@@ -155,8 +152,6 @@ void main() {
     await t.pumpWidget(_host(mc));
     await t.pump();
 
-    await _openView(t, 'Coverage');
-    expect(find.byType(FabricSurveyView), findsOneWidget);
     await _openView(t, 'Weather');
     expect(find.byType(WeatherView), findsOneWidget);
     await _openView(t, 'Mesh tree');
@@ -185,7 +180,6 @@ void main() {
     expect(t.takeException(), isNull, reason: 'the tab itself overflowed');
 
     for (final String label in <String>[
-      'Coverage',
       'Weather',
       'Mesh tree',
       'Altitude',

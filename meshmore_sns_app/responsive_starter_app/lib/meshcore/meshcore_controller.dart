@@ -3165,6 +3165,10 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// Most recently observed message (drives the sns-cells toast).
   HeatPing? get lastHeatPing => _heat.lastPing;
 
+  /// The newest heat pings, oldest first. A view that was not on screen when
+  /// they arrived reads them all instead of only the last one.
+  List<HeatPing> get recentHeatPings => _heat.recentPings;
+
   /// Wipe all accumulated social heat (sns-cells "clear" control).
   void clearMessageHeat() {
     _heat.clear();

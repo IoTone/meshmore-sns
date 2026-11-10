@@ -1748,12 +1748,6 @@ abstract class AppLocalizations {
   /// **'This view needs your own position. Waiting for a GPS fix (phone or device).'**
   String get gridNeedsFix;
 
-  /// No description provided for @gridViewFabric.
-  ///
-  /// In en, this message translates to:
-  /// **'Coverage'**
-  String get gridViewFabric;
-
   /// No description provided for @gridViewElevation.
   ///
   /// In en, this message translates to:
@@ -1868,36 +1862,6 @@ abstract class AppLocalizations {
   /// **'Mt Fuji'**
   String get elevationRefMtFuji;
 
-  /// No description provided for @fabricCoverageCount.
-  ///
-  /// In en, this message translates to:
-  /// **'MESH SURVEY · {n} CELLS'**
-  String fabricCoverageCount(int n);
-
-  /// No description provided for @fabricResetTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset coverage'**
-  String get fabricResetTooltip;
-
-  /// No description provided for @fabricResetTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset mesh-coverage survey?'**
-  String get fabricResetTitle;
-
-  /// No description provided for @fabricResetBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Drops every recorded cell. New observations will start filling the map again as you move and the mesh reports nearby nodes.'**
-  String get fabricResetBody;
-
-  /// No description provided for @fabricResetApply.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset'**
-  String get fabricResetApply;
-
   /// No description provided for @streetMapRecenter.
   ///
   /// In en, this message translates to:
@@ -1909,18 +1873,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This pack covers zoom {min} to {max}. Coarser tiles stand in outside that range.'**
   String mapPackZoomOutside(int min, int max);
-
-  /// No description provided for @mapHideTiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide map tiles'**
-  String get mapHideTiles;
-
-  /// No description provided for @mapShowTiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Show map tiles'**
-  String get mapShowTiles;
 
   /// No description provided for @deviceRegionLoadedOffline.
   ///
@@ -3781,48 +3733,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap a node for details, or Recenter to reset the view.'**
   String get meshTreeLegendInteract;
-
-  /// No description provided for @fabricLegendTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'MESH SURVEY'**
-  String get fabricLegendTitle;
-
-  /// No description provided for @fabricLegendDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'A persistent record of where the mesh has been observed. Each rectangle is a small geographic cell (~220 m × 220 m) the device logged on contact with this location.'**
-  String get fabricLegendDesc;
-
-  /// No description provided for @fabricLegendCell.
-  ///
-  /// In en, this message translates to:
-  /// **'Filled cell — the mesh reached here at some point.'**
-  String get fabricLegendCell;
-
-  /// No description provided for @fabricLegendRecency.
-  ///
-  /// In en, this message translates to:
-  /// **'Brighter is more recent: under an hour, under a day, under a week, older.'**
-  String get fabricLegendRecency;
-
-  /// No description provided for @fabricLegendMarker.
-  ///
-  /// In en, this message translates to:
-  /// **'Filled pins are the nodes in range now. Tap one for details.'**
-  String get fabricLegendMarker;
-
-  /// No description provided for @fabricLegendSelf.
-  ///
-  /// In en, this message translates to:
-  /// **'The primary-coloured pin is you.'**
-  String get fabricLegendSelf;
-
-  /// No description provided for @fabricLegendReset.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset the survey from the overflow menu when you move to a new area.'**
-  String get fabricLegendReset;
 
   /// No description provided for @nodeDetailHopsKv.
   ///
@@ -9346,24 +9256,6 @@ abstract class AppLocalizations {
   /// **'Arrow · route out'**
   String get treeArrowShort;
 
-  /// No description provided for @fabricCellShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Cell · mesh heard here'**
-  String get fabricCellShort;
-
-  /// No description provided for @fabricRecencyShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Brighter · more recent'**
-  String get fabricRecencyShort;
-
-  /// No description provided for @fabricMarkerShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Pin · peer now'**
-  String get fabricMarkerShort;
-
   /// No description provided for @snsHotShort.
   ///
   /// In en, this message translates to:
@@ -9429,12 +9321,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How far each node is, and how long ago it was heard.'**
   String get gridPurposeRadial;
-
-  /// No description provided for @gridPurposeCoverage.
-  ///
-  /// In en, this message translates to:
-  /// **'Where the mesh has answered, cell by cell.'**
-  String get gridPurposeCoverage;
 
   /// No description provided for @gridPurposeWeather.
   ///
@@ -9807,24 +9693,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dots line up side to side, not by distance.'**
   String get elevationNotADistance;
-
-  /// No description provided for @fabricNewestCell.
-  ///
-  /// In en, this message translates to:
-  /// **'newest cell {ago}'**
-  String fabricNewestCell(Object ago);
-
-  /// No description provided for @fabricNothingYet.
-  ///
-  /// In en, this message translates to:
-  /// **'nothing recorded yet — cells fill as you hear the mesh'**
-  String get fabricNothingYet;
-
-  /// No description provided for @fabricAgoDays.
-  ///
-  /// In en, this message translates to:
-  /// **'{d}d ago'**
-  String fabricAgoDays(Object d);
 
   /// No description provided for @meshbookEmptyDetail.
   ///
@@ -10809,6 +10677,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Kept on this phone until the app closes. A note is not saved to history.'**
   String get voiceNotesSession;
+
+  /// No description provided for @gridRangeAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get gridRangeAuto;
+
+  /// No description provided for @mapCoverageShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Coverage shading'**
+  String get mapCoverageShow;
+
+  /// No description provided for @mapCoverageHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide coverage shading'**
+  String get mapCoverageHide;
+
+  /// No description provided for @heatEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No chatter overheard here in the last hour.'**
+  String get heatEmpty;
+
+  /// No description provided for @elevationEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.'**
+  String get elevationEmpty;
 }
 
 class _AppLocalizationsDelegate

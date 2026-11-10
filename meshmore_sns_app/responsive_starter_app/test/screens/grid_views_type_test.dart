@@ -28,7 +28,6 @@ void main() {
 
   const List<String> views = <String>[
         'lib/screens/street_map_view.dart',
-    'lib/screens/fabric_survey_view.dart',
     'lib/screens/elevation_profile_view.dart',
     'lib/screens/mesh_tree_view.dart',
     'lib/screens/sns_cells_view.dart',

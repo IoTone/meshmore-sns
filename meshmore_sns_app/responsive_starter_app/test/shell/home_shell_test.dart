@@ -617,7 +617,7 @@ void main() {
     // drag is the shell's.
     await t.tap(find.byTooltip('View'));
     await settle(t);
-    await t.tap(find.text('Coverage').last);
+    await t.tap(find.text('Message heat').last);
     await settle(t);
     expect(find.byKey(const ValueKey<String>('grid-pan-toggle')),
         findsOneWidget);

@@ -111,9 +111,19 @@ class _SnsCellsViewState extends State<SnsCellsView>
     super.dispose();
   }
 
-  void _ingestPing(MeshcoreController mc) {
-    final HeatPing? p = mc.lastHeatPing;
-    if (p == null || p.seq == _lastPingSeq) return;
+  /// Every ping this view has not drawn yet, oldest first.
+  ///
+  /// Reading `lastHeatPing` alone toasted one message however many arrived while
+  /// another grid view was showing — the radar disposes this one, so a burst was
+  /// one toast when the heat map was next opened.
+  void _ingestPings(MeshcoreController mc) {
+    for (final HeatPing p in mc.recentHeatPings) {
+      if (p.seq > _lastPingSeq) _ingestPing(p);
+    }
+  }
+
+  void _ingestPing(HeatPing p) {
+    if (p.seq <= _lastPingSeq) return;
     _lastPingSeq = p.seq;
     final int now = DateTime.now().millisecondsSinceEpoch;
     final bool located = p.latitude != null && p.longitude != null;
@@ -150,7 +160,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
     final ColorScheme cs = Theme.of(context).colorScheme;
     final AppLocalizations l = AppLocalizations.of(context);
 
-    if (!widget.frozen) _ingestPing(mc);
+    if (!widget.frozen) _ingestPings(mc);
 
     final OwnLocation? own = mc.ownLocation;
     final double? selfLat = own?.latitude;
@@ -167,6 +177,15 @@ class _SnsCellsViewState extends State<SnsCellsView>
     final VizPalette viz = VizPalette.of(context.skin);
     final Map<String, double> heat = mc.messageHeatScores();
     final Map<String, int> heatCounts = mc.messageHeatCounts();
+    // Nothing has been overheard in this window. The painter would draw an
+    // empty grid under the legend, which reads as a broken view rather than as
+    // a quiet channel — the same defect the other views fixed with a notice.
+    if (heat.isEmpty && _toasts.isEmpty) {
+      return GridNotice(
+        message: l.heatEmpty,
+        icon: Icons.graphic_eq,
+      );
+    }
     final List<DiscoveredNode> source =
         widget.filteredNodes ?? mc.nodes;
     final List<DiscoveredNode> nodes = <DiscoveredNode>[

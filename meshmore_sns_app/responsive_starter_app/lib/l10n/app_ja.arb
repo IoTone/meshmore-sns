@@ -446,7 +446,6 @@
   "gridZoomWider": "広く（ズームアウト）",
   "gridZoomTighter": "狭く（ズームイン）",
   "gridNeedsFix": "この表示には自分の位置が必要です。GPS 取得待ち（スマートフォンまたはデバイス）。",
-  "gridViewFabric": "カバレッジ",
   "gridViewElevation": "高度",
   "fujiLegendTitle": "Fujiさん",
   "fujiLegendDesc": "標高測量。√スケール軸で有名な建造物と高さを比較。自分の標高はデバイスGPSテレメトリまたは電話の位置情報から取得。",
@@ -473,22 +472,8 @@
   "elevationRefEmpireState": "エンパイア",
   "elevationRefBurj": "ブルジュ",
   "elevationRefMtFuji": "富士山",
-  "fabricCoverageCount": "メッシュ調査 · {n} セル",
-  "@fabricCoverageCount": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "fabricResetTooltip": "調査結果をリセット",
-  "fabricResetTitle": "メッシュ調査結果をリセットしますか？",
-  "fabricResetBody": "記録済みのセルをすべて削除します。移動と近隣ノードの観測に応じて新しい記録が再び埋まっていきます。",
-  "fabricResetApply": "リセット",
   "streetMapRecenter": "現在地に戻す",
   "mapPackZoomOutside": "このパックの範囲はズーム {min}〜{max} です。範囲外は粗いタイルで表示します。",
-  "mapHideTiles": "地図タイルを非表示",
-  "mapShowTiles": "地図タイルを表示",
   "deviceRegionLoadedOffline": "{label} を読み込みました — デバイス接続時に「適用」してください。",
   "@deviceRegionLoadedOffline": {
     "placeholders": {
@@ -1303,13 +1288,6 @@
   "meshTreeLegendFloat": "浮遊（エッジなし）— advert のみで受信、経路不明。",
   "meshTreeLegendArrow": "矢印は自分から目的ピアへ向かう。",
   "meshTreeLegendInteract": "ノードをタップで詳細、「中央に戻す」で表示を戻します。",
-  "fabricLegendTitle": "メッシュ調査",
-  "fabricLegendDesc": "メッシュが観測された場所の永続的な記録。各長方形は小さな地理セル（約 220 m × 220 m）で、デバイスがこの位置と接続したときにログ。",
-  "fabricLegendCell": "塗りつぶしセル — ここで一度はメッシュが届いた。",
-  "fabricLegendRecency": "明るいほど新しい: 1時間以内、1日以内、1週間以内、それ以上。",
-  "fabricLegendMarker": "塗りつぶしたピンは、いま範囲内にいるノードです。タップで詳細。",
-  "fabricLegendSelf": "原色のピンはあなた。",
-  "fabricLegendReset": "新しい地域に移動するときは、オーバーフローメニューからサーベイをリセット。",
   "nodeDetailHopsKv": "ホップ数",
   "nodeDetailHopsDirect": "直接 (0 ホップ)",
   "nodeDetailHopsViaRepeaters": "{n} 経由リピーター",
@@ -1450,7 +1428,6 @@
   "notifBodySos": "位置はアプリで確認してください。警報には座標が含まれますが、ロック画面には表示しません。",
   "notifAlarmRunningBody": "警報を繰り返し送信中です。アプリを開いて停止してください。",
   "notifSectionTitle": "通知",
-
   "notifMutedNotice": "設定でミュートされています。ここのスイッチは再びオンにしたときに適用されます。",
   "notifOs": "通知を表示",
   "notifAudio": "音を鳴らす",
@@ -1633,7 +1610,6 @@
   "radioHealthNotReported": "未報告",
   "radioHealthUptime": "稼働 {uptime}",
   "radioHealthSource": "無線の値です",
-
   "radioHealthAckTrip": "最後の確認応答: 往復 {ms} ms（無線機の計測値）",
   "@radioHealthAckTrip": {
     "placeholders": {
@@ -2502,9 +2478,6 @@
   "treeSensorShort": "波形 · センサー",
   "treeFloodShort": "点 · フラッド経由",
   "treeArrowShort": "矢印 · 経路",
-  "fabricCellShort": "セル · 受信した場所",
-  "fabricRecencyShort": "明るいほど新しい",
-  "fabricMarkerShort": "ピン · 現在のピア",
   "snsHotShort": "赤 · 現在混雑",
   "snsCoolShort": "色落ち · 沈静化",
   "snsToastShort": "点滅 · 新着",
@@ -2516,7 +2489,6 @@
   "chatSpeechOffAction": "読み上げはアプリ設定でオフです",
   "nodeDetailAltitudeNotReported": "報告されません",
   "gridPurposeRadial": "各ノードまでの距離と、最後に聞こえた時刻。",
-  "gridPurposeCoverage": "メッシュが応答した場所をセルごとに。",
   "gridPurposeWeather": "温度・湿度・気圧（報告するノードのみ）。",
   "gridPurposeTree": "ノード同士の経路（広告されたルートより）。",
   "gridPurposeSnsCells": "メッセージの発信元を直近1時間で。",
@@ -2592,9 +2564,6 @@
   "elevationAskNodes": "各ノードに高度を問い合わせる",
   "elevationAsking": "問い合わせ中…",
   "elevationNotADistance": "点は横並びで、距離の順ではありません。",
-  "fabricNewestCell": "最新のセルは{ago}",
-  "fabricNothingYet": "まだ記録はありません。メッシュを受信するとセルが埋まります。",
-  "fabricAgoDays": "{d}日前",
   "meshbookEmptyDetail": "このチャンネルの発言が記録されます。対象は直近24時間です。",
   "locTriggerManual": "手動",
   "locTriggerPeriodic": "タイマー",
@@ -2845,5 +2814,10 @@
   "voiceNoteTooShort": "短すぎて復号できません。",
   "mediaStalledTableFull": "無線機のパケット表が満杯のままになったため、送信を中止しました。以降は何も送信していません。",
   "mediaStalledAirtime": "この1時間の送信時間の上限に達したため、送信を中止しました。時間枠が戻れば再試行できます。",
-  "voiceNotesSession": "アプリを閉じるまでこの端末に保持されます。履歴には保存されません。"
+  "voiceNotesSession": "アプリを閉じるまでこの端末に保持されます。履歴には保存されません。",
+  "gridRangeAuto": "自動",
+  "mapCoverageShow": "カバレッジ表示",
+  "mapCoverageHide": "カバレッジ表示を隠す",
+  "heatEmpty": "この1時間、この範囲で交信は聞こえていません。",
+  "elevationEmpty": "まだ誰も高度を報告していません。センサーを持つ相手に問い合わせるか、広告を待ってください。"
 }

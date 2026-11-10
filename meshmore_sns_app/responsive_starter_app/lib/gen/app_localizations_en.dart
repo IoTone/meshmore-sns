@@ -958,9 +958,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'This view needs your own position. Waiting for a GPS fix (phone or device).';
 
   @override
-  String get gridViewFabric => 'Coverage';
-
-  @override
   String get gridViewElevation => 'Altitude';
 
   @override
@@ -1026,36 +1023,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get elevationRefMtFuji => 'Mt Fuji';
 
   @override
-  String fabricCoverageCount(int n) {
-    return 'MESH SURVEY · $n CELLS';
-  }
-
-  @override
-  String get fabricResetTooltip => 'Reset coverage';
-
-  @override
-  String get fabricResetTitle => 'Reset mesh-coverage survey?';
-
-  @override
-  String get fabricResetBody =>
-      'Drops every recorded cell. New observations will start filling the map again as you move and the mesh reports nearby nodes.';
-
-  @override
-  String get fabricResetApply => 'Reset';
-
-  @override
   String get streetMapRecenter => 'Re-centre on me';
 
   @override
   String mapPackZoomOutside(int min, int max) {
     return 'This pack covers zoom $min to $max. Coarser tiles stand in outside that range.';
   }
-
-  @override
-  String get mapHideTiles => 'Hide map tiles';
-
-  @override
-  String get mapShowTiles => 'Show map tiles';
 
   @override
   String deviceRegionLoadedOffline(String label) {
@@ -2224,32 +2197,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get meshTreeLegendInteract =>
       'Tap a node for details, or Recenter to reset the view.';
-
-  @override
-  String get fabricLegendTitle => 'MESH SURVEY';
-
-  @override
-  String get fabricLegendDesc =>
-      'A persistent record of where the mesh has been observed. Each rectangle is a small geographic cell (~220 m × 220 m) the device logged on contact with this location.';
-
-  @override
-  String get fabricLegendCell =>
-      'Filled cell — the mesh reached here at some point.';
-
-  @override
-  String get fabricLegendRecency =>
-      'Brighter is more recent: under an hour, under a day, under a week, older.';
-
-  @override
-  String get fabricLegendMarker =>
-      'Filled pins are the nodes in range now. Tap one for details.';
-
-  @override
-  String get fabricLegendSelf => 'The primary-coloured pin is you.';
-
-  @override
-  String get fabricLegendReset =>
-      'Reset the survey from the overflow menu when you move to a new area.';
 
   @override
   String get nodeDetailHopsKv => 'hops';
@@ -5575,15 +5522,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get treeArrowShort => 'Arrow · route out';
 
   @override
-  String get fabricCellShort => 'Cell · mesh heard here';
-
-  @override
-  String get fabricRecencyShort => 'Brighter · more recent';
-
-  @override
-  String get fabricMarkerShort => 'Pin · peer now';
-
-  @override
   String get snsHotShort => 'Red · busy now';
 
   @override
@@ -5616,10 +5554,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get gridPurposeRadial =>
       'How far each node is, and how long ago it was heard.';
-
-  @override
-  String get gridPurposeCoverage =>
-      'Where the mesh has answered, cell by cell.';
 
   @override
   String get gridPurposeWeather =>
@@ -5858,20 +5792,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get elevationNotADistance =>
       'Dots line up side to side, not by distance.';
-
-  @override
-  String fabricNewestCell(Object ago) {
-    return 'newest cell $ago';
-  }
-
-  @override
-  String get fabricNothingYet =>
-      'nothing recorded yet — cells fill as you hear the mesh';
-
-  @override
-  String fabricAgoDays(Object d) {
-    return '${d}d ago';
-  }
 
   @override
   String get meshbookEmptyDetail =>
@@ -6463,4 +6383,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get voiceNotesSession =>
       'Kept on this phone until the app closes. A note is not saved to history.';
+
+  @override
+  String get gridRangeAuto => 'Auto';
+
+  @override
+  String get mapCoverageShow => 'Coverage shading';
+
+  @override
+  String get mapCoverageHide => 'Hide coverage shading';
+
+  @override
+  String get heatEmpty => 'No chatter overheard here in the last hour.';
+
+  @override
+  String get elevationEmpty =>
+      'Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.';
 }

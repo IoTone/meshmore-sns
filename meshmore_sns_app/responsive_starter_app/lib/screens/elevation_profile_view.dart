@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import 'grid_notice.dart';
 import '../theme/mm_skin.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -161,6 +162,24 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
 
     final double? selfAlt = mc.ownLocation?.altitudeMeters;
     final double? selfTemp = mc.selfTelemetry?.temperatureC;
+
+    // No altitude from anyone (peers nor us): the chart would draw only the
+    // reference objects and our own band, which reads as a broken chart rather
+    // than as "nothing has reported an altitude". Say which it is, with the
+    // action that can ask the peers that could answer.
+    // The same action the chart offers, because this is the state where it is
+    // most useful and it would otherwise be unreachable: with no altitude
+    // anywhere the chart does not draw, and its button with it.
+    final bool canAsk = peers.any((DiscoveredNode n) =>
+        n.pubKeyHex != mc.ownPubKeyHex && peerAlt[n.pubKeyHex] == null);
+    if (peerAlt.isEmpty && selfAlt == null) {
+      return GridNotice(
+        message: l.elevationEmpty,
+        icon: Icons.terrain_outlined,
+        actionLabel: canAsk ? l.elevationAskNodes : null,
+        onAction: canAsk ? () => _askNodesElevation(mc) : null,
+      );
+    }
 
     return Stack(
       children: <Widget>[

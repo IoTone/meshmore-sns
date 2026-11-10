@@ -19,6 +19,7 @@ import '../meshcore/own_location.dart';
 import '../geofence/geofence_controller.dart';
 import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
+import '../maps/coverage_quilt.dart';
 import '../maps/basemap_prefs.dart';
 import '../maps/map_centre.dart';
 import '../perms/location_service.dart';
@@ -96,7 +97,7 @@ class StreetMapView extends StatefulWidget {
   /// controls (zoom in, zoom out, recentre, basemap picker, tile
   /// toggle), each 48 dp, `controlsInset` from the top-right corner.
   static const double controlCell = 48;
-  static const int controlCount = 5;
+  static const int controlCount = 6;
   static const double controlsInset = 12;
   static const double controlsBottom =
       controlsInset + controlCount * controlCell;
@@ -197,6 +198,12 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// the reasoning in one testable place: the phone's position, then the
   /// radio's own, then the view the user left, then the world.
   double _zoom = MapCentre.personalZoom;
+
+  /// The reception quilt, on by default: it is why the grid's Coverage view
+  /// left, and a layer nobody can see on the tab that replaced it would make
+  /// that removal a loss. The toggle exists because it is an overlay on a map
+  /// whose labels matter underneath it.
+  bool _showCoverage = true;
   bool _centered = false;
 
   /// The view the user left, read once at startup. It is step three of the
@@ -656,6 +663,18 @@ class _StreetMapViewState extends State<StreetMapView> {
               else
                 basemapLayer(context, shownSource,
                     dim: context.skin.shape.dimmedBasemap),
+              // The reception quilt, moved here from the grid's Coverage view
+              // (that view was a second map doing the map's job). Drawn under
+              // the reach circles so a cell never hides a range, and only when
+              // there is something to draw.
+              if (_showCoverage && mc.coverageCells.isNotEmpty)
+                PolygonLayer(
+                  polygons: coveragePolygons(
+                    cells: mc.coverageCells,
+                    nowUnix: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                    color: cs.secondary,
+                  ),
+                ),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),
               // R25+1 — range circle for self. Uses our radio-tuple
@@ -976,6 +995,20 @@ class _StreetMapViewState extends State<StreetMapView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                IconButton(
+                  key: const ValueKey<String>('map-coverage-toggle'),
+                  tooltip:
+                      _showCoverage ? l.mapCoverageHide : l.mapCoverageShow,
+                  iconSize: 18,
+                  constraints: const BoxConstraints(
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
+                  icon: Icon(_showCoverage
+                      ? Icons.grid_on
+                      : Icons.grid_off_outlined),
+                  onPressed: () =>
+                      setState(() => _showCoverage = !_showCoverage),
+                ),
                 IconButton(
                   tooltip: l.gridZoomTighter,
                   iconSize: 18,

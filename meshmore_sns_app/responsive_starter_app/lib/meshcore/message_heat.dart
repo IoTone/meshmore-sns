@@ -87,6 +87,17 @@ class MessageHeatTracker {
   /// the first message is observed.
   HeatPing? lastPing;
 
+  /// The newest pings, oldest first.
+  ///
+  /// `lastPing` alone loses every message that arrived while this view was not
+  /// on screen: the grid keeps the previous view disposed, so a burst heard on
+  /// the radar was one toast when the heat map was next opened. A short log is
+  /// what lets the view draw what it missed.
+  static const int pingLogLength = 8;
+  final List<HeatPing> _recent = <HeatPing>[];
+
+  List<HeatPing> get recentPings => List<HeatPing>.unmodifiable(_recent);
+
   /// Record an observed message. [lat]/[lon] place it on the grid;
   /// when null the message contributes no heat (we can't place it)
   /// but still produces a [lastPing] so the view can toast it.
@@ -118,6 +129,10 @@ class MessageHeatTracker {
       longitude: lon,
       isChannel: isChannel,
     );
+    _recent.add(lastPing!);
+    while (_recent.length > pingLogLength) {
+      _recent.removeAt(0);
+    }
     return lastPing!;
   }
 
@@ -178,5 +193,6 @@ class MessageHeatTracker {
   void clear() {
     _cells.clear();
     lastPing = null;
+    _recent.clear();
   }
 }

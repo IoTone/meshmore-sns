@@ -8,8 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
-import 'package:meshmore_sns_app/screens/fabric_survey_view.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
+import 'package:meshmore_sns_app/screens/sns_cells_view.dart';
 
 import 'package:meshmore_sns_app/shell/horizontal_drag_claim.dart';
 import 'package:meshmore_sns_app/theme/mm_skin.dart';
@@ -205,19 +205,19 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Coverage').last);
+    await t.tap(find.text('Message heat').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
 
     // Swipe mode: the map does not take the drag, and it is still tappable.
     // Before this, the whole body was inside an IgnorePointer, so a node you
     // could see could not be opened until you switched modes.
-    expect(t.widget<FabricSurveyView>(find.byType(FabricSurveyView)).interactive,
-        isFalse);
+    expect(
+        t.widget<SnsCellsView>(find.byType(SnsCellsView)).interactive, isFalse);
     await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
     await t.pump();
-    expect(t.widget<FabricSurveyView>(find.byType(FabricSurveyView)).interactive,
-        isTrue);
+    expect(
+        t.widget<SnsCellsView>(find.byType(SnsCellsView)).interactive, isTrue);
   });
 
   testWidgets('R109 the Swipe ⇄ Pan toggle exists only where the view pans, '
@@ -237,7 +237,7 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Coverage').last);
+    await t.tap(find.text('Message heat').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     expect(
@@ -286,7 +286,7 @@ void main() {
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Coverage').last);
+    await t.tap(find.text('Message heat').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
@@ -317,7 +317,7 @@ void main() {
     // The transport is present and says live, because that is what the
     // view is doing.
     expect(find.byTooltip('Pause updates'), findsOneWidget);
-    expect(find.text('Wide'), findsWidgets);
+    expect(find.text('Auto'), findsWidgets);
     mc.dispose();
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 5));

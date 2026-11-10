@@ -21,19 +21,16 @@ void main() {
         '{"scale":2,"north":false,"live":true,"iv":10}');
     final GridPrefs p = (await GridPrefsStore.load())!;
     expect(p.scaleIndex, 2);
-    expect(p.live, isTrue);
     expect(p.intervalSec, 10);
   });
 
   test('round-trips the grid preferences', () async {
     await GridPrefsStore.save(const GridPrefs(
       scaleIndex: 3,
-      live: true,
       intervalSec: 30,
     ));
     final GridPrefs p = (await GridPrefsStore.load())!;
     expect(p.scaleIndex, 3);
-    expect(p.live, isTrue);
     expect(p.intervalSec, 30);
   });
 }

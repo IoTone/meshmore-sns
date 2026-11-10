@@ -905,9 +905,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridNeedsFix => 'この表示には自分の位置が必要です。GPS 取得待ち（スマートフォンまたはデバイス）。';
 
   @override
-  String get gridViewFabric => 'カバレッジ';
-
-  @override
   String get gridViewElevation => '高度';
 
   @override
@@ -968,36 +965,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get elevationRefMtFuji => '富士山';
 
   @override
-  String fabricCoverageCount(int n) {
-    return 'メッシュ調査 · $n セル';
-  }
-
-  @override
-  String get fabricResetTooltip => '調査結果をリセット';
-
-  @override
-  String get fabricResetTitle => 'メッシュ調査結果をリセットしますか？';
-
-  @override
-  String get fabricResetBody =>
-      '記録済みのセルをすべて削除します。移動と近隣ノードの観測に応じて新しい記録が再び埋まっていきます。';
-
-  @override
-  String get fabricResetApply => 'リセット';
-
-  @override
   String get streetMapRecenter => '現在地に戻す';
 
   @override
   String mapPackZoomOutside(int min, int max) {
     return 'このパックの範囲はズーム $min〜$max です。範囲外は粗いタイルで表示します。';
   }
-
-  @override
-  String get mapHideTiles => '地図タイルを非表示';
-
-  @override
-  String get mapShowTiles => '地図タイルを表示';
 
   @override
   String deviceRegionLoadedOffline(String label) {
@@ -2120,28 +2093,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get meshTreeLegendInteract => 'ノードをタップで詳細、「中央に戻す」で表示を戻します。';
-
-  @override
-  String get fabricLegendTitle => 'メッシュ調査';
-
-  @override
-  String get fabricLegendDesc =>
-      'メッシュが観測された場所の永続的な記録。各長方形は小さな地理セル（約 220 m × 220 m）で、デバイスがこの位置と接続したときにログ。';
-
-  @override
-  String get fabricLegendCell => '塗りつぶしセル — ここで一度はメッシュが届いた。';
-
-  @override
-  String get fabricLegendRecency => '明るいほど新しい: 1時間以内、1日以内、1週間以内、それ以上。';
-
-  @override
-  String get fabricLegendMarker => '塗りつぶしたピンは、いま範囲内にいるノードです。タップで詳細。';
-
-  @override
-  String get fabricLegendSelf => '原色のピンはあなた。';
-
-  @override
-  String get fabricLegendReset => '新しい地域に移動するときは、オーバーフローメニューからサーベイをリセット。';
 
   @override
   String get nodeDetailHopsKv => 'ホップ数';
@@ -5346,15 +5297,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get treeArrowShort => '矢印 · 経路';
 
   @override
-  String get fabricCellShort => 'セル · 受信した場所';
-
-  @override
-  String get fabricRecencyShort => '明るいほど新しい';
-
-  @override
-  String get fabricMarkerShort => 'ピン · 現在のピア';
-
-  @override
   String get snsHotShort => '赤 · 現在混雑';
 
   @override
@@ -5386,9 +5328,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridPurposeRadial => '各ノードまでの距離と、最後に聞こえた時刻。';
-
-  @override
-  String get gridPurposeCoverage => 'メッシュが応答した場所をセルごとに。';
 
   @override
   String get gridPurposeWeather => '温度・湿度・気圧（報告するノードのみ）。';
@@ -5618,19 +5557,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get elevationNotADistance => '点は横並びで、距離の順ではありません。';
-
-  @override
-  String fabricNewestCell(Object ago) {
-    return '最新のセルは$ago';
-  }
-
-  @override
-  String get fabricNothingYet => 'まだ記録はありません。メッシュを受信するとセルが埋まります。';
-
-  @override
-  String fabricAgoDays(Object d) {
-    return '$d日前';
-  }
 
   @override
   String get meshbookEmptyDetail => 'このチャンネルの発言が記録されます。対象は直近24時間です。';
@@ -6198,4 +6124,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get voiceNotesSession => 'アプリを閉じるまでこの端末に保持されます。履歴には保存されません。';
+
+  @override
+  String get gridRangeAuto => '自動';
+
+  @override
+  String get mapCoverageShow => 'カバレッジ表示';
+
+  @override
+  String get mapCoverageHide => 'カバレッジ表示を隠す';
+
+  @override
+  String get heatEmpty => 'この1時間、この範囲で交信は聞こえていません。';
+
+  @override
+  String get elevationEmpty => 'まだ誰も高度を報告していません。センサーを持つ相手に問い合わせるか、広告を待ってください。';
 }
