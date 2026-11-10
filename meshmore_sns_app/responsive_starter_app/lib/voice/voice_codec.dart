@@ -15,14 +15,17 @@ import 'dart:typed_data';
 /// `codec2_samples_per_frame` return exactly these for each mode.
 enum VoiceMode {
   /// 28 bits per 40 ms frame. 700 bit/s, 87.5 bytes per second of audio.
-  narrowband(8, '700C', bitsPerFrame: 28, bytesPerFrame: 4, samplesPerFrame: 320),
+  narrowband(8, '700C',
+      wireId: 0, bitsPerFrame: 28, bytesPerFrame: 4, samplesPerFrame: 320),
 
   /// 52 bits per 40 ms frame. 1300 bit/s, 162.5 bytes per second.
-  standard(4, '1300', bitsPerFrame: 52, bytesPerFrame: 7, samplesPerFrame: 320);
+  standard(4, '1300',
+      wireId: 1, bitsPerFrame: 52, bytesPerFrame: 7, samplesPerFrame: 320);
 
   const VoiceMode(
     this.codec2Id,
     this.label, {
+    required this.wireId,
     required this.bitsPerFrame,
     required this.bytesPerFrame,
     required this.samplesPerFrame,
@@ -31,6 +34,11 @@ enum VoiceMode {
   /// The `CODEC2_MODE_*` value the C library takes. Not the enum index: these
   /// are ABI and a wrong number is a codec for a different mode, silently.
   final int codec2Id;
+
+  /// The nibble the wire header carries, which is **not** [codec2Id] and not
+  /// the enum index either: a payload is a fact about a recording, so its mode
+  /// number must not move when the codec's ABI or this enum's order does.
+  final int wireId;
 
   /// How the mode is named on the wire, in logs and in the licence notice.
   final String label;
@@ -55,6 +63,16 @@ enum VoiceMode {
     return null;
   }
 
+  /// The mode whose [wireId] is [id], or null for one this build does not
+  /// carry — a payload recorded on a build with another mode is refused by
+  /// name rather than decoded at the wrong width.
+  static VoiceMode? fromWireId(int id) {
+    for (final VoiceMode m in VoiceMode.values) {
+      if (m.wireId == id) return m;
+    }
+    return null;
+  }
+
   /// Bytes for [seconds] of audio if frames are packed bit-contiguously.
   ///
   /// This is the number the composer states before the microphone opens: a
@@ -65,6 +83,29 @@ enum VoiceMode {
     final int frames = (audio.inMilliseconds / 40).ceil();
     return (frames * bitsPerFrame + 7) ~/ 8;
   }
+}
+
+/// The shortest take worth sending, in 40 ms frames.
+///
+/// A recorder hands over whatever the platform streamed, which is rarely a
+/// whole number of frames and can be a handful of samples. Five frames is 200 ms
+/// — below that a note is a click, and it still costs a datagram, a chunk
+/// header and the receiver's attention.
+const int kVoiceMinFrames = 5;
+
+/// [pcm] cut back to the whole 40 ms frames [mode] can encode.
+///
+/// The tail is dropped rather than padded, because padding silence onto the end
+/// changes the duration a receiver computes from the stream, and a stream whose
+/// length is not a whole number of frames is refused by every decoder on the
+/// path. At most 39 ms is lost, which is one frame's worth of speech rather than
+/// a click at the end of a sentence.
+Uint8List voicePcmWholeFrames(Uint8List pcm, VoiceMode mode) {
+  final int frameBytes = mode.pcmBytesPerFrame;
+  final int whole = pcm.length - (pcm.length % frameBytes);
+  if (whole == pcm.length) return pcm;
+  if (whole <= 0) return Uint8List(0);
+  return Uint8List.fromList(Uint8List.sublistView(pcm, 0, whole));
 }
 
 /// Why voice could not be encoded, decoded or recorded.

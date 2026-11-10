@@ -141,6 +141,73 @@ void main() {
       await capture.dispose();
     });
   });
+
+  group('a take is cut to whole frames before it reaches the codec', () {
+    test('one byte over and one byte short both land on 640-byte frames',
+        () async {
+      for (final int extra in <int>[1, -1]) {
+        final _FakePlatform platform = _FakePlatform();
+        final PlatformVoiceCapture capture =
+            PlatformVoiceCapture(platform: platform);
+        await capture.start();
+        // Three whole frames plus, or minus, one byte.
+        platform.emit(Uint8List(3 * kVoicePcmFrameBytes + extra));
+        final VoiceRecording r = await capture.stop();
+        // A platform streams whatever byte counts it likes, and the codec
+        // refuses a partial frame — so a take is trimmed here or every real
+        // press of the button is refused downstream.
+        expect(r.pcm.length % kVoicePcmFrameBytes, 0);
+        // Both cases keep the whole frames they have: one byte over is still
+        // three frames, one byte short is two, and the tail is dropped either
+        // way rather than padded.
+        expect(r.pcm.length, extra > 0 ? 3 * kVoicePcmFrameBytes : 2 * kVoicePcmFrameBytes);
+        await capture.dispose();
+      }
+    });
+
+    test('a take shorter than one frame is empty rather than a click',
+        () async {
+      final _FakePlatform platform = _FakePlatform();
+      final PlatformVoiceCapture capture =
+          PlatformVoiceCapture(platform: platform);
+      await capture.start();
+      platform.emit(Uint8List(kVoicePcmFrameBytes - 1));
+      final VoiceRecording r = await capture.stop();
+      expect(r.pcm, isEmpty);
+      await capture.dispose();
+    });
+  });
+
+  group('a take the ceiling ended keeps its audio', () {
+    test('the ceiling\'s stop and the caller\'s stop are the same take',
+        () async {
+      final _FakePlatform platform = _FakePlatform();
+      final PlatformVoiceCapture capture = PlatformVoiceCapture(
+        platform: platform,
+        ceiling: const Duration(milliseconds: 30),
+      );
+      await capture.start();
+      // Two whole frames, so the trim cannot explain the length away.
+      platform.emit(Uint8List(2 * kVoicePcmFrameBytes));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      // The ceiling stopped the recorder itself. Before this was fixed, its
+      // stop consumed the chunks and its result was discarded, so the surface
+      // asked for the take, got zero bytes, and the note that ran to the limit
+      // — the common case for a long message — arrived empty.
+      final VoiceRecording r = await capture.stop();
+      expect(r.stoppedAtCeiling, isTrue);
+      expect(r.pcm.length, 2 * kVoicePcmFrameBytes);
+      // Asking again returns the same take rather than an empty buffer.
+      final VoiceRecording again = await capture.stop();
+      expect(again.pcm.length, 2 * kVoicePcmFrameBytes);
+      // And a new recording starts clean.
+      await capture.start();
+      platform.emit(Uint8List(kVoicePcmFrameBytes));
+      final VoiceRecording next = await capture.stop();
+      expect(next.pcm.length, kVoicePcmFrameBytes);
+      await capture.dispose();
+    });
+  });
 }
 
 /// The platform seam as the capture sees it: permission, PCM support, a byte

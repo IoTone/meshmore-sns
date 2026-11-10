@@ -172,6 +172,7 @@ final class MediaReassembler {
         // add re-inserts, so order is last-seen order.
         final int victim = _transfers.keys.first;
         _transfers.remove(victim);
+        _forgetSlots(victim);
         _rememberEvicted(victim);
       }
       t = MediaTransfer(
@@ -193,6 +194,18 @@ final class MediaReassembler {
     if (!t.complete) return null;
     _rememberCompleted(t.payloadId);
     return t;
+  }
+
+  /// Drops the dedupe keys of a payload that was evicted.
+  ///
+  /// Without this an evicted transfer is a zombie: its remaining chunks arrive,
+  /// a fresh transfer is created, and every index that had already been seen is
+  /// answered `duplicate` — so it can never complete, never fails, and holds a
+  /// pool slot until something else evicts it. The window exists to make a
+  /// retransmit cheap, not to keep a transfer the receiver gave up on.
+  void _forgetSlots(int payloadId) {
+    final String prefix = '$payloadId:';
+    _seen.removeWhere((String key) => key.startsWith(prefix));
   }
 
   void _rememberEvicted(int payloadId) {

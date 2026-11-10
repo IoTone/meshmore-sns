@@ -28,6 +28,26 @@ void main() {
     'voiceNoMicrophone',
     'voiceNoCodec',
     'voiceCost',
+    // The composer: what a take says while it is being recorded, what the
+    // two modes are called, and the two refusals a pressed button can produce.
+    'voiceRecording',
+    'voiceNoteSend',
+    'voiceNotePreview',
+    'voiceNotePlaying',
+    'voiceModeTitle',
+    'voiceModeNarrow',
+    'voiceModeStandard',
+    'voiceNoteTooShort',
+    // The received side: the sheet, its empty state, its count, and the one
+    // failure a stored payload can produce.
+    'voiceNotesTitle',
+    'voiceNotesEmpty',
+    'voiceNotesCount',
+    'voiceNotesSession',
+    'voiceNoteDecodeFailed',
+    // The two capacity stops a media send can hit, which a voice send shares.
+    'mediaStalledTableFull',
+    'mediaStalledAirtime',
   ];
 
   Map<String, dynamic> read(String path) =>

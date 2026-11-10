@@ -43,6 +43,40 @@ void main() {
         reason: 'a workflow there is never read, so it guards nothing');
   });
 
+  test('every job runs at least one command, and the app gate is fatal', () {
+    // A job with no `run:` step is a job that passes by doing nothing, and a
+    // workflow can lose its steps in an edit that still looks right. The app
+    // job's analyzer also has to be fatal: the tree is at zero issues, so an
+    // info-level lint that does not fail the gate is a lint nobody fixes.
+    final List<String> lines =
+        File('${repo.path}/.github/workflows/ci.yml').readAsLinesSync();
+    final List<(String, List<String>)> jobs = <(String, List<String>)>[];
+    bool inJobs = false;
+    for (final String line in lines) {
+      if (line.trimRight() == 'jobs:') {
+        inJobs = true;
+        continue;
+      }
+      if (!inJobs) continue;
+      final RegExpMatch? job = RegExp(r'^  ([a-z][a-z0-9-]*):$').firstMatch(line);
+      if (job != null) {
+        jobs.add((job.group(1)!, <String>[]));
+        continue;
+      }
+      if (jobs.isNotEmpty) jobs.last.$2.add(line);
+    }
+    expect(jobs, isNotEmpty, reason: 'the workflow declares no jobs');
+    for (final (String name, List<String> body) in jobs) {
+      expect(body.where((String l) => l.trimLeft().startsWith('run:')),
+          isNotEmpty,
+          reason: 'job $name would pass without running anything');
+    }
+    final String appJob =
+        jobs.firstWhere(((String, List<String>) j) => j.$1 == 'app-analyze').$2.join('\n');
+    expect(appJob, contains('--fatal-infos'),
+        reason: 'the app analyzer has to fail on an info-level lint');
+  });
+
   test('every working-directory names a directory with a project in it', () {
     final File workflow = File('${repo.path}/.github/workflows/ci.yml');
     final List<String> dirs = <String>[

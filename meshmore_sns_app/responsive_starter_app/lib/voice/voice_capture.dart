@@ -15,6 +15,23 @@ import 'package:record/record.dart' as rec;
 const int kVoiceSampleRate = 8000;
 const int kVoiceChannels = 1;
 
+/// Bytes of PCM in one 40 ms Codec 2 frame: 320 samples at two bytes each.
+///
+/// Both modes carry 40 ms per frame, so this is the one alignment the recorder
+/// and every decoder agree on, and it is why a take is trimmed here rather than
+/// in the codec: the platform streams whatever byte counts it likes, and a
+/// recording whose last partial frame reached the encoder would be refused by
+/// the codec on almost every real press of the button.
+const int kVoicePcmFrameBytes = kVoiceSampleRate * 2 * 40 ~/ 1000;
+
+/// How long the recorder's stream is given to drain after the platform stops.
+///
+/// `record` resolves its stop before every queued event is necessarily
+/// delivered, so the subscription is cancelled a moment later rather than at
+/// once. Thirty milliseconds is below what anyone hears as a delay and enough
+/// for the plugin's own controller to hand over what it already had.
+const Duration kVoiceStopDrain = Duration(milliseconds: 30);
+
 /// The longest note the app records.
 ///
 /// Not a technical limit — Codec 2 would happily encode longer — but the
@@ -132,6 +149,13 @@ final class RecordPackagePlatform implements VoiceRecorderPlatform {
 
 /// A capture session the surfaces drive.
 abstract interface class VoiceCapture {
+  /// How long one take may run. Stated before the microphone opens and used by
+  /// a surface to notice that the capture stopped itself at the ceiling, which
+  /// no callback reports: the recorder ends the take quietly, and a composer
+  /// that only listens for its own stop button sits on "Recording" past the
+  /// limit while the audio has already ended.
+  Duration get limit;
+
   /// True when the microphone is granted and the platform can record the PCM
   /// the codec needs.
   Future<bool> isAvailable();
@@ -178,8 +202,19 @@ final class PlatformVoiceCapture implements VoiceCapture {
   bool _stoppedAtCeiling = false;
   bool _recording = false;
 
-  /// What a full take is allowed to run for, for a surface that states the
-  /// limit before the microphone opens.
+  /// The take the last stop produced, so asking twice returns it twice
+  /// instead of an empty buffer.
+  ///
+  /// This matters because the 20-second ceiling stops the recording itself: a
+  /// surface whose own timer fires at the same moment asks for a take that a
+  /// `_recording == false` check used to answer with zero bytes, and a note
+  /// that ran to the ceiling — the common case for a long message — arrived
+  /// empty with `stoppedAtCeiling` set. One future is shared by every caller,
+  /// so the ceiling's stop and the button's stop are the same stop.
+  Future<VoiceRecording>? _stopping;
+  VoiceRecording? _take;   // the take produced by the last stop()
+
+  @override
   Duration get limit => _ceiling;
 
   @override
@@ -200,6 +235,8 @@ final class PlatformVoiceCapture implements VoiceCapture {
     }
     _chunks.clear();
     _stoppedAtCeiling = false;
+    _stopping = null;
+    _take = null;
     final Stream<Uint8List> stream;
     try {
       stream = await _platform.startStream(
@@ -225,8 +262,25 @@ final class PlatformVoiceCapture implements VoiceCapture {
     });
   }
 
+  /// Stops and returns the take.
+  ///
+  /// Idempotent: the ceiling's own stop, a surface's stop and a second tap all
+  /// resolve to one take, because the first caller's future is shared and its
+  /// result is kept. A stop on a capture that never started is an empty take,
+  /// which is a fact rather than an error.
   @override
-  Future<VoiceRecording> stop() async {
+  Future<VoiceRecording> stop() {
+    final Future<VoiceRecording>? running = _stopping;
+    if (running != null) return running;
+    final VoiceRecording? finished = _take;
+    if (finished != null) return Future<VoiceRecording>.value(finished);
+    return _stopping = _stopInternal().then((VoiceRecording take) {
+      _take = take;
+      return take;
+    });
+  }
+
+  Future<VoiceRecording> _stopInternal() async {
     _ceilingTimer?.cancel();
     _ceilingTimer = null;
     if (!_recording) {
@@ -235,6 +289,7 @@ final class PlatformVoiceCapture implements VoiceCapture {
     }
     _recording = false;
     await _platform.stop();
+    await Future<void>.delayed(kVoiceStopDrain);
     await _sub?.cancel();
     _sub = null;
     final int total =
@@ -246,13 +301,24 @@ final class PlatformVoiceCapture implements VoiceCapture {
       at += c.length;
     }
     _chunks.clear();
-    return VoiceRecording(pcm: pcm, stoppedAtCeiling: _stoppedAtCeiling);
+    // Cut back to whole 40 ms frames. The tail beyond the last frame is at most
+    // 39 ms of speech and is dropped rather than padded, because padding
+    // silence changes the duration a receiver computes from the stream and a
+    // stream that is not a whole number of frames is refused by every decoder
+    // on the path.
+    final int whole = total - (total % kVoicePcmFrameBytes);
+    final Uint8List usable = whole <= 0
+        ? Uint8List(0)
+        : (whole == total ? pcm : Uint8List.fromList(pcm.sublist(0, whole)));
+    return VoiceRecording(pcm: usable, stoppedAtCeiling: _stoppedAtCeiling);
   }
 
   @override
   Future<void> cancel() async {
     _ceilingTimer?.cancel();
     _ceilingTimer = null;
+    _stopping = null;
+    _take = null;
     _chunks.clear();
     if (_recording) {
       _recording = false;

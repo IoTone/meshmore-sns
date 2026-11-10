@@ -1,9 +1,9 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'dart:typed_data';
-
 import 'package:avif_native/avif_native.dart';
+import 'package:flutter/foundation.dart';
 
+import '../util/mesh_log.dart';
 import 'media_photo.dart';
 
 /// Why the codec could not encode or decode.
@@ -113,6 +113,18 @@ final class AvifMediaCodec implements MediaCodec {
   /// keeps this number honest on a phone.
   final int speed;
 
+  /// How long the last encode's native call took, in milliseconds.
+  ///
+  /// The M1 protocol asks for the median encode against the transfer time it
+  /// buys, and there was no way to read it: the encode is synchronous inside
+  /// this class and nothing timed it. This is the number, taken around the
+  /// native call rather than around a Dart future, because that is the part
+  /// that blocks the frame.
+  static int lastEncodeMillis = 0;
+
+  /// Every encode this process ran, for a median rather than a single reading.
+  static final List<int> encodeMillis = <int>[];
+
   /// The quantiser ladder, worst case last.
   ///
   /// libavif's quantiser is 0–63. Below about 20 the container overhead and the
@@ -145,6 +157,7 @@ final class AvifMediaCodec implements MediaCodec {
     EncodedPhoto? smallest;
     for (final (int minQ, int maxQ) in quantiserLadder) {
       final Uint8List bytes;
+      final Stopwatch watch = Stopwatch()..start();
       try {
         bytes = encodeAvifFrames(
           width: fitted.width,
@@ -162,6 +175,17 @@ final class AvifMediaCodec implements MediaCodec {
         throw MediaCodecException(MediaCodecFailure.encodeFailed, e.message);
       } on UnsupportedError catch (e) {
         throw MediaCodecException(MediaCodecFailure.unavailable, '$e');
+      } finally {
+        watch.stop();
+        lastEncodeMillis = watch.elapsedMilliseconds;
+        encodeMillis.add(lastEncodeMillis);
+        if (encodeMillis.length > 64) encodeMillis.removeAt(0);
+        if (kDebugMode) {
+          meshLog('media',
+              'encode ${fitted.width}x${fitted.height} speed $speed q$minQ-$maxQ: '
+              '${watch.elapsedMilliseconds} ms (M1: median ${_medianMillis()} ms '
+              'over ${encodeMillis.length})');
+        }
       }
       final EncodedPhoto candidate = EncodedPhoto(
         bytes: bytes,
@@ -175,6 +199,13 @@ final class AvifMediaCodec implements MediaCodec {
       if (candidate.withinBudget) return candidate;
     }
     return smallest!;
+  }
+
+  /// The median of the encodes this process has run, for the M1 threshold.
+  static int _medianMillis() {
+    if (encodeMillis.isEmpty) return 0;
+    final List<int> sorted = List<int>.of(encodeMillis)..sort();
+    return sorted[sorted.length ~/ 2];
   }
 
   @override

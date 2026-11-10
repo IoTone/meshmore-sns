@@ -6411,4 +6411,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String voiceCost(int datagrams, int seconds, String mode) {
     return '$datagrams packets, about $seconds s of airtime at $mode.';
   }
+
+  @override
+  String voiceRecording(int seconds, int bytes, int datagrams) {
+    return 'Recording $seconds s, $bytes B, about $datagrams packets.';
+  }
+
+  @override
+  String get voiceNoteSend => 'Send voice';
+
+  @override
+  String get voiceNotePreview => 'Preview';
+
+  @override
+  String get voiceNotePlaying => 'Playing';
+
+  @override
+  String get voiceModeTitle => 'Voice mode';
+
+  @override
+  String get voiceModeNarrow => 'Narrow';
+
+  @override
+  String get voiceModeStandard => 'Standard';
+
+  @override
+  String get voiceNotesTitle => 'Voice notes';
+
+  @override
+  String get voiceNotesEmpty => 'No voice notes yet. Record one, then send it.';
+
+  @override
+  String voiceNotesCount(int count) {
+    return 'Voice notes ($count)';
+  }
+
+  @override
+  String get voiceNoteDecodeFailed => 'This voice note cannot be decoded.';
+
+  @override
+  String get voiceNoteTooShort => 'Too short to decode.';
+
+  @override
+  String get mediaStalledTableFull =>
+      'The radio\'s packet table stayed full, so the send stopped. Nothing further was put on air.';
+
+  @override
+  String get mediaStalledAirtime =>
+      'This hour\'s airtime budget refused the send, so it stopped. It can be tried again after the window rolls over.';
+
+  @override
+  String get voiceNotesSession =>
+      'Kept on this phone until the app closes. A note is not saved to history.';
 }

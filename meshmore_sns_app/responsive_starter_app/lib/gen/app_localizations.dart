@@ -10719,6 +10719,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{datagrams} packets, about {seconds} s of airtime at {mode}.'**
   String voiceCost(int datagrams, int seconds, String mode);
+
+  /// No description provided for @voiceRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording {seconds} s, {bytes} B, about {datagrams} packets.'**
+  String voiceRecording(int seconds, int bytes, int datagrams);
+
+  /// No description provided for @voiceNoteSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send voice'**
+  String get voiceNoteSend;
+
+  /// No description provided for @voiceNotePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get voiceNotePreview;
+
+  /// No description provided for @voiceNotePlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get voiceNotePlaying;
+
+  /// No description provided for @voiceModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice mode'**
+  String get voiceModeTitle;
+
+  /// No description provided for @voiceModeNarrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Narrow'**
+  String get voiceModeNarrow;
+
+  /// No description provided for @voiceModeStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get voiceModeStandard;
+
+  /// No description provided for @voiceNotesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice notes'**
+  String get voiceNotesTitle;
+
+  /// No description provided for @voiceNotesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No voice notes yet. Record one, then send it.'**
+  String get voiceNotesEmpty;
+
+  /// No description provided for @voiceNotesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice notes ({count})'**
+  String voiceNotesCount(int count);
+
+  /// No description provided for @voiceNoteDecodeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This voice note cannot be decoded.'**
+  String get voiceNoteDecodeFailed;
+
+  /// No description provided for @voiceNoteTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Too short to decode.'**
+  String get voiceNoteTooShort;
+
+  /// No description provided for @mediaStalledTableFull.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio\'s packet table stayed full, so the send stopped. Nothing further was put on air.'**
+  String get mediaStalledTableFull;
+
+  /// No description provided for @mediaStalledAirtime.
+  ///
+  /// In en, this message translates to:
+  /// **'This hour\'s airtime budget refused the send, so it stopped. It can be tried again after the window rolls over.'**
+  String get mediaStalledAirtime;
+
+  /// No description provided for @voiceNotesSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept on this phone until the app closes. A note is not saved to history.'**
+  String get voiceNotesSession;
 }
 
 class _AppLocalizationsDelegate

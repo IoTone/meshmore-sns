@@ -53,7 +53,10 @@ jobs:
       - name: Resolve
         run: flutter pub get
       - name: Analyze
-        run: flutter analyze
+        # `--fatal-infos` because the tree is at zero issues, and an info-level
+        # lint that cannot fail the gate is a lint nobody fixes. The codec job
+        # has asked for the same thing since it was written.
+        run: flutter analyze --fatal-infos
       - name: Widget tests
         run: flutter test
 

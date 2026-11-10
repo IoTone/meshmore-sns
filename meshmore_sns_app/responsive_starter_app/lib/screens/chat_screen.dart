@@ -26,6 +26,12 @@ import '../gen/app_localizations.dart';
 import '../media/media_codec.dart';
 import '../media/media_composer.dart';
 import '../media/media_transfer.dart';
+import '../voice/voice_capture.dart';
+import '../voice/voice_codec.dart';
+import '../voice/voice_composer.dart';
+import '../voice/voice_inbox.dart';
+import '../voice/voice_notes_sheet.dart';
+import '../voice/voice_playback.dart';
 import '../meshcore/airtime.dart';
 import '../meshcore/block_filter.dart';
 import '../meshcore/block_store.dart';
@@ -416,6 +422,44 @@ class _ChatScreenState extends State<ChatScreen>
     }
   }
 
+  /// Records one note on the active channel.
+  ///
+  /// The channel rules, the ceiling, the cost and the pacing all live in the
+  /// sheet; this only hands it the app-scoped pieces and the radio call for one
+  /// datagram. A build without a codec or a microphone opens the sheet anyway,
+  /// because the sheet's own sentences say which one is missing.
+  Future<void> _openVoice(MeshcoreController mc) async {
+    final VoiceCapture? capture = context.read<VoiceCapture?>();
+    final VoiceCodec? codec = context.read<VoiceCodec?>();
+    if (capture == null || codec == null) return;
+    await VoiceComposer.show(
+      context,
+      service: _media,
+      capture: capture,
+      codec: codec,
+      channelPsk: mc.channelPsk(mc.activeChannel),
+      playback: context.read<VoicePlayback?>(),
+      sendBlob: (Uint8List blob) => mc.sendChannelData(
+        channelIdx: mc.activeChannel,
+        dataType: kChannelDataTypeDev,
+        blob: blob,
+      ),
+    );
+  }
+
+  /// The notes this session holds for the active channel, newest first.
+  Future<void> _openVoiceNotes(MeshcoreController mc) async {
+    final VoiceInbox? inbox = context.read<VoiceInbox?>();
+    final VoiceCodec? codec = context.read<VoiceCodec?>();
+    if (inbox == null || codec == null) return;
+    await VoiceNotesSheet.show(
+      context,
+      notes: inbox.notesFor(mc.activeChannel),
+      codec: codec,
+      playback: context.read<VoicePlayback?>(),
+    );
+  }
+
   Future<void> _openSearch(MeshcoreController mc) async {
     final String? id = await context.push<String>('/chat/search');
     if (id == null || !mounted) return;
@@ -631,6 +675,10 @@ class _ChatScreenState extends State<ChatScreen>
     // per channel and skips blocked rows, and the mark moves only while this
     // tab is the one on screen and the reader is at the bottom of the thread.
     final ChannelReadStore? reads = context.watch<ChannelReadStore?>();
+    // Voice notes the session holds for this channel: the strip's badge and the
+    // sheet read the one store, so they cannot disagree about what is there.
+    final VoiceInbox? voiceInbox = context.watch<VoiceInbox?>();
+    final int voiceNotes = voiceInbox?.countFor(active) ?? 0;
     final BlockStore? blocks = context.watch<BlockStore?>();
     final BlockFilter filter = blocks == null
         ? (_fallbackFilter ??= BlockFilter(BlockStore()))
@@ -741,6 +789,8 @@ class _ChatScreenState extends State<ChatScreen>
                     icon: const Icon(Icons.more_vert),
                     onSelected: (String v) {
                       switch (v) {
+                        case 'voice':
+                          _openVoiceNotes(mc);
                         case 'search':
                           _openSearch(mc);
                         case 'export':
@@ -752,6 +802,31 @@ class _ChatScreenState extends State<ChatScreen>
                       }
                     },
                     itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
+                      // The notes this session took off this channel. It lives
+                      // here, not on the strip: the strip answers "which
+                      // channel", and a fifth control competing with the
+                      // channel names is the shape the comment above it warns
+                      // against. The count rides in the label, because a row
+                      // that says "Voice notes" is otherwise silent about
+                      // whether there is anything to open.
+                      PopupMenuItem<String>(
+                        key: const ValueKey<String>('chat-voice-notes'),
+                        value: 'voice',
+                        child: Row(
+                          children: <Widget>[
+                            const Icon(Icons.graphic_eq, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                voiceNotes == 0
+                                    ? l.voiceNotesTitle
+                                    : l.voiceNotesCount(voiceNotes),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       PopupMenuItem<String>(
                         key: const ValueKey<String>('chat-search'),
                         value: 'search',
@@ -962,6 +1037,12 @@ class _ChatScreenState extends State<ChatScreen>
                               ),
                             ],
                           ),
+                        ),
+                        IconButton(
+                          key: const ValueKey<String>('chat-voice'),
+                          tooltip: l.voiceTitle,
+                          onPressed: ready ? () => _openVoice(mc) : null,
+                          icon: const Icon(Icons.mic_none_outlined),
                         ),
                         IconButton(
                           key: const ValueKey<String>('chat-attach'),

@@ -2830,5 +2830,20 @@
   "voiceNoMicrophone": "マイクを利用できないため録音できません。",
   "voiceNoCodec": "このビルドには音声コーデックがありません。",
   "voiceCost": "{datagrams} パケット、{mode} で約 {seconds} 秒の送信時間。",
-  "@voiceCost": {"placeholders": {"datagrams": {"type": "int"}, "seconds": {"type": "int"}, "mode": {"type": "String"}}}
+  "@voiceCost": {"placeholders": {"datagrams": {"type": "int"}, "seconds": {"type": "int"}, "mode": {"type": "String"}}},
+  "voiceRecording": "録音中 {seconds} 秒、{bytes} バイト、約 {datagrams} パケット。",
+  "voiceNoteSend": "音声を送信",
+  "voiceNotePreview": "試聴",
+  "voiceNotePlaying": "再生中",
+  "voiceModeTitle": "音声モード",
+  "voiceModeNarrow": "ナロー",
+  "voiceModeStandard": "スタンダード",
+  "voiceNotesTitle": "ボイスメモ",
+  "voiceNotesEmpty": "ボイスメモはまだありません。録音してから送信してください。",
+  "voiceNotesCount": "ボイスメモ ({count})",
+  "voiceNoteDecodeFailed": "このボイスメモは復号できません。",
+  "voiceNoteTooShort": "短すぎて復号できません。",
+  "mediaStalledTableFull": "無線機のパケット表が満杯のままになったため、送信を中止しました。以降は何も送信していません。",
+  "mediaStalledAirtime": "この1時間の送信時間の上限に達したため、送信を中止しました。時間枠が戻れば再試行できます。",
+  "voiceNotesSession": "アプリを閉じるまでこの端末に保持されます。履歴には保存されません。"
 }

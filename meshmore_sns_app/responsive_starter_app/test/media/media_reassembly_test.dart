@@ -167,4 +167,32 @@ void main() {
     expect(t.complete, isTrue);
     expect(t.assemble(), <int>[1, 0, 1, 1]);
   });
+
+  test('an evicted transfer is rebuilt rather than becoming a zombie', () {
+    // An evicted payload's remaining chunks used to meet the dedupe window's
+    // stale slots: every index the receiver had already seen answered
+    // `duplicate`, so the restarted transfer could never complete, never failed
+    // and held a pool slot until something else evicted it.
+    final MediaReassembler r = MediaReassembler(maxTransfers: 1);
+    MediaChunk chunk(int payloadId, int index, int count) =>
+        MediaChunkCodec.parse(MediaChunkCodec.encode(
+              payloadId: payloadId,
+              kind: MediaKind.voice,
+              index: index,
+              count: count,
+              data: <int>[index],
+            ))
+            .chunk!;
+
+    expect(r.add(chunk(1, 0, 2)), isNull); // occupies the only slot
+    expect(r.add(chunk(2, 0, 2)), isNull); // evicts payload 1
+    expect(r.evictions, 1);
+    // Payload 1's remaining chunk arrives: it must join a fresh transfer, not
+    // be answered as a duplicate of a slot from the transfer that was dropped.
+    expect(r.add(chunk(1, 1, 2)), isNull);
+    final MediaTransfer? done = r.add(chunk(1, 0, 2));
+    expect(done, isNotNull);
+    expect(done!.complete, isTrue);
+    expect(done.assemble(), <int>[0, 1]);
+  });
 }

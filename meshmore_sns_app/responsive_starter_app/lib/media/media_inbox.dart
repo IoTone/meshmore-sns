@@ -174,8 +174,18 @@ final class MediaInbox {
     }
     final int evictionsBefore = download.reassembler.evictions;
     final MediaIntake intake = download.accept(datagram.blob, now: _clock());
-    if (download.reassembler.evictions > evictionsBefore) {
-      _evictedTransfers++;
+    final bool evicted = download.reassembler.evictions > evictionsBefore;
+    if (evicted) _evictedTransfers++;
+    // A completion is the interesting event, and it can arrive on the same
+    // datagram that evicted another transfer — the pool was full and the new
+    // payload happened to be one chunk, which is exactly a sub-second voice
+    // note. Reporting the eviction first used to swallow that hand-off.
+    if (intake == MediaIntake.complete) {
+      _lastOutcome = MediaInboxOutcome.completed;
+      _handOff(datagram);
+      return;
+    }
+    if (evicted) {
       _lastOutcome = MediaInboxOutcome.evicted;
       return;
     }

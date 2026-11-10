@@ -14,6 +14,7 @@ import 'package:meshmore_sns_app/media/media_reassembly.dart';
 import 'package:meshmore_sns_app/media/media_send_policy.dart';
 import 'package:meshmore_sns_app/media/media_sender.dart';
 import 'package:meshmore_sns_app/media/media_transfer.dart';
+import 'package:meshmore_sns_app/voice/voice_codec.dart';
 
 MediaPhoto photo(int width, int height) => MediaPhoto(
       width: width,
@@ -458,6 +459,164 @@ void main() {
             missing: <int>[1]),
         throwsArgumentError,
       );
+    });
+  });
+
+  group('a recorded note is costed and gated like any other payload', () {
+    PackedVoice note(VoiceMode mode, int frames) => PackedVoice(
+          mode: mode,
+          bytes: Uint8List((frames * mode.bitsPerFrame + 7) ~/ 8),
+          frames: frames,
+          samples: frames * mode.samplesPerFrame,
+        );
+
+    test('a 20-second 700C note is twelve datagrams of voice, not image',
+        () async {
+      final TestClock clock = TestClock();
+      int ids = 0;
+      final MediaTransferService service = MediaTransferService(
+        codec: FakeMediaCodec(),
+        estimator: const AirtimeEstimator(millisPerByte: 4),
+        clock: clock.call,
+        newPayloadId: () => 100 + ids++,
+      );
+      final MediaPreparation outcome = await service.prepareVoice(
+        voice: note(VoiceMode.narrowband, 500),
+        channelPsk: const <int>[1, 2, 3],
+      );
+      expect(outcome, isA<MediaPrepared>());
+      final MediaTransferPlan plan = (outcome as MediaPrepared).plan;
+      expect(plan.kind, MediaKind.voice);
+      expect(plan.photo, isNull, reason: 'a note is not a picture');
+      expect(plan.payload.length, 1751);
+      expect(plan.cost.chunks, 12);
+      expect(plan.cost.bytes, 1751);
+      expect(plan.withinBudget, isTrue);
+      expect(plan.cost.airtime, greaterThan(Duration.zero));
+      // The one-chunk-per-datagram rule holds for voice too.
+      for (final Uint8List chunk in plan.chunks) {
+        expect(chunk.length, lessThanOrEqualTo(162));
+      }
+    });
+
+    test('the Public gate refuses before any payload exists', () async {
+      final TestClock clock = TestClock();
+      int ids = 0;
+      final MediaTransferService service = MediaTransferService(
+        codec: FakeMediaCodec(),
+        estimator: const AirtimeEstimator(millisPerByte: 4),
+        clock: clock.call,
+        newPayloadId: () => ids++,
+      );
+      final MediaPreparation outcome = await service.prepareVoice(
+        voice: note(VoiceMode.narrowband, 500),
+        channelPsk: kPublicChannelPsk,
+      );
+      expect((outcome as MediaRefused).refusal,
+          MediaSendRefusal.mediaOffOnPublic);
+      expect(ids, 0, reason: 'nothing was chunked for a refused channel');
+    });
+
+    test('an empty take is a refusal, not a codec exception', () async {
+      final MediaTransferService service = MediaTransferService(
+        codec: FakeMediaCodec(),
+        estimator: const AirtimeEstimator(millisPerByte: 4),
+        clock: TestClock().call,
+      );
+      final MediaPreparation outcome = await service.prepareVoice(
+        voice: PackedVoice(
+          mode: VoiceMode.narrowband,
+          bytes: Uint8List(0),
+          frames: 0,
+          samples: 0,
+        ),
+        channelPsk: const <int>[1, 2, 3],
+      );
+      expect((outcome as MediaRefused).refusal,
+          MediaSendRefusal.payloadUnusable);
+    });
+
+    test('a payload past the receiver\'s own chunk ceiling is refused here',
+        () async {
+      final MediaTransferService service = MediaTransferService(
+        codec: FakeMediaCodec(),
+        estimator: const AirtimeEstimator(millisPerByte: 4),
+        clock: TestClock().call,
+      );
+      // 512 chunks is the reassembler's bound; 513 would arrive as a count it
+      // refuses, so the sender refuses rather than spending the airtime.
+      final MediaPreparation outcome = await service.prepareVoice(
+        voice: PackedVoice(
+          mode: VoiceMode.narrowband,
+          bytes: Uint8List(513 * MediaChunkCodec.maxDataBytes),
+          frames: 513 * 40,
+          samples: 513 * 40 * 320,
+        ),
+        channelPsk: const <int>[1, 2, 3],
+      );
+      expect((outcome as MediaRefused).refusal,
+          MediaSendRefusal.payloadUnusable);
+    });
+  });
+
+  group('capacity that never comes back is a stop, not a spinner', () {
+    MediaUpload upload(TestClock clock) => MediaUpload(
+          plan: MediaTransferPlan(
+            payloadId: 55,
+            kind: MediaKind.voice,
+            photo: null,
+            payload: Uint8List(300),
+            chunks: MediaChunkCodec.split(List<int>.filled(300, 3),
+                payloadId: 55, kind: MediaKind.voice),
+            cost: const MediaTransferCost(
+                chunks: 2, bytes: 300, airtime: Duration(milliseconds: 8)),
+            withinBudget: true,
+          ),
+          clock: clock.call,
+          wait: clock.wait,
+        );
+
+    test('a run of TABLE_FULL answers stops and names the capacity', () async {
+      final TestClock clock = TestClock();
+      int calls = 0;
+      await expectLater(
+        upload(clock).run((Uint8List blob) async {
+          calls++;
+          return const ChannelDataSendResult(ChannelDataSendStatus.notReady);
+        }),
+        throwsA(isA<MediaUploadStalled>().having(
+            (MediaUploadStalled e) => e.reason,
+            'reason',
+            MediaSendResult.tableFull)),
+      );
+      expect(calls, MediaUpload.maxCapacityAnswers);
+    });
+
+    test('an airtime refusal is the same stop with its own reason', () async {
+      final TestClock clock = TestClock();
+      await expectLater(
+        upload(clock).run((Uint8List blob) async =>
+            const ChannelDataSendResult(ChannelDataSendStatus.refusedAirtime)),
+        throwsA(isA<MediaUploadStalled>().having(
+            (MediaUploadStalled e) => e.reason,
+            'reason',
+            MediaSendResult.budgetRefused)),
+      );
+    });
+
+    test('a cancel stops the loop before the next datagram', () async {
+      final TestClock clock = TestClock();
+      final MediaUpload u = upload(clock);
+      u.cancel();
+      int calls = 0;
+      await expectLater(
+        u.run((Uint8List blob) async {
+          calls++;
+          return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
+        }),
+        throwsA(isA<MediaUploadCancelled>()),
+      );
+      expect(calls, 0, reason: 'a closed sheet puts nothing on air');
     });
   });
 }

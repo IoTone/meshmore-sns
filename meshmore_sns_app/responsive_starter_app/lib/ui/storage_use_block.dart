@@ -7,6 +7,7 @@ import '../field/position_history.dart';
 import '../gen/app_localizations.dart';
 import '../maps/maps_controller.dart';
 import '../media/media_journal.dart';
+import '../voice/voice_inbox.dart';
 import '../meshcore/chat_store.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../places/place_store.dart';
@@ -142,6 +143,9 @@ class StorageUseBlock extends StatelessWidget {
     required PositionRecorder? trail,
     required MediaInterruptions? media,
   }) async {
+    // Read before the first await, so the step below does not touch a context
+    // that a dialog may have outlived.
+    final VoiceInbox? voice = context.read<VoiceInbox?>();
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext ctx) => _ClearEverythingDialog(l: l),
@@ -172,7 +176,14 @@ class StorageUseBlock extends StatelessWidget {
     await step(mc.clearAllHistory);
     await step(() async => places?.clear());
     await step(() async => trail?.clear());
-    await step(() async => media?.acknowledge());
+    // The voice notes on screen go with the media journal: one step, because
+    // they are the same claim ("the media inbox is empty") and a note left in
+    // the sheet after a delete that says it removed one would be the snack
+    // contradicting the screen.
+    await step(() async {
+      await media?.acknowledge();
+      voice?.clear();
+    });
     await step(() async => maps?.clearViewCache());
     if (!context.mounted) return;
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(

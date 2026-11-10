@@ -6147,4 +6147,55 @@ class AppLocalizationsJa extends AppLocalizations {
   String voiceCost(int datagrams, int seconds, String mode) {
     return '$datagrams パケット、$mode で約 $seconds 秒の送信時間。';
   }
+
+  @override
+  String voiceRecording(int seconds, int bytes, int datagrams) {
+    return '録音中 $seconds 秒、$bytes バイト、約 $datagrams パケット。';
+  }
+
+  @override
+  String get voiceNoteSend => '音声を送信';
+
+  @override
+  String get voiceNotePreview => '試聴';
+
+  @override
+  String get voiceNotePlaying => '再生中';
+
+  @override
+  String get voiceModeTitle => '音声モード';
+
+  @override
+  String get voiceModeNarrow => 'ナロー';
+
+  @override
+  String get voiceModeStandard => 'スタンダード';
+
+  @override
+  String get voiceNotesTitle => 'ボイスメモ';
+
+  @override
+  String get voiceNotesEmpty => 'ボイスメモはまだありません。録音してから送信してください。';
+
+  @override
+  String voiceNotesCount(int count) {
+    return 'ボイスメモ ($count)';
+  }
+
+  @override
+  String get voiceNoteDecodeFailed => 'このボイスメモは復号できません。';
+
+  @override
+  String get voiceNoteTooShort => '短すぎて復号できません。';
+
+  @override
+  String get mediaStalledTableFull =>
+      '無線機のパケット表が満杯のままになったため、送信を中止しました。以降は何も送信していません。';
+
+  @override
+  String get mediaStalledAirtime =>
+      'この1時間の送信時間の上限に達したため、送信を中止しました。時間枠が戻れば再試行できます。';
+
+  @override
+  String get voiceNotesSession => 'アプリを閉じるまでこの端末に保持されます。履歴には保存されません。';
 }

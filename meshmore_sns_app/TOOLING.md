@@ -23,7 +23,7 @@ export ANDROID_USER_HOME=/home/ldeen/.config/.android   # build only
 | JDK | Temurin 21.0.12+8 at `/home/ldeen/.local/jdk/jdk-21.0.12+8` | `java -version` |
 | adb | 1.0.41 / 34.0.5-debian at `/usr/bin/adb` | `adb version` |
 | Gradle / AGP / Kotlin | 8.14.3 / 8.11.1 / 2.2.20 | `android/gradle/wrapper/gradle-wrapper.properties:6`, `android/settings.gradle:26-27` |
-| Application id | `com.iotone.meshmore_sns_app` | `android/app/build.gradle.kts` |
+| Application id | `com.iotone.meshmore_sns_app` | `android/app/build.gradle` |
 | App version | `1.0.197+13` | `pubspec.yaml:19` |
 
 **Only the `-sdk-links` wrapper works.** The plain nix wrapper writes into its own read-only store path and dies with
@@ -48,7 +48,7 @@ Run from `meshmore_sns_app/responsive_starter_app/` unless stated.
 | One subtree | `flutter test test/theme` | **7.5 s**, 36 tests |
 | Full app suite | `flutter test` | about three minutes; the current count is the dated figure in `STATUS.md` |
 | Protocol package | `cd ../packages/meshcore && dart test` | a few seconds; the current count is in `STATUS.md` |
-| Java port | `cd ../../../libmeshcore && ./gradlew test --offline` | **4.7 s**, 143 tests, 0 failures |
+| Java port | `cd ../../../libmeshcore && ./gradlew test --offline` | **4.7 s** warm; 164 tests, 0 failures (the count lives in `STATUS.md`) |
 
 - **A test file that takes more than ~5 s is a defect to report, not to live with.** `test/shell/home_shell_test.dart`
   is the known offender (~12–14 s: it builds six skins' worth of shells). Fixing it is a named task, not a side effect.
@@ -117,7 +117,16 @@ $ANDROID_HOME/build-tools/36.1.0/aapt2 dump badging \
 **16 KB page sizes** (Android requires them from 1 Feb 2027). `tool/check_16k.sh [apk]` unzips every `lib/**/*.so`,
 reads its program headers and checks two things per library — every `PT_LOAD` aligned to at least 16 KB, and the
 `GNU_RELRO` range ending at or before the next `PT_LOAD` once rounded up to 16 KB — then runs `zipalign -c -P 16` on
-the archive. Exit status is non-zero on any failure. Measured on the debug APK, all ten libraries pass:
+the archive. Exit status is non-zero on any failure.
+
+**Measured on the debug APK on 2026-11-09: all nineteen libraries pass** across the three ABIs — eleven Flutter- and
+plugin-supplied, six Codec 2 objects and three AVIF builds — and `zipalign -P 16` is ok: the first run where nothing
+in the APK failed (R144, D11.9). The nine libraries this repository builds or vendors are checked on **every**
+`flutter test` by `test/store/native_page_alignment_test.dart`, which parses the committed `.so` files' program headers
+directly, so that invariant is a gate and not a paragraph. The APK check itself still needs a build; run it after any
+dependency or native change and on the release artifact as well, because R8 and the ABI split change what ships.
+
+The ten Flutter- and plugin-supplied libraries, from the pre-R144 measurement:
 
 | library | LOAD align | RELRO end (rounded) | next LOAD |
 | --- | --- | --- | --- |
@@ -137,12 +146,11 @@ read-only, so there is nothing to remap and nothing to pad, and the alignment ch
 script used to call that a failure; it now passes it with `ok (no GNU_RELRO)`, because a false blocker on every
 release artifact is worse than no check.
 
-`zipalign -P 16`: ok. **One shipped library fails: `libavif_native.so`** (all three ABIs) — `PT_LOAD` alignment
-`0x1000` and a `GNU_RELRO` range that runs past the next `PT_LOAD` once rounded to 16 KB. That is the recorded D11.2
-item with the 1 Feb 2027 deadline, and it is not fixable from this repository: the archive is prebuilt by the package,
-so the remedy is a vendor rebuild with `-Wl,-z,max-page-size=16384`, a different build of the same library, or dropping
-AVIF from the wire. Re-run `tool/check_16k.sh` after any dependency bump and on the **release** artifact, not only the
-debug one, because R8 and the ABI split change what ships.
+`zipalign -P 16`: ok. **`libavif_native.so` used to be the one failure** (all three ABIs): the package shipped its
+archives prebuilt at 4 KB with a `GNU_RELRO` that ran past the next `PT_LOAD`. `avif_native` is vendored now and its
+three libraries rebuilt with both page flags passed explicitly (R144), so nothing in the APK fails. Re-run
+`tool/check_16k.sh` after any dependency or native change **and on the release artifact**, not only the debug one,
+because R8 and the ABI split change what ships. The release APK has not been re-measured since that rebuild.
 
 **Foreground service.** The manifest declares `com.pravera.flutter_foreground_task.service.ForegroundService` with
 `android:foregroundServiceType="connectedDevice"`, `android:exported="false"`, plus `FOREGROUND_SERVICE`,
@@ -182,8 +190,9 @@ tool/check_16k.sh build/app/outputs/flutter-apk/app-release.apk
 Measured once with a throwaway keystore, 2026-11-05, so the numbers are known before the publisher's key exists:
 `flutter build appbundle --release` 4 m 22 s, AAB 76 136 550 B (72.6 MiB); `flutter build apk --release
 --target-platform android-arm64` 31 902 037 B; `jarsigner -verify` reports `jar verified`, signed by the generated
-certificate rather than `CN=Android Debug`; `tool/check_16k.sh` on that release APK fails only on `libavif_native.so`
-(D11.2) and passes everything else, `zipalign -P 16` included. Delete `key.properties` afterwards: a throwaway key in
+certificate rather than `CN=Android Debug`; `tool/check_16k.sh` on that release APK failed only on `libavif_native.so`
+(D11.2) and passed everything else, `zipalign -P 16` included; that library was rebuilt on 2026-11-09 and a fresh
+release artifact has not been measured since. Delete `key.properties` afterwards: a throwaway key in
 the build is worse than no key.
 
 Verify the signer before every upload: a release signed with the debug certificate prints `CN=Android Debug`, and that

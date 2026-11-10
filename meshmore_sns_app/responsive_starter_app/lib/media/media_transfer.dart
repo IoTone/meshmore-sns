@@ -7,6 +7,8 @@ import 'package:meshcore/meshcore.dart';
 
 import '../meshcore/airtime.dart';
 import '../meshcore/channel_datagram.dart';
+import '../voice/voice_codec.dart';
+import '../voice/voice_payload.dart';
 import 'media_chunk.dart';
 import 'media_journal.dart';
 import 'media_codec.dart';
@@ -63,7 +65,13 @@ final class MediaTransferPlan {
   /// cannot collide on the same id with the same chunk count.
   final int payloadId;
   final MediaKind kind;
-  final MediaPhoto photo;
+
+  /// The picture this plan encodes, or null for a payload that is not one —
+  /// a recorded voice note. The plan's own fields are format-neutral because
+  /// the sender, the journal and the receipt never needed to know which kind
+  /// they were carrying; only a surface that draws a picture does, and it has
+  /// the photo it asked to encode.
+  final MediaPhoto? photo;
   final Uint8List payload;
   final List<Uint8List> chunks;
   final MediaTransferCost cost;
@@ -134,6 +142,24 @@ final class MediaUpload {
   static const int maxConsecutiveSendFailures = 3;
   int _consecutiveSendFailures = 0;
 
+  /// Consecutive capacity answers before the loop stops.
+  ///
+  /// Six is 12 s at the sender's 2 s backoff: long enough that a busy packet
+  /// table clears, short enough that nobody watches a stalled line for a
+  /// minute. The airtime window is a different scale and is refused by the same
+  /// counter — a window that is closed for an hour is not something a progress
+  /// bar should pretend to wait for.
+  static const int maxCapacityAnswers = 6;
+  int _capacityAnswers = 0;
+
+  bool _cancelled = false;
+
+  /// Stops the loop. Safe from any thread of the app, including the sheet's
+  /// `dispose`.
+  void cancel() => _cancelled = true;
+
+  bool get cancelled => _cancelled;
+
   int get sent => _sender.delivered;
 
   int get chunks => _sender.chunkCount;
@@ -171,6 +197,7 @@ final class MediaUpload {
     Future<ChannelDataSendResult> Function(Uint8List blob) send,
   ) async {
     while (!_sender.complete && !_sender.failed) {
+      if (_cancelled) throw const MediaUploadCancelled();
       final List<MediaSend> due = _sender.takeDue();
       if (due.isEmpty) {
         final Duration wait = _sender.waitBeforeDue;
@@ -198,7 +225,17 @@ final class MediaUpload {
           if (_consecutiveSendFailures >= maxConsecutiveSendFailures) rethrow;
           continue;
         }
-        _sender.acknowledge(item.index, resultFor(result.status));
+        final MediaSendResult outcome = resultFor(result.status);
+        _sender.acknowledge(item.index, outcome);
+        if (outcome == MediaSendResult.tableFull ||
+            outcome == MediaSendResult.budgetRefused) {
+          _capacityAnswers++;
+          if (_capacityAnswers >= maxCapacityAnswers) {
+            throw MediaUploadStalled(outcome, _sender.pending.toSet());
+          }
+        } else {
+          _capacityAnswers = 0;
+        }
       }
     }
     if (_sender.failed) {
@@ -242,6 +279,39 @@ final class MediaUploadFailed implements Exception {
 
   @override
   String toString() => 'MediaUploadFailed(lost ${lost.length} chunks)';
+}
+
+/// A transfer stopped because capacity never came back.
+///
+/// `TABLE_FULL` and this app's own duty-cycle refusal are both "nothing was
+/// written", so the sender requeues without spending an attempt — which is
+/// right for one answer and wrong for fifty: the radio's table can stay full,
+/// and the airtime window can be closed for an hour. A run of them past a
+/// ceiling stops the loop and says which capacity refused it, so a surface can
+/// say "the radio is busy" or "this hour's airtime is spent" instead of holding
+/// a progress line that will not move.
+final class MediaUploadStalled implements Exception {
+  const MediaUploadStalled(this.reason, this.pending);
+
+  /// [MediaSendResult.tableFull] or [MediaSendResult.budgetRefused].
+  final MediaSendResult reason;
+
+  /// Chunks that never went on air, ascending.
+  final Set<int> pending;
+
+  @override
+  String toString() =>
+      'MediaUploadStalled(${reason.name}, ${pending.length} chunks)';
+}
+
+/// The caller stopped the transfer: the sheet closed, or a newer send replaced
+/// it. Not an error — the sender simply stops pacing datagrams onto a link the
+/// user has walked away from.
+final class MediaUploadCancelled implements Exception {
+  const MediaUploadCancelled();
+
+  @override
+  String toString() => 'MediaUploadCancelled()';
 }
 
 /// What an inbound datagram did.
@@ -293,7 +363,7 @@ final class MediaDownload {
   MediaChunkRefusal? _lastChunkRefusal;
   MediaReassemblyRefusal? _lastReassemblyRefusal;
   MediaChunk? _lastRequest;
-  final Map<int, MediaChunk> _lastRequestSeen = <int, MediaChunk>{};
+
 
   /// Why the last datagram was refused, when it was. Chunk-level and
   /// transfer-level refusals are different answers, so they stay separate:
@@ -324,7 +394,6 @@ final class MediaDownload {
     }
     if (chunk.kind == MediaKind.request) {
       _lastRequest = chunk;
-      _lastRequestSeen[chunk.payloadId] = chunk;
       return MediaIntake.request;
     }
     final MediaTransfer? complete =
@@ -364,7 +433,6 @@ final class MediaDownload {
   /// keeps the slots, so a replayed chunk cannot resurrect it.
   void forget(int payloadId) {
     _reassembler.forget(payloadId);
-    _lastRequestSeen.remove(payloadId);
   }
 
   /// The datagram that asks [payloadId]'s sender for exactly what is missing,
@@ -430,9 +498,88 @@ final class MediaTransferService {
     if (refusal != null) return MediaRefused(refusal);
 
     final EncodedPhoto encoded = await codec.encode(photo, byteBudget: byteBudget);
+    // Every datagram is its own frame on air: the radio wraps each blob in the
+    // datagram header and the packet it sends, so the cost is the sum over
+    // chunks of the bytes that datagram puts on air — not one byte per chunk,
+    // which understated a photo by roughly two orders of magnitude.
+    return _planFor(
+      payload: encoded.bytes,
+      kind: kind,
+      photo: photo,
+      withinBudget: encoded.withinBudget,
+    );
+  }
+
+  /// Works out what a recorded note costs before any of it is queued.
+  ///
+  /// The order is the photo's and for the same reason: the channel rules run
+  /// before the payload is built, because refusing media on the Public channel
+  /// after the codec has run would look like a codec failure. The payload is
+  /// the packed frames behind [VoicePayloadCodec]'s one-byte header, so the
+  /// receiver can tell which width to decode at.
+  ///
+  /// [withinBudget] is true by construction: the ceiling that matters is the
+  /// capture's 20 seconds, which stopped the microphone rather than trimming
+  /// the frames afterwards.
+  Future<MediaPreparation> prepareVoice({
+    required PackedVoice voice,
+    required List<int>? channelPsk,
+  }) async {
+    final MediaSendPolicy policy =
+        MediaSendPolicy(mediaOnPublic: mediaOnPublic);
+    // The channel rules first, because an encode that runs before a refusal is
+    // work done to reach an answer the rules already had.
+    final MediaSendRefusal? channelRefusal =
+        policy.channelRefusalFor(channelPsk: channelPsk);
+    if (channelRefusal != null) return MediaRefused(channelRefusal);
+    final Uint8List payload;
+    try {
+      payload = VoicePayloadCodec.encode(voice);
+    } on VoiceException {
+      // An empty take is the same refusal every other kind gets from its own
+      // size rule, rather than a codec exception reaching a surface.
+      return const MediaRefused(MediaSendRefusal.payloadUnusable);
+    }
+    final MediaSendRefusal? refusal = policy.refusalFor(
+      channelPsk: channelPsk,
+      payloadBytes: payload.length,
+    );
+    if (refusal != null) return MediaRefused(refusal);
+    return _planFor(
+      payload: payload,
+      kind: MediaKind.voice,
+      photo: null,
+      withinBudget: true,
+    );
+  }
+
+  MediaUpload upload(MediaTransferPlan plan) =>
+      MediaUpload(plan: plan, clock: clock, wait: wait);
+
+  /// The plan for one payload, whatever produced it.
+  ///
+  /// One place for the two rules every kind shares: a payload that fits in no
+  /// datagram is refused by name, and a payload the receiver's own reassembler
+  /// would refuse for naming too many chunks is refused here instead of after
+  /// twenty datagrams have gone on air.
+  MediaPreparation _planFor({
+    required Uint8List payload,
+    required MediaKind kind,
+    required MediaPhoto? photo,
+    required bool withinBudget,
+  }) {
+    if (payload.isEmpty) {
+      return const MediaRefused(MediaSendRefusal.payloadUnusable);
+    }
+    final int chunkCount =
+        (payload.length + MediaChunkCodec.maxDataBytes - 1) ~/
+            MediaChunkCodec.maxDataBytes;
+    if (chunkCount > MediaReassembler.maxChunks) {
+      return const MediaRefused(MediaSendRefusal.payloadUnusable);
+    }
     final int payloadId = _newPayloadId();
     final List<Uint8List> chunks = MediaChunkCodec.split(
-      encoded.bytes,
+      payload,
       payloadId: payloadId,
       kind: kind,
     );
@@ -440,28 +587,21 @@ final class MediaTransferService {
       payloadId: payloadId,
       kind: kind,
       photo: photo,
-      payload: encoded.bytes,
+      payload: payload,
       chunks: chunks,
       cost: MediaTransferCost(
         chunks: chunks.length,
-        bytes: encoded.bytes.length,
-        // Every datagram is its own frame on air: the radio wraps each blob in
-        // the datagram header and the packet it sends, so the cost is the sum
-        // over chunks of the bytes that datagram puts on air — not one byte
-        // per chunk, which understated a photo by roughly two orders of
-        // magnitude.
+        bytes: payload.length,
         airtime: chunks.fold<Duration>(
           Duration.zero,
           (Duration sum, Uint8List chunk) => sum +
               estimator.forBytes(ChannelDataLimits.airtimeBytesFor(chunk.length)),
         ),
       ),
-      withinBudget: encoded.withinBudget,
+      withinBudget: withinBudget,
     ));
   }
 
-  MediaUpload upload(MediaTransferPlan plan) =>
-      MediaUpload(plan: plan, clock: clock, wait: wait);
 
   static Future<void> _realWait(Duration d) => Future<void>.delayed(d);
 

@@ -10,6 +10,7 @@ import 'package:meshmore_sns_app/media/media_chunk.dart';
 import 'package:meshmore_sns_app/media/media_codec.dart';
 import 'package:meshmore_sns_app/media/media_inbox.dart';
 import 'package:meshmore_sns_app/media/media_photo.dart';
+import 'package:meshmore_sns_app/media/media_reassembly.dart';
 import 'package:meshmore_sns_app/media/media_transfer.dart';
 import 'package:meshmore_sns_app/meshcore/channel_datagram.dart';
 
@@ -196,6 +197,40 @@ void main() {
     final MediaPhoto photo = await box.codec.decode(claimed!.bytes);
     expect(photo.isWellFormed, isTrue);
     expect(codec.decodeCalls, 1);
+    await box.dispose();
+  });
+
+  test('a one-chunk payload still hands off when it had to make room', () async {
+    // Sixteen transfers in flight is the pool's bound; a seventeenth evicts the
+    // quietest. The arriving payload can itself be the one chunk that completes
+    // immediately — a sub-second voice note is exactly that — and the completion
+    // used to be swallowed because the eviction was reported first.
+    final MediaInbox box = MediaInbox(
+      datagrams: datagrams.stream,
+      codec: FakeMediaCodec(),
+      clock: () => _t0,
+      download: MediaDownload(reassembler: MediaReassembler(maxTransfers: 1)),
+    )..start();
+    final List<MediaInboxPayload> done = <MediaInboxPayload>[];
+    box.completed.listen(done.add);
+    // One chunk of a two-chunk payload fills the pool.
+    final ({List<Uint8List> chunks, Uint8List payload}) first =
+        _transfer(901, bytes: 300);
+    datagrams.add(_datagram(first.chunks.first));
+    await Future<void>.delayed(Duration.zero);
+    expect(box.download.reassembler.transfers.length, 1);
+    // A whole one-chunk payload arrives and evicts it.
+    final Uint8List single = MediaChunkCodec.split(
+      Uint8List.fromList(<int>[1, 2, 3, 4]),
+      payloadId: 902,
+      kind: MediaKind.voice,
+    ).single;
+    datagrams.add(_datagram(single));
+    await Future<void>.delayed(Duration.zero);
+    expect(done.length, 1, reason: 'the completion is the interesting event');
+    expect(done.single.payloadId, 902);
+    expect(done.single.bytes, <int>[1, 2, 3, 4]);
+    expect(box.evictedTransfers, 1, reason: 'and the eviction is still counted');
     await box.dispose();
   });
 }

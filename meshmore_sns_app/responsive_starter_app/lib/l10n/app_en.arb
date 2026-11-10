@@ -4370,5 +4370,22 @@
   "voiceNoMicrophone": "The microphone is not available, so nothing can be recorded.",
   "voiceNoCodec": "This build has no speech codec.",
   "voiceCost": "{datagrams} packets, about {seconds} s of airtime at {mode}.",
-  "@voiceCost": {"placeholders": {"datagrams": {"type": "int"}, "seconds": {"type": "int"}, "mode": {"type": "String"}}}
+  "@voiceCost": {"placeholders": {"datagrams": {"type": "int"}, "seconds": {"type": "int"}, "mode": {"type": "String"}}},
+  "voiceRecording": "Recording {seconds} s, {bytes} B, about {datagrams} packets.",
+  "@voiceRecording": {"placeholders": {"seconds": {"type": "int"}, "bytes": {"type": "int"}, "datagrams": {"type": "int"}}},
+  "voiceNoteSend": "Send voice",
+  "voiceNotePreview": "Preview",
+  "voiceNotePlaying": "Playing",
+  "voiceModeTitle": "Voice mode",
+  "voiceModeNarrow": "Narrow",
+  "voiceModeStandard": "Standard",
+  "voiceNotesTitle": "Voice notes",
+  "voiceNotesEmpty": "No voice notes yet. Record one, then send it.",
+  "voiceNotesCount": "Voice notes ({count})",
+  "@voiceNotesCount": {"placeholders": {"count": {"type": "int"}}},
+  "voiceNoteDecodeFailed": "This voice note cannot be decoded.",
+  "voiceNoteTooShort": "Too short to decode.",
+  "mediaStalledTableFull": "The radio's packet table stayed full, so the send stopped. Nothing further was put on air.",
+  "mediaStalledAirtime": "This hour's airtime budget refused the send, so it stopped. It can be tried again after the window rolls over.",
+  "voiceNotesSession": "Kept on this phone until the app closes. A note is not saved to history."
 }

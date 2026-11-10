@@ -151,6 +151,17 @@ class _MediaComposerState extends State<MediaComposer> {
   String? _sourceProblem;
   Set<int> _lost = <int>{};
 
+  /// The upload in flight, so closing the sheet stops it.
+  ///
+  /// A photo is twenty datagrams with a 350 ms pacing, and a radio that answers
+  /// TABLE_FULL keeps them queued; leaving the loop running after the sheet is
+  /// gone means the app transmits a datagram every two seconds for a picture
+  /// nobody is watching any more.
+  MediaUpload? _upload;
+
+  /// Why the send stopped without losing a chunk: capacity never came back.
+  MediaSendResult? _stalled;
+
   Future<void> _pick(MediaPhotoOrigin origin) async {
     if (!widget.source.isAvailable) {
       setState(() => _sourceProblem = 'unavailable');
@@ -207,8 +218,10 @@ class _MediaComposerState extends State<MediaComposer> {
     setState(() {
       _stage = _Stage.sending;
       _sent = 0;
+      _stalled = null;
     });
     final MediaUpload upload = widget.service.upload(plan);
+    _upload = upload;
     try {
       final MediaReceipt receipt = await upload.run((Uint8List blob) async {
         final ChannelDataSendResult result = await widget.sendBlob(blob);
@@ -226,7 +239,23 @@ class _MediaComposerState extends State<MediaComposer> {
         _lost = e.lost;
         _stage = _Stage.failed;
       });
+    } on MediaUploadStalled catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _stalled = e.reason;
+        _stage = _Stage.failed;
+      });
+    } on MediaUploadCancelled {
+      // The sheet closed: there is no surface left to tell.
+    } finally {
+      _upload = null;
     }
+  }
+
+  @override
+  void dispose() {
+    _upload?.cancel();
+    super.dispose();
   }
 
   @override
@@ -308,7 +337,15 @@ class _MediaComposerState extends State<MediaComposer> {
                       fontSize: skin.type.sizeSm)),
             if (_stage == _Stage.done && _receipt != null)
               _receiptBlock(skin, l, _receipt!),
-            if (_stage == _Stage.failed)
+            if (_stage == _Stage.failed && _stalled != null)
+              _Note(
+                skin: skin,
+                alert: true,
+                text: _stalled == MediaSendResult.budgetRefused
+                    ? l.mediaStalledAirtime
+                    : l.mediaStalledTableFull,
+              ),
+            if (_stage == _Stage.failed && _stalled == null)
               _Note(skin: skin, text: l.mediaSendFailed(_lost.length)),
             SizedBox(height: skin.space.step(4)),
             Row(

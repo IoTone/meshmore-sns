@@ -128,11 +128,10 @@ final class NativeVoiceCodec implements VoiceCodec {
 /// microseconds, so reopening per frame would invert that ratio.
 final class NativeVoiceHandle implements ffi.Finalizable {
   NativeVoiceHandle._(
-      this._bridge, this._handle, this.mode, ffi.NativeFinalizer? finalizer)
-      : samplesPerFrame = _bridge.c2_bridge_samples_per_frame(_handle),
-        bytesPerFrame = _bridge.c2_bridge_bytes_per_frame(_handle),
-        bitsPerFrame = _bridge.c2_bridge_bits_per_frame(_handle),
-        usesBer = _bridge.c2_bridge_uses_ber(_handle) == 1 {
+      this._bridge, this._handle, this.mode, ffi.NativeFinalizer? finalizer) {
+    // The finalizer is attached before the first metadata read, so a handle
+    // whose own getter throws cannot strand tables `codec2_create` allocated:
+    // `late final` initialises on first access, which is after this line.
     _finalizer = finalizer;
     _finalizer?.attach(this, _handle.cast(), detach: this);
   }
@@ -145,12 +144,13 @@ final class NativeVoiceHandle implements ffi.Finalizable {
   /// What the library reports, which must agree with [VoiceMode]: a mismatch
   /// means the vendored source and the Dart table have drifted, and the packer
   /// would then lay frames out at the wrong width.
-  final int samplesPerFrame;
-  final int bytesPerFrame;
-  final int bitsPerFrame;
+  late final int samplesPerFrame =
+      _bridge.c2_bridge_samples_per_frame(_handle);
+  late final int bytesPerFrame = _bridge.c2_bridge_bytes_per_frame(_handle);
+  late final int bitsPerFrame = _bridge.c2_bridge_bits_per_frame(_handle);
 
   /// True for the mode where a bit-error estimate changes the decode.
-  final bool usesBer;
+  late final bool usesBer = _bridge.c2_bridge_uses_ber(_handle) == 1;
 
   bool _closed = false;
 

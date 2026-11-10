@@ -4,6 +4,11 @@ import 'media/photo_source.dart';
 import 'media/media_composer.dart';
 import 'places/place_photo.dart';
 import 'media/media_codec.dart';
+import 'voice/native_voice_codec.dart';
+import 'voice/voice_capture.dart';
+import 'voice/voice_codec.dart';
+import 'voice/voice_inbox.dart';
+import 'voice/voice_playback.dart';
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
@@ -153,6 +158,19 @@ Future<void> startApp() async {
     codec: const AvifMediaCodec(),
     clock: DateTime.now,
   )..start();
+  // The voice half of the same inbox. A completed voice payload has no surface
+  // claiming it — nobody is waiting for a note the way a place sheet waits for
+  // its picture — so the newest few are kept for the channel they arrived on,
+  // and the sheet says they last as long as the process does.
+  final VoiceInbox voiceInbox =
+      VoiceInbox(completed: mediaInbox.completed)..start();
+  // One codec, one recorder and one player for the app: the codec opens the
+  // two shipped libraries and builds pitch tables, so a per-tap instance would
+  // reload them for nothing. A build without the libraries still starts: every
+  // call refuses with a typed failure the sheet has a sentence for.
+  final VoiceCodec voiceCodec = NativeVoiceCodec();
+  final VoiceCapture voiceCapture = PlatformVoiceCapture();
+  final VoicePlayback voicePlayback = AudioplayersVoicePlayback();
   final PlacePhotos placePhotos = PlacePhotos(clock: DateTime.now);
 
   // Transfers the last process left unfinished. Read at startup so the
@@ -346,6 +364,14 @@ Future<void> startApp() async {
         // second store built here would leave that hook pointing at nothing.
         ChangeNotifierProvider<PlaceStore>.value(value: placeStore),
         Provider<MediaInbox>.value(value: mediaInbox),
+        // Voice: the inbox is nullable-safe for a harness, and the codec,
+        // recorder and player are registered so a surface never constructs a
+        // native object itself (a widget test keeps none of them and the sheet
+        // says which sentence applies).
+        ChangeNotifierProvider<VoiceInbox?>.value(value: voiceInbox),
+        Provider<VoiceCodec?>.value(value: voiceCodec),
+        Provider<VoiceCapture?>.value(value: voiceCapture),
+        Provider<VoicePlayback?>.value(value: voicePlayback),
         // The real photo source for the composer: the platform picker plus
         // the engine's decoder. Nullable-safe for harnesses: the composer
         // falls back to the named "cannot read a photo" state.

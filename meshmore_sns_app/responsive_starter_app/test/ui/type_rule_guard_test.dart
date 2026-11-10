@@ -106,15 +106,29 @@ void main() {
     // widget sets one skin's face on every skin. This used to be a per-file
     // ratchet (13 literals across 9 files when the mono face was one face);
     // now the count is zero and the rule is the count, which cannot drift.
-    final RegExp lit = RegExp(r"fontFamily:\s*'[^']+'");
+    //
+    // The rule matches every spelling a face can be named by, not only the one
+    // the sweep happened to remove: `fontFamily: "X"` with double quotes,
+    // `fontFamilyFallback:`, and the skin's own `monoFamily:`/`displayFamily:`/
+    // `headingFamily:` keys. It used to skip `lib/theme/` entirely, which is
+    // where the faces are actually named — so a widget placed there could
+    // hardcode one. Only `mm_skin.dart` (the one place a face is chosen) and
+    // `lib/gen/` (generated from ARB) are exempt now.
+    // A quoted value after any `…Family:` key, on the same line and before the
+    // next comma — so `fontFamily: 'X'` and
+    // `fontFamilyFallback: <String>['X']` are both literals, while
+    // `fontFamily: skin.type.monoFamily` is the reference the rule asks for and
+    // is not. (Proved by planting each spelling and watching this fail.)
+    final RegExp lit =
+        RegExp(r'''[A-Za-z]*Family\w*\s*:\s*[^,\n]*['"]''');
     final List<String> named = <String>[];
     for (final FileSystemEntity e
         in Directory('lib').listSync(recursive: true)) {
       if (e is! File || !e.path.endsWith('.dart')) continue;
       final String path = e.path.replaceAll('\\', '/');
-      // The tokens layer is where a face is chosen, and `lib/gen/` is
-      // generated from ARB.
-      if (path.startsWith('lib/gen/') || path.startsWith('lib/theme/')) {
+      // `mm_skin.dart` is the one place a face is chosen; `lib/gen/` is
+      // generated from ARB. Nothing else may name one.
+      if (path == 'lib/theme/mm_skin.dart' || path.startsWith('lib/gen/')) {
         continue;
       }
       final int n = lit.allMatches(e.readAsStringSync()).length;
