@@ -121,10 +121,26 @@ class MeshcoreMeshSender {
   Future<void> _tail = Future<void>.value();
   bool _disposed = false;
 
+  /// The largest record a radio will **report upward**: 171.
+  ///
+  /// The firmware's receive-log push refuses a frame it cannot fit in
+  /// `MAX_FRAME_SIZE` 176 — it needs three bytes of push header on top of the
+  /// received packet (`MyMesh.cpp`, `logRxRaw`) — so a 172-byte record is
+  /// transmitted, received, and never reported to either side. That is silent
+  /// and repeats on every full record. The other radio project found it first
+  /// and made it a constant (`ldmux`, `crates/mesh/src/constants.rs`,
+  /// `RECORD_RECEIVED_MAX`): the sender's own ceiling is per path, because the
+  /// packet it builds carries the path, but it is capped by the receiver's.
+  static const int recordReceivedMax = 171;
+
   /// The largest record [to]'s path leaves room for: `174 - path_len`, the
-  /// frame ceiling minus the opcode, the length byte and the path.
-  static int recordMaxFor(Contact to) =>
-      MeshCarryLimits.rawDataPayloadMax((to.directPath ?? Uint8List(0)).length);
+  /// frame ceiling minus the opcode, the length byte and the path — capped at
+  /// [recordReceivedMax], the most a radio will hand up the other end.
+  static int recordMaxFor(Contact to) {
+    final int byPath = MeshCarryLimits.rawDataPayloadMax(
+        (to.directPath ?? Uint8List(0)).length);
+    return byPath < recordReceivedMax ? byPath : recordReceivedMax;
+  }
 
   /// Bytes the radio puts on air around the record: the MeshCore packet header
   /// and the path, which are not part of [record]. A meter that counts only

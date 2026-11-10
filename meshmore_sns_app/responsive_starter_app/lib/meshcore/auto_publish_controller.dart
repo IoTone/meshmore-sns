@@ -39,8 +39,17 @@ class AutoPublishController extends ChangeNotifier {
   static const String _kMinMovementM = 'mm.autoPublish.minMovementM';
 
   /// Allowed periodic interval values (seconds). 0 means off.
+  ///
+  /// Five minutes is deliberately absent. The other radio project measured its
+  /// own five-minute advert cadence at **564 times the community's** and found
+  /// it bought nothing, because a repeater advertises every 47 hours and drops
+  /// an advert after eight hops (`ldmux`, `docs/AIRTIME.md`, ADR-0032) — a
+  /// position beacon every five minutes is airtime spent telling repeaters what
+  /// they already know. Fifteen minutes is the shortest interval the app
+  /// offers; a stored five-minute value loads as fifteen rather than silently
+  /// switching the feature off.
   static const List<int> intervalOptions = <int>[
-    0, 300, 900, 1800, 3600,
+    0, 900, 1800, 3600,
   ];
 
   /// Allowed smart-broadcast movement thresholds (meters). 0 means
@@ -82,7 +91,11 @@ class AutoPublishController extends ChangeNotifier {
   Future<void> load() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
     _enabled = Prefs.readBool(p, _kEnabled);
-    _intervalSec = Prefs.readInt(p, _kIntervalSec);
+    final int stored = Prefs.readInt(p, _kIntervalSec);
+    // A value this build no longer offers (five minutes) becomes the shortest
+    // interval it does offer, not zero: the user asked for beacons, and a
+    // silent switch-off is a worse answer than a slower cadence.
+    _intervalSec = intervalOptions.contains(stored) ? stored : 900;
     _minMovementM = Prefs.readInt(p, _kMinMovementM);
     _restart();
     notifyListeners();

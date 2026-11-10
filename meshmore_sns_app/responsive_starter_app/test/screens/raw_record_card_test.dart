@@ -85,7 +85,8 @@ Future<_Host> _host(
     await t.pumpAndSettle();
   }
   if (withRoute && ready) {
-    // 176 - 1 opcode - 1 path_len - 2 path bytes = 172 for the record.
+    // 176 - 1 opcode - 1 path_len - 2 path bytes = 172 for the record, and
+    // the receiver's own ceiling of 171 is the smaller of the two.
     fake.emit(contactFrame(
         name: 'peer',
         firstPubByte: 70,
@@ -128,7 +129,7 @@ void main() {
     final _Host h = await _host(t);
     expect(find.textContaining('Frame ${MeshCarryLimits.maxFrameSize} bytes'),
         findsOneWidget);
-    expect(find.textContaining('leaves 172 for the record'), findsOneWidget);
+    expect(find.textContaining('leaves 171 for the record'), findsOneWidget);
     await _teardown(t, h);
   });
 
@@ -157,7 +158,7 @@ void main() {
     final _Host h = await _host(t);
     await t.enterText(find.byType(TextField), _hexOf(173));
     await t.pumpAndSettle();
-    expect(find.textContaining("Over this contact's 172-byte budget"),
+    expect(find.textContaining("Over this contact's 171-byte budget"),
         findsOneWidget);
     expect(t.widget<MmAction>(find.byType(MmAction)).onPressed, isNull);
     expect(_rawSends(h.fake), isEmpty);

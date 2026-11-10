@@ -126,6 +126,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         _location = locationService ?? NoopLocationService(),
         _airtime = airtimeMeter ?? AirtimeMeter() {
     unawaited(_loadAirtimePolicy());
+    unawaited(_loadAirtimeSpend());
     _statesSub = _connection.states.listen((MeshcoreConnectionState s) {
       _state = s;
       notifyListeners();
@@ -1255,11 +1256,71 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
 
   Future<void> _loadAirtimePolicy() async {
     try {
-      _airtime.policy = await AirtimePolicyPrefs.policy();
+      _airtime.policy =
+          await AirtimePolicyPrefs.policy(frequencyMhz: selfInfo?.frequencyMhz);
       notifyListeners();
     } catch (_) {
       // No preferences backend (a test, a host without the plugin): the
       // constructor's fallback is already the safe policy.
+    }
+  }
+
+  /// Restores the rolling hour the last process was in the middle of.
+  Timer? _airtimeSaveTimer;
+
+  /// Writes the rolling hour at most once every two seconds.
+  ///
+  /// A media burst charges twelve frames in four seconds, and the snapshot is
+  /// one short string. Two seconds bounds what a kill can lose to a rounding
+  /// error while keeping the write off the frame path; [dispose] flushes what
+  /// is left.
+  Future<void> _persistAirtimeSpend() async {
+    // A send that lands after dispose must not arm a timer nothing will cancel:
+    // it writes once, immediately, and stops existing.
+    if (isDisposed) {
+      unawaited(AirtimePolicyPrefs.setSpend(_airtime.snapshot())
+          .catchError((Object _) {}));
+      return;
+    }
+    if (_airtimeSaveTimer != null) return;
+    _airtimeSaveTimer = Timer(const Duration(seconds: 2), () {
+      _airtimeSaveTimer = null;
+      unawaited(AirtimePolicyPrefs.setSpend(_airtime.snapshot())
+          .catchError((Object _) {}));
+    });
+  }
+
+  Future<void> _loadAirtimeSpend() async {
+    try {
+      _airtime.restore(await AirtimePolicyPrefs.spend());
+      notifyListeners();
+    } catch (_) {
+      // No preferences backend: the meter starts empty, which is the old
+      // behaviour rather than a wrong hour.
+    }
+  }
+
+  /// Re-derives the policy from the band the radio reports, but only for a user
+  /// who never chose one.
+  ///
+  /// The first `_loadAirtimePolicy` runs before any SelfInfo, so it can only
+  /// answer with the stricter fallback. A radio on 902-928 MHz has no duty
+  /// cycle, and holding it to the EU's 1 % because the answer arrived in the
+  /// wrong order is the defect this closes.
+  Future<void> _deriveAirtimePolicyForBand() async {
+    final SelfInfo? si = selfInfo;
+    if (si == null) return;
+    try {
+      if (await AirtimePolicyPrefs.hasChoice()) return;
+      final AirtimePolicy derived =
+          AirtimePolicy.defaultForBand(si.frequencyMhz);
+      if (derived == _airtime.policy) return;
+      _airtime.policy = derived;
+      meshLog('meshcore.airtime', 'policy follows the band: '
+          '${si.frequencyMhz} MHz -> ${derived.name}');
+      notifyListeners();
+    } catch (_) {
+      // No preferences backend: leave the fallback in place.
     }
   }
 
@@ -1291,6 +1352,11 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       _airtime.refund(cost);
       rethrow;
     }
+    // Written between frames, not per frame: the snapshot is one short string
+    // and a burst would otherwise be a write per datagram. The dispose path
+    // flushes, so a kill inside the window loses a second of accounting rather
+    // than the hour.
+    unawaited(_persistAirtimeSpend());
     _notifyAirtime();
   }
 
@@ -3712,6 +3778,9 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   void _startSelfInfoPolling() {
     _selfInfoTimer?.cancel();
     _selfInfoTimer = Timer.periodic(_selfInfoPollInterval, (_) {
+      // The first SelfInfo may have arrived before the stored policy was read,
+      // so the band's own rule is re-derived here rather than once at startup.
+      unawaited(_deriveAirtimePolicyForBand());
       if (!isReady) return;
       if (_periodicAdvert) {
         unawaited(refreshSelfInfo());
@@ -6134,6 +6203,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
           .catchError((Object _) {}));
       _contactsSaveTimer = null;
     }
+    // The rolling hour is a fact about the hour, so a kill inside the two-second
+    // write window must not cost it: a restart that forgets what the last
+    // process spent hands out a fresh allowance over a band that has none.
+    _airtimeSaveTimer?.cancel();
+    _airtimeSaveTimer = null;
+    unawaited(
+        AirtimePolicyPrefs.setSpend(_airtime.snapshot()).catchError((Object _) {}));
     _drainWatchdog?.cancel();
     // The two protocol walks own timers of their own: the channel probe's idle
     // window and the contact stream's watchdog. Left armed they outlive the

@@ -117,4 +117,100 @@ void main() {
       expect(e.forBytes(176), const Duration(milliseconds: 704));
     });
   });
+
+  group('the rolling hour survives a restart', () {
+    test('a snapshot restores the same window, not a fresh one', () {
+      final _Clock c = _Clock(DateTime.utc(2026, 11, 5, 12));
+      final AirtimeMeter first = AirtimeMeter(clock: () => c.now)
+        ..charge(const Duration(seconds: 12))
+        ..charge(const Duration(seconds: 5));
+      final String snap = first.snapshot();
+      expect(snap, isNotEmpty);
+
+      // A second process, same clock, reads the file back.
+      final AirtimeMeter second = AirtimeMeter(clock: () => c.now);
+      expect(second.restore(snap), 0, reason: 'nothing malformed');
+      expect(second.spent, const Duration(seconds: 17));
+      expect(second.remaining, const Duration(seconds: 19));
+      // And it keeps charging on top rather than starting again.
+      second.charge(const Duration(seconds: 1));
+      expect(second.spent, const Duration(seconds: 18));
+    });
+
+    test('a snapshot from hours ago restores as nothing', () {
+      final _Clock c = _Clock(DateTime.utc(2026, 11, 5, 12));
+      final AirtimeMeter old = AirtimeMeter(clock: () => c.now)
+        ..charge(const Duration(seconds: 30));
+      final String snap = old.snapshot();
+      // Two hours later the window has moved on entirely.
+      c.advance(const Duration(hours: 2));
+      final AirtimeMeter fresh = AirtimeMeter(clock: () => c.now);
+      expect(fresh.restore(snap), 0);
+      expect(fresh.spent, Duration.zero);
+    });
+
+    test('a malformed part is counted and skipped, never guessed at', () {
+      final _Clock c = _Clock(DateTime.utc(2026, 11, 5, 12));
+      final int minute = c.now.millisecondsSinceEpoch ~/ 60000;
+      final AirtimeMeter m = AirtimeMeter(clock: () => c.now);
+      final int dropped = m.restore('nonsense,:12,$minute:1500,$minute:2500,9:-4');
+      expect(dropped, 3);
+      expect(m.spent, const Duration(milliseconds: 4000),
+          reason: 'two good parts for one minute add up');
+    });
+
+    test('an empty or absent snapshot is an empty window', () {
+      final AirtimeMeter m = AirtimeMeter(clock: () => DateTime.utc(2026, 11, 5));
+      expect(m.restore(null), 0);
+      expect(m.spent, Duration.zero);
+      expect(m.snapshot(), isEmpty);
+    });
+  });
+
+  group('the policy a band\'s own rule calls for', () {
+    test('902-928 MHz has no duty cycle, so the default caps nothing', () {
+      // The US/Canada preset sits here. A courtesy cap applied over a band with
+      // no rule refuses sends the firmware permits, which is the defect the
+      // other radio project removed on 2026-11-08.
+      expect(AirtimePolicy.defaultForBand(910.525),
+          AirtimePolicy.ownedChannel);
+      expect(AirtimePolicy.defaultForBand(902.0),
+          AirtimePolicy.ownedChannel);
+      expect(AirtimePolicy.defaultForBand(928.0),
+          AirtimePolicy.ownedChannel);
+      expect(AirtimePolicy.defaultForBand(927.9),
+          AirtimePolicy.ownedChannel);
+    });
+
+    test('the EU/UK sub-bands keep the voluntary one percent', () {
+      expect(AirtimePolicy.defaultForBand(868.1),
+          AirtimePolicy.onePercentDutyCycle);
+      expect(AirtimePolicy.defaultForBand(869.525),
+          AirtimePolicy.onePercentDutyCycle);
+      expect(AirtimePolicy.defaultForBand(433.5),
+          AirtimePolicy.onePercentDutyCycle);
+      // Just outside the US band is not the US band.
+      expect(AirtimePolicy.defaultForBand(901.9),
+          AirtimePolicy.onePercentDutyCycle);
+      expect(AirtimePolicy.defaultForBand(928.1),
+          AirtimePolicy.onePercentDutyCycle);
+    });
+
+    test('no radio yet means the stricter answer', () {
+      expect(AirtimePolicy.defaultForBand(null),
+          AirtimePolicy.onePercentDutyCycle);
+    });
+
+    test('a capped policy still measures, and an uncapped one still counts', () {
+      final _Clock c = _Clock(DateTime.utc(2026, 11, 5, 12));
+      final AirtimeMeter m = AirtimeMeter(
+          clock: () => c.now, initialPolicy: AirtimePolicy.ownedChannel);
+      expect(m.budget, isNull);
+      expect(m.remaining, isNull);
+      expect(m.quote(const Duration(minutes: 5)).allowed, isTrue);
+      m.charge(const Duration(seconds: 20));
+      expect(m.spent, const Duration(seconds: 20),
+          reason: 'no cap is not no meter');
+    });
+  });
 }

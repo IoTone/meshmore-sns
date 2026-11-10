@@ -32,6 +32,33 @@ enum AirtimePolicy {
   /// Whether this end meters itself. Always true; a policy with no cap still
   /// charges what it spends, so the figure stays honest.
   bool get isUnlimited => hourlyBudget == null;
+
+  /// The policy a band's own rule calls for, used when the user has not chosen.
+  ///
+  /// This is the correction an audit of the owner's other radio project earned
+  /// (`ldmux`, `docs/AIRTIME.md`, 2026-11-08): that project invented a "ten
+  /// percent courtesy cap" for 902-928 MHz, where there is **no duty cycle at
+  /// all** for this kind of transmitter, and then refused sends at a fifth of
+  /// what the firmware permits while the refusal looked like a legal rule about
+  /// a band that has none. Its ruling is the right one here: **the allowance is
+  /// the law, or nothing.**
+  ///
+  /// So the default follows the band. The EU/UK sub-bands keep the 1 % the app
+  /// has always defaulted to, because ERC/REC 70-03 gives them one (Annex 1
+  /// h1.3.1: 868.0-868.6 is 1 %, and 868.7-869.2 is 0.1 % — the alarm band,
+  /// which is not a place to send a photo). 902-928 MHz gets no cap, and the
+  /// meter still counts everything it sends.
+  ///
+  /// [frequencyMhz] null — no radio has reported its preset yet — keeps the
+  /// stricter answer, because an unknown band must not be assumed to be
+  /// unregulated.
+  static AirtimePolicy defaultForBand(double? frequencyMhz) {
+    if (frequencyMhz == null) return AirtimePolicy.onePercentDutyCycle;
+    final double f = frequencyMhz;
+    // 902-928 MHz: part 15.247 frequency-hopping, no duty cycle.
+    if (f >= 902 && f <= 928) return AirtimePolicy.ownedChannel;
+    return AirtimePolicy.onePercentDutyCycle;
+  }
 }
 
 /// Time-on-air estimate for a record of a given length.

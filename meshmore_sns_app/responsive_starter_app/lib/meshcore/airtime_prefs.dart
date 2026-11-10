@@ -18,16 +18,45 @@ import '../util/prefs.dart';
 abstract final class AirtimePolicyPrefs {
   static const String _kPolicy = 'mm.airtime.policy';
 
+  /// What the rolling hour has spent, as [AirtimeMeter.snapshot] writes it.
+  ///
+  /// Without this a restart hands out a fresh hour: the other radio project
+  /// measured an afternoon of app restarts reaching **61.4 s against a 36 s
+  /// budget** every time, because each launch forgot what the last had spent
+  /// (`ldmux`, `docs/AIRTIME.md`, 2026-11-07). The window is the meter's own
+  /// rolling hour, not a wall-clock one.
+  static const String _kSpend = 'mm.airtime.spend';
+
   static const AirtimePolicy fallback = AirtimePolicy.onePercentDutyCycle;
 
-  static Future<AirtimePolicy> policy() async {
+  /// The user's policy, or the band's own rule when they never chose.
+  ///
+  /// [frequencyMhz] is the radio's reported preset. Null keeps [fallback].
+  static Future<AirtimePolicy> policy({double? frequencyMhz}) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
     final String? raw = p.getString(_kPolicy);
-    if (raw == null) return fallback;
+    if (raw == null) return AirtimePolicy.defaultForBand(frequencyMhz);
     for (final AirtimePolicy v in AirtimePolicy.values) {
       if (v.name == raw) return v;
     }
-    return fallback;
+    return AirtimePolicy.defaultForBand(frequencyMhz);
+  }
+
+  /// True when the user picked a policy themselves. A derived default is not a
+  /// choice and may be re-derived when the radio reports a different band.
+  static Future<bool> hasChoice() async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    return p.getString(_kPolicy) != null;
+  }
+
+  static Future<String?> spend() async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    return Prefs.readString(p, _kSpend);
+  }
+
+  static Future<void> setSpend(String snapshot) async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    await Prefs.setString(p, _kSpend, snapshot);
   }
 
   static Future<void> setPolicy(AirtimePolicy value) async {

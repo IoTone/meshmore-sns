@@ -162,6 +162,51 @@ final class AirtimeMeter {
     }
   }
 
+  /// The window as `minute:milliseconds` pairs, comma separated.
+  ///
+  /// One short string, because it is written on a phone between frames: the
+  /// minute is the epoch minute the charge landed in, so a restored window is
+  /// the same rolling hour rather than a fresh one. Empty means nothing spent.
+  String snapshot() {
+    _prune();
+    final List<String> parts = <String>[
+      for (final MapEntry<int, Duration> e in _minutes.entries)
+        '${e.key}:${e.value.inMilliseconds}',
+    ]..sort();
+    return parts.join(',');
+  }
+
+  /// Adds a snapshot from an earlier process to this meter's window.
+  ///
+  /// Additive, not a replacement: a controller may be built with a meter that
+  /// already holds charges (a test, a hot restart inside one process), and
+  /// clearing those to load an older file would forget time that was really
+  /// spent. Every bucket goes through the same prune as a live charge, so a
+  /// snapshot written hours ago contributes nothing rather than resurrecting a
+  /// stale hour, and a clock that moved backwards cannot keep a future bucket.
+  /// A malformed part is skipped by count, never guessed at.
+  int restore(String? snapshot) {
+    if (snapshot == null || snapshot.isEmpty) return 0;
+    int dropped = 0;
+    for (final String part in snapshot.split(',')) {
+      final int at = part.indexOf(':');
+      if (at <= 0) {
+        dropped++;
+        continue;
+      }
+      final int? minute = int.tryParse(part.substring(0, at));
+      final int? millis = int.tryParse(part.substring(at + 1));
+      if (minute == null || millis == null || millis <= 0) {
+        dropped++;
+        continue;
+      }
+      _minutes[minute] = (_minutes[minute] ?? Duration.zero) +
+          Duration(milliseconds: millis);
+    }
+    _prune();
+    return dropped;
+  }
+
   /// Forgets everything. Tests only: a real window empties by itself.
   void reset() => _minutes.clear();
 }

@@ -136,4 +136,42 @@ void main() {
     final SharedPreferences p = await SharedPreferences.getInstance();
     expect(p.getString('mm.airtime.policy'), 'ownedChannel');
   });
+
+  test('a restart resumes the rolling hour instead of a fresh one', () async {
+    // The window is the meter's own rolling hour. A launch that forgets what
+    // the last one spent hands out a new allowance, which the other radio
+    // project measured as 61.4 s spent against a 36 s budget across an
+    // afternoon of restarts.
+    final DateTime now = DateTime.now();
+    final int minute = now.millisecondsSinceEpoch ~/ 60000;
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'flutter.mm.airtime.spend': '$minute:12000,${minute - 1}:4000',
+    });
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController c = MeshcoreController(
+      transportFactory: () async => fake,
+      connection: MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    // The load is a preference read, so let it land.
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(c.airtimeMeterForTest.spent, const Duration(seconds: 16));
+    expect(c.airtimeMeterForTest.remaining, const Duration(seconds: 20));
+    c.dispose();
+  });
+
+  test('a snapshot from an hour ago does not restore as spent', () async {
+    final DateTime now = DateTime.now();
+    final int stale = now.millisecondsSinceEpoch ~/ 60000 - 90;
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'flutter.mm.airtime.spend': '$stale:30000',
+    });
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController c = MeshcoreController(
+      transportFactory: () async => fake,
+      connection: MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(c.airtimeMeterForTest.spent, Duration.zero);
+    c.dispose();
+  });
 }

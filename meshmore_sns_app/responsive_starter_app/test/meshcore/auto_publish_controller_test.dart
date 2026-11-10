@@ -200,4 +200,32 @@ void main() {
     ap.dispose();
     r.mc.dispose();
   });
+
+  test('a stored five-minute interval loads as fifteen, not as off', () async {
+    // Five minutes was removed from the options because it is 564 times the
+    // community's advert cadence and a repeater drops an advert past eight hops
+    // anyway. A build that simply dropped the value would leave the feature on
+    // with an interval nothing armed, or off without saying so.
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'mm.autoPublish.minMovementM': 0,
+      'mm.autoPublish.intervalSec': 300,
+      'mm.autoPublish.enabled': true,
+    });
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final AutoPublishController auto = AutoPublishController(
+      mc: mc,
+      location: NoopLocationService(),
+    );
+    await auto.load();
+    expect(auto.intervalSec, 900);
+    expect(AutoPublishController.intervalOptions.contains(300), isFalse);
+    expect(AutoPublishController.intervalOptions, <int>[0, 900, 1800, 3600]);
+    mc.dispose();
+    auto.dispose();
+  });
 }

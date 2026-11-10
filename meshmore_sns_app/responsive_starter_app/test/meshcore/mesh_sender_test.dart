@@ -72,14 +72,16 @@ void main() {
     test('a contact with a direct path sets the record budget from its path',
         () async {
       await setUpRadio(outPathLen: 2, path: <int>[0xAA, 0xBB]);
-      // 176 - 1 opcode - 1 path_len - 2 path bytes.
-      expect(MeshcoreMeshSender.recordMaxFor(peer()), 172);
+      // 176 - 1 opcode - 1 path_len - 2 path bytes = 172, and the receiver's
+      // own ceiling is 171: a 172-byte record travels and is never handed up,
+      // so the sender's copy of the budget is the smaller of the two.
+      expect(MeshcoreMeshSender.recordMaxFor(peer()), 171);
       expect(MeshcoreMeshSender.airtimeOverheadFor(peer()), 4);
     });
 
     test('a zero-hop neighbour is a real route, not "no route"', () async {
       await setUpRadio(outPathLen: 0);
-      expect(MeshcoreMeshSender.recordMaxFor(peer()), 174);
+      expect(MeshcoreMeshSender.recordMaxFor(peer()), 171);
       final Future<SendOutcome> out =
           sender.sendRecord(Uint8List(8), to: peer());
       await _tick();
