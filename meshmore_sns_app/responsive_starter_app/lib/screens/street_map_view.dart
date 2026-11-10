@@ -20,6 +20,8 @@ import '../geofence/geofence_controller.dart';
 import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
 import '../maps/coverage_quilt.dart';
+import '../maps/density_overlay.dart';
+import '../theme/viz_palette.dart';
 import '../maps/basemap_prefs.dart';
 import '../maps/map_centre.dart';
 import '../perms/location_service.dart';
@@ -97,7 +99,7 @@ class StreetMapView extends StatefulWidget {
   /// controls (zoom in, zoom out, recentre, basemap picker, tile
   /// toggle), each 48 dp, `controlsInset` from the top-right corner.
   static const double controlCell = 48;
-  static const int controlCount = 6;
+  static const int controlCount = 7;
   static const double controlsInset = 12;
   static const double controlsBottom =
       controlsInset + controlCount * controlCell;
@@ -204,6 +206,15 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// that removal a loss. The toggle exists because it is an overlay on a map
   /// whose labels matter underneath it.
   bool _showCoverage = true;
+
+  /// The equal-area density overlay, off by default: it is a reading about the
+  /// mesh, not a record of it, so it is something to ask for rather than
+  /// something to dismiss on every visit.
+  bool _showDensity = false;
+
+  /// The squares last drawn, so a tap on the map can name the one it landed in.
+  /// Rebuilt with the layer, because the set depends on where the nodes are.
+  List<DensityCell> _densityCells = const <DensityCell>[];
   bool _centered = false;
 
   /// The view the user left, read once at startup. It is step three of the
@@ -362,6 +373,87 @@ class _StreetMapViewState extends State<StreetMapView> {
     _saveView?.cancel();
     _compassSub?.cancel();
     super.dispose();
+  }
+
+  /// A tap on the map that landed inside a density square names its nodes.
+  ///
+  /// A polygon hit test was tried first and it could not work: a square's
+  /// centre is where its nodes are, so the pin's own marker took every tap
+  /// inside a cell and the square was never the thing that was opened. Asking
+  /// which square contains the tapped point has no such ordering problem, and
+  /// a tap on empty map outside every square still does nothing.
+  void _onMapTap(TapPosition _, LatLng point) {
+    if (!_showDensity) return;
+    for (final DensityCell cell in _densityCells) {
+      if (cellContains(cell, point)) {
+        final MeshcoreController mc =
+            Provider.of<MeshcoreController>(context, listen: false);
+        _showDensityCell(context, mc, cell);
+        return;
+      }
+    }
+  }
+
+  Future<void> _showDensityCell(
+      BuildContext ctx, MeshcoreController mc, DensityCell cell) {
+    final Map<String, DiscoveredNode> byKey = <String, DiscoveredNode>{
+      for (final DiscoveredNode n in mc.nodes) n.pubKeyHex: n,
+    };
+    final List<DiscoveredNode> inside = <DiscoveredNode>[
+      for (final String k in cell.pubKeys)
+        if (byKey[k] != null) byKey[k]!,
+    ];
+    final AppLocalizations l = AppLocalizations.of(ctx);
+    final ColorScheme cs = Theme.of(ctx).colorScheme;
+    return showModalBottomSheet<void>(
+      context: ctx,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                l.mapDensityCellTitle(cell.count),
+                style: TextStyle(
+                    fontSize: ctx.skin.type.sizeBodyLg,
+                    fontWeight: FontWeight.w600),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                l.mapDensityCellArea,
+                style: TextStyle(
+                    fontSize: ctx.skin.type.sizeBody,
+                    color: cs.onSurfaceVariant),
+              ),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: <Widget>[
+                  for (final DiscoveredNode n in inside)
+                    ListTile(
+                      dense: true,
+                      title: Text(n.name.isEmpty ? n.shortId : n.name),
+                      subtitle: Text(l.mapDensityCellOpen),
+                      onTap: () {
+                        Navigator.of(sheetCtx).pop();
+                        _showDetail(ctx, mc, n);
+                      },
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   void _zoomIn() {
@@ -533,6 +625,42 @@ class _StreetMapViewState extends State<StreetMapView> {
     final double? selfLon = hasPersonalPosition ? start.centre.longitude : null;
     final bool hasFix = hasPersonalPosition;
 
+    // The density squares, computed once per build rather than per layer: the
+    // grouping walks every located node, and there are three layers to feed
+    // (squares, counts, and the hit notifier's payloads).
+    //
+    // The anchor is our own fix when there is one, and otherwise the centroid
+    // of the nodes themselves. Two anchors were tried and both were wrong: the
+    // camera's centre is (0, 0) before the map controller attaches on the first
+    // build, which threw every cell eleven degrees of longitude west of the
+    // nodes it was describing, and refusing to draw without a fix made a control
+    // that does nothing on the tab whose whole point is that it always draws.
+    final List<DensityPoint> densityPoints = _showDensity
+        ? <DensityPoint>[
+            for (final DiscoveredNode n in mc.nodes)
+              if (n.hasLocation)
+                (lat: n.latitude!, lon: n.longitude!, pubKey: n.pubKeyHex),
+          ]
+        : const <DensityPoint>[];
+    List<DensityCell> density = const <DensityCell>[];
+    if (densityPoints.isNotEmpty) {
+      double sumLat = 0;
+      double sumLon = 0;
+      for (final DensityPoint p in densityPoints) {
+        sumLat += p.lat;
+        sumLon += p.lon;
+      }
+      density = densityCells(
+        points: densityPoints,
+        anchor: hasFix
+            ? start.centre
+            : LatLng(sumLat / densityPoints.length, sumLon / densityPoints.length),
+      );
+    }
+    // The tap handler reads this, and it is the same list the layer draws, so
+    // the square that opens is the square that was tapped.
+    _densityCells = density;
+
     // The Map tab always draws: the world view is a real answer to "where am
     // I", and the owner asked for exactly that when no position is known. This
     // widget therefore has no "needs your position" screen at all — the grid's
@@ -637,6 +765,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               // is what the user aimed at, so the report travels at exact
               // precision rather than the snapped default that belongs to
               // "here" (meshmore-places-spec.md §9).
+              onTap: _onMapTap,
               onLongPress: (TapPosition _, LatLng point) =>
                   _createPlace(context, point),
               // R115 — the vector map is painted from this skin's tokens, so
@@ -674,6 +803,48 @@ class _StreetMapViewState extends State<StreetMapView> {
                     nowUnix: DateTime.now().millisecondsSinceEpoch ~/ 1000,
                     color: cs.secondary,
                   ),
+                ),
+              // The equal-area density grid: node counts in kilometre
+              // squares, so the map can answer "how many per square km" the
+              // way the radar cannot. Under the pins and the reach circles,
+              // over the quilt, because a cell is about where nodes are and a
+              // ring is about how far they reach.
+              if (density.isNotEmpty)
+                PolygonLayer<DensityCell>(
+                  // The skin's viz accent, not the theme's primary: a cell
+                  // drawn in primary over this skin's own basemap was
+                  // invisible on the phone, which the synthetic width test
+                  // could not see. The palette exists for exactly this.
+                  polygons: densityPolygons(
+                    cells: density,
+                    color: VizPalette.of(context.skin).accent,
+                  ),
+                ),
+              // The count is the reading and the square is the unit. Labels are
+              // capped: past sixty squares the numbers hide the map they are
+              // describing.
+              if (density.isNotEmpty && density.length <= 60)
+                MarkerLayer(
+                  markers: <Marker>[
+                    for (final DensityCell c in density)
+                      Marker(
+                        point: c.centre,
+                        width: 26,
+                        height: 16,
+                        child: IgnorePointer(
+                          child: Center(
+                            child: Text(
+                              '${c.count}',
+                              style: TextStyle(
+                                fontSize: context.skin.type.sizeMicro,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),
@@ -995,6 +1166,18 @@ class _StreetMapViewState extends State<StreetMapView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                IconButton(
+                  key: const ValueKey<String>('map-density-toggle'),
+                  tooltip:
+                      _showDensity ? l.mapDensityHide : l.mapDensityShow,
+                  iconSize: 18,
+                  constraints: const BoxConstraints(
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
+                  icon: Icon(_showDensity ? Icons.blur_on : Icons.blur_off),
+                  onPressed: () =>
+                      setState(() => _showDensity = !_showDensity),
+                ),
                 IconButton(
                   key: const ValueKey<String>('map-coverage-toggle'),
                   tooltip:

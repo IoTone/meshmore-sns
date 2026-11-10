@@ -4362,5 +4362,19 @@
   "mapCoverageShow": "Coverage shading",
   "mapCoverageHide": "Hide coverage shading",
   "heatEmpty": "No chatter overheard here in the last hour.",
-  "elevationEmpty": "Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise."
+  "elevationEmpty": "Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.",
+  "mapDensityShow": "Node density per cell",
+  "mapDensityHide": "Hide node density",
+  "mapDensityCellTitle": "{count, plural, =1{1 node in this square} other{{count} nodes in this square}}",
+  "@mapDensityCellTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapDensityCellArea": "Each square is 250 m across, so every cell covers the same area.",
+  "mapDensityCellOpen": "Open this node",
+  "bootFailedTitle": "Meshmore SNS could not start.",
+  "bootTryAgain": "Try again"
 }

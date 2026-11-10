@@ -1,0 +1,185 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'dart:math' as math;
+import 'dart:ui';
+
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart' hide Path;
+
+/// Node density per equal area, as map polygons.
+///
+/// This is the property the deleted equal-area grid held and nothing else did:
+/// cells of the same ground area, so a count per cell compares like with like.
+/// The radar is radial with a saturating clamp and the pins are points, so
+/// neither can say "eleven nodes in this square kilometre".
+///
+/// The grid is kilometre squares aligned to the operator's own fix, with the
+/// longitude span corrected by `cos(latitude)` at the anchor. Over the extent a
+/// mesh spans (tens of kilometres) the cosine changes by less than half a
+/// percent, so every cell covers the same ground area to within that. A global
+/// grid would need an equal-area projection to do better, and it would then look
+/// wrong on the Mercator basemap it is drawn on.
+///
+/// Pure, so the geometry and the ramp are testable without a map.
+
+/// One cell of the density grid.
+///
+/// [pubKeys] are the nodes whose positions fall inside it, so a tap can name
+/// them rather than only count them.
+class DensityCell {
+  const DensityCell({
+    required this.ix,
+    required this.iy,
+    required this.pubKeys,
+    required this.bounds,
+  });
+
+  /// Cell index east of the anchor grid, and north of it.
+  final int ix;
+  final int iy;
+
+  final List<String> pubKeys;
+
+  /// The square, drawn in this order: south-west, south-east, north-east,
+  /// north-west.
+  final List<LatLng> bounds;
+
+  int get count => pubKeys.length;
+
+  LatLng get centre => LatLng(
+        (bounds[0].latitude + bounds[2].latitude) / 2,
+        (bounds[0].longitude + bounds[2].longitude) / 2,
+      );
+
+  /// Stable identity for a widget key or a rebuild comparison.
+  String get id => '$ix:$iy';
+}
+
+/// A node's position and the key that names it.
+typedef DensityPoint = ({double lat, double lon, String pubKey});
+
+/// Metres per degree of latitude, at the accuracy a mesh grid needs.
+const double kMetresPerDegLat = 111320.0;
+
+/// The default cell: 250 m squares, which is roughly a city block and small
+/// enough that a street-level mesh separates into more than one cell.
+///
+/// The grid is anchored to the operator's fix, which is where the `cos(latitude)`
+/// correction is evaluated. Moving further than a cell re-anchors it, so the
+/// squares step rather than crawl; the areas stay equal because the anchor's
+/// latitude is the one used for the longitude span.
+const double kDensityCellMetres = 250.0;
+
+/// Groups [points] into equal-area cells of [cellMetres] squares.
+///
+/// The grid is anchored to [anchor] so it stays put while the operator moves and
+/// pans: cells are a property of the ground, not of the viewport. Only cells
+/// with at least one node are returned, so an empty mesh draws nothing rather
+/// than a lattice over the whole map.
+List<DensityCell> densityCells({
+  required Iterable<DensityPoint> points,
+  required LatLng anchor,
+  double cellMetres = kDensityCellMetres,
+}) {
+  if (cellMetres <= 0) {
+    throw ArgumentError.value(cellMetres, 'cellMetres', 'must be positive');
+  }
+  final double metresPerDegLon =
+      kMetresPerDegLat * math.cos(anchor.latitude * math.pi / 180).abs();
+  if (metresPerDegLon < 1) {
+    // Within a few hundred metres of a pole a longitude degree spans nothing,
+    // so a lat/lon grid cannot hold an area at all. Better to draw nothing than
+    // a sliver.
+    return <DensityCell>[];
+  }
+  final double latSpan = cellMetres / kMetresPerDegLat;
+  final double lonSpan = cellMetres / metresPerDegLon;
+
+  final Map<String, List<String>> byCell = <String, List<String>>{};
+  final Map<String, (int, int)> index = <String, (int, int)>{};
+  for (final DensityPoint p in points) {
+    final int ix =
+        ((p.lon - anchor.longitude) * metresPerDegLon / cellMetres).floor();
+    final int iy = ((p.lat - anchor.latitude) * kMetresPerDegLat / cellMetres)
+        .floor();
+    final String id = '$ix:$iy';
+    index[id] = (ix, iy);
+    (byCell[id] ??= <String>[]).add(p.pubKey);
+  }
+
+  final List<DensityCell> out = <DensityCell>[];
+  byCell.forEach((String id, List<String> keys) {
+    final (int ix, int iy) = index[id]!;
+    final double south = anchor.latitude + iy * latSpan;
+    final double west = anchor.longitude + ix * lonSpan;
+    out.add(DensityCell(
+      ix: ix,
+      iy: iy,
+      pubKeys: keys,
+      bounds: <LatLng>[
+        LatLng(south, west),
+        LatLng(south, west + lonSpan),
+        LatLng(south + latSpan, west + lonSpan),
+        LatLng(south + latSpan, west),
+      ],
+    ));
+  });
+  // Deterministic order so a rebuild does not reshuffle the layer.
+  out.sort((DensityCell a, DensityCell b) =>
+      a.iy != b.iy ? a.iy.compareTo(b.iy) : a.ix.compareTo(b.ix));
+  return out;
+}
+
+/// Whether [point] falls inside [cell].
+///
+/// The map's own tap handler uses this rather than a polygon hit test, because
+/// a cell's centre is where its nodes are: a hit test would open the node sheet
+/// for the pin standing in the middle of the square and never the square.
+bool cellContains(DensityCell cell, LatLng point) {
+  final LatLng sw = cell.bounds[0];
+  final LatLng ne = cell.bounds[2];
+  return point.latitude >= sw.latitude &&
+      point.latitude <= ne.latitude &&
+      point.longitude >= sw.longitude &&
+      point.longitude <= ne.longitude;
+}
+
+/// How strongly a cell is filled, from its count against the busiest cell.
+///
+/// The square root, not the count: with a linear ramp a cell of one node among
+/// forty is invisible, which hides most of a mesh. With the root, one node is a
+/// third of full strength and the gradient still reads as more-is-darker.
+double densityAlpha(int count, int maxCount) {
+  if (count <= 0 || maxCount <= 0) return 0;
+  final double t = math.sqrt(count / maxCount).clamp(0.0, 1.0);
+  // A faint fill, because the pins on this map are themselves pale squares and
+  // a strong fill made a cell look like a node. The border carries the grid and
+  // the fill carries the count.
+  return 0.16 + 0.30 * t;
+}
+
+/// The density cells as map polygons, coloured by count.
+///
+/// Typed to [DensityCell] so a tap on a square hands back the cell itself
+/// through the layer's hit notifier, rather than a polygon whose index the
+/// caller has to line up with a parallel list.
+List<Polygon<DensityCell>> densityPolygons({
+  required Iterable<DensityCell> cells,
+  required Color color,
+}) {
+  final List<DensityCell> list = cells.toList();
+  int maxCount = 0;
+  for (final DensityCell c in list) {
+    if (c.count > maxCount) maxCount = c.count;
+  }
+  return <Polygon<DensityCell>>[
+    for (final DensityCell c in list)
+      Polygon<DensityCell>(
+        points: c.bounds,
+        hitValue: c,
+        color: color.withValues(alpha: densityAlpha(c.count, maxCount)),
+        borderColor: color.withValues(alpha: 0.80),
+        borderStrokeWidth: 1.2,
+      ),
+  ];
+}

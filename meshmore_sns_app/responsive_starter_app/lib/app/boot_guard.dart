@@ -5,6 +5,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
+import '../gen/app_localizations.dart';
+import '../gen/app_localizations_en.dart';
+import '../gen/app_localizations_ja.dart';
+
 /// Runs the boot chain and guarantees the splash comes down either way.
 ///
 /// The native splash is removed only after the first frame, so a throw between
@@ -53,6 +57,10 @@ Future<void> runBoot({
 /// fail, so the panel must not depend on the code that failed. The reason is
 /// one line, and the one action is a retry, because the common cause is
 /// transient.
+///
+/// The two fixed strings come from the device language rather than the saved
+/// preference, because reading preferences is one of the things that may have
+/// just failed. Two bundles ship, so anything but Japanese is English.
 class BootFailureApp extends StatelessWidget {
   const BootFailureApp({
     super.key,
@@ -63,8 +71,21 @@ class BootFailureApp extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
+  /// The panel's copy, from the device language.
+  ///
+  /// Direct construction rather than the delegate: the delegate loads a
+  /// bundle asynchronously, and this panel is what is on screen when loading
+  /// anything is exactly what failed.
+  AppLocalizations get _strings {
+    final Locale device = WidgetsBinding.instance.platformDispatcher.locale;
+    return device.languageCode == 'ja'
+        ? AppLocalizationsJa()
+        : AppLocalizationsEn();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l = _strings;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
@@ -74,17 +95,17 @@ class BootFailureApp extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Text(
-                  'Meshmore SNS could not start.',
+                Text(
+                  l.bootFailedTitle,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
                 Text(message, textAlign: TextAlign.center),
                 const SizedBox(height: 20),
                 FilledButton(
                   onPressed: onRetry,
-                  child: const Text('Try again'),
+                  child: Text(l.bootTryAgain),
                 ),
               ],
             ),

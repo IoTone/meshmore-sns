@@ -10707,6 +10707,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.'**
   String get elevationEmpty;
+
+  /// No description provided for @mapDensityShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Node density per cell'**
+  String get mapDensityShow;
+
+  /// No description provided for @mapDensityHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide node density'**
+  String get mapDensityHide;
+
+  /// No description provided for @mapDensityCellTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 node in this square} other{{count} nodes in this square}}'**
+  String mapDensityCellTitle(int count);
+
+  /// No description provided for @mapDensityCellArea.
+  ///
+  /// In en, this message translates to:
+  /// **'Each square is 250 m across, so every cell covers the same area.'**
+  String get mapDensityCellArea;
+
+  /// No description provided for @mapDensityCellOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open this node'**
+  String get mapDensityCellOpen;
+
+  /// No description provided for @bootFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meshmore SNS could not start.'**
+  String get bootFailedTitle;
+
+  /// No description provided for @bootTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get bootTryAgain;
 }
 
 class _AppLocalizationsDelegate

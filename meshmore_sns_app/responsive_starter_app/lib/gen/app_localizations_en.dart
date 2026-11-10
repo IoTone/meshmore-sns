@@ -6411,4 +6411,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get elevationEmpty =>
       'Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.';
+
+  @override
+  String get mapDensityShow => 'Node density per cell';
+
+  @override
+  String get mapDensityHide => 'Hide node density';
+
+  @override
+  String mapDensityCellTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count nodes in this square',
+      one: '1 node in this square',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mapDensityCellArea =>
+      'Each square is 250 m across, so every cell covers the same area.';
+
+  @override
+  String get mapDensityCellOpen => 'Open this node';
+
+  @override
+  String get bootFailedTitle => 'Meshmore SNS could not start.';
+
+  @override
+  String get bootTryAgain => 'Try again';
 }

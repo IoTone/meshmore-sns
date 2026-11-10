@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: MIT
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/app/boot_guard.dart';
+import 'package:meshmore_sns_app/gen/app_localizations_ja.dart';
 
 /// L1 — the boot chain is guarded, so a throw or a hung platform channel can
 /// no longer leave the branded splash on screen with no message.
@@ -88,6 +90,26 @@ void main() {
     expect(find.text('SharedPreferences platform failure'), findsOneWidget);
 
     await tester.tap(find.text('Try again'));
+    await tester.pump();
+    expect(retries, 1);
+  });
+
+  testWidgets('the panel speaks the device language, not a saved preference',
+      (WidgetTester tester) async {
+    // Reading preferences is one of the things that may have just failed, so
+    // the only signal left is the device locale.
+    tester.platformDispatcher.localeTestValue = const Locale('ja');
+    addTearDown(tester.platformDispatcher.clearLocaleTestValue);
+    final AppLocalizationsJa ja = AppLocalizationsJa();
+    int retries = 0;
+    await tester.pumpWidget(BootFailureApp(
+      message: '起動時の設定読み込みに失敗しました',
+      onRetry: () => retries++,
+    ));
+    expect(find.text(ja.bootFailedTitle), findsOneWidget);
+    expect(find.text(ja.bootTryAgain), findsOneWidget);
+    expect(find.text('Try again'), findsNothing);
+    await tester.tap(find.text(ja.bootTryAgain));
     await tester.pump();
     expect(retries, 1);
   });

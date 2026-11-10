@@ -6151,4 +6151,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get elevationEmpty => 'まだ誰も高度を報告していません。センサーを持つ相手に問い合わせるか、広告を待ってください。';
+
+  @override
+  String get mapDensityShow => 'セルごとのノード密度';
+
+  @override
+  String get mapDensityHide => 'ノード密度を隠す';
+
+  @override
+  String mapDensityCellTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'この区画に $count ノード',
+      one: 'この区画に 1 ノード',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mapDensityCellArea => '各区画は一辺 250 m で、どのセルも同じ面積です。';
+
+  @override
+  String get mapDensityCellOpen => 'このノードを開く';
+
+  @override
+  String get bootFailedTitle => 'Meshmore SNS を起動できませんでした。';
+
+  @override
+  String get bootTryAgain => '再試行';
 }
