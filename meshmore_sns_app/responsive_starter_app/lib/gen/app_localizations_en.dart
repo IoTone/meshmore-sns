@@ -2099,7 +2099,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String snsCellsStatus(int active, int hot) {
-    return '$active cells · $hot hot';
+    String _temp0 = intl.Intl.pluralLogic(
+      active,
+      locale: localeName,
+      other: '$active cells',
+      one: '1 cell',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      hot,
+      locale: localeName,
+      other: '$hot hot',
+      one: '1 hot',
+    );
+    return '$_temp0 · $_temp1';
   }
 
   @override

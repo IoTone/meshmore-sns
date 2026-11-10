@@ -2007,7 +2007,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String snsCellsStatus(int active, int hot) {
-    return '$active セル · $hot ホット';
+    String _temp0 = intl.Intl.pluralLogic(
+      active,
+      locale: localeName,
+      other: '$active セル',
+      one: '1 セル',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      hot,
+      locale: localeName,
+      other: '$hot ホット',
+      one: '1 ホット',
+    );
+    return '$_temp0 · $_temp1';
   }
 
   @override

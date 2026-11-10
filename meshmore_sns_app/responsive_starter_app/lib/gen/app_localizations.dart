@@ -3575,7 +3575,7 @@ abstract class AppLocalizations {
   /// No description provided for @snsCellsStatus.
   ///
   /// In en, this message translates to:
-  /// **'{active} cells · {hot} hot'**
+  /// **'{active, plural, =1{1 cell} other{{active} cells}} · {hot, plural, =1{1 hot} other{{hot} hot}}'**
   String snsCellsStatus(int active, int hot);
 
   /// No description provided for @snsFrameMetro.

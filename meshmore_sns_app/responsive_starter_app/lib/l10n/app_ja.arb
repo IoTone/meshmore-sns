@@ -1244,7 +1244,7 @@
     }
   },
   "snsCellsClear": "クリア",
-  "snsCellsStatus": "{active} セル · {hot} ホット",
+  "snsCellsStatus": "{active, plural, =1{1 セル} other{{active} セル}} · {hot, plural, =1{1 ホット} other{{hot} ホット}}",
   "snsFrameMetro": "メトロ · 約20 km",
   "snsFrameRegion": "地域 · 約300 km",
   "snsFrameMesh": "メッシュ · 全体",

@@ -1324,7 +1324,7 @@
     }
   },
   "snsCellsClear": "Clear",
-  "snsCellsStatus": "{active} cells · {hot} hot",
+  "snsCellsStatus": "{active, plural, =1{1 cell} other{{active} cells}} · {hot, plural, =1{1 hot} other{{hot} hot}}",
   "snsFrameMetro": "Metro · ~20 km",
   "snsFrameRegion": "Region · ~300 km",
   "snsFrameMesh": "Mesh · fit all",
