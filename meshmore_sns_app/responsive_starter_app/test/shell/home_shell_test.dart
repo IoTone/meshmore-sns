@@ -710,8 +710,12 @@ void main() {
     testWidgets('a fling from the right edge goes to the next view',
         (WidgetTester t) async {
       final Rect r = await openMap(t);
+      // 20 dp above the bottom, not 60: the band starts below the map's tool
+      // column (R70), and on this 600 dp test surface that column now reaches
+      // within 44 dp of the bottom. The band is still there and still wins,
+      // which is what this test is about.
       await t.flingFrom(
-          Offset(r.right - 10, r.bottom - 60), const Offset(-300, 0), 1000);
+          Offset(r.right - 10, r.bottom - 20), const Offset(-300, 0), 1000);
       await settle(t);
       expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
       expect(t.takeException(), isNull);
