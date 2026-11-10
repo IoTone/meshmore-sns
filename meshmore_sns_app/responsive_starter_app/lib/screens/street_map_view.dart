@@ -971,7 +971,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                 children: <Widget>[
                   Icon(Icons.pause, size: 12, color: cs.onTertiaryContainer),
                   const SizedBox(width: 4),
-                  Text(l.globePaused,
+                  Text(l.mapFrozenBadge,
                       style: TextStyle(
                           color: cs.onTertiaryContainer,
                           fontSize: context.skin.type.sizeMicro,

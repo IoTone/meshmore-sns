@@ -14,7 +14,6 @@ import 'package:flutter/foundation.dart';
 ///   wiki) baked into `assets/docs/` — MIT, © MeshCore contributors.
 /// - GeoNames `cities15000` dataset (`assets/data/cities15000.bin`) —
 ///   **CC-BY 4.0, which requires attribution.**
-/// - Natural Earth 110m land polygons (`assets/data/world-110m.geojson`)
 ///   — public domain.
 /// - OpenStreetMap raster tiles (R25 map view, fetched at runtime) —
 ///   map data © OpenStreetMap contributors, ODbL.
@@ -50,24 +49,6 @@ void registerAssetLicenses() {
       'ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN '
       'CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE '
       'SOFTWARE.',
-    );
-
-    yield const LicenseEntryWithLineBreaks(
-      <String>['Meshmore SNS — GeoNames cities'],
-      'The offline city dataset (cities15000) is derived from GeoNames '
-      '(https://www.geonames.org) and is licensed under the Creative '
-      'Commons Attribution 4.0 License (CC BY 4.0).\n'
-      '\n'
-      '© GeoNames (https://www.geonames.org).\n'
-      'See https://creativecommons.org/licenses/by/4.0/ for the full '
-      'license text.',
-    );
-
-    yield const LicenseEntryWithLineBreaks(
-      <String>['Meshmore SNS — Natural Earth'],
-      'The world land outline (110m land polygons) is from Natural Earth '
-      '(https://www.naturalearthdata.com) and is in the public domain. '
-      'No attribution is required; credit is given here as a courtesy.',
     );
 
     yield const LicenseEntryWithLineBreaks(

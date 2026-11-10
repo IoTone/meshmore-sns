@@ -581,7 +581,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get aboutAttributions =>
-      'MeshCore ドキュメント（MIT）、GeoNames 都市データ（CC-BY 4.0）、Natural Earth（パブリックドメイン）、OpenStreetMap 地図データ（ODbL）、Saira・JetBrains Mono フォント（OFL）を含みます。';
+      'MeshCore ドキュメント（MIT）、OpenStreetMap 地図データ（ODbL）、Saira・JetBrains Mono フォント（OFL）を含みます。';
 
   @override
   String get personalizationHeading => 'プロフィール & パーソナライズ';
@@ -978,7 +978,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get globePaused => '一時停止';
+  String get mapFrozenBadge => '一時停止';
 
   @override
   String get voiceOfflineBadge => 'オフライン';

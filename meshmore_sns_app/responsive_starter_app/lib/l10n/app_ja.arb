@@ -289,7 +289,7 @@
   "aboutReportProblem": "問題を報告",
   "aboutReportProblemSub": "アプリとラジオの情報を入れた状態で課題トラッカーを開きます。そこで送信するまで何も送られません。",
   "aboutLicensesButton": "オープンソースライセンスと権利表示",
-  "aboutAttributions": "MeshCore ドキュメント（MIT）、GeoNames 都市データ（CC-BY 4.0）、Natural Earth（パブリックドメイン）、OpenStreetMap 地図データ（ODbL）、Saira・JetBrains Mono フォント（OFL）を含みます。",
+  "aboutAttributions": "MeshCore ドキュメント（MIT）、OpenStreetMap 地図データ（ODbL）、Saira・JetBrains Mono フォント（OFL）を含みます。",
   "@aboutVersion": {
     "placeholders": {
       "version": {
@@ -482,7 +482,7 @@
       }
     }
   },
-  "globePaused": "一時停止",
+  "mapFrozenBadge": "一時停止",
   "voiceOfflineBadge": "オフライン",
   "dashboardLocationRefresh": "デバイスから位置を更新",
   "dashboardLocationAltitude": "高度 {meters} m",

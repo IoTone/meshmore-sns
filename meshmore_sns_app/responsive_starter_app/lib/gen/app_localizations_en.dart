@@ -609,7 +609,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutAttributions =>
-      'Includes MeshCore documentation (MIT), GeoNames cities (CC-BY 4.0), Natural Earth (public domain), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).';
+      'Includes MeshCore documentation (MIT), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).';
 
   @override
   String get personalizationHeading => 'Profile & personalization';
@@ -1036,7 +1036,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get globePaused => 'PAUSED';
+  String get mapFrozenBadge => 'PAUSED';
 
   @override
   String get voiceOfflineBadge => 'OFFLINE';

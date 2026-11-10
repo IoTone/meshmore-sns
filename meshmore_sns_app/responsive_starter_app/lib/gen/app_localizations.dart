@@ -1133,7 +1133,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutAttributions.
   ///
   /// In en, this message translates to:
-  /// **'Includes MeshCore documentation (MIT), GeoNames cities (CC-BY 4.0), Natural Earth (public domain), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).'**
+  /// **'Includes MeshCore documentation (MIT), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).'**
   String get aboutAttributions;
 
   /// No description provided for @personalizationHeading.
@@ -1880,11 +1880,11 @@ abstract class AppLocalizations {
   /// **'{label} loaded — Apply when a device is connected.'**
   String deviceRegionLoadedOffline(String label);
 
-  /// No description provided for @globePaused.
+  /// No description provided for @mapFrozenBadge.
   ///
   /// In en, this message translates to:
   /// **'PAUSED'**
-  String get globePaused;
+  String get mapFrozenBadge;
 
   /// No description provided for @voiceOfflineBadge.
   ///

@@ -194,15 +194,13 @@ flutter:
       - assets/audio/hyperlocal/
       - assets/audio/drpop/
       - assets/audio/recon/
-      # R27 globe view — Natural Earth 110m land polygons (public
-      # domain). ~97 KB after coord-trim to 4 decimals. Loaded once
-      # at GlobeView startup.
-      - assets/data/world-110m.geojson
-      # R25 Stage 2 — packed GeoNames cities15000 dataset (~33 k
-      # cities, ~810 KB). CC-BY 4.0 (attribute geonames.org in About).
-      # Built offline via tool/pack_cities.dart; re-run when the
-      # GeoNames source refreshes.
+      # R25 Stage 2 — packed GeoNames cities15000 dataset (~33 k cities,
+      # ~810 KB). CC-BY 4.0 (attribute geonames.org in About). Read by the
+      # chat's "looks like a place" line via `lib/sns/city_gazetteer.dart`,
+      # and rebuilt offline by `tool/pack_cities.dart`.
       - assets/data/cities15000.bin
+      # The globe's Natural Earth land polygons left on 2026-11-10 with the
+      # view that loaded them: 97 KB of APK read by nothing.
       # Per-device power reference for battery-life estimation
       # (capacity, OCV curve, typical current draw). Offline-first:
       # baked into the binary like the region presets; bump the app

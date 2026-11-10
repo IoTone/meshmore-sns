@@ -318,7 +318,7 @@
   "aboutReportProblem": "Report a problem",
   "aboutReportProblemSub": "Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.",
   "aboutLicensesButton": "Open-source licenses & attributions",
-  "aboutAttributions": "Includes MeshCore documentation (MIT), GeoNames cities (CC-BY 4.0), Natural Earth (public domain), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).",
+  "aboutAttributions": "Includes MeshCore documentation (MIT), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).",
   "@aboutVersion": {
     "placeholders": {
       "version": {
@@ -521,7 +521,7 @@
       }
     }
   },
-  "globePaused": "PAUSED",
+  "mapFrozenBadge": "PAUSED",
   "voiceOfflineBadge": "OFFLINE",
   "dashboardLocationRefresh": "Refresh location from device",
   "dashboardLocationAltitude": "alt {meters} m",

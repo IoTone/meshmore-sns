@@ -28,11 +28,13 @@ void main() {
     expect(bodies['Meshmore SNS — MeshCore documentation'],
         contains('MIT'));
 
-    // ...and the other attribution-bearing assets we ship.
-    expect(packages, contains('Meshmore SNS — GeoNames cities'));
-    expect(bodies['Meshmore SNS — GeoNames cities'], contains('CC BY 4.0'));
-    expect(packages, contains('Meshmore SNS — Natural Earth'));
+    // ...and the other attribution-bearing assets we ship. GeoNames and
+    // Natural Earth are deliberately absent: neither asset is bundled any
+    // more, and a licence page that credits what is not there is its own kind
+    // of wrong.
     expect(packages, contains('Meshmore SNS — OpenStreetMap'));
+    expect(packages, isNot(contains('Meshmore SNS — GeoNames cities')));
+    expect(packages, isNot(contains('Meshmore SNS — Natural Earth')));
     // Bundled OFL fonts: every face a preset can draw, not just the two the
     // app shipped with before the per-preset mapping.
     final String fontsKey = packages.firstWhere(
