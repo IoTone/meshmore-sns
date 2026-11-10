@@ -437,10 +437,12 @@ class _StreetMapViewState extends State<StreetMapView> {
                 shrinkWrap: true,
                 children: <Widget>[
                   for (final DiscoveredNode n in inside)
-                    ListTile(
-                      dense: true,
-                      title: Text(n.name.isEmpty ? n.shortId : n.name),
-                      subtitle: Text(l.mapDensityCellOpen),
+                    // MmPickerTile, not a bare ListTile: a row of this shape is
+                    // a picker row by the product's own rule, and the guard
+                    // that enforces it did its job here.
+                    MmPickerTile(
+                      title: n.name.isEmpty ? n.shortId : n.name,
+                      value: l.mapDensityCellOpen,
                       onTap: () {
                         Navigator.of(sheetCtx).pop();
                         _showDetail(ctx, mc, n);
