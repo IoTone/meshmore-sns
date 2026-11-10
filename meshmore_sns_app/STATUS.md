@@ -4,7 +4,7 @@ _Snapshot as of 2026-11-10. App `1.0.197+13`, branch `feat/app-completion`.
 Change records below are newest first from R122; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, **2026-11-10**: `flutter test` **2470 passed** in 2 m 32 s;
+**What is proven and what is not.** Measured on this tree, **2026-11-10**: `flutter test` **2485 passed** in 4 m 2 s;
 `flutter analyze` reports **no issues** (the two `unawaited_return_in_try_block` warnings in `lib/maps/maps_controller.dart`
 were fixed on 2026-11-05, so any warning now is a regression);
 the protocol package `dart test` **382 passed with 1 skipped**; the pure-Java port at the repository root, `cd libmeshcore && ./gradlew test --offline
