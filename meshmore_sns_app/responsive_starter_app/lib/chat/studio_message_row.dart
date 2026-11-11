@@ -29,7 +29,7 @@ import '../util/clock_model.dart';
 ///   `chat_screen.dart` `_log`) is dropped here: it was an unexplained
 ///   mark. Outgoing rows instead carry a 2dp accent rule on their left
 ///   edge and an accent timestamp (a shape cue as well as a colour cue).
-class StudioMessageRow extends StatelessWidget {
+class StudioMessageRow extends StatefulWidget {
   const StudioMessageRow({
     super.key,
     required this.message,
@@ -55,6 +55,26 @@ class StudioMessageRow extends StatelessWidget {
   final Widget? echo;
   final VoidCallback onAction;
 
+  @override
+  State<StudioMessageRow> createState() => _StudioMessageRowState();
+}
+
+class _StudioMessageRowState extends State<StudioMessageRow> {
+  ChatMessage get message => widget.message;
+  String get body => widget.body;
+  String? get sender => widget.sender;
+  Widget? get echo => widget.echo;
+  VoidCallback get onAction => widget.onAction;
+
+  /// The send time appears when asked for: hold the row or open its actions.
+  /// A thread where every line prints `16:07` reads as a log file.
+  bool _showTime = false;
+
+  void _revealThenAct() {
+    if (!_showTime) setState(() => _showTime = true);
+    onAction();
+  }
+
   /// APP-N3 — absolute only while the sender's clock agrees with this phone;
   /// see `clockStamp`.
   String _time(AppLocalizations l) => clockStamp(l, message.at);
@@ -67,7 +87,7 @@ class StudioMessageRow extends StatelessWidget {
     final bool out = message.outgoing;
     final bool delivery = out && message.delivery != null;
     return InkWell(
-      onLongPress: onAction,
+      onLongPress: _revealThenAct,
       child: Container(
         decoration: out
             ? BoxDecoration(
@@ -82,10 +102,11 @@ class StudioMessageRow extends StatelessWidget {
             // box was too narrow for "16:07" in mono and the time wrapped
             // one character per line ("16:0" / "7") beside the sender.
             SizedBox(
-              width: 56 * MediaQuery.textScalerOf(context).scale(1),
+              width: (_showTime ? 56 : 12) *
+                  MediaQuery.textScalerOf(context).scale(1),
               child: Padding(
                 padding: const EdgeInsets.only(left: 6),
-                child: Text(_time(l),
+                child: Text(_showTime ? _time(l) : '',
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(
@@ -131,7 +152,7 @@ class StudioMessageRow extends StatelessWidget {
               iconSize: 18,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              onPressed: onAction,
+              onPressed: _revealThenAct,
               icon: Icon(Icons.more_vert, color: skin.color.fgMuted),
             ),
           ],

@@ -99,10 +99,17 @@ void main() {
     expect(s.fontSize!, lessThan(b.fontSize!));
     expect(s.fontWeight, FontWeight.w600);
     expect(s.color, isNot(b.color));
-    // Time is machine data: mono.
+    // The send time is revealed, not printed: a thread where every line
+    // carries `16:07` reads as a log file. Holding the row (or the actions
+    // button) brings it back.
+    expect(find.textContaining(RegExp(r'^\d\d:\d\d$')), findsNothing,
+        reason: 'a stamp nobody asked for is ink on every row');
+    await t.longPress(body);
+    await t.pumpAndSettle();
+    // The long-press also opens the actions sheet; the stamp is behind it.
     final Finder time = find.textContaining(RegExp(r'^\d\d:\d\d$'));
-    expect(time, findsOneWidget);
-    expect(family(t, time), mono);
+    expect(time, findsWidgets, reason: 'the reveal puts the stamp back');
+    expect(family(t, time.first), mono);
     expect(find.textContaining('«'), findsNothing);
     mc.dispose();
     await t.pumpWidget(const SizedBox());

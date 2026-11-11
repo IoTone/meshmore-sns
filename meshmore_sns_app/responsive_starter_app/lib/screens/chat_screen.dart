@@ -1105,7 +1105,7 @@ _ChatMode _chatModeFor(MmThemePreset p) => switch (p) {
       _ => _ChatMode.log, // seele, nerv, recon — terminal log
     };
 
-class _MessageRow extends StatelessWidget {
+class _MessageRow extends StatefulWidget {
   const _MessageRow(this.m,
       {super.key, required this.onAction, this.sinceLast});
   final ChatMessage m;
@@ -1114,6 +1114,35 @@ class _MessageRow extends StatelessWidget {
   /// Time since the same identity last spoke on this channel (DR Pop name
   /// tag). Null = first message from them this session, or not block mode.
   final Duration? sinceLast;
+
+  @override
+  State<_MessageRow> createState() => _MessageRowState();
+}
+
+class _MessageRowState extends State<_MessageRow> {
+  ChatMessage get m => widget.m;
+  VoidCallback get onAction => widget.onAction;
+  Duration? get sinceLast => widget.sinceLast;
+
+  /// The send time is revealed, not printed.
+  ///
+  /// A terminal thread where every line carries `16:07` reads as a log file,
+  /// and on a channel that is busy the stamps are most of the ink. The time
+  /// is a detail you go looking for, so it appears when you ask: hold the row,
+  /// or open its actions. It stays revealed for that row afterwards, because
+  /// hiding it again under the reader's eyes is its own small hostility.
+  bool _showTime = false;
+
+  void _revealTime() {
+    if (_showTime) return;
+    setState(() => _showTime = true);
+  }
+
+  /// Hold or the actions button: reveal the stamp, then do the thing asked.
+  VoidCallback get _revealThenAct => () {
+        _revealTime();
+        onAction();
+      };
 
   /// APP-N3 — a stamp the reader can trust: the sender's own `HH:MM` when
   /// that clock agrees with this phone, and a named marker when it does not
@@ -1187,16 +1216,21 @@ class _MessageRow extends StatelessWidget {
     return Semantics(
       label: spoken,
       child: InkWell(
-        onLongPress: onAction,
+        onLongPress: _revealThenAct,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               // R102 — scale the gutter with the text (see StudioMessageRow).
+              // Narrow while the stamp is hidden: the gutter is the time's
+              // place, and an empty 56 dp column is a hole in every row. The
+              // direction glyph stays, because it is not a timestamp.
               SizedBox(
-                width: 56 * MediaQuery.textScalerOf(context).scale(1),
-                child: Text('${_time(l)} ${m.outgoing ? '»' : '«'}',
+                width: (_showTime ? 56 : 16) *
+                    MediaQuery.textScalerOf(context).scale(1),
+                child: Text(_showTime ? '${_time(l)} ${m.outgoing ? '»' : '«'}'
+                    : m.outgoing ? '»' : '«',
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(
@@ -1229,7 +1263,7 @@ class _MessageRow extends StatelessWidget {
                 iconSize: 18,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                onPressed: onAction,
+                onPressed: _revealThenAct,
                 icon: Icon(Icons.more_vert, color: skin.color.fgMuted),
               ),
             ],
@@ -1332,9 +1366,11 @@ class _MessageRow extends StatelessWidget {
                 DeliveryStatusIcon(m.delivery!),
                 const SizedBox(width: 4),
               ],
-              Text(_time(l),
-                  style: TextStyle(
-                      color: ink.withValues(alpha: 0.65), fontSize: skin.type.sizeMicro)),
+              if (_showTime)
+                Text(_time(l),
+                    style: TextStyle(
+                        color: ink.withValues(alpha: 0.65),
+                        fontSize: skin.type.sizeMicro)),
             ],
           ),
         ],
@@ -1365,7 +1401,7 @@ class _MessageRow extends StatelessWidget {
     ];
 
     return InkWell(
-      onLongPress: onAction,
+      onLongPress: _revealThenAct,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
@@ -1401,7 +1437,7 @@ class _MessageRow extends StatelessWidget {
         constraints:
             BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
         child: InkWell(
-          onLongPress: onAction,
+          onLongPress: _revealThenAct,
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 4),
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
@@ -1427,19 +1463,23 @@ class _MessageRow extends StatelessWidget {
                 if (PlaceEchoLine.placeOf(m) case final Place place)
                   PlaceEchoLine(
                       place: place, store: context.read<PlaceStore>()),
-                const SizedBox(height: 2),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    if (m.outgoing && m.delivery != null) ...<Widget>[
-                      DeliveryStatusIcon(m.delivery!),
-                      const SizedBox(width: 4),
+                if ((m.outgoing && m.delivery != null) || _showTime) ...<Widget>[
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      if (m.outgoing && m.delivery != null) ...<Widget>[
+                        DeliveryStatusIcon(m.delivery!),
+                        const SizedBox(width: 4),
+                      ],
+                      if (_showTime)
+                        Text(_time(l),
+                            style: TextStyle(
+                                color: metaColor,
+                                fontSize: skin.type.sizeMicro)),
                     ],
-                    Text(_time(l),
-                        style:
-                            TextStyle(color: metaColor, fontSize: skin.type.sizeMicro)),
-                  ],
-                ),
+                  ),
+                ],
               ],
             ),
           ),
