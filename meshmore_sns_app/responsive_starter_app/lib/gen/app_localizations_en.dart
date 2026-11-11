@@ -1926,7 +1926,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wxMeasured => 'measured';
 
   @override
-  String get wxAmbientEmpty => 'No weather chatter on this channel yet.';
+  String get wxAmbientEmpty =>
+      'No measured weather report on this channel in the last 24 h. A number and a unit is a report; \"rain later\" is not.';
 
   @override
   String wxMentionsShort(int count) {
@@ -5789,7 +5790,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wxMicroclimateFromChatNoMessages =>
-      'Nothing yet: this reads what people write in this channel.';
+      'Nothing measured yet: this reads reports people write in this channel, and only ones with a number and a unit.';
 
   @override
   String get elevationAskNodes => 'Ask nodes for altitude';

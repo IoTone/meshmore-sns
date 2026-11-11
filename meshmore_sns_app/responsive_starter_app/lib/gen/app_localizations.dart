@@ -3293,7 +3293,7 @@ abstract class AppLocalizations {
   /// No description provided for @wxAmbientEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No weather chatter on this channel yet.'**
+  /// **'No measured weather report on this channel in the last 24 h. A number and a unit is a report; \"rain later\" is not.'**
   String get wxAmbientEmpty;
 
   /// No description provided for @wxMentionsShort.
@@ -9667,7 +9667,7 @@ abstract class AppLocalizations {
   /// No description provided for @wxMicroclimateFromChatNoMessages.
   ///
   /// In en, this message translates to:
-  /// **'Nothing yet: this reads what people write in this channel.'**
+  /// **'Nothing measured yet: this reads reports people write in this channel, and only ones with a number and a unit.'**
   String get wxMicroclimateFromChatNoMessages;
 
   /// No description provided for @elevationAskNodes.

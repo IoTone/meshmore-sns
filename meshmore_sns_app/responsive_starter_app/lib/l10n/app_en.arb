@@ -1193,7 +1193,7 @@
   "wxMicroclimatesHeader": "MICROCLIMATES (by place)",
   "wxMicroclimateNearby": "nearby",
   "wxMeasured": "measured",
-  "wxAmbientEmpty": "No weather chatter on this channel yet.",
+  "wxAmbientEmpty": "No measured weather report on this channel in the last 24 h. A number and a unit is a report; \"rain later\" is not.",
   "wxMentionsShort": "{count} mentions",
   "@wxMentionsShort": {
     "placeholders": {
@@ -3991,7 +3991,7 @@
   "sosHoldSummary": "Hold to send the words above to {channel}, with your name and position.",
   "sosUseDefaults": "Use defaults",
   "wxMicroclimateFromChat": "Read from this channel's messages; newest {ago}.",
-  "wxMicroclimateFromChatNoMessages": "Nothing yet: this reads what people write in this channel.",
+  "wxMicroclimateFromChatNoMessages": "Nothing measured yet: this reads reports people write in this channel, and only ones with a number and a unit.",
   "elevationAskNodes": "Ask nodes for altitude",
   "elevationAsking": "Asking…",
   "elevationNotADistance": "Dots line up side to side, not by distance.",

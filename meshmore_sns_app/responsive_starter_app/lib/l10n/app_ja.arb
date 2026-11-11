@@ -1113,7 +1113,7 @@
   "wxMicroclimatesHeader": "微気候（場所別）",
   "wxMicroclimateNearby": "近く",
   "wxMeasured": "実測",
-  "wxAmbientEmpty": "このチャンネルにはまだ天気の話題がありません。",
+  "wxAmbientEmpty": "このチャンネルでは過去 24 時間に測定値のある天気報告はありません。数値と単位があるものだけを報告として扱います。",
   "wxMentionsShort": "{count} 件の言及",
   "@wxMentionsShort": {
     "placeholders": {
@@ -2558,8 +2558,8 @@
   "sosWordsOptional": "任意 — 空にすると既定の文言で送信します。",
   "sosHoldSummary": "長押しで、上の文言を名前と位置とともに {channel} へ送信します。",
   "sosUseDefaults": "既定に戻す",
-  "wxMicroclimateFromChatNoMessages": "まだありません。このチャンネルに書かれた内容から読み取ります。",
-  "wxMicroclimateFromChat": "このチャンネルの発言から読み取りました。最新は{ago}。",
+  "wxMicroclimateFromChatNoMessages": "まだ測定値はありません。このチャンネルに書かれた報告のうち、数値と単位があるものだけを読み取ります。",
+  "wxMicroclimateFromChat": "このチャンネルのメッセージから読み取り。最新 {ago}。",
   "elevationAskNodes": "各ノードに高度を問い合わせる",
   "elevationAsking": "問い合わせ中…",
   "elevationNotADistance": "点は横並びで、距離の順ではありません。",

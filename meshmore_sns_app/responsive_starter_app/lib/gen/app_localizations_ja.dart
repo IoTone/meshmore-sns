@@ -1837,7 +1837,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get wxMeasured => '実測';
 
   @override
-  String get wxAmbientEmpty => 'このチャンネルにはまだ天気の話題がありません。';
+  String get wxAmbientEmpty =>
+      'このチャンネルでは過去 24 時間に測定値のある天気報告はありません。数値と単位があるものだけを報告として扱います。';
 
   @override
   String wxMentionsShort(int count) {
@@ -5551,12 +5552,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String wxMicroclimateFromChat(Object ago) {
-    return 'このチャンネルの発言から読み取りました。最新は$ago。';
+    return 'このチャンネルのメッセージから読み取り。最新 $ago。';
   }
 
   @override
   String get wxMicroclimateFromChatNoMessages =>
-      'まだありません。このチャンネルに書かれた内容から読み取ります。';
+      'まだ測定値はありません。このチャンネルに書かれた報告のうち、数値と単位があるものだけを読み取ります。';
 
   @override
   String get elevationAskNodes => '各ノードに高度を問い合わせる';
