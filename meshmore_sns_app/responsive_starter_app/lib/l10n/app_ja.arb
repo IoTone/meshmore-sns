@@ -2492,20 +2492,6 @@
   "gridPurposeTree": "ノード同士の経路（広告されたルートより）。",
   "gridPurposeSnsCells": "メッセージの発信元を直近1時間で。",
   "gridPurposeElevation": "各ノードの高度を地形と比較して。",
-  "meshTreeCounts": "表示 {shown} · 入力 {input} · 合計 {total}",
-  "@meshTreeCounts": {
-    "placeholders": {
-      "shown": {
-        "type": "String"
-      },
-      "input": {
-        "type": "String"
-      },
-      "total": {
-        "type": "String"
-      }
-    }
-  },
   "mapNoPositionYet": "現在地がまだ分かりません。",
   "mapNoPositionFind": "現在地を取得",
   "mapNoPositionAsking": "取得中...",
@@ -2827,7 +2813,5 @@
   "bootFailedTitle": "Meshmore SNS を起動できませんでした。",
   "bootTryAgain": "再試行",
   "notifGroupBody": "{count, plural, other{{count} 件}} · {body}",
-  "mapDensityCellSize": "セル {size}",
-  "meshTreeFilteredEmpty": "{n} ホップ以内で経路が判明している相手はいません。{unknown} 件は経路がまだ不明です。",
-  "meshTreeShowAll": "すべて表示"
+  "mapDensityCellSize": "セル {size}"
 }

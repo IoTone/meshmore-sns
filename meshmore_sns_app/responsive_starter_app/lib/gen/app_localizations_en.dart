@@ -5581,11 +5581,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'How high each node is, against landmarks.';
 
   @override
-  String meshTreeCounts(String shown, String input, String total) {
-    return '$shown shown · $input in · $total total';
-  }
-
-  @override
   String get mapNoPositionYet => 'Your position is not known yet.';
 
   @override
@@ -6455,12 +6450,4 @@ class AppLocalizationsEn extends AppLocalizations {
   String mapDensityCellSize(String size) {
     return 'Cells $size';
   }
-
-  @override
-  String meshTreeFilteredEmpty(int n, int unknown) {
-    return 'No contact has a known route of $n hops or fewer. $unknown of them have routes the radio has not learned yet.';
-  }
-
-  @override
-  String get meshTreeShowAll => 'Show all';
 }

@@ -5352,11 +5352,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridPurposeElevation => '各ノードの高度を地形と比較して。';
 
   @override
-  String meshTreeCounts(String shown, String input, String total) {
-    return '表示 $shown · 入力 $input · 合計 $total';
-  }
-
-  @override
   String get mapNoPositionYet => '現在地がまだ分かりません。';
 
   @override
@@ -6195,12 +6190,4 @@ class AppLocalizationsJa extends AppLocalizations {
   String mapDensityCellSize(String size) {
     return 'セル $size';
   }
-
-  @override
-  String meshTreeFilteredEmpty(int n, int unknown) {
-    return '$n ホップ以内で経路が判明している相手はいません。$unknown 件は経路がまだ不明です。';
-  }
-
-  @override
-  String get meshTreeShowAll => 'すべて表示';
 }

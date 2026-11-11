@@ -79,11 +79,17 @@ class MeshGraph {
   /// filter still shows up as an intermediate hub.
   /// [maxHops] caps the resolved hop depth shown. A peer is included
   /// when its hop count (`outPathHashes.length`, 0 = direct) is
-  /// `<= maxHops`. Peers with **unknown** routes (advert-only, no
-  /// path info) are included only at the top of the range
-  /// (`maxHops >= 6`), treated as the "show everything, including
-  /// unknowns" setting. Default 6 keeps the unfiltered behaviour for
-  /// callers that don't pass it.
+  /// `<= maxHops`.
+  ///
+  /// **A peer whose route is unknown is always included**, whatever the
+  /// limit. A limit says "do not show me anything deeper than N", and an
+  /// unknown depth is not a deep one: hiding it says "this is further than
+  /// you asked", which nobody knows. On a mesh where the radio has learned
+  /// no routes at all — 183 advert-only nodes and 0 contacts, measured on
+  /// the public mesh — the old rule emptied the tree at every setting below
+  /// All, so the control looked broken and the tree was useless. Those peers
+  /// are drawn as floaters, which the legend already explains ("heard via
+  /// advert only; route unknown").
   static MeshGraph fromController(
     MeshcoreController mc, {
     List<DiscoveredNode>? filteredNodes,
@@ -124,13 +130,10 @@ class MeshGraph {
     for (final DiscoveredNode peer in peers) {
       if (peer.pubKeyHex == ownHex) continue; // don't double the root
 
-      // Hop-depth filter. Known hop count = outPathHashes.length
-      // (0 = direct). Unknown route (null) shows only at the top of
-      // the range.
+      // Hop-depth filter, applied only to a depth the radio actually knows.
+      // An unknown route is not a deep one, so it is never filtered out.
       final int? hops = peer.outPathHashes?.length;
-      final bool passesHops =
-          hops == null ? maxHops >= 6 : hops <= maxHops;
-      if (!passesHops) continue;
+      if (hops != null && hops > maxHops) continue;
 
       addNode(peer);
 

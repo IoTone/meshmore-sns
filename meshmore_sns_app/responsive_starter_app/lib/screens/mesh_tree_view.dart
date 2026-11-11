@@ -259,12 +259,6 @@ class _MeshTreeViewState extends State<MeshTreeView>
       maxHops: _maxHops,
     );
 
-    // Diagnostic counts — localise any "nodes missing" issue to the
-    // filter (input vs shown) vs rendering (shown vs what's drawn).
-    final int totalNodes = mc.nodes.length;
-    final int inputNodes = (widget.filteredNodes ?? mc.nodes).length;
-    final int shownPeers = graph.nodes.length - 1; // minus self
-
     return LayoutBuilder(
       builder: (BuildContext _, BoxConstraints c) {
         final Size size = Size(c.maxWidth, c.maxHeight);
@@ -325,24 +319,16 @@ class _MeshTreeViewState extends State<MeshTreeView>
                 ),
               ),
             ),
-            // Nothing but us. Which "nothing" it is decides what the view
-            // says: a mesh with no contacts yet is a sync question, while a
-            // hop limit below the route depth empties the tree on a mesh where
-            // most routes are unknown — and on this mesh they mostly are, so
-            // the slider looked broken. One tap puts it back to All.
+            // Nothing but us. A hop limit can no longer cause this: a peer
+            // whose depth is unknown is never filtered out (see
+            // `MeshGraph.fromController`), because an unknown depth is not a
+            // deep one. So this is the one real "nothing" — no peers yet — and
+            // it is a sync question, not a filter question.
             if (graph.nodes.length <= 1)
               Positioned.fill(
                 child: GridNotice(
-                  message: inputNodes == 0
-                      ? l.meshTreeEmpty
-                      : l.meshTreeFilteredEmpty(_maxHops, _unknownRoutes(mc)),
-                  icon: inputNodes == 0
-                      ? Icons.account_tree
-                      : Icons.filter_alt_off,
-                  actionLabel: inputNodes == 0 ? null : l.meshTreeShowAll,
-                  onAction: inputNodes == 0
-                      ? null
-                      : () => setState(() => _maxHops = 6),
+                  message: l.meshTreeEmpty,
+                  icon: Icons.account_tree,
                 ),
               ),
             // Recenter overlay — listens to the transformation
@@ -354,40 +340,21 @@ class _MeshTreeViewState extends State<MeshTreeView>
             if (!_autoFit)
               Positioned(
                 right: 12,
-                bottom: 12,
+                // Above the hop slider, which owns the bottom strip: both at
+                // `bottom: 12` meant this button was painted under the slider
+                // and could not be tapped (seen on device).
+                bottom: _HopSlider.stripHeight + 20,
                 child: FilledButton.tonalIcon(
                   icon: const Icon(Icons.center_focus_strong, size: 16),
                   label: Text(l.meshTreeRecenter),
                   onPressed: _recenter,
                 ),
               ),
-            // Counts, but only when the filter is hiding something: a
-            // permanent "shown/input/total" readout is a developer line on a
-            // report view, and at 2 hops by default it was always there.
-            if (shownPeers != inputNodes)
-              Positioned(
-                left: 12,
-                top: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: cs.surface.withValues(alpha: .82),
-                    borderRadius: mmRadius(context, 6),
-                    border: Border.all(color: cs.outline.withValues(alpha: .5)),
-                  ),
-                  child: Text(
-                    l.meshTreeCounts('$shownPeers', '$inputNodes', '$totalNodes'),
-                    style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontSize: context.skin.type.sizeMicro,
-                      fontFamily: context.skin.type.monoFamily,
-                    ),
-                  ),
-                ),
-              ),
-            // Hop-depth slider — trims the tree to peers within
-            // N hops. 0 = Direct, 6 = All (incl. advert-only
-            // floaters). Default 2.
+            // Hop-depth slider — trims the tree to peers whose *known* route
+            // is within N hops. Peers whose route the radio has not learned
+            // stay, drawn as floaters: a limit cannot exclude a depth nobody
+            // measured. Default 6 keeps everything visible on a mesh with no
+            // learned routes, which is the public mesh most of the time.
             Positioned(
               left: 12,
               right: 12,
@@ -407,21 +374,6 @@ class _MeshTreeViewState extends State<MeshTreeView>
     );
   }
 
-  /// Peers whose route the radio has not learned (advert-only or flooded).
-  ///
-  /// They are the reason a hop limit empties this view: a limit can only
-  /// include a peer whose outPath is known and short enough, and on a public
-  /// mesh most peers are flooded rather than routed.
-  int _unknownRoutes(MeshcoreController mc) {
-    final List<DiscoveredNode> peers = widget.filteredNodes ?? mc.nodes;
-    int unknown = 0;
-    for (final DiscoveredNode n in peers) {
-      if (n.pubKeyHex == mc.ownPubKeyHex) continue;
-      if (n.outPathHashes == null) unknown++;
-    }
-    return unknown;
-  }
-
   String _hopLabel(int hops, AppLocalizations l) {
     if (hops <= 0) return l.meshTreeHopsDirect;
     // Top of the range = "everything", which in practice is mostly
@@ -434,6 +386,10 @@ class _MeshTreeViewState extends State<MeshTreeView>
 /// Compact hop-depth slider for the tree view. 0..6 with a label
 /// chip showing the current setting.
 class _HopSlider extends StatelessWidget {
+  /// The strip's own height, so anything placed above it can clear it without
+  /// guessing. A Slider is 48 dp and the container adds its padding.
+  static const double stripHeight = 56;
+
   const _HopSlider({
     required this.value,
     required this.label,

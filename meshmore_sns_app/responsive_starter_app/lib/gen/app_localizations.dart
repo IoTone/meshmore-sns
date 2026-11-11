@@ -9340,12 +9340,6 @@ abstract class AppLocalizations {
   /// **'How high each node is, against landmarks.'**
   String get gridPurposeElevation;
 
-  /// No description provided for @meshTreeCounts.
-  ///
-  /// In en, this message translates to:
-  /// **'{shown} shown · {input} in · {total} total'**
-  String meshTreeCounts(String shown, String input, String total);
-
   /// No description provided for @mapNoPositionYet.
   ///
   /// In en, this message translates to:
@@ -10755,18 +10749,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cells {size}'**
   String mapDensityCellSize(String size);
-
-  /// No description provided for @meshTreeFilteredEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No contact has a known route of {n} hops or fewer. {unknown} of them have routes the radio has not learned yet.'**
-  String meshTreeFilteredEmpty(int n, int unknown);
-
-  /// No description provided for @meshTreeShowAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Show all'**
-  String get meshTreeShowAll;
 }
 
 class _AppLocalizationsDelegate

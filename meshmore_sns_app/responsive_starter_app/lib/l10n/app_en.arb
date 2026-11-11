@@ -3828,20 +3828,6 @@
   "gridPurposeTree": "How nodes reach each other, from the routes they advertise.",
   "gridPurposeSnsCells": "Where messages came from, cooling over the last hour.",
   "gridPurposeElevation": "How high each node is, against landmarks.",
-  "meshTreeCounts": "{shown} shown · {input} in · {total} total",
-  "@meshTreeCounts": {
-    "placeholders": {
-      "shown": {
-        "type": "String"
-      },
-      "input": {
-        "type": "String"
-      },
-      "total": {
-        "type": "String"
-      }
-    }
-  },
   "mapNoPositionYet": "Your position is not known yet.",
   "mapNoPositionFind": "Find me",
   "mapNoPositionAsking": "Finding you...",
@@ -4401,17 +4387,5 @@
         "type": "String"
       }
     }
-  },
-  "meshTreeFilteredEmpty": "No contact has a known route of {n} hops or fewer. {unknown} of them have routes the radio has not learned yet.",
-  "@meshTreeFilteredEmpty": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      },
-      "unknown": {
-        "type": "int"
-      }
-    }
-  },
-  "meshTreeShowAll": "Show all"
+  }
 }

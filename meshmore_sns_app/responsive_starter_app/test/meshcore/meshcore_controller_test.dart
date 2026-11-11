@@ -624,6 +624,50 @@ void main() {
       expect(hasNode(one, 'peer209'), isTrue);
       expect(hasNode(one, 'peer210'), isFalse);
     });
+
+    test('an unknown route is never filtered out by a hop limit', () async {
+      // The public mesh this app ships on has ~183 advert-only nodes and no
+      // learned routes, so the old rule (unknown routes only at maxHops >= 6)
+      // emptied the tree at every other setting and the slider looked broken.
+      // A limit means "nothing deeper than N"; an unknown depth is not deep.
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl = MeshcoreController(
+        transportFactory: () async => fake,
+        connection: MeshcoreConnection(
+            handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await ctrl.connect();
+      fake.emit(selfInfoFrame());
+      await Future<void>.delayed(Duration.zero);
+
+      // One direct contact, one 2-hop contact, and two advert-only nodes with
+      // no outPath at all (the floaters).
+      fake.emit(contactFrame(firstByte: 0xB1, type: 2, outPath: <int>[]));
+      fake.emit(contactFrame(firstByte: 0xB2, type: 2, outPath: <int>[]));
+      fake.emit(contactFrame(firstByte: 0xD0, type: 1, outPath: <int>[]));
+      fake.emit(contactFrame(
+          firstByte: 0xD2, type: 1, outPath: <int>[0xB1, 0xB2]));
+      fake.emit(advertFrame(name: 'Floater1', firstPubByte: 0xE1));
+      fake.emit(advertFrame(name: 'Floater2', firstPubByte: 0xE2));
+      await Future<void>.delayed(Duration.zero);
+
+      bool hasNode(MeshGraph g, String name) =>
+          g.nodes.any((MeshGraphNode n) => n.label == name);
+
+      // Direct only: the 2-hop contact drops, both floaters stay.
+      final MeshGraph direct = MeshGraph.fromController(ctrl, maxHops: 0);
+      expect(hasNode(direct, 'peer208'), isTrue, reason: 'direct contact');
+      expect(hasNode(direct, 'peer210'), isFalse, reason: 'known 2 hops');
+      expect(hasNode(direct, 'Floater1'), isTrue,
+          reason: 'depth unknown, so a depth limit cannot exclude it');
+      expect(hasNode(direct, 'Floater2'), isTrue);
+
+      // And at the widest setting everything is still there.
+      final MeshGraph all = MeshGraph.fromController(ctrl, maxHops: 6);
+      expect(all.nodes.length, greaterThanOrEqualTo(direct.nodes.length));
+      expect(hasNode(all, 'peer210'), isTrue);
+    });
   });
 
   group('telemetry (R47) — self-telemetry via 0x27 / 0x8B', () {
