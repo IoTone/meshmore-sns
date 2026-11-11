@@ -6447,9 +6447,9 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count messages · $body',
-      one: '1 message · $body',
+      other: '$count messages',
+      one: '1 message',
     );
-    return '$_temp0';
+    return '$_temp0 · $body';
   }
 }

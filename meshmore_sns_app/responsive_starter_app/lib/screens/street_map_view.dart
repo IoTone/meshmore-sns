@@ -849,7 +849,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               color: cs.surface.withValues(alpha: .72),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(kRadiusXs),
                             ),
                             child: Text(
                               '${c.count}',

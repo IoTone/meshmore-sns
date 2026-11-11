@@ -6186,8 +6186,8 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count 件 · $body',
+      other: '$count 件',
     );
-    return '$_temp0';
+    return '$_temp0 · $body';
   }
 }

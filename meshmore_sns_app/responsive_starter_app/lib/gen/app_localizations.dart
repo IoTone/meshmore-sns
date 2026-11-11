@@ -10753,7 +10753,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifGroupBody.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 message · {body}} other{{count} messages · {body}}}'**
+  /// **'{count, plural, =1{1 message} other{{count} messages}} · {body}'**
   String notifGroupBody(int count, String body);
 }
 

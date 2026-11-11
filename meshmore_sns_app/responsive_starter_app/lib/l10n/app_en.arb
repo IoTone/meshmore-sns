@@ -4377,7 +4377,7 @@
   "mapDensityCellOpen": "Open this node",
   "bootFailedTitle": "Meshmore SNS could not start.",
   "bootTryAgain": "Try again",
-  "notifGroupBody": "{count, plural, =1{1 message · {body}} other{{count} messages · {body}}}",
+  "notifGroupBody": "{count, plural, =1{1 message} other{{count} messages}} · {body}",
   "@notifGroupBody": {
     "placeholders": {
       "count": {

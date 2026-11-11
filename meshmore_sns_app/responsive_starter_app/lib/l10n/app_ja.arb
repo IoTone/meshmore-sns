@@ -2827,5 +2827,5 @@
   "mapDensityCellOpen": "このノードを開く",
   "bootFailedTitle": "Meshmore SNS を起動できませんでした。",
   "bootTryAgain": "再試行",
-  "notifGroupBody": "{count, plural, other{{count} 件 · {body}}}"
+  "notifGroupBody": "{count, plural, other{{count} 件}} · {body}"
 }
