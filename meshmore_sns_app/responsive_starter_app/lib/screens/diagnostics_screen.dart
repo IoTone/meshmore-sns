@@ -429,27 +429,36 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
+                // Three peer actions, one control. They used to be a filled
+                // button, an outlined button with an icon and an outlined
+                // button without one, side by side: three weights for three
+                // peers, which reads as a ranking nobody intended. `MmAction`
+                // is the app's own control, and every one of them carries an
+                // icon so the row scans as a row.
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: <Widget>[
-                    FilledButton.icon(
-                      icon: Icon(
-                          live ? Icons.link_off : Icons.bluetooth_searching),
-                      label: Text(live
+                    MmAction(
+                      key: const ValueKey<String>('diag-connect'),
+                      icon: live ? Icons.link_off : Icons.bluetooth_searching,
+                      label: live
                           ? l.diagnosticsDisconnect
-                          : l.diagnosticsScanConnect),
+                          : l.diagnosticsScanConnect,
                       onPressed: () => live ? mc.disconnect() : mc.connect(),
                     ),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.add_link),
-                      label: Text(l.diagnosticsPairRadio),
+                    MmAction(
+                      key: const ValueKey<String>('diag-pair'),
+                      icon: Icons.add_link,
+                      label: l.diagnosticsPairRadio,
                       onPressed: () => context.push('/pair'),
                     ),
                     if (mc.hasPairedDevice)
-                      OutlinedButton(
+                      MmAction(
+                        key: const ValueKey<String>('diag-forget'),
+                        icon: Icons.link_off,
+                        label: l.diagnosticsForgetShort,
                         onPressed: () => _confirmForget(mc),
-                        child: Text(l.diagnosticsForgetShort),
                       ),
                   ],
                 ),
@@ -480,9 +489,13 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                             height: 1.35),
                       ),
                       const SizedBox(height: 4),
-                      OutlinedButton(
+                      // The same control as every other action on the page: a
+                      // lone OutlinedButton here was the fourth style on one
+                      // screen.
+                      MmAction(
+                        icon: Icons.check,
+                        label: l.diagnosticsRadioChangedAccept,
                         onPressed: () => mc.acceptRadioIdentity(),
-                        child: Text(l.diagnosticsRadioChangedAccept),
                       ),
                     ],
                   ),
@@ -539,40 +552,55 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                       : const SizedBox.shrink(),
                 ),
                 section(l.diagnosticsSectionSend),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: <Widget>[
-                    const SizedBox(width: 8),
-                    OutlinedButton(
-                      onPressed: () => _send(mc,
-                          MeshcoreFrameCodec.sendSelfAdvert(), 'self-advert'),
-                      child: Text(l.diagnosticsSendSelfAdvert),
-                    ),
-                    OutlinedButton(
-                      onPressed: () => _send(
-                          mc, MeshcoreFrameCodec.getDeviceTime(), 'get-time'),
-                      child: Text(l.diagnosticsReadClock),
-                    ),
-                    OutlinedButton(
-                      onPressed: () => _send(mc,
-                          MeshcoreFrameCodec.syncNextMessage(), 'sync-msg'),
-                      child: Text(l.diagnosticsPullMessage),
-                    ),
-                    // The radio's own restart (`CMD_REBOOT` 0x13). It is the
-                    // only way out of a radio that has stopped answering its
-                    // own screens, and it silently drops any message it was
-                    // holding, so it asks first and says what it costs.
-                    OutlinedButton.icon(
-                      onPressed: mc.isReady ? () => _restartRadio(mc, l) : null,
-                      icon: const Icon(Icons.restart_alt, size: 18),
-                      label: Text(l.diagnosticsRestartRadio),
-                    ),
-                  ],
-                ),
+                // One padded Wrap with one control style. It used to be four
+                // OutlinedButtons behind a stray `SizedBox(width: 8)`, so the
+                // first button was indented by a widget that only existed to
+                // fake a margin, and the restart carried an icon the other
+                // three did not. `MmAction` in a padded Wrap fixes both.
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      MmAction(
+                        icon: Icons.campaign_outlined,
+                        label: l.diagnosticsSendSelfAdvert,
+                        onPressed: () => _send(mc,
+                            MeshcoreFrameCodec.sendSelfAdvert(), 'self-advert'),
+                      ),
+                      MmAction(
+                        icon: Icons.schedule,
+                        label: l.diagnosticsReadClock,
+                        onPressed: () => _send(mc,
+                            MeshcoreFrameCodec.getDeviceTime(), 'get-time'),
+                      ),
+                      MmAction(
+                        icon: Icons.download_outlined,
+                        label: l.diagnosticsPullMessage,
+                        onPressed: () => _send(mc,
+                            MeshcoreFrameCodec.syncNextMessage(), 'sync-msg'),
+                      ),
+                      // The radio's own restart (`CMD_REBOOT` 0x13). It is the
+                      // only way out of a radio that has stopped answering its
+                      // own screens, and it silently drops any message it was
+                      // holding, so it asks first and says what it costs.
+                      MmAction(
+                        icon: Icons.restart_alt,
+                        label: l.diagnosticsRestartRadio,
+                        onPressed:
+                            mc.isReady ? () => _restartRadio(mc, l) : null,
+                      ),
+                    ],
+                  ),
+                ),
+                // The field takes the row and the button keeps its own width:
+                // a bare `Row` with the button's intrinsic width squeezed the
+                // field to nothing at a narrow width.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: <Widget>[
                       Expanded(
                         child: TextField(
@@ -582,7 +610,9 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      FilledButton(
+                      MmAction(
+                        key: const ValueKey<String>('diag-send-test'),
+                        label: l.diagnosticsSend,
                         onPressed: () => _send(
                           mc,
                           MeshcoreFrameCodec.sendChannelTextMessage(
@@ -592,7 +622,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                           ),
                           'ch0 message',
                         ),
-                        child: Text(l.diagnosticsSend),
                       ),
                     ],
                   ),
