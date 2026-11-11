@@ -70,9 +70,9 @@ void main() {
         await pump(t);
 
     expect(find.textContaining('State: disconnected'), findsOneWidget);
-    expect(find.text('Scan & connect'), findsOneWidget);
+    expect(find.text('Connect'), findsOneWidget);
 
-    await t.tap(find.text('Scan & connect'));
+    await t.tap(find.text('Connect'));
     await t.pumpAndSettle();
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
@@ -86,7 +86,7 @@ void main() {
       (WidgetTester t) async {
     final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
         await pump(t);
-    await t.tap(find.text('Scan & connect'));
+    await t.tap(find.text('Connect'));
     await t.pumpAndSettle();
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
@@ -110,7 +110,7 @@ void main() {
     // developer fold rather than beside the one action the page leads with.
     final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
         await pump(t);
-    await t.tap(find.text('Scan & connect'));
+    await t.tap(find.text('Connect'));
     await t.pumpAndSettle();
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
@@ -177,7 +177,7 @@ void main() {
     final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
         await pump(t);
     fake.mtuValue = 247;
-    await t.tap(find.text('Scan & connect'));
+    await t.tap(find.text('Connect'));
     await t.pumpAndSettle();
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
@@ -191,7 +191,7 @@ void main() {
       (WidgetTester t) async {
     final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
         await pump(t);
-    await t.tap(find.text('Scan & connect'));
+    await t.tap(find.text('Connect'));
     await t.pumpAndSettle();
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
@@ -273,7 +273,7 @@ void main() {
     addTearDown(t.view.reset);
     final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
         await pump(t);
-    await t.tap(find.text('Scan & connect'));
+    await t.tap(find.text('Connect'));
     await t.pumpAndSettle();
     fake.emit(currentTimeFrame());
     await t.pumpAndSettle();
@@ -323,7 +323,7 @@ void main() {
       ),
     );
 
-    await t.tap(find.text('Scan & connect'));
+    await t.tap(find.text('Connect'));
     await t.pumpAndSettle();
     links.last.emit(selfInfoFrame());
     await t.pumpAndSettle();

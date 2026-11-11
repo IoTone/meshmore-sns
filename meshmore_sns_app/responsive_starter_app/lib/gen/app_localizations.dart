@@ -545,7 +545,7 @@ abstract class AppLocalizations {
   /// No description provided for @actionConnect.
   ///
   /// In en, this message translates to:
-  /// **'CONNECT'**
+  /// **'Connect'**
   String get actionConnect;
 
   /// No description provided for @actionRetry.
@@ -553,6 +553,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get actionRetry;
+
+  /// No description provided for @actionRetrySend.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get actionRetrySend;
 
   /// No description provided for @dashboardDevice.
   ///
@@ -6855,12 +6861,6 @@ abstract class AppLocalizations {
   String diagnosticsFramingLine(
       String truncated, String trailing, Object empty);
 
-  /// No description provided for @diagnosticsScanConnect.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan & connect'**
-  String get diagnosticsScanConnect;
-
   /// No description provided for @diagnosticsForgetShort.
   ///
   /// In en, this message translates to:
@@ -7046,12 +7046,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Networks'**
   String get networksTitle;
-
-  /// No description provided for @networksTileSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Radio settings shared by a group of radios'**
-  String get networksTileSubtitle;
 
   /// No description provided for @networksEmpty.
   ///

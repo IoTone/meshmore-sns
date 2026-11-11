@@ -140,10 +140,8 @@ void main() {
       en.diagnosticsErrorLine(p),
       ja.diagnosticsErrorLine(p)
     ),
-    'diagnosticsScanConnect': (
-      en.diagnosticsScanConnect,
-      ja.diagnosticsScanConnect
-    ),
+    'actionConnect': (en.actionConnect, ja.actionConnect),
+    'actionRetrySend': (en.actionRetrySend, ja.actionRetrySend),
     'diagnosticsForgetShort': (
       en.diagnosticsForgetShort,
       ja.diagnosticsForgetShort
@@ -208,10 +206,15 @@ void main() {
       ),
     );
     expect(find.textContaining('状態: 切断'), findsOneWidget);
-    expect(find.text(ja.diagnosticsScanConnect), findsOneWidget);
-    expect(find.text('Scan & connect'), findsNothing);
-    expect(find.textContaining('State:'), findsNothing);
+    // One word for one intent: the diagnostics button and the dashboard's
+    // say the same thing, in the same case.
+    // Japanese needs three words here and used to have one: 接続 is the
+    // section header (a noun), 接続する is the action, 接続済み is the state.
+    // With one word the button read as the heading and the state read as the
+    // action.
+    expect(find.text(ja.actionConnect), findsOneWidget);
     expect(find.text(ja.diagnosticsSectionConnection), findsOneWidget);
+    expect(find.textContaining('State:'), findsNothing);
     await t.pumpWidget(const SizedBox());
     ctrl.dispose();
   });

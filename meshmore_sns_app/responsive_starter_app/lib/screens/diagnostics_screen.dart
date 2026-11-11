@@ -446,7 +446,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                       icon: live ? Icons.link_off : Icons.bluetooth_searching,
                       label: live
                           ? l.diagnosticsDisconnect
-                          : l.diagnosticsScanConnect,
+                          : l.actionConnect,
                       onPressed: () => live ? mc.disconnect() : mc.connect(),
                     ),
                     MmAction(

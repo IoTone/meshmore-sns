@@ -52,7 +52,7 @@ void main() {
     // install shows a state and the way out of it.
     expect(find.text('NODES IN RANGE'), findsNothing);
     expect(find.textContaining('OFFLINE'), findsOneWidget);
-    expect(find.byTooltip('CONNECT'), findsOneWidget);
+    expect(find.byTooltip('Connect'), findsOneWidget);
     expect(find.text('PEERS IN RANGE'), findsNothing);
     expect(find.text('Waiting for the radio…'), findsNothing);
     expect(find.text('No activity yet'), findsNothing);
@@ -63,7 +63,7 @@ void main() {
     await t.pumpAndSettle();
 
     expect(find.textContaining('LINKED'), findsOneWidget);
-    expect(find.byTooltip('CONNECT'), findsNothing);
+    expect(find.byTooltip('Connect'), findsNothing);
     expect(find.textContaining('self-info'), findsOneWidget);
 
     // An inbound channel message lands in the recent feed.

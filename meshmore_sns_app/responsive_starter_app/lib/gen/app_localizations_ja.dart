@@ -204,7 +204,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboardLocationConfigure => '設定';
 
   @override
-  String get statusLinked => '接続中';
+  String get statusLinked => '接続済み';
 
   @override
   String get statusSyncing => '同期中…';
@@ -225,7 +225,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get statusConnecting => '接続中…';
 
   @override
-  String get linkChipLinked => '接続';
+  String get linkChipLinked => '接続済み';
 
   @override
   String get linkChipSync => '同期';
@@ -248,10 +248,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get actionConnect => '接続';
+  String get actionConnect => '接続する';
 
   @override
-  String get actionRetry => '再送';
+  String get actionRetry => '再試行';
+
+  @override
+  String get actionRetrySend => '再送';
 
   @override
   String get dashboardDevice => 'デバイス';
@@ -263,7 +266,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceMgrNoPair => 'デバイス未ペアリング';
 
   @override
-  String get deviceMgrStateConnected => '接続中';
+  String get deviceMgrStateConnected => '接続済み';
 
   @override
   String get deviceMgrStateConnecting => '接続中…';
@@ -3870,9 +3873,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get diagnosticsScanConnect => 'スキャンして接続';
-
-  @override
   String get diagnosticsForgetShort => '解除';
 
   @override
@@ -3974,9 +3974,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get networksTitle => 'ネットワーク';
-
-  @override
-  String get networksTileSubtitle => '複数の無線機で共有する無線設定';
 
   @override
   String get networksEmpty => 'ネットワークはまだありません。ネットワークとは、無線機同士で合わせる無線設定のことです。';

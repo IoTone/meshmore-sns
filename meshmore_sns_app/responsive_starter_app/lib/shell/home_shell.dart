@@ -598,11 +598,24 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
   AppLocalizations l,
 ) =>
     <({String label, List<(IconData, String, String)> rows})>[
+      // RADIO is what the radio *is*: its air-interface settings and its own
+      // firmware. Networks belong here rather than under APP — a network is a
+      // frequency, a bandwidth, a spreading factor and a path-hash size shared
+      // by a group of radios, which is the same kind of fact as a channel and
+      // nothing at all like an app preference. Firmware moved here too: it was
+      // under CONNECTION, which is what the *link* is doing, and flashing a
+      // radio is not a property of the link.
       (
         label: l.settingsGroupRadio,
         rows: <(IconData, String, String)>[
           (Icons.router_outlined, l.settingsHubDevice, '/settings/device'),
           (Icons.tag, l.settingsHubChannels, '/settings/channels'),
+          (Icons.hub_outlined, l.networksTitle, '/settings/networks'),
+          (
+            Icons.system_update_alt,
+            l.settingsHubFirmware,
+            '/settings/firmware'
+          ),
         ],
       ),
       (
@@ -622,11 +635,6 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
             '/settings/diagnostics'
           ),
           (Icons.handyman_outlined, l.settingsHubTools, '/settings/tools'),
-          (
-            Icons.system_update_alt,
-            l.settingsHubFirmware,
-            '/settings/firmware'
-          ),
         ],
       ),
       (

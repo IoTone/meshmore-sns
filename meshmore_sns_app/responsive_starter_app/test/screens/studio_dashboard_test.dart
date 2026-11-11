@@ -96,7 +96,7 @@ void main() {
     final MeshcoreController mc = _mc(FakeMeshcoreTransport(connected: true));
     await _pump(t, mc);
     expect(find.text('OFFLINE'), findsOneWidget);
-    expect(find.text('CONNECT'), findsOneWidget,
+    expect(find.text('Connect'), findsOneWidget,
         reason: 'the old banner was read as drawing CONNECT twice');
     // No filled block: no decoration or ColoredBox uses alert / error.
     final Color error =
@@ -136,7 +136,7 @@ void main() {
     fake.emit(selfInfoFrameAt(lat: 38.925, lon: -104.772826));
     await t.pump();
     await t.pump(const Duration(milliseconds: 50));
-    expect(find.text('CONNECT'), findsNothing);
+    expect(find.text('Connect'), findsNothing);
     expect(find.text('LOCATION'), findsOneWidget);
     expect(find.textContaining('38.92'), findsOneWidget);
     final Iterable<Container> dots = t

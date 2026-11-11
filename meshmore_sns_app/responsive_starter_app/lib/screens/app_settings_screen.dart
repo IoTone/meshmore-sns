@@ -298,15 +298,6 @@ class AppSettingsScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/settings/location'),
             ),
-            // The radio settings a group of radios agree on (private mesh).
-            ListTile(
-              leading: const Icon(Icons.hub_outlined),
-              title: Text(l.networksTitle),
-              subtitle: Text(l.networksTileSubtitle,
-                  style: TextStyle(color: cs.onSurfaceVariant)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/settings/networks'),
-            ),
             SizedBox(height: context.skin.space.sectionGap),
             MmSectionHeader(l.settingsAppGroupSystem),
             // R21 / U12 — Permissions row: jumps to the OS app-settings

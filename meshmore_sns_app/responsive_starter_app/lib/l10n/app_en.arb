@@ -140,8 +140,9 @@
       }
     }
   },
-  "actionConnect": "CONNECT",
+  "actionConnect": "Connect",
   "actionRetry": "Retry",
+  "actionRetrySend": "Retry",
   "dashboardDevice": "Device",
   "deviceMgrTitle": "DEVICE",
   "deviceMgrNoPair": "No device paired",
@@ -2657,7 +2658,6 @@
       }
     }
   },
-  "diagnosticsScanConnect": "Scan & connect",
   "diagnosticsForgetShort": "Forget",
   "diagnosticsPairedLine": "Paired: {name} — auto-reconnects on startup",
   "@diagnosticsPairedLine": {
@@ -2717,7 +2717,6 @@
   "diagnosticsSoakCopied": "Soak report copied",
   "nodesClearSearch": "Clear search",
   "networksTitle": "Networks",
-  "networksTileSubtitle": "Radio settings shared by a group of radios",
   "networksEmpty": "No networks yet. A network is the radio settings your radios agree on.",
   "networksNew": "New network",
   "networksName": "Name",

@@ -268,10 +268,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get actionConnect => 'CONNECT';
+  String get actionConnect => 'Connect';
 
   @override
   String get actionRetry => 'Retry';
+
+  @override
+  String get actionRetrySend => 'Retry';
 
   @override
   String get dashboardDevice => 'Device';
@@ -4030,9 +4033,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get diagnosticsScanConnect => 'Scan & connect';
-
-  @override
   String get diagnosticsForgetShort => 'Forget';
 
   @override
@@ -4136,10 +4136,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get networksTitle => 'Networks';
-
-  @override
-  String get networksTileSubtitle =>
-      'Radio settings shared by a group of radios';
 
   @override
   String get networksEmpty =>

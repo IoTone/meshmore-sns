@@ -115,7 +115,7 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
                   m.delivery == MessageDelivery.unknown))
             ListTile(
               leading: const Icon(Icons.refresh),
-              title: Text(l.actionRetry),
+              title: Text(l.actionRetrySend),
               subtitle: Text(_retrySubtitle(l, m)),
               onTap: () => Navigator.pop(ctx, ChatAction.retry),
             trailing: const Icon(Icons.chevron_right, size: 18),
