@@ -41,12 +41,16 @@ class DashboardHost extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          // No vertical padding here. The banner carries its own inset and
+          // draws nothing when nothing is degraded, so reserving
+          // `padScreen.top` for it left 41 px of empty space above the first
+          // row of every dashboard while the row below kept its own small
+          // margin. That reads as "more space above the content than below
+          // it", which is what the owner saw. The inset now belongs to the
+          // banner and exists only when the banner does.
           Padding(
-            padding: EdgeInsets.fromLTRB(
-              context.skin.space.padScreen.left,
-              context.skin.space.padScreen.top,
-              context.skin.space.padScreen.right,
-              0,
+            padding: EdgeInsets.symmetric(
+              horizontal: context.skin.space.padScreen.left,
             ),
             child: const DashboardDegradedBanner(),
           ),

@@ -16,13 +16,15 @@ import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import '../meshcore/fake_transport.dart';
 
-/// The status band's vertical padding is equal above and below.
+/// The status band's content sits centred in its height.
 ///
-/// It used to have none, with a `minHeight: 56` and a centring Row doing the
-/// work, so the height came from the tallest child. On the phone that measured
-/// 51 px above the Retry button and 11 px below, between the hairlines above
-/// and below the band — the "more space above than below" the owner reported,
-/// on both the LINK LOST text and the button next to it.
+/// It has no vertical padding of its own: a `minHeight: 56` and a centring Row
+/// do the work, so a 48 dp control lands 4 dp from each edge. Verified here
+/// because the owner reported the space above the Retry button as larger than
+/// the space below it — and measuring from the app bar's hairline rather than
+/// from the band's own top edge produced exactly that false reading. The real
+/// cause was the degraded banner reserving its inset while saying nothing; that
+/// is `dashboard_banner_gap_test.dart`.
 void main() {
   testWidgets('equal space above and below the band content',
       (WidgetTester t) async {
