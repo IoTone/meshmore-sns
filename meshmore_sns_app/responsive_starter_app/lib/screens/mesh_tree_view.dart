@@ -27,6 +27,34 @@ import '../ui/mm_shape.dart';
 /// work). Compared to the radial view this is *connectivity, not
 /// recency* — every edge in the picture is a confirmed route.
 class MeshTreeView extends StatefulWidget {
+  /// Every depth the slider can hold, plus the "no limit" stop.
+  ///
+  /// It used to be 0..6 with 6 meaning All, so the last step before All was
+  /// five hops — and on a mesh whose routes are mostly unlearned there is
+  /// nothing between five and everything, which made the control feel like a
+  /// switch. Ten hops is the real next step down from All: it is under the
+  /// firmware's own path ceiling, so "≤10" and "All" differ only by the peers
+  /// whose route the radio has not learned.
+  static const List<int> hopStops = <int>[0, 1, 2, 3, 4, 5, 10, allHops];
+
+  /// The stop that applies no depth limit at all.
+  static const int allHops = 99;
+
+  /// The slider position for a depth.
+  @visibleForTesting
+  static int hopIndex(int hops) {
+    if (hops >= allHops) return hopStops.length - 1;
+    final int i = hopStops.indexOf(hops);
+    if (i >= 0) return i;
+    // A value that is not a stop lands on the nearest stop at or below it, so
+    // an old depth can never select All by accident.
+    int best = 0;
+    for (int k = 0; k < hopStops.length; k++) {
+      if (hopStops[k] <= hops) best = k;
+    }
+    return best;
+  }
+
   const MeshTreeView({
     super.key,
     this.filteredNodes,
@@ -59,7 +87,7 @@ class _MeshTreeViewState extends State<MeshTreeView>
   /// almost every MeshCore contact is flood-routed, so a lower default
   /// shows only the handful of direct/repeater peers (the "3 nodes"
   /// surprise). Start wide; the user dials *down* to declutter.
-  int _maxHops = 6;
+  int _maxHops = MeshTreeView.allHops;
 
   /// When true the view continuously scales/pans to frame the whole
   /// graph (so a few-hundred-node cloud is always visible). Disabled
@@ -360,11 +388,14 @@ class _MeshTreeViewState extends State<MeshTreeView>
               right: 12,
               bottom: 12,
               child: _HopSlider(
-                value: _maxHops,
+                index: MeshTreeView.hopIndex(_maxHops),
+                stops: MeshTreeView.hopStops.length,
                 label: _hopLabel(_maxHops, l),
                 cs: cs,
-                onChanged: (int v) {
-                  if (v != _maxHops) setState(() => _maxHops = v);
+                onChanged: (int i) {
+                  final int hops = MeshTreeView.hopStops[
+                      i.clamp(0, MeshTreeView.hopStops.length - 1)];
+                  if (hops != _maxHops) setState(() => _maxHops = hops);
                 },
               ),
             ),
@@ -375,10 +406,8 @@ class _MeshTreeViewState extends State<MeshTreeView>
   }
 
   String _hopLabel(int hops, AppLocalizations l) {
+    if (hops >= MeshTreeView.allHops) return l.meshTreeHopsFlood;
     if (hops <= 0) return l.meshTreeHopsDirect;
-    // Top of the range = "everything", which in practice is mostly
-    // flood-routed contacts — label it the way the official app does.
-    if (hops >= 6) return l.meshTreeHopsFlood;
     return l.meshTreeHopsN(hops);
   }
 }
@@ -391,12 +420,18 @@ class _HopSlider extends StatelessWidget {
   static const double stripHeight = 56;
 
   const _HopSlider({
-    required this.value,
+    required this.index,
+    required this.stops,
     required this.label,
     required this.cs,
     required this.onChanged,
   });
-  final int value;
+
+  /// The current stop's position, not its hop count: the ladder is uneven
+  /// (0..5, 10, All) and a slider over hop counts would put five and ten a
+  /// pixel apart.
+  final int index;
+  final int stops;
   final String label;
   final ColorScheme cs;
   final ValueChanged<int> onChanged;
@@ -428,10 +463,10 @@ class _HopSlider extends StatelessWidget {
           ),
           Expanded(
             child: Slider(
-              value: value.toDouble(),
+              value: index.toDouble(),
               min: 0,
-              max: 6,
-              divisions: 6,
+              max: (stops - 1).toDouble(),
+              divisions: stops - 1,
               onChanged: (double v) => onChanged(v.round()),
             ),
           ),
