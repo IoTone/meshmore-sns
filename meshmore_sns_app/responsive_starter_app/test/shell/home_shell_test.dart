@@ -225,6 +225,46 @@ void main() {
     expect(y('CONNECTION'), lessThan(y('ABOUT')));
   });
 
+  testWidgets('R161 every settings route has one home in the hub',
+      (WidgetTester t) async {
+    // Two faults found on the phone 2026-11-11. "Networks" was listed twice —
+    // once under APP in the hub and once as its own row in App settings — and
+    // "Firmware" sat under CONNECTION, which is what the link is doing, while
+    // flashing a radio is a property of the radio. Both routes now live under
+    // RADIO, and no route may appear in two groups.
+    addTearDown(() => appRouter.go('/'));
+    t.view.physicalSize = const Size(400, 1600);
+    t.view.devicePixelRatio = 1.0;
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    await _pumpApp(t);
+    await t.tap(find.byTooltip('Settings'));
+    await t.pumpAndSettle();
+
+    double y(String s) => t.getTopLeft(find.text(s)).dy;
+    // Networks and Firmware are in the RADIO group: below its label and above
+    // the APP label that follows it.
+    for (final String row in <String>['Networks', 'Firmware']) {
+      expect(y(row), greaterThan(y('RADIO')), reason: '$row belongs under RADIO');
+      expect(y(row), lessThan(y('APP')),
+          reason: '$row drifted past the APP group');
+    }
+    // Each row appears exactly once in the hub.
+    for (final String row in <String>[
+      'Device configuration',
+      'Channels',
+      'Networks',
+      'Firmware',
+      'App settings',
+      'Profile & personalization',
+      'Offline maps',
+      'Diagnostics & connect',
+      'Tools',
+    ]) {
+      expect(find.text(row), findsOneWidget, reason: '$row is listed once');
+    }
+  });
+
   testWidgets('the view strip jumps views (R11, R64)', (WidgetTester t) async {
     await _pumpApp(t);
     await t.tap(find.byTooltip('Settings'));
