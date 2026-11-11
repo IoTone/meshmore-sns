@@ -2811,6 +2811,11 @@
   "bootFailedTitle": "Meshmore SNS を起動できませんでした。",
   "bootTryAgain": "再試行",
   "notifGroupBody": "{count, plural, other{{count} 件}} · {body}",
+  "notifUnreadDigest": "{count, plural, =1{未読メッセージ 1 件} other{未読メッセージ {count} 件}}",
+  "@notifUnreadDigest": {
+    "description": "The body of the one line standing for a queue of messages the app did not announce one by one.",
+    "placeholders": {"count": {"type": "int"}}
+  },
   "mapDensityCellSize": "セル {size}",
   "actionReplyMention": "{name} に返信",
   "actionReplyMentionSub": "名前を宛先にします。MeshCore のクライアントはこれを返信として読みます。",

@@ -115,6 +115,10 @@ class LocalNotifier implements Notifier {
   /// The summary's own id, outside the per-message range the controller picks.
   static const int summaryId = 0;
 
+  /// The batch line's own id, so a growing catch-up queue rewrites one entry
+  /// instead of stacking a second, a third and a twelfth.
+  static const int digestId = 1;
+
   /// Payloads posted, oldest first, bounded: the summary routes to the newest
   /// and the count only has to be plausible.
   final List<String> _recentPayloads = <String>[];
@@ -225,6 +229,42 @@ class LocalNotifier implements Notifier {
     );
     _rememberPayload(n.payload);
     await _postSummary(n);
+  }
+
+  /// The batch line: one entry for a queue, replaced in place as it grows.
+  ///
+  /// `onlyAlertOnce` is what makes a burst behave: the first post alerts, and
+  /// every later count inside the same catch-up window rewrites the same id, so
+  /// a dozen queued messages are one sound and one entry reading "12 unread
+  /// messages" rather than twelve of each.
+  ///
+  /// It does not post a group summary of its own. The entry already stands for
+  /// the whole queue, and a summary counted beside it would state the same
+  /// number twice.
+  @override
+  Future<void> showDigest(MessageDigest d) async {
+    final ({String name, String description}) ch = _channels[d.channelId]!;
+    await _plugin.show(
+      id: digestId,
+      title: d.title,
+      body: d.body,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          d.channelId,
+          ch.name,
+          channelDescription: ch.description,
+          importance: Importance.high,
+          priority: Priority.high,
+          category: AndroidNotificationCategory.message,
+          onlyAlertOnce: true,
+          autoCancel: true,
+          fullScreenIntent: false,
+          groupKey: _groupKey,
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+      payload: d.payload,
+    );
   }
 
   /// Two bundles ship, so anything but Japanese is English.

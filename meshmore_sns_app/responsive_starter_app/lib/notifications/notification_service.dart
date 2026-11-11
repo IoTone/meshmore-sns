@@ -58,6 +58,11 @@ abstract interface class NotificationStrings {
   /// text stays in the thread.
   String sosBody();
 
+  /// The body of the catch-up line: how many messages are waiting, and
+  /// nothing about their contents. A queue is read in the app, not on a lock
+  /// screen.
+  String unreadDigest(int count);
+
   /// The body of the ongoing notification shown while an alarm repeats.
   /// Deliberately not the message text: this line is about the alarm, and it
   /// stays on screen until the alarm ends.
@@ -82,6 +87,9 @@ class LocalizedNotificationStrings implements NotificationStrings {
 
   @override
   String sosBody() => l10n.notifBodySos;
+
+  @override
+  String unreadDigest(int count) => l10n.notifUnreadDigest(count);
 
   @override
   String alarmRunningBody() => l10n.notifAlarmRunningBody;
@@ -148,6 +156,22 @@ class NotificationService {
   StreamSubscription<ChatMessage>? _channelSub;
   StreamSubscription<ChatMessage>? _dmSub;
 
+  /// How long a burst keeps counting as catch-up after the last message.
+  ///
+  /// The radio hands over its whole queue when the link comes up, one frame at
+  /// a time, and the gaps between those frames are small but not zero. Three
+  /// seconds of quiet is the end of the queue.
+  Duration catchUpIdle = const Duration(seconds: 3);
+
+  /// The longest a catch-up window may run, so a radio that keeps dribbling
+  /// messages cannot hold the queue open forever.
+  Duration catchUpMax = const Duration(seconds: 20);
+
+  bool _catchingUp = false;
+  int _catchUpCount = 0;
+  Timer? _catchUpIdleTimer;
+  Timer? _catchUpMaxTimer;
+
   /// Message ids already announced this process. Bounded: a long session must
   /// not grow the set forever, and the oldest id is the least likely replay.
   final Set<String> _announced = <String>{};
@@ -163,6 +187,8 @@ class NotificationService {
   }
 
   Future<void> dispose() async {
+    _catchUpIdleTimer?.cancel();
+    _catchUpMaxTimer?.cancel();
     await _channelSub?.cancel();
     await _dmSub?.cancel();
     _channelSub = null;
@@ -207,6 +233,14 @@ class NotificationService {
     }
     final NotificationClass cls =
         sos ? NotificationClass.sos : NotificationClass.channel;
+    // A queue handed over when the link comes up is one event. Counting it
+    // here — after every silence rule has already decided the message would
+    // have been announced — keeps a muted channel muted and turns the rest into
+    // a single "N unread messages" line. An SOS never takes this path.
+    if (_catchingUp && !sos) {
+      _absorb(cls, channelName(m.channelIdx), 'ch:${m.channelIdx}');
+      return;
+    }
     // The bundle's other three switches. Honoured here rather than in the
     // notifier, because a cue and a vibration are the app's, not the OS's,
     // and a silent channel must not cue either.
@@ -233,9 +267,13 @@ class NotificationService {
     final String key = m.peerPubKeyHex ?? '';
     if (focus.isPeerOpen(key)) return;
     final String? name = peerDisplayName(key);
+    final bool sos = isSosLine(m.text);
+    if (_catchingUp && !sos) {
+      _absorb(NotificationClass.direct, name ?? key, 'dm:$key');
+      return;
+    }
     _effects.cue(NotificationClass.direct);
     _effects.vibrate();
-    final bool sos = isSosLine(m.text);
     notifier.show(MessageNotification(
       id: idFor(m.id),
       cls: sos ? NotificationClass.sos : NotificationClass.direct,
@@ -244,6 +282,59 @@ class NotificationService {
       body: sos ? strings().sosBody() : m.text,
       payload: 'dm:$key',
     ));
+  }
+
+  /// The link just reached ready, so the radio is about to hand over whatever
+  /// queued while the phone was away.
+  ///
+  /// Everything that arrives before the queue falls quiet is counted into one
+  /// entry rather than announced one message at a time. The window closes after
+  /// [catchUpIdle] with nothing new, or after [catchUpMax] whatever happens, and
+  /// from then on a message is announced on its own — which is what "only when
+  /// already connected" means: connected *and* caught up.
+  void onLinkReady() {
+    _catchingUp = true;
+    _catchUpCount = 0;
+    _catchUpIdleTimer?.cancel();
+    _catchUpMaxTimer?.cancel();
+    _catchUpMaxTimer = Timer(catchUpMax, _flushCatchUp);
+  }
+
+  /// Whether a queue is being counted right now. Read by tests and by anything
+  /// that wants to say "catching up" without guessing.
+  bool get isCatchingUp => _catchingUp;
+
+  void _absorb(
+    NotificationClass cls,
+    String? name,
+    String payload,
+  ) {
+    _catchUpCount++;
+    // The batch's one cue: the OS entry alerts on its first post because
+    // `onlyAlertOnce` silences the rewrites, and the app's own cue follows the
+    // same rule.
+    if (_catchUpCount == 1) {
+      _effects.cue(cls);
+      _effects.vibrate();
+    }
+    _catchUpIdleTimer?.cancel();
+    _catchUpIdleTimer = Timer(catchUpIdle, _flushCatchUp);
+    notifier.showDigest(MessageDigest(
+      count: _catchUpCount,
+      cls: cls,
+      title: strings().title(cls, name),
+      body: strings().unreadDigest(_catchUpCount),
+      payload: payload,
+    ));
+  }
+
+  void _flushCatchUp() {
+    _catchUpIdleTimer?.cancel();
+    _catchUpMaxTimer?.cancel();
+    _catchUpIdleTimer = null;
+    _catchUpMaxTimer = null;
+    _catchingUp = false;
+    _catchUpCount = 0;
   }
 
   /// Whether an alarm is repeating, as the OS should show it.

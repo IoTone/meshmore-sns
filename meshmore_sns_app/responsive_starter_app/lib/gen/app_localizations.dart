@@ -10732,6 +10732,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 message} other{{count} messages}} · {body}'**
   String notifGroupBody(int count, String body);
 
+  /// The body of the one line standing for a queue of messages the app did not announce one by one.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 unread message} other{{count} unread messages}}'**
+  String notifUnreadDigest(int count);
+
   /// No description provided for @mapDensityCellSize.
   ///
   /// In en, this message translates to:

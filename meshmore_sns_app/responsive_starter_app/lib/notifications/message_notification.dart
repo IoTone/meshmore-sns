@@ -50,3 +50,36 @@ class MessageNotification {
         NotificationClass.sos => 'mm_messages_sos',
       };
 }
+
+/// One line standing in for a batch of messages the app deliberately did not
+/// announce one at a time.
+///
+/// When the link comes up the radio hands over whatever queued while the phone
+/// was away, and that queue can be a dozen messages in two seconds. A dozen
+/// OS notifications for a moment the user did not witness is noise: one entry
+/// says "unread messages" and the count, and a tap opens the newest thread.
+class MessageDigest {
+  const MessageDigest({
+    required this.count,
+    required this.cls,
+    required this.title,
+    required this.body,
+    required this.payload,
+  });
+
+  /// How many messages this line stands for. Always at least one.
+  final int count;
+
+  /// The channel class of the newest message, which decides the OS channel.
+  final NotificationClass cls;
+
+  final String title;
+  final String body;
+  final String payload;
+
+  String get channelId => switch (cls) {
+        NotificationClass.channel => 'mm_messages_channel',
+        NotificationClass.direct => 'mm_messages_direct',
+        NotificationClass.sos => 'mm_messages_sos',
+      };
+}

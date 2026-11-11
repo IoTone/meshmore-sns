@@ -27,6 +27,10 @@ class _Strings implements NotificationStrings {
   String sosBody() => 'SOS body without coordinates';
 
   @override
+  String unreadDigest(int count) =>
+      count == 1 ? '1 unread message' : '$count unread messages';
+
+  @override
   String alarmRunningBody() => 'alarm running body';
 }
 

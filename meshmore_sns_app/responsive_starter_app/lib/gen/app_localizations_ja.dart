@@ -6181,6 +6181,17 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String notifUnreadDigest(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '未読メッセージ $count 件',
+      one: '未読メッセージ 1 件',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String mapDensityCellSize(String size) {
     return 'セル $size';
   }

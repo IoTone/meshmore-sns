@@ -52,6 +52,7 @@ import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/peer/peer_profiles.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/notifications/channel_notification_prefs.dart';
+import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/notifications/local_notifier.dart';
 import 'package:meshmore_sns_app/notifications/app_notification_effects.dart';
 import 'package:meshmore_sns_app/notifications/message_notification.dart';
@@ -211,6 +212,18 @@ Future<void> startApp() async {
     channelName: (int slot) => _channelName(controller, slot),
     isBlocked: blockFilter.hidesMessage,
   );
+  // Tell the service when the link comes up, so the queue the radio hands over
+  // is one "N unread messages" line rather than one notification per message.
+  // Only the edge into `ready` matters: a second notification for a link that
+  // was already up would start a catch-up window for ordinary traffic.
+  MeshcoreConnectionState lastLinkState = controller.state;
+  controller.addListener(() {
+    final MeshcoreConnectionState now = controller.state;
+    if (now != lastLinkState) {
+      lastLinkState = now;
+      if (now == MeshcoreConnectionState.ready) notifications.onLinkReady();
+    }
+  });
   notifier.onTap = (String payload) {
     if (payload.startsWith('dm:')) {
       appRouter.push('/dm/${payload.substring(3)}');

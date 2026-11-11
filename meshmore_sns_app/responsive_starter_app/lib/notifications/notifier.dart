@@ -32,6 +32,13 @@ abstract interface class Notifier {
   /// Shows [n], replacing any notification with the same [MessageNotification.id].
   Future<void> show(MessageNotification n);
 
+  /// Shows one line for a batch of messages, replacing the previous batch line.
+  ///
+  /// A catch-up queue is one event, not N: the entry carries the count and
+  /// alerts once, and later arrivals in the same batch update that count in
+  /// place instead of adding another entry.
+  Future<void> showDigest(MessageDigest d);
+
   /// Removes the notification a thread may still be showing.
   Future<void> cancelFor(String payload);
 

@@ -15,6 +15,13 @@ class FakeNotifier implements Notifier {
   @override
   Future<void> show(MessageNotification n) async => shown.add(n);
 
+  /// Batch lines, newest last. A growing queue replaces the previous entry, so
+  /// the last one here is the count the user would be looking at.
+  final List<MessageDigest> digests = <MessageDigest>[];
+
+  @override
+  Future<void> showDigest(MessageDigest d) async => digests.add(d);
+
   @override
   Future<void> cancelFor(String payload) async => cancelled.add(payload);
 
@@ -30,5 +37,6 @@ class FakeNotifier implements Notifier {
   void clear() {
     shown.clear();
     cancelled.clear();
+    digests.clear();
   }
 }

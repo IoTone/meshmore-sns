@@ -4368,6 +4368,11 @@
   "bootFailedTitle": "Meshmore SNS could not start.",
   "bootTryAgain": "Try again",
   "notifGroupBody": "{count, plural, =1{1 message} other{{count} messages}} · {body}",
+  "notifUnreadDigest": "{count, plural, =1{1 unread message} other{{count} unread messages}}",
+  "@notifUnreadDigest": {
+    "description": "The body of the one line standing for a queue of messages the app did not announce one by one.",
+    "placeholders": {"count": {"type": "int"}}
+  },
   "@notifGroupBody": {
     "placeholders": {
       "count": {
