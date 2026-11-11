@@ -2774,7 +2774,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get radioHealthReading => 'Reading…';
 
   @override
-  String get radioHealthUnread => 'Tap Read';
+  String get radioHealthUnread => 'No reading yet.';
 
   @override
   String radioHealthNoise(String dbm) {

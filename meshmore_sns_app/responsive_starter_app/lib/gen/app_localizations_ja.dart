@@ -2657,7 +2657,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get radioHealthReading => '取得中…';
 
   @override
-  String get radioHealthUnread => '「読む」を押してください';
+  String get radioHealthUnread => 'まだ読み取っていません。';
 
   @override
   String radioHealthNoise(String dbm) {

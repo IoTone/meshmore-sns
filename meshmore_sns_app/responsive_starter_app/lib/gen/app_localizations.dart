@@ -4703,7 +4703,7 @@ abstract class AppLocalizations {
   /// No description provided for @radioHealthUnread.
   ///
   /// In en, this message translates to:
-  /// **'Tap Read'**
+  /// **'No reading yet.'**
   String get radioHealthUnread;
 
   /// No description provided for @radioHealthNoise.

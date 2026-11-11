@@ -1779,7 +1779,7 @@
   "radioHealthTitle": "Radio health",
   "radioHealthRead": "Read",
   "radioHealthReading": "Reading…",
-  "radioHealthUnread": "Tap Read",
+  "radioHealthUnread": "No reading yet.",
   "radioHealthNoise": "Noise {dbm} dBm",
   "@radioHealthNoise": {
     "placeholders": {

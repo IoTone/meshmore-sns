@@ -438,6 +438,8 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
+                  alignment: WrapAlignment.start,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: <Widget>[
                     MmAction(
                       key: const ValueKey<String>('diag-connect'),
@@ -557,11 +559,17 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                 // first button was indented by a widget that only existed to
                 // fake a margin, and the restart carried an icon the other
                 // three did not. `MmAction` in a padded Wrap fixes both.
+                // One column of equal-width actions, not a Wrap.
+                //
+                // A Wrap gave each button its label's own width, and these four
+                // labels are 15 to 22 characters: on the phone they stacked one
+                // per line at four different widths, which is the "too many
+                // rows, badly laid out" the owner reported. Equal width makes
+                // the column deliberate, and a column cannot be ragged.
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       MmAction(
                         icon: Icons.campaign_outlined,
@@ -569,18 +577,21 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                         onPressed: () => _send(mc,
                             MeshcoreFrameCodec.sendSelfAdvert(), 'self-advert'),
                       ),
+                      const SizedBox(height: 8),
                       MmAction(
                         icon: Icons.schedule,
                         label: l.diagnosticsReadClock,
                         onPressed: () => _send(mc,
                             MeshcoreFrameCodec.getDeviceTime(), 'get-time'),
                       ),
+                      const SizedBox(height: 8),
                       MmAction(
                         icon: Icons.download_outlined,
                         label: l.diagnosticsPullMessage,
                         onPressed: () => _send(mc,
                             MeshcoreFrameCodec.syncNextMessage(), 'sync-msg'),
                       ),
+                      const SizedBox(height: 8),
                       // The radio's own restart (`CMD_REBOOT` 0x13). It is the
                       // only way out of a radio that has stopped answering its
                       // own screens, and it silently drops any message it was

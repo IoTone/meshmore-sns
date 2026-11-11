@@ -1601,7 +1601,7 @@
   "radioHealthTitle": "無線の状態",
   "radioHealthRead": "取得",
   "radioHealthReading": "取得中…",
-  "radioHealthUnread": "「読む」を押してください",
+  "radioHealthUnread": "まだ読み取っていません。",
   "radioHealthNoise": "ノイズ {dbm} dBm",
   "radioHealthLast": "直近 {rssi} dBm · SNR {snr} dB",
   "radioHealthBattery": "電池 {volts} V",

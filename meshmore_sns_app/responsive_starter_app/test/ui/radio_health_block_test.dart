@@ -111,7 +111,11 @@ void main() {
   testWidgets('before a read, the block says so rather than showing zeros',
       (WidgetTester t) async {
     await _pump(t);
-    expect(find.textContaining('Tap Read'), findsOneWidget);
+    // The line states the fact; the Read button beside it is the action. It
+    // used to say "Tap Read", which is the button's own label written out one
+    // line below the button.
+    expect(find.textContaining('No reading yet'), findsOneWidget);
+    expect(find.textContaining('Tap Read'), findsNothing);
   });
 
   testWidgets('the radio numbers are shown, each with its source',
