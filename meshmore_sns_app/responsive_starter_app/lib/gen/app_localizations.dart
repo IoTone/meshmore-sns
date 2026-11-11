@@ -2708,12 +2708,6 @@ abstract class AppLocalizations {
   /// **'Send this message again'**
   String get actionRetrySub;
 
-  /// No description provided for @actionReply.
-  ///
-  /// In en, this message translates to:
-  /// **'Reply'**
-  String get actionReply;
-
   /// No description provided for @actionCopy.
   ///
   /// In en, this message translates to:
@@ -10749,6 +10743,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cells {size}'**
   String mapDensityCellSize(String size);
+
+  /// No description provided for @actionReplyMention.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply to {name}'**
+  String actionReplyMention(String name);
+
+  /// No description provided for @actionReplyMentionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Addresses them by name, the way MeshCore clients read a reply.'**
+  String get actionReplyMentionSub;
+
+  /// No description provided for @actionQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote this message'**
+  String get actionQuote;
+
+  /// No description provided for @actionQuoteSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Puts their words in the box; nothing names them.'**
+  String get actionQuoteSub;
+
+  /// No description provided for @actionReplyNoName.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get actionReplyNoName;
+
+  /// No description provided for @actionReplyNoNameSub.
+  ///
+  /// In en, this message translates to:
+  /// **'No sender name on this message, so there is nobody to address.'**
+  String get actionReplyNoNameSub;
 }
 
 class _AppLocalizationsDelegate

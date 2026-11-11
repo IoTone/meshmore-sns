@@ -195,7 +195,7 @@ void main() {
     mc.dispose();
   });
 
-  testWidgets('Reply prepends a quoted prefix into the composer (R20)',
+  testWidgets('Reply addresses the sender in the MeshCore form (R20)',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -211,17 +211,54 @@ void main() {
     await mc.connect();
     fake.emit(selfInfoFrame());
     await t.pump();
-    fake.emit(channelMsgFrame(text: 'hey there'));
+    // A channel line with a sender prefix: the name is the address the
+    // protocol gives us, and `@[Name] ` is the form MeshCore clients read as
+    // a reply (`meshcore.js` writes exactly this).
+    fake.emit(channelMsgFrame(text: 'MikeP: hey there'));
     await t.pumpAndSettle();
 
-    await t.longPress(find.text('hey there'));
+    await t.longPress(find.textContaining('hey there'));
     await t.pumpAndSettle();
-    await t.tap(find.text('Reply'));
+    await t.tap(find.textContaining('Reply to MikeP'));
     await t.pumpAndSettle();
 
     final TextField field =
         t.widget<TextField>(find.byType(TextField));
-    expect(field.controller!.text, startsWith('> hey there'));
+    expect(field.controller!.text, startsWith('@[MikeP] '),
+        reason: 'a MeshCore reply addresses the sender by name');
+    mc.dispose();
+  });
+
+  testWidgets('Quote puts their words in the box and names nobody',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final TtsController tts = TtsController(speaker: FakeTtsSpeaker());
+    await t.pumpWidget(_host(mc, tts));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pump();
+    fake.emit(channelMsgFrame(text: 'MikeP: hey there'));
+    await t.pumpAndSettle();
+
+    await t.longPress(find.textContaining('hey there'));
+    await t.pumpAndSettle();
+    await t.tap(find.textContaining('Quote this message'));
+    await t.pumpAndSettle();
+
+    final TextField field =
+        t.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, startsWith('> '),
+        reason: 'the quote keeps the words and adds no address');
+    expect(field.controller!.text, contains('hey there'));
+    expect(field.controller!.text, isNot(contains('@[')));
     mc.dispose();
   });
 

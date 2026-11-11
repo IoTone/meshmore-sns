@@ -23,6 +23,11 @@ bool isMentioned(
   if (name.isNotEmpty) {
     if (_bounded(haystack, name)) return true;
     if (_bounded(haystack, '@$name')) return true;
+    // The MeshCore channel-reply form: `@[Name] text`. `meshcore.js` writes a
+    // reply exactly this way, so a reply from another client must count as
+    // naming me or the mentions-only rule misses the one message that was
+    // addressed to me by construction.
+    if (haystack.contains('@[$name]')) return true;
   }
   if (matchKeySuffix) {
     final String hex = (keySuffix ?? '').trim().toLowerCase();

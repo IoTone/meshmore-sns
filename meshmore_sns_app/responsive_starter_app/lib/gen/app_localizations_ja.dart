@@ -1503,9 +1503,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionRetrySub => 'このメッセージをもう一度送信';
 
   @override
-  String get actionReply => '返信';
-
-  @override
   String get actionCopy => 'コピー';
 
   @override
@@ -6190,4 +6187,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String mapDensityCellSize(String size) {
     return 'セル $size';
   }
+
+  @override
+  String actionReplyMention(String name) {
+    return '$name に返信';
+  }
+
+  @override
+  String get actionReplyMentionSub =>
+      '名前を宛先にします。MeshCore のクライアントはこれを返信として読みます。';
+
+  @override
+  String get actionQuote => 'このメッセージを引用';
+
+  @override
+  String get actionQuoteSub => '相手の言葉を入力欄に入れます。名前は宛先になりません。';
+
+  @override
+  String get actionReplyNoName => '返信';
+
+  @override
+  String get actionReplyNoNameSub => 'このメッセージには送信者名がないため、宛先にできる相手がいません。';
 }

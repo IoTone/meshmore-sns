@@ -567,7 +567,16 @@ class _ChatScreenState extends State<ChatScreen>
     final ChatAction? action = await showChatActions(context, m);
     if (action == null || !mounted) return;
     switch (action) {
-      case ChatAction.reply:
+      case ChatAction.replyMention:
+        // The MeshCore reply: address the person. `@[Name] ` is the form the
+        // ecosystem reads as a reply, so another client shows this as an
+        // answer to that sender rather than as prose that starts oddly.
+        final String prefix =
+            mentionPrefixFor(parseChannelSenderName(m.text)) ?? '';
+        _input.text = prefix + _input.text;
+        _input.selection = TextSelection.collapsed(offset: _input.text.length);
+        break;
+      case ChatAction.quote:
         final String quote = buildReplyQuote(m);
         _input.text = quote + _input.text;
         _input.selection = TextSelection.collapsed(offset: _input.text.length);

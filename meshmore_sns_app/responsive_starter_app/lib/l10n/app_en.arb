@@ -966,7 +966,6 @@
   },
   "dmSend": "Send DM",
   "actionRetrySub": "Send this message again",
-  "actionReply": "Reply",
   "actionCopy": "Copy",
   "actionDeleteLocal": "Delete locally",
   "actionDeleteLocalSub": "Removes this row from your history only — over-the-air messages cannot be recalled.",
@@ -4387,5 +4386,18 @@
         "type": "String"
       }
     }
-  }
+  },
+  "actionReplyMention": "Reply to {name}",
+  "@actionReplyMention": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "actionReplyMentionSub": "Addresses them by name, the way MeshCore clients read a reply.",
+  "actionQuote": "Quote this message",
+  "actionQuoteSub": "Puts their words in the box; nothing names them.",
+  "actionReplyNoName": "Reply",
+  "actionReplyNoNameSub": "No sender name on this message, so there is nobody to address."
 }

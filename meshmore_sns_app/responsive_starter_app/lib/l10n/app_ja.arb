@@ -886,7 +886,6 @@
   },
   "dmSend": "DM 送信",
   "actionRetrySub": "このメッセージをもう一度送信",
-  "actionReply": "返信",
   "actionCopy": "コピー",
   "actionDeleteLocal": "ローカル削除",
   "actionDeleteLocalSub": "履歴からこの行のみ削除 — OTA 送信済みのメッセージは取り消せません。",
@@ -2813,5 +2812,11 @@
   "bootFailedTitle": "Meshmore SNS を起動できませんでした。",
   "bootTryAgain": "再試行",
   "notifGroupBody": "{count, plural, other{{count} 件}} · {body}",
-  "mapDensityCellSize": "セル {size}"
+  "mapDensityCellSize": "セル {size}",
+  "actionReplyMention": "{name} に返信",
+  "actionReplyMentionSub": "名前を宛先にします。MeshCore のクライアントはこれを返信として読みます。",
+  "actionQuote": "このメッセージを引用",
+  "actionQuoteSub": "相手の言葉を入力欄に入れます。名前は宛先になりません。",
+  "actionReplyNoName": "返信",
+  "actionReplyNoNameSub": "このメッセージには送信者名がないため、宛先にできる相手がいません。"
 }

@@ -324,7 +324,15 @@ class _DmScreenState extends State<DmScreen> {
     final ChatAction? action = await showChatActions(context, m);
     if (action == null || !mounted) return;
     switch (action) {
-      case ChatAction.reply:
+      case ChatAction.replyMention:
+        // A direct message is already addressed to exactly one node, so there
+        // is nobody to name: the reply is the quote, and the thread is the
+        // address. MeshCore has no reply field on a DM at all.
+        final String quote = buildReplyQuote(m);
+        _input.text = quote + _input.text;
+        _input.selection = TextSelection.collapsed(offset: _input.text.length);
+        break;
+      case ChatAction.quote:
         final String quote = buildReplyQuote(m);
         _input.text = quote + _input.text;
         _input.selection = TextSelection.collapsed(offset: _input.text.length);

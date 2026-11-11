@@ -1585,9 +1585,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionRetrySub => 'Send this message again';
 
   @override
-  String get actionReply => 'Reply';
-
-  @override
   String get actionCopy => 'Copy';
 
   @override
@@ -6450,4 +6447,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String mapDensityCellSize(String size) {
     return 'Cells $size';
   }
+
+  @override
+  String actionReplyMention(String name) {
+    return 'Reply to $name';
+  }
+
+  @override
+  String get actionReplyMentionSub =>
+      'Addresses them by name, the way MeshCore clients read a reply.';
+
+  @override
+  String get actionQuote => 'Quote this message';
+
+  @override
+  String get actionQuoteSub =>
+      'Puts their words in the box; nothing names them.';
+
+  @override
+  String get actionReplyNoName => 'Reply';
+
+  @override
+  String get actionReplyNoNameSub =>
+      'No sender name on this message, so there is nobody to address.';
 }

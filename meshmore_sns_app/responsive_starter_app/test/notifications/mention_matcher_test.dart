@@ -72,4 +72,22 @@ void main() {
       );
     });
   });
+
+  test('the MeshCore reply form counts as naming me', () {
+    // `meshcore.js` writes a channel reply as `@[Name] text`, so another
+    // client's reply to me carries my name in that exact bracket form. A
+    // mentions-only channel must alert on it: the one message addressed to me
+    // by construction is the one a bare-word rule would miss if the name is
+    // written inside brackets.
+    expect(isMentioned('@[Sam] are you there', 'Sam'), isTrue);
+    expect(isMentioned('@[sam] lower case works too', 'Sam'), isTrue);
+    // A longer name does not match a shorter one through the bracket form.
+    expect(isMentioned('@[Samantha] hello', 'Sam'), isFalse);
+    // But the whole word still matches wherever it is written.
+    expect(isMentioned('@[Sam] but not Samantha', 'Samantha'), isTrue);
+    expect(isMentioned('@[Other] not for me', 'Sam'), isFalse);
+    // The plain forms still hold.
+    expect(isMentioned('Sam: are you there', 'Sam'), isTrue);
+    expect(isMentioned('@Sam are you there', 'Sam'), isTrue);
+  });
 }

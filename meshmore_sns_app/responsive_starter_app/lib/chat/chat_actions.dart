@@ -12,6 +12,7 @@ import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/failure.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../screens/delivery_status_icon.dart';
 // The conversation picker is a widget library rather than a screen, and a
 // forward is the same question a tool asks: which conversation?
@@ -23,7 +24,32 @@ import 'draft_store.dart';
 /// on a failed outgoing row) for chat
 /// rows (channel chat **and** DM thread). Long-press a row OR tap
 /// the trailing affordance to open this sheet.
-enum ChatAction { reply, copy, forward, delete, retry, report }
+/// What a long-press on a row can do.
+///
+/// [replyMention] and [quote] are deliberately two rows, not one. Research
+/// into the MeshCore ecosystem settled the convention: a channel reply is the
+/// original author's name in the message, written `@[Name] text`, because a
+/// channel message carries no identity the protocol can prove — the name is
+/// the address. `meshcore.js` does exactly this in `Message.reply(...)` with
+/// its `mention` option on by default. Our old Reply produced `> quoted text`,
+/// which no MeshCore client reads as a reply, so a reply from here was just
+/// prose with a `>` in front of it.
+///
+/// They are still separate actions because they answer different questions:
+/// "reply to this person" addresses them, "quote this message" puts their
+/// words in the box. A reader who wants one does not always want the other.
+enum ChatAction { replyMention, quote, copy, forward, delete, retry, report }
+
+/// The channel-reply prefix MeshCore clients read as a reply: `@[Name] `.
+///
+/// Returns null when the row names nobody, which is every outgoing message and
+/// any incoming line whose sender prefix could not be parsed. A reply to
+/// nobody is not a reply, so the caller offers the plain quote instead.
+String? mentionPrefixFor(String? sender) {
+  final String name = (sender ?? '').trim();
+  if (name.isEmpty) return null;
+  return '@[$name] ';
+}
 
 /// Modal bottom sheet listing the three actions. Returns the chosen
 /// action (or null on dismiss). The caller wires the consequences:
@@ -32,12 +58,21 @@ enum ChatAction { reply, copy, forward, delete, retry, report }
 /// confirmation (Delete).
 Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
   final AppLocalizations l = AppLocalizations.of(context);
+  // The addressable name, if this row has one: the parsed channel sender, or
+  // null for our own messages and for a line whose prefix did not parse.
+  final String? sender = m.outgoing ? null : parseChannelSenderName(m.text);
   return showModalBottomSheet<ChatAction>(
     context: context,
     showDragHandle: true,
     builder: (BuildContext ctx) => SafeArea(
       top: false,
-      child: Column(
+      // Scrollable, because this list is seven rows on a long-press that
+      // offers retry, report and both reply forms, and a bottom sheet is capped
+      // at 9/16 of the screen: the extra row pushed it 162 px past that cap at
+      // 420 x 900. A menu that clips its own last row is a menu with a dead
+      // action.
+      child: SingleChildScrollView(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           // Route and signal belong to the transmission, not to the message,
@@ -65,10 +100,26 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
               onTap: () => Navigator.pop(ctx, ChatAction.retry),
             trailing: const Icon(Icons.chevron_right, size: 18),
             ),
+          // Two answers, because they are different questions: address the
+          // person (the MeshCore reply) or put their words in the box.
           ListTile(
             leading: const Icon(Icons.reply),
-            title: Text(l.actionReply),
-            onTap: () => Navigator.pop(ctx, ChatAction.reply),
+            title: Text(sender == null
+                ? l.actionReplyNoName
+                : l.actionReplyMention(sender)),
+            subtitle:
+                Text(sender == null ? l.actionReplyNoNameSub : l.actionReplyMentionSub),
+            enabled: sender != null,
+            onTap: sender == null
+                ? null
+                : () => Navigator.pop(ctx, ChatAction.replyMention),
+            trailing: const Icon(Icons.chevron_right, size: 18),
+          ),
+          ListTile(
+            leading: const Icon(Icons.format_quote),
+            title: Text(l.actionQuote),
+            subtitle: Text(l.actionQuoteSub),
+            onTap: () => Navigator.pop(ctx, ChatAction.quote),
             trailing: const Icon(Icons.chevron_right, size: 18),
           ),
           ListTile(
@@ -108,6 +159,7 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
           ),
           const SizedBox(height: 4),
         ],
+        ),
       ),
     ),
   );
