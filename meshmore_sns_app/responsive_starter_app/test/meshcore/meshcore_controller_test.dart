@@ -429,7 +429,11 @@ void main() {
       // The graph should connect a flood node to self with a dashed
       // (flood) edge — reachable, but no fixed path. It must NOT be a
       // floating orphan, and must NOT claim a solid direct line.
-      final MeshGraph g = MeshGraph.fromController(ctrl, maxHops: 6);
+      // All, not six: below All a peer with no learned route is left out (see
+      // the rule on `MeshGraph.fromController`), and this test is about the
+      // edge a flood peer gets, so it has to be on screen.
+      final MeshGraph g = MeshGraph.fromController(ctrl);
+
       final MeshGraphEdge floodEdge = g.edges.firstWhere(
         (MeshGraphEdge e) => e.toId == peer.pubKeyHex,
         orElse: () => throw StateError('flood node had no edge to self'),
@@ -625,11 +629,17 @@ void main() {
       expect(hasNode(one, 'peer210'), isFalse);
     });
 
-    test('an unknown route is never filtered out by a hop limit', () async {
-      // The public mesh this app ships on has ~183 advert-only nodes and no
-      // learned routes, so the old rule (unknown routes only at maxHops >= 6)
-      // emptied the tree at every other setting and the slider looked broken.
-      // A limit means "nothing deeper than N"; an unknown depth is not deep.
+    test('below All, only a learned route is shown; All shows everything',
+        () async {
+      // The rule reversed on 2026-11-11, and this is the test that records why.
+      //
+      // Keeping unknown-depth peers at every setting made the tree non-empty on
+      // an unlearned mesh, but it also made the ladder filter *nothing*: All,
+      // ten, three, one and Direct drew the same picture, which the owner
+      // reported as the control being broken. A stop called "≤N hops" now
+      // asserts only what it can check — peers whose route the radio learned, at
+      // most N deep — and All (the default) still shows every peer, including
+      // the ones whose depth nobody knows.
       final FakeMeshcoreTransport fake =
           FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl = MeshcoreController(
@@ -641,8 +651,8 @@ void main() {
       fake.emit(selfInfoFrame());
       await Future<void>.delayed(Duration.zero);
 
-      // One direct contact, one 2-hop contact, and two advert-only nodes with
-      // no outPath at all (the floaters).
+      // Two repeaters, one direct contact, one 2-hop contact, and two
+      // advert-only nodes with no outPath at all (the floaters).
       fake.emit(contactFrame(firstByte: 0xB1, type: 2, outPath: <int>[]));
       fake.emit(contactFrame(firstByte: 0xB2, type: 2, outPath: <int>[]));
       fake.emit(contactFrame(firstByte: 0xD0, type: 1, outPath: <int>[]));
@@ -655,18 +665,31 @@ void main() {
       bool hasNode(MeshGraph g, String name) =>
           g.nodes.any((MeshGraphNode n) => n.label == name);
 
-      // Direct only: the 2-hop contact drops, both floaters stay.
+      // Direct only: the 2-hop contact drops, and so do the floaters, because
+      // a depth limit cannot say anything about a peer with no learned route.
       final MeshGraph direct = MeshGraph.fromController(ctrl, maxHops: 0);
       expect(hasNode(direct, 'peer208'), isTrue, reason: 'direct contact');
       expect(hasNode(direct, 'peer210'), isFalse, reason: 'known 2 hops');
-      expect(hasNode(direct, 'Floater1'), isTrue,
-          reason: 'depth unknown, so a depth limit cannot exclude it');
-      expect(hasNode(direct, 'Floater2'), isTrue);
+      expect(hasNode(direct, 'Floater1'), isFalse,
+          reason: 'no learned route, so ≤0 hops cannot claim it');
+      expect(hasNode(direct, 'Floater2'), isFalse);
+      expect(direct.routed, greaterThan(0),
+          reason: 'the contacts at depth 0 are routed');
+      expect(direct.hidden, greaterThan(0));
 
-      // And at the widest setting everything is still there.
-      final MeshGraph all = MeshGraph.fromController(ctrl, maxHops: 6);
-      expect(all.nodes.length, greaterThanOrEqualTo(direct.nodes.length));
-      expect(hasNode(all, 'peer210'), isTrue);
+      // ≤2 hops reaches the second contact.
+      final MeshGraph two = MeshGraph.fromController(ctrl, maxHops: 2);
+      expect(hasNode(two, 'peer210'), isTrue);
+      expect(two.routed, greaterThan(direct.routed),
+          reason: 'the 2-hop contact joins at ≤2');
+
+      // All is the default and shows the floaters too.
+      final MeshGraph all = MeshGraph.fromController(ctrl);
+      expect(hasNode(all, 'Floater1'), isTrue);
+      expect(hasNode(all, 'Floater2'), isTrue);
+      expect(all.hidden, 0, reason: 'All hides nothing');
+      expect(all.nodes.length, greaterThan(direct.nodes.length));
+      expect(all.peers, direct.peers, reason: 'the same peers were offered');
     });
   });
 

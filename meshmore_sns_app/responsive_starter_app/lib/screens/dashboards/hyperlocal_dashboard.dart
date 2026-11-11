@@ -146,6 +146,7 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
                                     fg: skin.color.fg,
                                     fgMuted: skin.color.fgMuted,
                                     monoFamily: skin.type.monoFamily,
+                                    type: skin.type,
                                     northLabel: 'N',
                                     headingDegrees: _compass.heading,
                                     northMarker: VizPalette.north,
@@ -343,6 +344,7 @@ class _RadarPainter extends CustomPainter {
     required this.fg,
     required this.fgMuted,
     required this.monoFamily,
+    required this.type,
     required this.northLabel,
     required this.headingDegrees,
     required this.northMarker,
@@ -361,6 +363,12 @@ class _RadarPainter extends CustomPainter {
   final Color fg;
   final Color fgMuted;
   final String monoFamily;
+
+  /// The skin's type roles. A painter has no [BuildContext], so the sizes come
+  /// in rather than being reached for: the callouts used a literal 11.5 and the
+  /// north letter a literal 10, which meant the radar's own text ignored both
+  /// the in-app font size and the system one while everything around it grew.
+  final MmType type;
   final String northLabel;
 
   /// Which way the phone points, or null when nothing knows. The dial turns so
@@ -443,7 +451,7 @@ class _RadarPainter extends CustomPainter {
           center.dy - (maxR + 4) * math.cos(na),
         ),
         northMarker,
-        10,
+        radarLabelSizes(type).north,
         center: true);
 
     // Blips (dots only — in-range names are drawn as decluttered
@@ -475,8 +483,8 @@ class _RadarPainter extends CustomPainter {
   /// lines back to their blips. Split into left/right columns and pushed
   /// vertically apart so they never overlap each other or the radar.
   void _drawCallouts(Canvas canvas, Size size) {
-    const double fontSize = 11.5;
-    const double minGap = 15;
+    final double fontSize = radarLabelSizes(type).callout;
+    final double minGap = 15;
     final double top = 10, bottom = size.height - 10;
     final double gutter = (size.width / 2 - maxR - 8).clamp(34, 96);
 
@@ -484,10 +492,16 @@ class _RadarPainter extends CustomPainter {
     final List<_LabelSlot> right = <_LabelSlot>[];
     for (final _PositionedBlip b in blips) {
       if (!b.inRange) continue;
+      // Measured, not estimated: `layout(maxWidth:)` with a single line and an
+      // ellipsis puts the cut exactly where the gutter ends, at whatever size
+      // the skin is currently drawing. The old `_fit` guessed from an average
+      // character width, which is wrong for every glyph that is not average and
+      // wrong by the whole scale factor once the text grew.
       final TextPainter tp = _textPainter(
-          _fit(b.node.name.isEmpty ? b.node.shortId : b.node.name,
-              gutter, fontSize),
-          fontSize);
+        b.node.name.isEmpty ? b.node.shortId : b.node.name,
+        fontSize,
+        maxWidth: gutter,
+      );
       // The column is decided by where the blip *appears*, not where it sits
       // in the unrotated layout, or a label would cross the dial after a turn.
       final Offset at = _turn(b.offset);
@@ -536,26 +550,19 @@ class _RadarPainter extends CustomPainter {
     }
   }
 
-  /// Truncate [name] (with an ellipsis) to roughly fit [maxWidth] at the
-  /// mono face — cheap char-width estimate, no per-frame measuring loop.
-  String _fit(String name, double maxWidth, double fontSize) {
-    final int maxChars = (maxWidth / (fontSize * 0.62)).floor();
-    if (maxChars <= 1) return '…';
-    if (name.length <= maxChars) return name;
-    return '${name.substring(0, maxChars - 1)}…';
-  }
-
-  TextPainter _textPainter(String text, double size) => TextPainter(
-        text: TextSpan(
-          text: text,
-          style: TextStyle(
-              color: fg,
-              fontSize: size,
-              fontFamily: monoFamily,
-              fontWeight: FontWeight.w500),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
+  /// One line, ellipsised at [maxWidth] by the real text engine.
+  ///
+  /// The layout is bounded rather than estimated, so the cut lands on the
+  /// gutter's edge at the size the skin is drawing right now — the case the
+  /// character-count estimate got wrong as soon as the text scale changed.
+  TextPainter _textPainter(String text, double size, {double? maxWidth}) =>
+      radarCalloutPainter(
+        text: text,
+        size: size,
+        maxWidth: maxWidth,
+        monoFamily: monoFamily,
+        color: fg,
+      );
 
   void _label(Canvas canvas, String text, Offset at, Color color,
       double size,
@@ -742,3 +749,43 @@ class _StatusRail extends StatelessWidget {
     );
   }
 }
+
+/// One callout line, ellipsised at [maxWidth].
+///
+/// A top-level function rather than a method so the two properties that matter
+/// can be asserted without a canvas: the size it draws at is the size it was
+/// given, and a name too long for the gutter is cut by the text engine at the
+/// gutter's edge rather than by a character-count guess. The guess is what the
+/// radar used until 2026-11-11, and it was wrong by the whole scale factor as
+/// soon as the text grew.
+@visibleForTesting
+TextPainter radarCalloutPainter({
+  required String text,
+  required double size,
+  required String monoFamily,
+  required Color color,
+  double? maxWidth,
+}) =>
+    TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+            color: color,
+            fontSize: size,
+            fontFamily: monoFamily,
+            fontWeight: FontWeight.w500),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+      ellipsis: '\u2026',
+    )..layout(maxWidth: maxWidth ?? double.infinity);
+
+/// The two sizes the dial draws its own text at, taken from the skin.
+///
+/// A function rather than two fields so the rule is assertable: the radar's
+/// labels come from the same scale as everything else and never from a literal,
+/// which is what they did until 2026-11-11 (11.5 for a name, 10 for the north
+/// letter), leaving the dial as the one surface that ignored the font setting.
+@visibleForTesting
+({double callout, double north}) radarLabelSizes(MmType type) =>
+    (callout: type.sizeSm, north: type.sizeMicro);

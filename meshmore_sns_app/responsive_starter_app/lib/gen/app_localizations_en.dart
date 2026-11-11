@@ -2163,6 +2163,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String meshTreeHopsRouted(int count) {
+    return '$count routed';
+  }
+
+  @override
+  String get meshTreeHopsNoRoutes => 'no routes';
+
+  @override
   String get meshTreeRecenter => 'Recenter';
 
   @override

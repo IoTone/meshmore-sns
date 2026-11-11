@@ -38,7 +38,26 @@ class MeshTreeView extends StatefulWidget {
   static const List<int> hopStops = <int>[0, 1, 2, 3, 4, 5, 10, allHops];
 
   /// The stop that applies no depth limit at all.
-  static const int allHops = 99;
+  ///
+  /// The number lives on [MeshGraph] because the filter needs to know which
+  /// value means "everything"; this is the same constant under the name the
+  /// screen uses.
+  static const int allHops = MeshGraph.noLimit;
+
+  /// The label for a stop, including what the limit actually reached.
+  ///
+  /// A stop below All filters on the depth the *radio* learned, so on a mesh
+  /// with no learned routes it can only be honest about that: "no routes"
+  /// rather than a count of zero that reads as a bug.
+  @visibleForTesting
+  static String hopLabelFor(int hops, AppLocalizations l,
+      {required int routed}) {
+    if (hops >= allHops) return l.meshTreeHopsFlood;
+    final String base = hops <= 0 ? l.meshTreeHopsDirect : l.meshTreeHopsN(hops);
+    return routed == 0
+        ? '$base · ${l.meshTreeHopsNoRoutes}'
+        : '$base · ${l.meshTreeHopsRouted(routed)}';
+  }
 
   /// The slider position for a depth.
   @visibleForTesting
@@ -393,7 +412,8 @@ class _MeshTreeViewState extends State<MeshTreeView>
               child: _HopSlider(
                 index: MeshTreeView.hopIndex(_maxHops),
                 stops: MeshTreeView.hopStops.length,
-                label: _hopLabel(_maxHops, l),
+                label: MeshTreeView.hopLabelFor(_maxHops, l,
+                    routed: graph.routed),
                 cs: cs,
                 onChanged: (int i) {
                   final int hops = MeshTreeView.hopStops[
@@ -408,11 +428,6 @@ class _MeshTreeViewState extends State<MeshTreeView>
     );
   }
 
-  String _hopLabel(int hops, AppLocalizations l) {
-    if (hops >= MeshTreeView.allHops) return l.meshTreeHopsFlood;
-    if (hops <= 0) return l.meshTreeHopsDirect;
-    return l.meshTreeHopsN(hops);
-  }
 }
 
 /// Compact hop-depth slider for the tree view. 0..6 with a label
@@ -445,23 +460,42 @@ class _HopSlider extends StatelessWidget {
         borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .55)),
       ),
-      child: Row(
+      // The label sits above the slider, not beside it.
+      //
+      // It used to be a fixed 96 dp box beside the slider, which held "Direct"
+      // but not "≤3 hops · 12 routed": the sentence was clipped to nothing
+      // useful. Widening it beside the slider then traded the label's room for
+      // the control's, and at 320 dp with 2.0 text neither had enough — the
+      // label needed three lines and the slider was down to its floor. A
+      // readout and a control do not have to share a line to belong together:
+      // stacked, the label gets the full width and the slider gets the full
+      // width, at every scale, with nothing to tune.
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(Icons.account_tree, size: 14, color: cs.primary),
-          const SizedBox(width: 6),
-          SizedBox(
-            width: 96,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: cs.onSurface,
-                fontSize: context.skin.type.sizeSm,
-                fontFamily: context.skin.type.monoFamily,
-                letterSpacing: 1,
+          Row(
+            children: <Widget>[
+              Icon(Icons.account_tree,
+                  size: context.skin.type.sizeMicro + 4, color: cs.primary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: context.skin.type.sizeSm,
+                    fontFamily: context.skin.type.monoFamily,
+                    letterSpacing: 1,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-          Expanded(
+          SizedBox(
+            width: double.infinity,
             child: Slider(
               value: index.toDouble(),
               min: 0,

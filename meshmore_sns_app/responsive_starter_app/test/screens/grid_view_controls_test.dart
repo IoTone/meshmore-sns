@@ -91,6 +91,54 @@ void main() {
     });
   }
 
+  // The hop strip is a readout plus a control, and the readout now carries a
+  // count: "≤3 hops · 12 routed". It used to sit in a fixed 96 dp box, which
+  // clipped that to nothing useful, so the label now takes a share of the strip
+  // and the slider keeps the rest. A readout may never eat the control.
+  for (final (double width, double scale) in <(double, double)>[
+    (320, 2.0),
+    (320, 1.3),
+    (411, 2.0),
+  ]) {
+    testWidgets('the hop strip keeps a draggable slider at ${width}dp ${scale}x',
+        (WidgetTester t) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      await t.binding.setSurfaceSize(Size(width, 720));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => fake,
+        connection:
+            MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await t.pumpWidget(host(const MeshTreeView(), mc, scale));
+      await mc.connect();
+      fake.emit(selfInfoFrame());
+      fake.emit(advertFrame(name: 'A', firstPubByte: 0x81));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 200));
+
+      final Rect slider = t.getRect(find.byType(Slider));
+      expect(slider.width, greaterThanOrEqualTo(120),
+          reason: 'the label squeezed the slider to ${slider.width} dp at '
+              '${width}dp / ${scale}x');
+      // And the label is actually on screen rather than clipped away.
+      final Iterable<Text> labels = t
+          .widgetList<Text>(find.byType(Text))
+          .where((Text w) => (w.data ?? '').contains('hops') ||
+              (w.data ?? '') == 'Flood / All' ||
+              (w.data ?? '') == 'Direct');
+      expect(labels, isNotEmpty, reason: 'the strip names its stop');
+      for (final Text w in labels) {
+        final Rect r = t.getRect(find.text(w.data!).first);
+        expect(r.width, greaterThan(0));
+      }
+      mc.dispose();
+      await t.pumpWidget(const SizedBox());
+      await t.pump(const Duration(seconds: 2));
+    });
+  }
+
   testWidgets('the mesh tree keeps Recenter clear of the hop slider',
       (WidgetTester t) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});

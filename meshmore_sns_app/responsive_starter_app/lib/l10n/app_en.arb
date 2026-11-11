@@ -1348,6 +1348,10 @@
   "meshTreeHopsDirect": "Direct",
   "meshTreeHopsFlood": "Flood / All",
   "meshTreeHopsN": "≤{n} hops",
+  "meshTreeHopsRouted": "{count} routed",
+  "@meshTreeHopsRouted": {"description": "How many peers the hop limit actually reached, shown after the stop name.", "placeholders": {"count": {"type": "int"}}},
+  "meshTreeHopsNoRoutes": "no routes",
+  "@meshTreeHopsNoRoutes": {"description": "Shown instead of a count when the radio has learned no routes at all, so a depth limit cannot reach any peer."},
   "@meshTreeHopsN": {
     "placeholders": {
       "n": {

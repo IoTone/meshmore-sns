@@ -48,9 +48,30 @@ class MeshGraphEdge {
 
 /// The full mesh topology tree we can derive from the controller.
 class MeshGraph {
-  const MeshGraph({required this.nodes, required this.edges});
+  const MeshGraph({
+    required this.nodes,
+    required this.edges,
+    this.peers = 0,
+    this.routed = 0,
+    this.hidden = 0,
+  });
+
+  /// No depth limit at all. Kept here rather than in the view because the
+  /// filter needs to know which value means "show everything".
+  static const int noLimit = 99;
+
   final List<MeshGraphNode> nodes;
   final List<MeshGraphEdge> edges;
+
+  /// Peers the caller offered, not counting this device.
+  final int peers;
+
+  /// Peers shown whose *learned* route is known — the only ones a depth limit
+  /// can actually talk about.
+  final int routed;
+
+  /// Peers left out because the limit could not include them.
+  final int hidden;
 
   /// Build the graph from the controller's current node table.
   ///
@@ -81,19 +102,30 @@ class MeshGraph {
   /// when its hop count (`outPathHashes.length`, 0 = direct) is
   /// `<= maxHops`.
   ///
-  /// **A peer whose route is unknown is always included**, whatever the
-  /// limit. A limit says "do not show me anything deeper than N", and an
-  /// unknown depth is not a deep one: hiding it says "this is further than
-  /// you asked", which nobody knows. On a mesh where the radio has learned
-  /// no routes at all — 183 advert-only nodes and 0 contacts, measured on
-  /// the public mesh — the old rule emptied the tree at every setting below
-  /// All, so the control looked broken and the tree was useless. Those peers
-  /// are drawn as floaters, which the legend already explains ("heard via
-  /// advert only; route unknown").
+  /// **Below All, only a peer whose learned route is known is included.**
+  ///
+  /// This reverses the earlier rule, which kept every unknown-depth peer at
+  /// every setting. That rule had one real merit: it kept the tree non-empty on
+  /// a mesh where the radio has learned no routes. It had one fatal cost, which
+  /// the owner reported: the ladder then filtered *nothing at all*, so All, ten,
+  /// three, one and Direct drew the same picture and the control looked broken.
+  ///
+  /// Both rules have to guess, and they guess in opposite directions. Showing an
+  /// unknown-depth peer says "this is within N hops", which nobody knows; hiding
+  /// it says "this is deeper than N", which nobody knows either. The difference
+  /// is which guess a given stop is making, and a control called "≤N hops" should
+  /// only ever assert the thing it can check. So a stop below All means exactly
+  /// "peers whose route the radio has learned, at most N deep", and All means
+  /// "everything, including the peers whose depth is unknown" — which is also the
+  /// default, so opening the tree never shows an empty field.
+  ///
+  /// [peers], [routed] and [hidden] exist so the control can say what it did
+  /// instead of leaving the reader to guess: "≤3 hops · 12 routed", or
+  /// "≤3 hops · no routes" when there is nothing for the limit to bite on.
   static MeshGraph fromController(
     MeshcoreController mc, {
     List<DiscoveredNode>? filteredNodes,
-    int maxHops = 6,
+    int maxHops = noLimit,
   }) {
     const String selfId = 'self';
     final Map<String, MeshGraphNode> byId = <String, MeshGraphNode>{
@@ -127,13 +159,31 @@ class MeshGraph {
 
     final String? ownHex = mc.ownPubKeyHex;
     final List<DiscoveredNode> peers = filteredNodes ?? mc.nodes;
+    final bool limited = maxHops < noLimit;
+    int considered = 0;
+    int routed = 0;
+    int hidden = 0;
     for (final DiscoveredNode peer in peers) {
       if (peer.pubKeyHex == ownHex) continue; // don't double the root
+      considered++;
 
-      // Hop-depth filter, applied only to a depth the radio actually knows.
-      // An unknown route is not a deep one, so it is never filtered out.
+      // The depth the radio learned, or null when it learned none.
       final int? hops = peer.outPathHashes?.length;
-      if (hops != null && hops > maxHops) continue;
+      if (hops == null) {
+        // No learned route: flood-routed or advert-only. Below All the limit
+        // cannot be evaluated, and a stop that cannot be checked does not
+        // claim the peer is inside it. At All everything is shown, which is
+        // the default, so an unlearned mesh still opens with a full tree.
+        if (limited) {
+          hidden++;
+          continue;
+        }
+      } else if (hops > maxHops) {
+        hidden++;
+        continue;
+      } else {
+        routed++;
+      }
 
       addNode(peer);
 
@@ -164,6 +214,9 @@ class MeshGraph {
     return MeshGraph(
       nodes: byId.values.toList(growable: false),
       edges: edges,
+      peers: considered,
+      routed: routed,
+      hidden: hidden,
     );
   }
 }

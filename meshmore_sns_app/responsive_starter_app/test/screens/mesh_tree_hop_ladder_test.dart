@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:meshmore_sns_app/gen/app_localizations_en.dart';
 import 'package:meshmore_sns_app/screens/mesh_tree_view.dart';
 
 /// The hop slider's ladder.
@@ -38,5 +39,35 @@ void main() {
     expect(MeshTreeView.hopIndex(7), MeshTreeView.hopIndex(5));
     expect(MeshTreeView.hopIndex(9), MeshTreeView.hopIndex(5));
     expect(MeshTreeView.hopIndex(11), MeshTreeView.hopIndex(10));
+  });
+
+  group('the label says what the limit actually reached', () {
+    // The owner reported that the ladder changed nothing, and the reason was
+    // that on a mesh with no learned routes it filtered no peer at all. A stop
+    // that cannot be evaluated now says so instead of drawing the same picture
+    // as All and looking broken.
+    final AppLocalizationsEn en = AppLocalizationsEn();
+
+    test('All names the widest stop and claims no count', () {
+      expect(MeshTreeView.hopLabelFor(MeshTreeView.allHops, en, routed: 0),
+          'Flood / All');
+      expect(MeshTreeView.hopLabelFor(MeshTreeView.allHops, en, routed: 12),
+          'Flood / All');
+    });
+
+    test('a stop with no learned routes says so', () {
+      expect(MeshTreeView.hopLabelFor(0, en, routed: 0),
+          'Direct \u00b7 no routes');
+      expect(MeshTreeView.hopLabelFor(3, en, routed: 0),
+          '\u22643 hops \u00b7 no routes');
+    });
+
+    test('a stop with learned routes reports how many it reached', () {
+      expect(MeshTreeView.hopLabelFor(0, en, routed: 4), 'Direct \u00b7 4 routed');
+      expect(MeshTreeView.hopLabelFor(3, en, routed: 12),
+          '\u22643 hops \u00b7 12 routed');
+      expect(MeshTreeView.hopLabelFor(10, en, routed: 1),
+          '\u226410 hops \u00b7 1 routed');
+    });
   });
 }

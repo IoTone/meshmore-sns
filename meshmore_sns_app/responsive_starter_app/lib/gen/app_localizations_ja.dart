@@ -2067,6 +2067,14 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String meshTreeHopsRouted(int count) {
+    return '経路あり $count 件';
+  }
+
+  @override
+  String get meshTreeHopsNoRoutes => '経路なし';
+
+  @override
   String get meshTreeRecenter => '中央に戻す';
 
   @override

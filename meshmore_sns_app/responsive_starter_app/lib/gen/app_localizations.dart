@@ -3656,6 +3656,18 @@ abstract class AppLocalizations {
   /// **'≤{n} hops'**
   String meshTreeHopsN(int n);
 
+  /// How many peers the hop limit actually reached, shown after the stop name.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} routed'**
+  String meshTreeHopsRouted(int count);
+
+  /// Shown instead of a count when the radio has learned no routes at all, so a depth limit cannot reach any peer.
+  ///
+  /// In en, this message translates to:
+  /// **'no routes'**
+  String get meshTreeHopsNoRoutes;
+
   /// No description provided for @meshTreeRecenter.
   ///
   /// In en, this message translates to:

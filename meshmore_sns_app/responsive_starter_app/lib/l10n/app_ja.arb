@@ -1268,6 +1268,8 @@
   "meshTreeHopsDirect": "直接",
   "meshTreeHopsFlood": "フラッド / 全て",
   "meshTreeHopsN": "≤{n} ホップ",
+  "meshTreeHopsRouted": "経路あり {count} 件",
+  "meshTreeHopsNoRoutes": "経路なし",
   "@meshTreeHopsN": {
     "placeholders": {
       "n": {
