@@ -2126,18 +2126,6 @@ abstract class AppLocalizations {
   /// **'Not connected — Settings → Diagnostics & connect'**
   String get gridStatusOffline;
 
-  /// No description provided for @gridSwipeModeTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Swipe mode: swipe left/right for other screens. Tap to pan and zoom this map'**
-  String get gridSwipeModeTooltip;
-
-  /// No description provided for @gridPanModeTooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Pan & zoom mode: drags move the map. Tap to swipe between screens again'**
-  String get gridPanModeTooltip;
-
   /// No description provided for @gridStatusCounts.
   ///
   /// In en, this message translates to:

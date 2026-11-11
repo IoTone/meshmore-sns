@@ -1188,14 +1188,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not connected — Settings → Diagnostics & connect';
 
   @override
-  String get gridSwipeModeTooltip =>
-      'Swipe mode: swipe left/right for other screens. Tap to pan and zoom this map';
-
-  @override
-  String get gridPanModeTooltip =>
-      'Pan & zoom mode: drags move the map. Tap to swipe between screens again';
-
-  @override
   String gridStatusCounts(int visible, int known, int favs) {
     String _temp0 = intl.Intl.pluralLogic(
       favs,
