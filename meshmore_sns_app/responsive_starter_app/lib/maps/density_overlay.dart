@@ -68,6 +68,45 @@ const double kDensityLabelMinPx = 28.0;
 /// Whether a square this many logical pixels across can hold its count.
 bool densityLabelsFit(double cellPx) => cellPx >= kDensityLabelMinPx;
 
+/// The sizes a cell may take, in metres. A ladder rather than a computed
+/// number, so the label always reads as a round distance and two views can be
+/// compared without arithmetic.
+const List<double> kDensityCellLadder = <double>[
+  50, 100, 250, 500, 1000, 2000, 5000, 10000, 25000, 50000, 100000,
+];
+
+/// The cell size to use at a zoom, so cells stay readable at every scale.
+///
+/// A fixed 250 m is right at one zoom and useless at the others: at metro zoom
+/// it is a three-pixel smudge, and at street zoom a single square fills the
+/// screen. The ladder picks the smallest size whose square is at least
+/// [targetPx] on screen, so the read stays comparable at any zoom and the count
+/// stays readable without the rule that followed the number of squares.
+///
+/// The scale is passed in rather than recomputed: `StreetMapView.metersPerPixel`
+/// already owns the Web-Mercator relation, and a second copy of it would drift.
+double densityCellMetresFor({
+  required double metresPerPixel,
+  double targetPx = 48.0,
+}) {
+  if (metresPerPixel <= 0) return kDensityCellLadder.last;
+  for (final double metres in kDensityCellLadder) {
+    if (metres / metresPerPixel >= targetPx) return metres;
+  }
+  return kDensityCellLadder.last;
+}
+
+/// The cell size written the way a person reads it: "250 m", "1 km", "25 km".
+String densityCellLabel(double metres) {
+  if (metres >= 1000) {
+    final double km = metres / 1000;
+    return km == km.roundToDouble()
+        ? '${km.round()} km'
+        : '${km.toStringAsFixed(1)} km';
+  }
+  return '${metres.round()} m';
+}
+
 /// A node's position and the key that names it.
 typedef DensityPoint = ({double lat, double lon, String pubKey});
 

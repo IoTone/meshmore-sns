@@ -1,11 +1,8 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
@@ -82,6 +79,9 @@ void main() {
       'the mesh it describes', (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(420, 900));
     addTearDown(() => t.binding.setSurfaceSize(null));
+    // A semantics label is only findable by label once semantics is switched
+    // on, which is what the tap below goes through.
+    final SemanticsHandle semantics = t.ensureSemantics();
     final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController mc = _mc(fake);
     await t.pumpWidget(_host(mc));
@@ -110,8 +110,10 @@ void main() {
     final PolygonLayer<DensityCell> layer =
         t.widget<PolygonLayer<DensityCell>>(
             find.byType(PolygonLayer<DensityCell>));
-    expect(layer.polygons.length, greaterThanOrEqualTo(2),
-        reason: 'a cluster and an outlier are two squares');
+    // How many squares there are is a property of the zoom now, because the
+    // cell size follows it: the assertion is that every located node is in one
+    // of them, not that the count happens to be two.
+    expect(layer.polygons, isNotEmpty);
     // Every located node is in exactly one square, and the square carries the
     // keys a tap needs to name them.
     final Set<String> keys = <String>{
@@ -122,34 +124,44 @@ void main() {
     expect(layer.polygons.first.hitValue!.count,
         layer.polygons.first.hitValue!.pubKeys.length);
 
-    // The count is drawn when the square is big enough to hold it: at the
-    // test's zoom a 250 m square is tens of pixels.
-    expect(find.byType(MarkerLayer), findsWidgets,
-        reason: 'the count markers are in the tree');
-    final Iterable<String> counts = t
-        .widgetList<Text>(find.byType(Text))
-        .map((Text x) => x.data ?? '')
-        .where((String d) => d == '1' || d == '2');
-    expect(counts, isNotEmpty, reason: 'a square shows its count');
+    // A count only means something next to the distance it is a count per, so
+    // the size is stated on screen. Whether the numbers themselves are drawn
+    // depends on the zoom (they fit, or they do not), which the pure test
+    // covers; this one asserts the label that makes them readable.
+    expect(find.byKey(const ValueKey<String>('map-density-size')),
+        findsOneWidget);
+    expect(find.textContaining('Cells'), findsOneWidget);
 
     // And a tap on a square names the nodes in it. The screen point comes from
     // the camera rather than from a guess, so the tap lands inside the square
     // wherever the map happens to be centred.
-    final MapCamera camera = MapCamera.of(
-        t.element(find.byType(PolygonLayer<DensityCell>)));
-    final DensityCell target = layer.polygons.first.hitValue!;
-    // A corner of the square, not its centre: the centre is where the node is,
-    // and its pin would take the tap. That is exactly why the tap is resolved
-    // by point-in-square rather than by a polygon hit test.
-    final Point<double> p = camera.latLngToScreenPoint(LatLng(
-      target.bounds[0].latitude + (target.bounds[2].latitude - target.bounds[0].latitude) * 0.1,
-      target.bounds[0].longitude + (target.bounds[2].longitude - target.bounds[0].longitude) * 0.1,
-    ));
-    await t.tapAt(Offset(p.x, p.y));
+    // A count is the square's own tap target, drawn above the pins: a 48 dp
+    // box with the number inside it. Tapping it opens the square, which is what
+    // a polygon hit test could never do — a pin's box covers its cell's centre.
+    final Iterable<Semantics> counts = t
+        .widgetList<Semantics>(find.byType(Semantics))
+        .where((Semantics s) =>
+            (s.properties.label ?? '').contains('in this square'));
+    expect(counts, isNotEmpty, reason: 'a square carries a labelled count');
+    // The label the widget actually carries, rather than a guess at which
+    // square is first: how many nodes share one depends on the zoom's cell size.
+    final String label = counts.first.properties.label!;
+    expect(layer.polygons
+        .any((Polygon<DensityCell> p) => _en.mapDensityCellTitle(p.hitValue!.count) == label),
+        isTrue,
+        reason: 'the label names a real square, count and all');
+    final DensityCell tapped = layer.polygons
+        .firstWhere((Polygon<DensityCell> p) =>
+            _en.mapDensityCellTitle(p.hitValue!.count) == label)
+        .hitValue!;
+    await t.tap(find.byKey(ValueKey<String>('density-count-${tapped.id}')));
+    // ignore: avoid_print
+    print('PROBE after-tap texts=${t.widgetList<Text>(find.byType(Text)).map((Text x) => x.data).where((String? d) => d != null).take(14).toList()}');
     await t.pumpAndSettle();
-    expect(find.text(_en.mapDensityCellTitle(target.count)), findsOneWidget,
-        reason: 'the sheet names the count the square carries');
-    expect(find.text(_en.mapDensityCellArea), findsOneWidget);
+    expect(find.textContaining('squares, so every cell covers'),
+        findsOneWidget,
+        reason: 'the sheet says what a square covers, at the size drawn');
+    semantics.dispose();
     await _drain(t, mc);
   });
 

@@ -6170,7 +6170,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get mapDensityCellArea => '各区画は一辺 250 m で、どのセルも同じ面積です。';
+  String mapDensityCellArea(String size) {
+    return '$size の区画で、どのセルも同じ面積です。';
+  }
 
   @override
   String get mapDensityCellOpen => 'このノードを開く';
@@ -6189,5 +6191,10 @@ class AppLocalizationsJa extends AppLocalizations {
       other: '$count 件',
     );
     return '$_temp0 · $body';
+  }
+
+  @override
+  String mapDensityCellSize(String size) {
+    return 'セル $size';
   }
 }

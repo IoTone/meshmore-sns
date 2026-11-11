@@ -4373,7 +4373,14 @@
       }
     }
   },
-  "mapDensityCellArea": "Each square is 250 m across, so every cell covers the same area.",
+  "mapDensityCellArea": "{size} squares, so every cell covers the same ground area.",
+  "@mapDensityCellArea": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "mapDensityCellOpen": "Open this node",
   "bootFailedTitle": "Meshmore SNS could not start.",
   "bootTryAgain": "Try again",
@@ -4384,6 +4391,14 @@
         "type": "int"
       },
       "body": {
+        "type": "String"
+      }
+    }
+  },
+  "mapDensityCellSize": "Cells {size}",
+  "@mapDensityCellSize": {
+    "placeholders": {
+      "size": {
         "type": "String"
       }
     }

@@ -394,6 +394,10 @@ class _StreetMapViewState extends State<StreetMapView> {
     }
   }
 
+  /// The cell size of the layer currently drawn, so the sheet can say what one
+  /// square covers. Kept as a field because the sheet outlives the build.
+  double _densityCellMetresShown = kDensityCellMetres;
+
   Future<void> _showDensityCell(
       BuildContext ctx, MeshcoreController mc, DensityCell cell) {
     final Map<String, DiscoveredNode> byKey = <String, DiscoveredNode>{
@@ -426,7 +430,7 @@ class _StreetMapViewState extends State<StreetMapView> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
-                l.mapDensityCellArea,
+                l.mapDensityCellArea(densityCellLabel(_densityCellMetresShown)),
                 style: TextStyle(
                     fontSize: ctx.skin.type.sizeBody,
                     color: cs.onSurfaceVariant),
@@ -637,6 +641,13 @@ class _StreetMapViewState extends State<StreetMapView> {
     // build, which threw every cell eleven degrees of longitude west of the
     // nodes it was describing, and refusing to draw without a fix made a control
     // that does nothing on the tab whose whole point is that it always draws.
+    // The cell size follows the zoom, so a reading is legible at every scale
+    // rather than only at the one zoom 250 m happened to suit.
+    final double densityCellMetres = densityCellMetresFor(
+      metresPerPixel: StreetMapView.metersPerPixel(
+          _zoom, hasFix ? start.centre.latitude : 39),
+    );
+    _densityCellMetresShown = densityCellMetres;
     final List<DensityPoint> densityPoints = _showDensity
         ? <DensityPoint>[
             for (final DiscoveredNode n in mc.nodes)
@@ -657,6 +668,7 @@ class _StreetMapViewState extends State<StreetMapView> {
         anchor: hasFix
             ? start.centre
             : LatLng(sumLat / densityPoints.length, sumLon / densityPoints.length),
+        cellMetres: densityCellMetres,
       );
     }
     // The tap handler reads this, and it is the same list the layer draws, so
@@ -822,48 +834,6 @@ class _StreetMapViewState extends State<StreetMapView> {
                     color: VizPalette.of(context.skin).accent,
                   ),
                 ),
-              // The count is the reading and the square is the unit. Whether a
-              // count fits is a property of the square on screen, not of how
-              // many squares there are: the first rule counted squares and hid
-              // every count on the metro view, where the squares are small, and
-              // every count on a street view of one node, which is where the
-              // number is the whole point.
-              if (density.isNotEmpty &&
-                  densityLabelsFit(kDensityCellMetres /
-                      StreetMapView.metersPerPixel(
-                          _zoom, hasFix ? start.centre.latitude : 0)))
-                MarkerLayer(
-                  markers: <Marker>[
-                    for (final DensityCell c in density)
-                      Marker(
-                        point: c.centre,
-                        // Offset so the count is not hidden under the pin that
-                        // stands at the cell's centre: with one node per square
-                        // that is every square, and a count nobody can see is
-                        // the one thing this overlay is for.
-                        alignment: Alignment.topRight,
-                        width: 26,
-                        height: 16,
-                        child: IgnorePointer(
-                          child: Container(
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: cs.surface.withValues(alpha: .72),
-                              borderRadius: BorderRadius.circular(kRadiusXs),
-                            ),
-                            child: Text(
-                              '${c.count}',
-                              style: TextStyle(
-                                fontSize: context.skin.type.sizeMicro,
-                                fontWeight: FontWeight.w600,
-                                color: cs.onSurface,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),
               // R25+1 — range circle for self. Uses our radio-tuple
@@ -1013,6 +983,56 @@ class _StreetMapViewState extends State<StreetMapView> {
                     ),
                 ],
               ),
+              // The counts, above the pins: a count is the square's own tap
+              // target, 48 dp square like any other control, with the number
+              // drawn small inside it. Below the pins it was unreachable — a
+              // pin's own box covers its cell's centre, which is where a badge
+              // there would sit — and a tap meant for the square opened the
+              // node instead.
+              if (density.isNotEmpty &&
+                  densityLabelsFit(densityCellMetres /
+                      StreetMapView.metersPerPixel(
+                          _zoom, hasFix ? start.centre.latitude : 39)))
+                MarkerLayer(
+                  markers: <Marker>[
+                    for (final DensityCell c in density)
+                      Marker(
+                        point: c.centre,
+                        width: 48,
+                        height: 48,
+                        alignment: Alignment.topRight,
+                        child: Semantics(
+                          key: ValueKey<String>('density-count-${c.id}'),
+                          button: true,
+                          label: l.mapDensityCellTitle(c.count),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => _showDensityCell(context, mc, c),
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: cs.surface.withValues(alpha: .82),
+                                  borderRadius: BorderRadius.circular(kRadiusXs),
+                                  border: Border.all(
+                                      color: cs.outline.withValues(alpha: .5)),
+                                ),
+                                child: Text(
+                                  '${c.count}',
+                                  style: TextStyle(
+                                    fontSize: context.skin.type.sizeMicro,
+                                    fontWeight: FontWeight.w600,
+                                    color: cs.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -1166,6 +1186,30 @@ class _StreetMapViewState extends State<StreetMapView> {
                           fontSize: context.skin.type.sizeMicro,
                           letterSpacing: 1)),
                 ],
+              ),
+            ),
+          ),
+        // The density cell size, stated where the counts are: a count only means
+        // something next to the distance it is a count per.
+        if (density.isNotEmpty)
+          Positioned(
+            left: StreetMapView.controlsInset,
+            bottom: 92,
+            child: IgnorePointer(
+              child: Container(
+                key: const ValueKey<String>('map-density-size'),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: cs.surface.withValues(alpha: .85),
+                  borderRadius: BorderRadius.circular(kRadiusSm),
+                  border: Border.all(color: cs.outline.withValues(alpha: .4)),
+                ),
+                child: Text(
+                  l.mapDensityCellSize(densityCellLabel(densityCellMetres)),
+                  style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: context.skin.type.sizeMicro),
+                ),
               ),
             ),
           ),

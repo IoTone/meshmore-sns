@@ -6430,8 +6430,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mapDensityCellArea =>
-      'Each square is 250 m across, so every cell covers the same area.';
+  String mapDensityCellArea(String size) {
+    return '$size squares, so every cell covers the same ground area.';
+  }
 
   @override
   String get mapDensityCellOpen => 'Open this node';
@@ -6451,5 +6452,10 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 message',
     );
     return '$_temp0 · $body';
+  }
+
+  @override
+  String mapDensityCellSize(String size) {
+    return 'Cells $size';
   }
 }

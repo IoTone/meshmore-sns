@@ -2823,9 +2823,10 @@
   "mapDensityShow": "セルごとのノード密度",
   "mapDensityHide": "ノード密度を隠す",
   "mapDensityCellTitle": "{count, plural, =1{この区画に 1 ノード} other{この区画に {count} ノード}}",
-  "mapDensityCellArea": "各区画は一辺 250 m で、どのセルも同じ面積です。",
+  "mapDensityCellArea": "{size} の区画で、どのセルも同じ面積です。",
   "mapDensityCellOpen": "このノードを開く",
   "bootFailedTitle": "Meshmore SNS を起動できませんでした。",
   "bootTryAgain": "再試行",
-  "notifGroupBody": "{count, plural, other{{count} 件}} · {body}"
+  "notifGroupBody": "{count, plural, other{{count} 件}} · {body}",
+  "mapDensityCellSize": "セル {size}"
 }

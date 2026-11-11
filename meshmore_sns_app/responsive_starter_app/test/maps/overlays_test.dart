@@ -218,6 +218,34 @@ void main() {
           reason: 'a 3 px square cannot hold a digit');
     });
 
+    test('the cell size follows the zoom, and reads as a distance', () {
+      // One zoom's cell size is another zoom's smudge: at 250 m, metro zoom
+      // gives a three-pixel square and street zoom one square fills the screen.
+      // The ladder keeps a square at least 48 px across at every scale.
+      double sizeAt(double metresPerPixel) =>
+          densityCellMetresFor(metresPerPixel: metresPerPixel);
+      expect(sizeAt(1), 50, reason: 'street zoom: the smallest cell is plenty');
+      expect(sizeAt(5.5), 500);
+      expect(sizeAt(17), 1000);
+      expect(sizeAt(70), 5000);
+      expect(sizeAt(300), 25000);
+      expect(sizeAt(5000), kDensityCellLadder.last,
+          reason: 'past the ladder, the largest cell is the answer');
+      // The chosen size always clears the target on screen.
+      for (final double mpp in <double>[0.5, 3, 9, 40, 120, 700, 2000]) {
+        final double m = sizeAt(mpp);
+        expect(m / mpp, greaterThanOrEqualTo(48));
+      }
+      expect(densityCellMetresFor(metresPerPixel: 0), kDensityCellLadder.last);
+    });
+
+    test('the size label is the number a person reads', () {
+      expect(densityCellLabel(250), '250 m');
+      expect(densityCellLabel(1000), '1 km');
+      expect(densityCellLabel(2500), '2.5 km');
+      expect(densityCellLabel(25000), '25 km');
+    });
+
     test('the polygons carry the cell, so a tap can name its nodes', () {
       final List<DensityCell> cells = densityCells(
         points: <DensityPoint>[at(39.0, -105.0, 'x'), at(39.0, -105.0, 'y')],

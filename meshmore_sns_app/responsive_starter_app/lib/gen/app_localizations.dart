@@ -10729,8 +10729,8 @@ abstract class AppLocalizations {
   /// No description provided for @mapDensityCellArea.
   ///
   /// In en, this message translates to:
-  /// **'Each square is 250 m across, so every cell covers the same area.'**
-  String get mapDensityCellArea;
+  /// **'{size} squares, so every cell covers the same ground area.'**
+  String mapDensityCellArea(String size);
 
   /// No description provided for @mapDensityCellOpen.
   ///
@@ -10755,6 +10755,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 message} other{{count} messages}} · {body}'**
   String notifGroupBody(int count, String body);
+
+  /// No description provided for @mapDensityCellSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Cells {size}'**
+  String mapDensityCellSize(String size);
 }
 
 class _AppLocalizationsDelegate
