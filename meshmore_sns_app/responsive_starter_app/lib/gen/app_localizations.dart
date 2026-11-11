@@ -10779,6 +10779,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No sender name on this message, so there is nobody to address.'**
   String get actionReplyNoNameSub;
+
+  /// No description provided for @chatActionsNoRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'No radio: a reply or quote waits in the box until one is connected.'**
+  String get chatActionsNoRadio;
 }
 
 class _AppLocalizationsDelegate

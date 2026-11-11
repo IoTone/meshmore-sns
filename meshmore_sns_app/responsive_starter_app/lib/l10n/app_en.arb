@@ -4399,5 +4399,6 @@
   "actionQuote": "Quote this message",
   "actionQuoteSub": "Puts their words in the box; nothing names them.",
   "actionReplyNoName": "Reply",
-  "actionReplyNoNameSub": "No sender name on this message, so there is nobody to address."
+  "actionReplyNoNameSub": "No sender name on this message, so there is nobody to address.",
+  "chatActionsNoRadio": "No radio: a reply or quote waits in the box until one is connected."
 }

@@ -2818,5 +2818,6 @@
   "actionQuote": "このメッセージを引用",
   "actionQuoteSub": "相手の言葉を入力欄に入れます。名前は宛先になりません。",
   "actionReplyNoName": "返信",
-  "actionReplyNoNameSub": "このメッセージには送信者名がないため、宛先にできる相手がいません。"
+  "actionReplyNoNameSub": "このメッセージには送信者名がないため、宛先にできる相手がいません。",
+  "chatActionsNoRadio": "無線が未接続です。返信や引用は入力欄に保持され、接続後に使えます。"
 }

@@ -6208,4 +6208,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get actionReplyNoNameSub => 'このメッセージには送信者名がないため、宛先にできる相手がいません。';
+
+  @override
+  String get chatActionsNoRadio => '無線が未接続です。返信や引用は入力欄に保持され、接続後に使えます。';
 }

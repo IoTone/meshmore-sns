@@ -3,8 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import 'package:meshcore/meshcore.dart' show kAdvTypeChat;
+import 'package:meshcore/meshcore.dart'
+    show kAdvTypeChat, MeshcoreConnectionState;
 
 import '../bot/bot_scope.dart';
 import '../gen/app_localizations.dart';
@@ -61,6 +63,12 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
   // The addressable name, if this row has one: the parsed channel sender, or
   // null for our own messages and for a line whose prefix did not parse.
   final String? sender = m.outgoing ? null : parseChannelSenderName(m.text);
+  // With no radio the composer is replaced by the connect row, so a reply or a
+  // quote would be written into a box nobody can see. The actions still work —
+  // the text waits in the draft — but the sheet says so rather than closing on
+  // a tap that appeared to do nothing.
+  final bool canCompose =
+      context.read<MeshcoreController>().state == MeshcoreConnectionState.ready;
   return showModalBottomSheet<ChatAction>(
     context: context,
     showDragHandle: true,
@@ -82,6 +90,18 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
                 meta,
+                style: TextStyle(
+                  color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                  fontSize: Theme.of(ctx).textTheme.labelSmall?.fontSize,
+                ),
+              ),
+            ),
+          if (!canCompose)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                l.chatActionsNoRadio,
+                key: const ValueKey<String>('chat-actions-no-radio'),
                 style: TextStyle(
                   color: Theme.of(ctx).colorScheme.onSurfaceVariant,
                   fontSize: Theme.of(ctx).textTheme.labelSmall?.fontSize,

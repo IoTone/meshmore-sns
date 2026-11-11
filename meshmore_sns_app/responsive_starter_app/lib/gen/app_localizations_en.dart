@@ -6470,4 +6470,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get actionReplyNoNameSub =>
       'No sender name on this message, so there is nobody to address.';
+
+  @override
+  String get chatActionsNoRadio =>
+      'No radio: a reply or quote waits in the box until one is connected.';
 }
