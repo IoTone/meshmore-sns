@@ -71,6 +71,29 @@ class CompassHeading extends ChangeNotifier {
   ({double x, double y, double z})? _magVec;
   ({double x, double y, double z})? _accVec;
 
+  /// Per-axis extents of the field seen so far, for the hard-iron offset.
+  ///
+  /// A phone's magnetometer reads the Earth's field **plus** whatever the
+  /// handset adds: a speaker magnet, a magnetic case, a car mount. Measured on
+  /// the test phone the raw vector had a magnitude of 141 µT where the Earth's
+  /// is about 50 and the dip came out at 82° instead of Denver's ~67°, so the
+  /// heading it produced was tens of degrees wrong — and it looked plausible,
+  /// which is worse. The offset is the centre of the sphere the samples sweep
+  /// out as the phone turns, so it is recovered by tracking each axis's extent
+  /// and subtracting the midpoint.
+  ({double x, double y, double z})? _lo;
+  ({double x, double y, double z})? _hi;
+  int _samples = 0;
+
+  /// How many samples of extent before the offset is trusted. A phone lying
+  /// still gives every axis an extent of zero, so a single sample tells you
+  /// nothing about the centre.
+  static const int _calibrationSamples = 40;
+
+  /// The smallest per-axis spread that counts as "the phone has moved". Below
+  /// it the centre is still the raw reading, which is the best guess available.
+  static const double _minSpread = 12.0;
+
   bool _started = false;
 
   void start() {
@@ -95,19 +118,80 @@ class CompassHeading extends ChangeNotifier {
   }
 
   void _recompute() {
-    final ({double x, double y, double z})? m = _magVec;
+    final ({double x, double y, double z})? raw = _magVec;
     final ({double x, double y, double z})? g = _accVec;
-    if (m == null) return;
+    if (raw == null) return;
+    _calibrate(raw);
+    final ({double x, double y, double z}) m = _corrected(raw);
     // Tilt compensation needs gravity. Without it the simplest usable reading
     // is the horizontal component of the field, which is right for a phone
     // held flat — the case a radar is read in — and wrong by the tilt when it
     // is not, which is why gravity is preferred when it exists.
-    final double? raw = g == null
+    final double? deg = g == null
         ? _flatHeading(m)
         : tiltCompensatedHeading(
             mx: m.x, my: m.y, mz: m.z, gx: g.x, gy: g.y, gz: g.z);
-    if (raw == null) return;
-    _apply(raw);
+    if (deg == null) return;
+    _apply(deg);
+  }
+
+  void _calibrate(({double x, double y, double z}) m) {
+    final ({double x, double y, double z})? lo = _lo;
+    final ({double x, double y, double z})? hi = _hi;
+    _lo = lo == null
+        ? (x: m.x, y: m.y, z: m.z)
+        : (
+            x: math.min(lo.x, m.x),
+            y: math.min(lo.y, m.y),
+            z: math.min(lo.z, m.z)
+          );
+    _hi = hi == null
+        ? (x: m.x, y: m.y, z: m.z)
+        : (
+            x: math.max(hi.x, m.x),
+            y: math.max(hi.y, m.y),
+            z: math.max(hi.z, m.z)
+          );
+    if (_samples < 1 << 30) _samples++;
+  }
+
+  /// The field with the hard-iron offset removed.
+  ({double x, double y, double z}) _corrected(
+      ({double x, double y, double z}) m) {
+    final ({double x, double y, double z})? lo = _lo;
+    final ({double x, double y, double z})? hi = _hi;
+    if (lo == null || hi == null) return m;
+    // Until the phone has actually turned, every extent is zero and the
+    // "centre" is simply the current reading: subtracting it would leave a
+    // zero vector and a dial that says nothing. Raw is the better guess then.
+    // A phone turned flat spins the field about the vertical axis, which moves
+    // x and y and leaves z where it was, so the horizontal pair is the test.
+    final double spread = math.min(hi.x - lo.x, hi.y - lo.y);
+    if (spread < _minSpread) return m;
+    final ({double x, double y, double z}) c = (
+      x: (lo.x + hi.x) / 2,
+      y: (lo.y + hi.y) / 2,
+      z: (lo.z + hi.z) / 2,
+    );
+    // z is corrected only when it has an extent of its own: on a flat turn it
+    // does not, and subtracting its "centre" would erase the dip that tilt
+    // compensation needs.
+    final bool zKnown = (hi.z - lo.z) >= _minSpread;
+    return (x: m.x - c.x, y: m.y - c.y, z: zKnown ? m.z - c.z : m.z);
+  }
+
+  /// Whether enough of the sphere has been seen for the offset to mean
+  /// something. Exposed because a dial drawn from an uncalibrated compass is
+  /// the case the tests exist for, and because the measurement above is not a
+  /// theory: 141 µT and an 82° dip is what an uncalibrated phone reads.
+  bool get calibrated {
+    final ({double x, double y, double z})? lo = _lo;
+    final ({double x, double y, double z})? hi = _hi;
+    if (lo == null || hi == null || _samples < _calibrationSamples) {
+      return false;
+    }
+    // x and y only: see `_corrected` on why z carries no extent on a turn.
+    return (hi.x - lo.x) >= _minSpread && (hi.y - lo.y) >= _minSpread;
   }
 
   void _apply(double raw) {
@@ -232,7 +316,7 @@ void paintNorthMarker(
   double radius, {
   required double markerDegrees,
   required Color color,
-  double size = 9,
+  double size = 15,
 }) {
   final double a = markerDegrees * math.pi / 180;
   // Point on the ring, and the two base corners a little inside it.
@@ -240,7 +324,7 @@ void paintNorthMarker(
         center.dx + r * math.sin(a + off),
         center.dy - r * math.cos(a + off),
       );
-  final double halfBase = size * 0.62;
+  final double halfBase = size * 0.78;
   final Offset tip = at(radius, 0);
   final Offset left = at(radius - size, -halfBase / radius);
   final Offset right = at(radius - size, halfBase / radius);

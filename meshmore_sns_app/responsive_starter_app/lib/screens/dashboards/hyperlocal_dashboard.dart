@@ -148,7 +148,7 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
                                     monoFamily: skin.type.monoFamily,
                                     northLabel: 'N',
                                     headingDegrees: _compass.heading,
-                                    northMarker: skin.color.alert,
+                                    northMarker: VizPalette.north,
                                   ),
                                 ),
                               ),
@@ -189,8 +189,20 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
     }
     _PositionedBlip? best;
     double bestD = 28; // max tap slop, logical px
+    // The blips are drawn on the turned dial, so a tap has to be measured
+    // against where the peer *appears*. Comparing against the laid-out
+    // position meant a turn moved every dot away from its own hit area.
+    final double? h = _compass.heading;
+    final double turn = -(h ?? 0) * math.pi / 180;
     for (final _PositionedBlip b in blips) {
-      final double d = (p - b.offset).distance;
+      Offset at = b.offset;
+      if (h != null) {
+        final Offset d = b.offset - center;
+        at = center +
+            Offset(d.dx * math.cos(turn) - d.dy * math.sin(turn),
+                d.dx * math.sin(turn) + d.dy * math.cos(turn));
+      }
+      final double d = (p - at).distance;
       if (d < bestD) {
         bestD = d;
         best = b;
@@ -254,15 +266,13 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
         frac = (frac + _hashUnit(n.pubKeyHex, 1) * 0.10 - 0.05)
             .clamp(0.08, 0.97);
       }
-      final double raw =
-          bearing[n.pubKeyHex] ?? (_hashUnit(n.pubKeyHex, 7) * 2 * math.pi);
-      // The dial's top is where the phone points: subtract the heading so a
-      // peer really to the east sits where the phone would find it, not where
-      // a north-up dial would have put it.
       final double angle =
-          raw - (_compass.heading ?? 0) * math.pi / 180;
+          bearing[n.pubKeyHex] ?? (_hashUnit(n.pubKeyHex, 7) * 2 * math.pi);
       final double r = frac * maxR;
-      // angle: 0 = straight ahead, clockwise.
+      // angle: 0 = North (up), clockwise. The turn towards the phone's own
+      // facing happens in the painter, not here: this layout is memoised and
+      // recomputing it per frame cost more than the whole dial.
+      // 
       final Offset pos = Offset(
         center.dx + r * math.sin(angle),
         center.dy - r * math.cos(angle),
@@ -310,8 +320,12 @@ class _PositionedBlip {
 
 /// A name callout being laid out: [y] is mutated by the declutter pass.
 class _LabelSlot {
-  _LabelSlot({required this.blip, required this.y, required this.tp});
+  _LabelSlot({required this.blip, required this.at, required this.y, required this.tp});
   final _PositionedBlip blip;
+
+  /// Where the blip appears on the turned dial, which is where its leader
+  /// line must start.
+  final Offset at;
   double y;
   final TextPainter tp;
 }
@@ -357,6 +371,18 @@ class _RadarPainter extends CustomPainter {
   /// The red the north marker is drawn in: the skin's own alert colour, so the
   /// marker is red on every skin without a literal.
   final Color northMarker;
+
+  /// A point in dial space: the blips are laid out by true bearing, and the
+  /// dial's top is the phone's own facing.
+  Offset _turn(Offset o) {
+    final double? h = headingDegrees;
+    if (h == null) return o;
+    final double t = -h * math.pi / 180;
+    final Offset d = o - center;
+    return center +
+        Offset(d.dx * math.cos(t) - d.dy * math.sin(t),
+            d.dx * math.sin(t) + d.dy * math.cos(t));
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -423,11 +449,12 @@ class _RadarPainter extends CustomPainter {
     // Blips (dots only — in-range names are drawn as decluttered
     // callouts in the gutter outside the rings, below).
     for (final _PositionedBlip b in blips) {
+      final Offset at = _turn(b.offset);
       if (b.inRange) {
-        canvas.drawCircle(b.offset, 9,
+        canvas.drawCircle(at, 9,
             Paint()..color = b.color.withValues(alpha: 0.18));
       }
-      canvas.drawCircle(b.offset, b.inRange ? 4.5 : 3.5,
+      canvas.drawCircle(at, b.inRange ? 4.5 : 3.5,
           Paint()..color = b.color);
     }
 
@@ -461,9 +488,11 @@ class _RadarPainter extends CustomPainter {
           _fit(b.node.name.isEmpty ? b.node.shortId : b.node.name,
               gutter, fontSize),
           fontSize);
-      final bool isRight = b.offset.dx >= center.dx;
-      (isRight ? right : left)
-          .add(_LabelSlot(blip: b, y: b.offset.dy, tp: tp));
+      // The column is decided by where the blip *appears*, not where it sits
+      // in the unrotated layout, or a label would cross the dial after a turn.
+      final Offset at = _turn(b.offset);
+      final bool isRight = at.dx >= center.dx;
+      (isRight ? right : left).add(_LabelSlot(blip: b, at: at, y: at.dy, tp: tp));
     }
     _declutter(left, top, bottom, minGap);
     _declutter(right, top, bottom, minGap);
@@ -473,12 +502,12 @@ class _RadarPainter extends CustomPainter {
       ..color = fgMuted.withValues(alpha: 0.5);
     for (final _LabelSlot s in right) {
       final double lx = center.dx + maxR + 6;
-      canvas.drawLine(s.blip.offset, Offset(lx, s.y), leader);
+      canvas.drawLine(s.at, Offset(lx, s.y), leader);
       s.tp.paint(canvas, Offset(lx + 3, s.y - s.tp.height / 2));
     }
     for (final _LabelSlot s in left) {
       final double lx = center.dx - maxR - 6;
-      canvas.drawLine(s.blip.offset, Offset(lx, s.y), leader);
+      canvas.drawLine(s.at, Offset(lx, s.y), leader);
       s.tp.paint(canvas, Offset(lx - 3 - s.tp.width, s.y - s.tp.height / 2));
     }
   }

@@ -61,6 +61,16 @@ class VizPalette {
   final Color accent;
   final Color grid;
 
+  /// The north marker on a dial.
+  ///
+  /// A fixed red rather than the skin's alert: north is a physical direction,
+  /// not a state of the app, and every skin must say it the same way or a
+  /// reader who switches theme has to relearn the one marker that never
+  /// changes meaning. Deliberately saturated — measured against the dark
+  /// dials, the skins' alert reds are muted enough that a 9 px triangle read
+  /// as another node.
+  static const Color north = Color(0xFFFF2D2D);
+
   factory VizPalette.of(MmSkin skin) => VizPalette(
         hot: skin.color.alert,
         cool: skin.color.fg,

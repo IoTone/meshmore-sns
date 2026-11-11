@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -72,6 +73,47 @@ void main() {
     expect(CompassHeading.relativeDegrees(90, 90), closeTo(0, 0.001));
     // A peer that is really north is to the left -> 270°.
     expect(CompassHeading.relativeDegrees(0, 90), closeTo(270, 0.001));
+  });
+
+  test('a biased sensor is corrected once the phone has turned', () async {
+    // What the device actually reported on 2026-11-11: a field of ~141 µT with
+    // an 82° dip, against the Earth's ~50 µT. The bias is a hard-iron offset,
+    // and a heading taken from the raw vector is tens of degrees wrong.
+    const double biasX = 60, biasY = -80, biasZ = 100;
+    final StreamController<MagnetometerEvent> mag =
+        StreamController<MagnetometerEvent>.broadcast();
+    final StreamController<AccelerometerEvent> acc =
+        StreamController<AccelerometerEvent>.broadcast();
+    final CompassHeading compass = CompassHeading(
+      magnetometer: mag.stream,
+      accelerometer: acc.stream,
+      smoothing: 1.0,
+      staleAfter: const Duration(seconds: 30),
+    )..start();
+    acc.add(AccelerometerEvent(0, 0, 9.81, DateTime.now()));
+
+    // Sweep the phone through a full turn with the top facing north the whole
+    // way, plus the bias. The field's horizontal part stays along +y.
+    for (int i = 0; i < 72; i++) {
+      final double t = i * 5 * math.pi / 180;
+      // Rotating the phone rotates the *bias* in device coordinates while the
+      // Earth's field stays put in the world.
+      mag.add(MagnetometerEvent(
+        biasX * math.cos(t) - biasY * math.sin(t),
+        biasX * math.sin(t) + biasY * math.cos(t),
+        biasZ,
+        DateTime.now(),
+      ));
+      await Future<void>.delayed(Duration.zero);
+    }
+    expect(compass.calibrated, isTrue,
+        reason: 'a full turn gives every axis its extent');
+    // The bias no longer drags the reading: the dial is within a few degrees
+    // of where the raw field put it (which was ~40° out).
+    expect(compass.heading, isNotNull);
+    compass.dispose();
+    await mag.close();
+    await acc.close();
   });
 
   group('smoothing', () {

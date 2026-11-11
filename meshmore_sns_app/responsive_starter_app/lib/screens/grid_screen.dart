@@ -25,6 +25,7 @@ import 'sns_cells_view.dart';
 import 'grid_notice.dart';
 import 'grid_prefs_store.dart';
 import '../maps/compass.dart';
+import '../theme/viz_palette.dart';
 import 'weather_view.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
@@ -956,7 +957,7 @@ class _GridScreenState extends State<GridScreen>
                                             rippleAt: _rippleAt,
                                             rippleDuration: _rippleDuration,
                                             scaleKm: scaleKm,
-                                            northMarker: cs.error,
+                                            northMarker: VizPalette.north,
                                             headingDegrees: _compass.heading,
                                           ),
                                         ),
@@ -1463,6 +1464,8 @@ class _GridPainter extends CustomPainter {
       // preset switch repaints the ring, and a stale accent is a wrong mark.
       old.selfLat != selfLat ||
       old.selfLon != selfLon ||
+      // The dial turns with the phone, so a heading change moves every marker.
+      old.headingDegrees != headingDegrees ||
       old.nowUnix != nowUnix ||
       old.windowSec != windowSec ||
       old.accent != accent ||
