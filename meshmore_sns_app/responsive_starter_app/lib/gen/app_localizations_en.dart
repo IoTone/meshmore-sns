@@ -922,6 +922,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Centre marker = you. Cross-hair = N-S / E-W guide.';
 
   @override
+  String get gridLegendNorth =>
+      'North is up: the top of the circle is true north, not the direction the phone is facing.';
+
+  @override
   String get gridLegendDot =>
       'A dot is a node we have heard. Brighter means more recent; it fades out over a day.';
 

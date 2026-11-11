@@ -875,6 +875,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridLegendSelf => '中央 = 自分。十字 = 南北 / 東西の目安。';
 
   @override
+  String get gridLegendNorth => '上が北です。円の上は端末の向きではなく真北を示します。';
+
+  @override
   String get gridLegendDot => '点は受信したノードです。明るいほど新しく、1日かけて消えていきます。';
 
   @override

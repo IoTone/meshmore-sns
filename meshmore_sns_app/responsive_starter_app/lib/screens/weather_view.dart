@@ -602,6 +602,33 @@ class _WindowRow extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 2),
+              // The measured quantities, when any message carried them: a
+              // pressure or a humidity that was parsed and never shown is the
+              // same as one that was never parsed.
+              if (a.hasMeasurement)
+                Wrap(
+                  spacing: 10,
+                  children: <Widget>[
+                    if (a.humidityAvgPct != null)
+                      Text('RH ${a.humidityAvgPct!.round()}%',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontFamily: context.skin.type.monoFamily,
+                              fontSize: context.skin.type.sizeBody)),
+                    if (a.pressureAvgHpa != null)
+                      Text('${a.pressureAvgHpa!.round()} hPa',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontFamily: context.skin.type.monoFamily,
+                              fontSize: context.skin.type.sizeBody)),
+                    if (a.windMaxMps != null)
+                      Text('${a.windMaxMps!.toStringAsFixed(1)} m/s',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontFamily: context.skin.type.monoFamily,
+                              fontSize: context.skin.type.sizeBody)),
+                  ],
+                ),
               Text(l.wxMentionsShort(a.mentions),
                   style:
                       TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody)),

@@ -1688,6 +1688,12 @@ abstract class AppLocalizations {
   /// **'Centre marker = you. Cross-hair = N-S / E-W guide.'**
   String get gridLegendSelf;
 
+  /// No description provided for @gridLegendNorth.
+  ///
+  /// In en, this message translates to:
+  /// **'North is up: the top of the circle is true north, not the direction the phone is facing.'**
+  String get gridLegendNorth;
+
   /// No description provided for @gridLegendDot.
   ///
   /// In en, this message translates to:

@@ -1086,6 +1086,7 @@ class _GridLegend extends StatelessWidget {
           _LegendMore(title: l.gridLegendMore, lines: <String>[
             l.gridLegendRings(scaleValueDisplay),
             l.gridLegendSelf,
+            l.gridLegendNorth,
             l.gridLegendDot,
             l.gridLegendKnown,
             l.gridLegendFavourite,
@@ -1280,6 +1281,32 @@ class _GridPainter extends CustomPainter {
         Offset(center.dx + maxR * f - tp.width - 4, center.dy - tp.height - 2),
       );
     }
+    // North, named. The radar is north-up, and nothing on it said so: a
+    // reader could only assume, and on a phone with a compass in it the
+    // assumption is worth stating. A tick on the outer ring plus the letter is
+    // the cheapest honest way to say which way is which.
+    canvas.drawLine(
+      Offset(center.dx, center.dy - maxR),
+      Offset(center.dx, center.dy - maxR + 8),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = ringStroke,
+    );
+    final TextPainter north = TextPainter(
+      text: TextSpan(
+        text: 'N',
+        style: TextStyle(
+            color: base,
+            fontSize: type.sizeMicro,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1,
+            fontFamily: type.monoFamily),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    north.paint(canvas, Offset(center.dx - north.width / 2, center.dy - maxR - north.height - 2));
+
     // Cross-hair guides (faint).
     final Paint cross = Paint()
       ..style = PaintingStyle.stroke

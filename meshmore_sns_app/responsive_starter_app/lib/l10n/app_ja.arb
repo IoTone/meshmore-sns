@@ -436,6 +436,7 @@
     }
   },
   "gridLegendSelf": "中央 = 自分。十字 = 南北 / 東西の目安。",
+  "gridLegendNorth": "上が北です。円の上は端末の向きではなく真北を示します。",
   "gridLegendDot": "点は受信したノードです。明るいほど新しく、1日かけて消えていきます。",
   "gridLegendKnown": "ゆっくり広がる輪は、直接やり取りしたことのあるノードです。",
   "gridLegendFavourite": "別色での速い点滅 = お気に入りのノード。",
@@ -611,8 +612,6 @@
   },
   "gridEmpty": "まだ範囲内にノードがありません。\n\nノードが自分を知らせると表示されます。",
   "gridStatusOffline": "未接続 — 設定 → 診断で接続",
-  "gridSwipeModeTooltip": "スワイプモード:左右にスワイプで他の画面へ。タップでこのマップを移動・ズーム",
-  "gridPanModeTooltip": "移動・ズームモード:ドラッグでマップを移動。タップで画面スワイプに戻る",
   "gridStatusCounts": "{visible}件 表示 · {known}件 既知 · {favs, plural, =0{0件 連絡先} other{{favs}件 連絡先}}",
   "gridNotConnected": "メッシュに未接続",
   "voiceSettingsTitle": "音声 (TTS 品質)",

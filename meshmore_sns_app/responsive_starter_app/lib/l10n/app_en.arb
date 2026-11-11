@@ -465,6 +465,7 @@
     }
   },
   "gridLegendSelf": "Centre marker = you. Cross-hair = N-S / E-W guide.",
+  "gridLegendNorth": "North is up: the top of the circle is true north, not the direction the phone is facing.",
   "gridLegendDot": "A dot is a node we have heard. Brighter means more recent; it fades out over a day.",
   "gridLegendKnown": "A slow growing halo is a node we have messaged directly.",
   "gridLegendFavourite": "Rapid blink in alt-colour = a favourited node.",
@@ -650,8 +651,6 @@
   },
   "gridEmpty": "No nodes in range yet.\n\nA node appears once it announces itself.",
   "gridStatusOffline": "Not connected — Settings → Diagnostics & connect",
-  "gridSwipeModeTooltip": "Swipe mode: swipe left/right for other screens. Tap to pan and zoom this map",
-  "gridPanModeTooltip": "Pan & zoom mode: drags move the map. Tap to swipe between screens again",
   "gridStatusCounts": "{visible} shown · {known} known · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
   "@gridStatusCounts": {
     "placeholders": {
