@@ -225,87 +225,101 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
             );
           },
         ),
-        // Self-telemetry chip — polled once when the view opens; tap
-        // to re-poll our own altitude. Other-node telemetry is
-        // deferred until lobospeak.
+        // The two controls sit in one column that flows, instead of at
+        // hardcoded `top: 56` and `top: 132`. Those offsets were measured at
+        // one text size: at 1.3x the chip already grows past 132, so the ask
+        // action was drawn over it, and at 200 % both were over the chart.
+        // A column cannot overlap itself at any size.
         Positioned(
           left: 12,
           top: 56,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _refreshSelfTelemetry,
-              borderRadius: mmRadius(context, 6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: cs.surface.withValues(alpha: .85),
-                  borderRadius: mmRadius(context, 6),
-                  border: Border.all(
-                      color: cs.outline.withValues(alpha: .55)),
-                ),
-                child: DefaultTextStyle(
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: context.skin.type.sizeMicro,
-                    fontFamily: context.skin.type.monoFamily,
-                    letterSpacing: 1,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Text(l.elevationSelfTelemetry),
-                          const SizedBox(width: 4),
-                          if (_polling)
-                            SizedBox(
-                              width: 11,
-                              height: 11,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 1.5, color: cs.primary),
-                            )
-                          else
-                            Icon(Icons.refresh,
-                                size: 11, color: cs.onSurfaceVariant),
-                        ],
+          right: 12,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _refreshSelfTelemetry,
+                    borderRadius: mmRadius(context, 6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: cs.surface.withValues(alpha: .85),
+                        borderRadius: mmRadius(context, 6),
+                        border: Border.all(
+                            color: cs.outline.withValues(alpha: .55)),
                       ),
-                      const SizedBox(height: 2),
-                      Text(selfAlt != null
-                          ? l.elevationSelfAlt(selfAlt.toStringAsFixed(0))
-                          : l.elevationSelfAltUnknown),
-                      if (selfTemp != null)
-                        Text(l.elevationSelfTemp(selfTemp.toStringAsFixed(1))),
-                      Text(_polling
-                          ? l.elevationPolling
-                          : l.elevationTapToUpdate),
-                    ],
+                      child: DefaultTextStyle(
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontSize: context.skin.type.sizeMicro,
+                          fontFamily: context.skin.type.monoFamily,
+                          letterSpacing: 1,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Text(l.elevationSelfTelemetry),
+                                const SizedBox(width: 4),
+                                if (_polling)
+                                  SizedBox(
+                                    width: 11,
+                                    height: 11,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 1.5, color: cs.primary),
+                                  )
+                                else
+                                  Icon(Icons.refresh,
+                                      size: 11, color: cs.onSurfaceVariant),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(selfAlt != null
+                                ? l.elevationSelfAlt(
+                                    selfAlt.toStringAsFixed(0))
+                                : l.elevationSelfAltUnknown),
+                            if (selfTemp != null)
+                              Text(l.elevationSelfTemp(
+                                  selfTemp.toStringAsFixed(1))),
+                            Text(_polling
+                                ? l.elevationPolling
+                                : l.elevationTapToUpdate),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+              // The one action this view owed: ask the peers that have no
+              // altitude. It follows the chip in the same column, so it can
+              // never be drawn on top of it, and it disappears when there is
+              // nothing to ask.
+              if (peers.any((DiscoveredNode n) =>
+                  n.pubKeyHex != mc.ownPubKeyHex &&
+                  peerAlt[n.pubKeyHex] == null))
+                Padding(
+                  padding: EdgeInsets.only(top: context.skin.space.step(2)),
+                  child: MmAction(
+                    key: const ValueKey<String>('elevation-ask-nodes'),
+                    icon: Icons.height,
+                    label: _asking ? l.elevationAsking : l.elevationAskNodes,
+                    dense: true,
+                    onPressed: _asking ? null : () => _askNodesElevation(mc),
+                  ),
+                ),
+            ],
           ),
         ),
-        // The one action this view owed: ask the peers that have no altitude.
-        // It sits under the self chip so the two refreshes read as the same
-        // kind of thing, and it disappears when there is nothing to ask.
-        if (peers.any((DiscoveredNode n) =>
-            n.pubKeyHex != mc.ownPubKeyHex &&
-            peerAlt[n.pubKeyHex] == null))
-          Positioned(
-            left: 12,
-            top: 132,
-            child: MmAction(
-              key: const ValueKey<String>('elevation-ask-nodes'),
-              icon: Icons.height,
-              label: _asking ? l.elevationAsking : l.elevationAskNodes,
-              dense: true,
-              onPressed: _asking ? null : () => _askNodesElevation(mc),
-            ),
-          ),
         // What this chart is not: the horizontal axis is a stagger so the
         // dots do not overlap, not a distance. The legend says the dots are
         // nodes; only this says the x-position means nothing.
