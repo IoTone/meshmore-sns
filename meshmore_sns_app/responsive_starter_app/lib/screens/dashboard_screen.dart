@@ -360,27 +360,44 @@ Widget _statusSlab(
                 BoxDecoration(shape: BoxShape.circle, color: statusColor),
           ),
         SizedBox(width: context.skin.space.rowGap),
+        // The label and the syncing note share one flexible slot. They used to
+        // be siblings with only the label flexible, so at 200 % text a long
+        // paired name plus "SYNCING…" plus two 48 dp buttons overflowed the
+        // row by 55 px on a 320 dp screen — measured, not guessed. Everything
+        // that can grow now lives inside the Expanded and ellipsises.
         Expanded(
-          child: Text('▌ ${st.label}',
-              style: TextStyle(
-                  color: statusColor,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.w600)),
+          child: Row(
+            children: <Widget>[
+              Flexible(
+                child: Text('▌ ${st.label}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: statusColor,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w600)),
+              ),
+              // Inline "SYNCING…" when the post-handshake drain is in flight,
+              // so the 1–3 s of BLE round-trip work does not read as a freeze.
+              // A static glyph, not a spinner, so widget tests can settle.
+              if (mc.state == MeshcoreConnectionState.ready &&
+                  mc.isDraining) ...<Widget>[
+                SizedBox(width: context.skin.space.labelToControl),
+                Icon(Icons.sync, size: 14, color: cs.primary),
+                SizedBox(width: context.skin.space.labelToControl),
+                Flexible(
+                  child: Text(l.statusSyncing,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: cs.primary,
+                          fontSize: skin.type.sizeMicro,
+                          letterSpacing: 2)),
+                ),
+              ],
+            ],
+          ),
         ),
-        // Inline "SYNCING…" when the post-handshake drain is in flight, so
-        // the 1–3 s of BLE round-trip work does not read as a freeze. A
-        // static glyph, not a spinner, so widget tests can still settle.
-        if (mc.state == MeshcoreConnectionState.ready &&
-            mc.isDraining) ...<Widget>[
-          Icon(Icons.sync, size: 14, color: cs.primary),
-          SizedBox(width: context.skin.space.labelToControl),
-          Text(l.statusSyncing,
-              style: TextStyle(
-                  color: cs.primary,
-                  fontSize: skin.type.sizeMicro,
-                  letterSpacing: 2)),
-          SizedBox(width: context.skin.space.labelToControl),
-        ],
         // Connect / Retry sit in the slab because they are the state's own
         // action: with nothing paired they open the in-app pairing flow,
         // where which radio you get is your choice.
@@ -537,19 +554,37 @@ class _LocationTile extends StatelessWidget {
           Text(l.dashboardAwaitingDeviceLocation,
               style: TextStyle(color: cs.onSurfaceVariant))
         else
-          Row(
+          // The message and its action stack, they do not share a Row. At
+          // 200 % text the icon, the sentence and a text button do not fit
+          // across a 320 dp tile: the button keeps its intrinsic width, so the
+          // Expanded text had nothing left and the row overflowed by 55 px —
+          // the yellow-and-black stripe the owner reported on this exact
+          // screen. A column cannot overflow that way at any text size.
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(Icons.location_off, size: 18, color: cs.error),
-              SizedBox(width: context.skin.space.rowGap),
-              Expanded(
-                child: Text(
-                  l.dashboardLocationNotSet,
-                  style: TextStyle(color: cs.onSurface),
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: EdgeInsets.only(top: context.skin.space.step(1)),
+                    child: Icon(Icons.location_off, size: 18, color: cs.error),
+                  ),
+                  SizedBox(width: context.skin.space.rowGap),
+                  Expanded(
+                    child: Text(
+                      l.dashboardLocationNotSet,
+                      style: TextStyle(color: cs.onSurface),
+                    ),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () => context.push('/settings/device'),
-                child: Text(l.dashboardLocationConfigure),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton(
+                  onPressed: () => context.push('/settings/device'),
+                  child: Text(l.dashboardLocationConfigure),
+                ),
               ),
             ],
           ),
