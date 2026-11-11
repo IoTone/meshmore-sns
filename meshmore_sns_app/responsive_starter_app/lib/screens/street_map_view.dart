@@ -1010,8 +1010,10 @@ class _StreetMapViewState extends State<StreetMapView> {
                             onTap: () => _showDensityCell(context, mc, c),
                             child: Center(
                               child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 5, vertical: 2),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: context.skin.space.insideText,
+                                    vertical: context.skin.space.insideText /
+                                        2),
                                 decoration: BoxDecoration(
                                   color: cs.surface.withValues(alpha: .82),
                                   borderRadius: BorderRadius.circular(kRadiusXs),
