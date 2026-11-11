@@ -204,4 +204,54 @@ void main() {
     expect(find.textContaining('Looks like a place: Seattle'), findsOneWidget);
     mc.dispose();
   });
+
+  testWidgets('both answers are real 48 dp controls, at every text size',
+      (WidgetTester t) async {
+    // The offer sits inside a thread, so it has to read as an offer and not as
+    // a form: two body-sized buttons under every message that names a place
+    // made the chat look like a questionnaire. The compact step shrinks the
+    // type role and the padding and keeps the 48 dp target, which is the part
+    // that must never shrink.
+    for (final double scale in <double>[1.0, 1.3, 2.0]) {
+      for (final Size size in <Size>[
+        const Size(320, 700),
+        const Size(420, 900),
+      ]) {
+        await t.binding.setSurfaceSize(size);
+        final FakeMeshcoreTransport fake =
+            FakeMeshcoreTransport(connected: true);
+        final MeshcoreController mc = _controller(fake);
+        await t.pumpWidget(MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+          child: _host(mc),
+        ));
+        await mc.connect();
+        fake.emit(selfInfoFrame());
+        await t.pumpAndSettle();
+        fake.emit(channelMsgFrame(text: 'hello from Seattle, 73'));
+        await t.pumpAndSettle();
+
+        Finder byKeyPrefix(String prefix) =>
+            find.byWidgetPredicate((Widget w) =>
+                w.key is ValueKey<String> &&
+                (w.key! as ValueKey<String>).value.startsWith(prefix));
+        final Finder report = byKeyPrefix('place-suggestion-report-');
+        final Finder dismiss = byKeyPrefix('place-suggestion-dismiss-');
+        expect(report, findsOneWidget, reason: 'scale $scale @ $size');
+        expect(dismiss, findsOneWidget, reason: 'scale $scale @ $size');
+        for (final Finder f in <Finder>[report, dismiss]) {
+          final Size s = t.getSize(f);
+          expect(s.height, greaterThanOrEqualTo(48),
+              reason: 'a control under 48 dp cannot be pressed reliably '
+                  '(scale $scale @ $size)');
+        }
+        expect(t.takeException(), isNull,
+            reason: 'overflow at scale $scale @ $size');
+        mc.dispose();
+        await t.pumpWidget(const SizedBox());
+        await t.pump(const Duration(seconds: 5));
+      }
+    }
+    addTearDown(() => t.binding.setSurfaceSize(null));
+  });
 }

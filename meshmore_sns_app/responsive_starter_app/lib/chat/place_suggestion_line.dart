@@ -99,16 +99,19 @@ class PlaceSuggestionLine extends StatelessWidget {
               ),
             ],
           ),
+          // Compact: an offer about the row above, not a primary action. The
+          // 48 dp target and the boundary stay, so it is still a control; only
+          // the type role and the padding step down.
           MmAction(
             key: ValueKey<String>('place-suggestion-report-${message.id}'),
-            dense: true,
+            compact: true,
             icon: Icons.add_location_alt_outlined,
             label: l.placeSuggestReport,
             onPressed: () => _report(context),
           ),
           MmAction(
             key: ValueKey<String>('place-suggestion-dismiss-${message.id}'),
-            dense: true,
+            compact: true,
             label: l.placeSuggestDismiss,
             onPressed: () => _dismiss(context),
           ),

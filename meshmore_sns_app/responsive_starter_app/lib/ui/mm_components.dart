@@ -463,6 +463,7 @@ class MmAction extends StatelessWidget {
     required this.onPressed,
     this.icon,
     this.dense = false,
+    this.compact = false,
   });
 
   final String label;
@@ -471,6 +472,13 @@ class MmAction extends StatelessWidget {
 
   /// Compact vertical padding for a control that sits inside a dense row.
   final bool dense;
+
+  /// A third, quieter step for an inline offer inside a content row: the
+  /// same 48 dp target and the same boundary, with the label at the small
+  /// type role and less side padding. In a chat row a suggestion is an offer
+  /// about the row above it, not a primary action, and two body-sized buttons
+  /// under every message that names a place made the thread read as a form.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -500,7 +508,8 @@ class MmAction extends StatelessWidget {
           child: Container(
             constraints: const BoxConstraints(minHeight: 48),
             padding: EdgeInsets.symmetric(
-                horizontal: 12, vertical: dense ? 6 : 8),
+                horizontal: compact ? 8 : 12,
+                vertical: dense || compact ? 6 : 8),
             decoration: ShapeDecoration(
               color: on
                   ? skin.color.surfaceAlt
@@ -516,15 +525,16 @@ class MmAction extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 if (icon != null) ...<Widget>[
-                  Icon(icon, size: 16, color: fg),
-                  const SizedBox(width: 6),
+                  Icon(icon, size: compact ? 14 : 16, color: fg),
+                  SizedBox(width: compact ? 4 : 6),
                 ],
                 Flexible(
                   child: Text(label,
                       softWrap: true,
                       style: TextStyle(
                           color: fg,
-                          fontSize: skin.type.sizeBodyLg,
+                          fontSize:
+                              compact ? skin.type.sizeSm : skin.type.sizeBodyLg,
                           letterSpacing: .4,
                           fontWeight: FontWeight.w600)),
                 ),
