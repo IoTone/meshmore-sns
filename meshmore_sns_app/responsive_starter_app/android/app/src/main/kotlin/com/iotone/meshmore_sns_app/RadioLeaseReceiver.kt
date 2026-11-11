@@ -36,15 +36,53 @@ class RadioLeaseReceiver : BroadcastReceiver() {
         private const val PREFS = "meshmore_radio_lease"
         private const val KEY_YIELDED = "yielded"
 
-        /** True while another app holds the radio. Persisted, because the process may die. */
-        fun isYielded(context: Context): Boolean = context
-            .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean(KEY_YIELDED, false)
+        private const val KEY_YIELDED_AT = "yielded_at"
+
+        /**
+         * How long a hold survives its holder going quiet.
+         *
+         * The flag used to be permanent until [ACTION_FREE], and a holder that was killed, uninstalled
+         * or simply never finished leaves no FREE to send. The result was unrecoverable and measured on
+         * the device on 2026-11-11: `meshmore_radio_lease.xml` held `yielded=true`, every launch read it
+         * and skipped the automatic connect, and the app sat disconnected until the operator tapped
+         * Connect — which is a state the lease was never meant to create. A hold is a statement about
+         * *now*; nothing can hold a radio for a quarter of an hour without saying anything, so the claim
+         * expires.
+         */
+        private const val HOLD_TTL_MS = 15L * 60L * 1000L
+
+        /**
+         * True while another app holds the radio, as last recorded.
+         *
+         * Persisted across processes because this app may be dead when the request arrives, and refused
+         * once stale: a hold nobody renewed is not evidence that the radio is still in use.
+         */
+        fun isYielded(context: Context): Boolean {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            if (!prefs.getBoolean(KEY_YIELDED, false)) return false
+            val at = prefs.getLong(KEY_YIELDED_AT, 0L)
+            val age = System.currentTimeMillis() - at
+            // A hold written before this timestamp existed has `at == 0`, so it reads as stale and the
+            // flag repairs itself on the first launch after the update.
+            if (at <= 0L || age > HOLD_TTL_MS) {
+                setYielded(context, false)
+                return false
+            }
+            return true
+        }
+
+        /** Take the radio back: the operator asked for it, which outranks a stale hold. */
+        fun clear(context: Context) = setYielded(context, false)
 
         private fun setYielded(context: Context, yielded: Boolean) {
-            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putBoolean(KEY_YIELDED, yielded)
-                .apply()
+            val editor = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            if (yielded) {
+                editor.putBoolean(KEY_YIELDED, true)
+                    .putLong(KEY_YIELDED_AT, System.currentTimeMillis())
+            } else {
+                editor.putBoolean(KEY_YIELDED, false).remove(KEY_YIELDED_AT)
+            }
+            editor.apply()
         }
 
         /**

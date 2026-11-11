@@ -52,6 +52,23 @@ abstract final class RadioLease {
   /// first connect. Never throws: an unanswered channel means "not yielded".
   static Future<bool> refresh() async => _cached = await isYielded();
 
+  /// Take the radio back, because the operator asked for it by hand.
+  ///
+  /// A hold outranks the automatic connect, but it never outranks a person
+  /// tapping Connect. Without this the stored flag vetoed every later launch
+  /// too: the app connected on the tap and then started disconnected again,
+  /// which is what made the lease look like a fault rather than an agreement.
+  static Future<void> clear() async {
+    _cached = false;
+    try {
+      await _channel.invokeMethod<void>('clear');
+    } on PlatformException {
+      // Nothing to clear if the platform cannot hear us.
+    } on MissingPluginException {
+      // Same.
+    }
+  }
+
   static Future<bool> isYielded() async {
     try {
       // A timeout, because a platform channel that has no handler does not

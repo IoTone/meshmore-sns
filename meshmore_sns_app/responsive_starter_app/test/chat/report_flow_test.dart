@@ -69,9 +69,9 @@ void main() {
     await t.tap(find.text('open'));
     await t.pumpAndSettle();
 
-    expect(find.text('Report this message'), findsOneWidget);
+    expect(find.text('Export this message'), findsOneWidget);
     await t.enterText(find.byType(TextField), 'this looks like a trap');
-    await t.tap(find.widgetWithText(TextButton, 'Report…'));
+    await t.tap(find.widgetWithText(TextButton, 'Export…'));
     await t.pumpAndSettle();
 
     expect(find.textContaining('Nothing was sent'), findsOneWidget);
@@ -105,9 +105,9 @@ void main() {
     addTearDown(() => t.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, null));
 
-    await t.tap(find.widgetWithText(TextButton, 'Copy the report'));
+    await t.tap(find.widgetWithText(TextButton, 'Copy the file'));
     await t.pumpAndSettle();
-    expect(find.text('Report copied.'), findsOneWidget);
+    expect(find.text('Copied.'), findsOneWidget);
     expect(clipboard, isNotNull);
     final Map<String, dynamic> copied =
         jsonDecode(clipboard!) as Map<String, dynamic>;
@@ -136,7 +136,7 @@ void main() {
     await t.tap(find.text('open'));
     await t.pumpAndSettle();
     await t.enterText(find.byType(TextField), 'came from the north');
-    await t.tap(find.widgetWithText(TextButton, 'Report…'));
+    await t.tap(find.widgetWithText(TextButton, 'Export…'));
     await t.pumpAndSettle();
 
     // The platform side wraps the file in a content:// URI; here it answers
@@ -151,7 +151,7 @@ void main() {
     addTearDown(() => t.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null));
 
-    await t.tap(find.widgetWithText(TextButton, 'Share the report'));
+    await t.tap(find.widgetWithText(TextButton, 'Share the file'));
     await t.pumpAndSettle();
 
     expect(calls.map((MethodCall c) => c.method), <String>['shareFile']);
@@ -160,7 +160,7 @@ void main() {
     expect(args['path'], '${dir.path}/bundle.json',
         reason: 'the file that was written is the file handed over');
     expect(args['mime'], 'application/json');
-    expect(find.text('Report copied.'), findsNothing,
+    expect(find.text('Copied.'), findsNothing,
         reason: 'sharing is not copying, and says so by not claiming it');
   });
 

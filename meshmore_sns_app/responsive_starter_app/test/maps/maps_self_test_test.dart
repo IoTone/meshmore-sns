@@ -143,7 +143,7 @@ void main() {
       expect(t.takeException(), isNull);
       if (loc.languageCode == 'en') {
         expect(find.text('All checks passed'), findsOneWidget);
-        expect(find.text('Copy report'), findsOneWidget);
+        expect(find.text('Copy results'), findsOneWidget);
         expect(find.text('Map servers reachable'), findsOneWidget);
       }
       expect(find.byIcon(Icons.check_circle), findsWidgets);

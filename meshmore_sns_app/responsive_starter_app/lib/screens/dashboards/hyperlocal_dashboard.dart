@@ -9,6 +9,7 @@ import '../../gen/app_localizations.dart';
 import '../../meshcore/discovered_node.dart';
 import '../../meshcore/meshcore_controller.dart';
 import '../../meshcore/own_location.dart';
+import '../../maps/compass.dart';
 import '../../theme/mm_skin.dart';
 import '../../theme/theme_controller.dart';
 import '../../theme/viz_palette.dart';
@@ -43,8 +44,18 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
     duration: const Duration(seconds: 4),
   );
 
+  /// Which way the phone points, so the dial's top is the phone's own facing.
+  final CompassHeading _compass = CompassHeading();
+
+  @override
+  void initState() {
+    super.initState();
+    _compass.start();
+  }
+
   @override
   void dispose() {
+    _compass.dispose();
     _sweep.dispose();
     super.dispose();
   }
@@ -136,6 +147,8 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
                                     fgMuted: skin.color.fgMuted,
                                     monoFamily: skin.type.monoFamily,
                                     northLabel: 'N',
+                                    headingDegrees: _compass.heading,
+                                    northMarker: skin.color.alert,
                                   ),
                                 ),
                               ),
@@ -241,10 +254,15 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
         frac = (frac + _hashUnit(n.pubKeyHex, 1) * 0.10 - 0.05)
             .clamp(0.08, 0.97);
       }
-      final double angle =
+      final double raw =
           bearing[n.pubKeyHex] ?? (_hashUnit(n.pubKeyHex, 7) * 2 * math.pi);
+      // The dial's top is where the phone points: subtract the heading so a
+      // peer really to the east sits where the phone would find it, not where
+      // a north-up dial would have put it.
+      final double angle =
+          raw - (_compass.heading ?? 0) * math.pi / 180;
       final double r = frac * maxR;
-      // angle: 0 = North (up), clockwise.
+      // angle: 0 = straight ahead, clockwise.
       final Offset pos = Offset(
         center.dx + r * math.sin(angle),
         center.dy - r * math.cos(angle),
@@ -312,6 +330,8 @@ class _RadarPainter extends CustomPainter {
     required this.fgMuted,
     required this.monoFamily,
     required this.northLabel,
+    required this.headingDegrees,
+    required this.northMarker,
   });
 
   final Offset center;
@@ -328,6 +348,15 @@ class _RadarPainter extends CustomPainter {
   final Color fgMuted;
   final String monoFamily;
   final String northLabel;
+
+  /// Which way the phone points, or null when nothing knows. The dial turns so
+  /// its top is the phone's own facing and the red marker says where north is;
+  /// with no heading it stays north-up, which is the only claim it can make.
+  final double? headingDegrees;
+
+  /// The red the north marker is drawn in: the skin's own alert colour, so the
+  /// marker is red on every skin without a literal.
+  final Color northMarker;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -374,9 +403,22 @@ class _RadarPainter extends CustomPainter {
           lead);
     }
 
-    // North marker.
-    _label(canvas, northLabel, Offset(center.dx, center.dy - maxR - 12),
-        fgMuted, 10, center: true);
+    // North, as a red marker that moves with the dial. A letter fixed at the
+    // top would keep saying north after the dial turned.
+    final double northAt = CompassHeading.northMarkerDegrees(headingDegrees);
+    paintNorthMarker(canvas, center, maxR - 2,
+        markerDegrees: northAt, color: northMarker);
+    final double na = northAt * math.pi / 180;
+    _label(
+        canvas,
+        northLabel,
+        Offset(
+          center.dx + (maxR + 4) * math.sin(na),
+          center.dy - (maxR + 4) * math.cos(na),
+        ),
+        northMarker,
+        10,
+        center: true);
 
     // Blips (dots only — in-range names are drawn as decluttered
     // callouts in the gutter outside the rings, below).

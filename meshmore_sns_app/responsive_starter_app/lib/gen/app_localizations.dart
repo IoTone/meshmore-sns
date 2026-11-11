@@ -5303,7 +5303,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolsCopyReport.
   ///
   /// In en, this message translates to:
-  /// **'Copy report'**
+  /// **'Copy results'**
   String get toolsCopyReport;
 
   /// No description provided for @toolsCopied.
@@ -6563,13 +6563,13 @@ abstract class AppLocalizations {
   /// No description provided for @selfTestCopy.
   ///
   /// In en, this message translates to:
-  /// **'Copy report'**
+  /// **'Copy results'**
   String get selfTestCopy;
 
   /// No description provided for @selfTestCopied.
   ///
   /// In en, this message translates to:
-  /// **'Report copied'**
+  /// **'Results copied'**
   String get selfTestCopied;
 
   /// No description provided for @selfCheckReach.
@@ -7026,13 +7026,13 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsCopySoak.
   ///
   /// In en, this message translates to:
-  /// **'Copy soak report'**
+  /// **'Copy soak results'**
   String get diagnosticsCopySoak;
 
   /// No description provided for @diagnosticsSoakCopied.
   ///
   /// In en, this message translates to:
-  /// **'Soak report copied'**
+  /// **'Soak results copied'**
   String get diagnosticsSoakCopied;
 
   /// No description provided for @nodesClearSearch.
@@ -7261,7 +7261,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeCreateAction.
   ///
   /// In en, this message translates to:
-  /// **'Report'**
+  /// **'Tag'**
   String get placeCreateAction;
 
   /// No description provided for @placeLabelField.
@@ -7315,7 +7315,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeSent.
   ///
   /// In en, this message translates to:
-  /// **'Place reported. It expires on its own.'**
+  /// **'Place tagged. It expires on its own.'**
   String get placeSent;
 
   /// No description provided for @placeBudgetRefused.
@@ -7327,7 +7327,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeNoIdentity.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio first: a place is reported as you.'**
+  /// **'Connect a radio first: a place is tagged as you.'**
   String get placeNoIdentity;
 
   /// No description provided for @placeLabelEmpty.
@@ -7363,7 +7363,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeReportedBy.
   ///
   /// In en, this message translates to:
-  /// **'Reported by {name}, {time}'**
+  /// **'Tagged by {name}, {time}'**
   String placeReportedBy(String name, String time);
 
   /// No description provided for @placeTimeUnknown.
@@ -7471,7 +7471,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeHistoryEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No places yet. Long-press the map to report one.'**
+  /// **'No places yet. Long-press the map to tag one.'**
   String get placeHistoryEmpty;
 
   /// No description provided for @placeStateLive.
@@ -7489,7 +7489,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeSearchHint.
   ///
   /// In en, this message translates to:
-  /// **'Search label or reporter'**
+  /// **'Search label or who tagged it'**
   String get placeSearchHint;
 
   /// No description provided for @placeWithinAny.
@@ -7885,7 +7885,7 @@ abstract class AppLocalizations {
   /// No description provided for @degradedNoLocation.
   ///
   /// In en, this message translates to:
-  /// **'Location is off, so distances, bearings and place reports have no fix. Everything else works.'**
+  /// **'Location is off, so distances, bearings and place tags have no fix. Everything else works.'**
   String get degradedNoLocation;
 
   /// No description provided for @degradedMapOffline.
@@ -8377,7 +8377,7 @@ abstract class AppLocalizations {
   /// No description provided for @placePhotoNotFetched.
   ///
   /// In en, this message translates to:
-  /// **'Photo not fetched. The report itself is complete; the picture is optional and may never arrive.'**
+  /// **'Photo not fetched. The entry itself is complete; the picture is optional and may never arrive.'**
   String get placePhotoNotFetched;
 
   /// No description provided for @placePhotoMayNotArrive.
@@ -8887,13 +8887,13 @@ abstract class AppLocalizations {
   /// No description provided for @reportAction.
   ///
   /// In en, this message translates to:
-  /// **'Report…'**
+  /// **'Export…'**
   String get reportAction;
 
   /// No description provided for @reportSheetTitle.
   ///
   /// In en, this message translates to:
-  /// **'Report this message'**
+  /// **'Export this message'**
   String get reportSheetTitle;
 
   /// No description provided for @reportObservationLabel.
@@ -8911,25 +8911,25 @@ abstract class AppLocalizations {
   /// No description provided for @reportBundleWritten.
   ///
   /// In en, this message translates to:
-  /// **'Report saved to {path}'**
+  /// **'Saved to {path}'**
   String reportBundleWritten(String path);
 
   /// No description provided for @reportShareBundle.
   ///
   /// In en, this message translates to:
-  /// **'Share the report'**
+  /// **'Share the file'**
   String get reportShareBundle;
 
   /// No description provided for @reportCopyBundle.
   ///
   /// In en, this message translates to:
-  /// **'Copy the report'**
+  /// **'Copy the file'**
   String get reportCopyBundle;
 
   /// No description provided for @reportCopied.
   ///
   /// In en, this message translates to:
-  /// **'Report copied.'**
+  /// **'Copied.'**
   String get reportCopied;
 
   /// No description provided for @blockedKeysNotPersisted.
@@ -8947,7 +8947,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportActionSub.
   ///
   /// In en, this message translates to:
-  /// **'Writes a file on this device for you to send. Nothing is transmitted.'**
+  /// **'Writes a file on this device for you to send. Nothing leaves the app.'**
   String get reportActionSub;
 
   /// No description provided for @sosDestinationContactsLimit.
@@ -9049,7 +9049,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapReportPlace.
   ///
   /// In en, this message translates to:
-  /// **'Report a place'**
+  /// **'Tag a place'**
   String get mapReportPlace;
 
   /// No description provided for @settingsAppGroupRadio.
@@ -9571,7 +9571,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeSuggestReport.
   ///
   /// In en, this message translates to:
-  /// **'Report place'**
+  /// **'Tag place'**
   String get placeSuggestReport;
 
   /// No description provided for @placeSuggestDismiss.
@@ -9583,7 +9583,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeSuggestNeedsLocation.
   ///
   /// In en, this message translates to:
-  /// **'Turn on location to report a place.'**
+  /// **'Turn on location to tag a place.'**
   String get placeSuggestNeedsLocation;
 
   /// No description provided for @mapCompassLegend.

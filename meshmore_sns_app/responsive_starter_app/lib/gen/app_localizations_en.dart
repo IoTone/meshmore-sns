@@ -3120,7 +3120,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toolsStop => 'Stop';
 
   @override
-  String get toolsCopyReport => 'Copy report';
+  String get toolsCopyReport => 'Copy results';
 
   @override
   String get toolsCopied => 'Copied to the clipboard';
@@ -3848,10 +3848,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get selfTestCopy => 'Copy report';
+  String get selfTestCopy => 'Copy results';
 
   @override
-  String get selfTestCopied => 'Report copied';
+  String get selfTestCopied => 'Results copied';
 
   @override
   String get selfCheckReach => 'Map servers reachable';
@@ -4126,10 +4126,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsSoakEmpty => 'No scopes bound';
 
   @override
-  String get diagnosticsCopySoak => 'Copy soak report';
+  String get diagnosticsCopySoak => 'Copy soak results';
 
   @override
-  String get diagnosticsSoakCopied => 'Soak report copied';
+  String get diagnosticsSoakCopied => 'Soak results copied';
 
   @override
   String get nodesClearSearch => 'Clear search';
@@ -4267,7 +4267,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeCreateTitle => 'Drop a place';
 
   @override
-  String get placeCreateAction => 'Report';
+  String get placeCreateAction => 'Tag';
 
   @override
   String get placeLabelField => 'What is here?';
@@ -4294,7 +4294,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placePrecision1000 => 'About 1 km';
 
   @override
-  String get placeSent => 'Place reported. It expires on its own.';
+  String get placeSent => 'Place tagged. It expires on its own.';
 
   @override
   String placeBudgetRefused(int n, String time) {
@@ -4303,7 +4303,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeNoIdentity =>
-      'Connect a radio first: a place is reported as you.';
+      'Connect a radio first: a place is tagged as you.';
 
   @override
   String get placeLabelEmpty => 'A place needs a few words.';
@@ -4324,7 +4324,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String placeReportedBy(String name, String time) {
-    return 'Reported by $name, $time';
+    return 'Tagged by $name, $time';
   }
 
   @override
@@ -4390,7 +4390,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeHistoryEmpty =>
-      'No places yet. Long-press the map to report one.';
+      'No places yet. Long-press the map to tag one.';
 
   @override
   String get placeStateLive => 'live';
@@ -4399,7 +4399,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeStateExpired => 'expired';
 
   @override
-  String get placeSearchHint => 'Search label or reporter';
+  String get placeSearchHint => 'Search label or who tagged it';
 
   @override
   String get placeWithinAny => 'Any time left';
@@ -4659,7 +4659,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get degradedNoLocation =>
-      'Location is off, so distances, bearings and place reports have no fix. Everything else works.';
+      'Location is off, so distances, bearings and place tags have no fix. Everything else works.';
 
   @override
   String get degradedMapOffline =>
@@ -4972,7 +4972,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placePhotoNotFetched =>
-      'Photo not fetched. The report itself is complete; the picture is optional and may never arrive.';
+      'Photo not fetched. The entry itself is complete; the picture is optional and may never arrive.';
 
   @override
   String get placePhotoMayNotArrive =>
@@ -5319,10 +5319,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The key is unblocked. Its messages appear again.';
 
   @override
-  String get reportAction => 'Report…';
+  String get reportAction => 'Export…';
 
   @override
-  String get reportSheetTitle => 'Report this message';
+  String get reportSheetTitle => 'Export this message';
 
   @override
   String get reportObservationLabel => 'What did you see? (optional)';
@@ -5333,17 +5333,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String reportBundleWritten(String path) {
-    return 'Report saved to $path';
+    return 'Saved to $path';
   }
 
   @override
-  String get reportShareBundle => 'Share the report';
+  String get reportShareBundle => 'Share the file';
 
   @override
-  String get reportCopyBundle => 'Copy the report';
+  String get reportCopyBundle => 'Copy the file';
 
   @override
-  String get reportCopied => 'Report copied.';
+  String get reportCopied => 'Copied.';
 
   @override
   String get blockedKeysNotPersisted =>
@@ -5355,7 +5355,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportActionSub =>
-      'Writes a file on this device for you to send. Nothing is transmitted.';
+      'Writes a file on this device for you to send. Nothing leaves the app.';
 
   @override
   String sosDestinationContactsLimit(int count) {
@@ -5417,7 +5417,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mapReportPlace => 'Report a place';
+  String get mapReportPlace => 'Tag a place';
 
   @override
   String get settingsAppGroupRadio => 'Radio';
@@ -5727,13 +5727,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get placeSuggestReport => 'Report place';
+  String get placeSuggestReport => 'Tag place';
 
   @override
   String get placeSuggestDismiss => 'Dismiss';
 
   @override
-  String get placeSuggestNeedsLocation => 'Turn on location to report a place.';
+  String get placeSuggestNeedsLocation => 'Turn on location to tag a place.';
 
   @override
   String get mapCompassLegend => 'The arrow is this phone\'s compass.';

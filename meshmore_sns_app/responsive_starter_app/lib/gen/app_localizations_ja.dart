@@ -2988,7 +2988,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toolsStop => '停止';
 
   @override
-  String get toolsCopyReport => 'レポートをコピー';
+  String get toolsCopyReport => '結果をコピー';
 
   @override
   String get toolsCopied => 'クリップボードにコピーしました';
@@ -3696,10 +3696,10 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get selfTestCopy => 'レポートをコピー';
+  String get selfTestCopy => '結果をコピー';
 
   @override
-  String get selfTestCopied => 'レポートをコピーしました';
+  String get selfTestCopied => '結果をコピーしました';
 
   @override
   String get selfCheckReach => '地図サーバーに接続';
@@ -3964,10 +3964,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnosticsSoakEmpty => 'スコープが未設定です';
 
   @override
-  String get diagnosticsCopySoak => 'ソークレポートをコピー';
+  String get diagnosticsCopySoak => 'ソーク結果をコピー';
 
   @override
-  String get diagnosticsSoakCopied => 'ソークレポートをコピーしました';
+  String get diagnosticsSoakCopied => 'ソーク結果をコピーしました';
 
   @override
   String get nodesClearSearch => '検索をクリア';
@@ -4101,7 +4101,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeCreateTitle => '場所を立てる';
 
   @override
-  String get placeCreateAction => '報告';
+  String get placeCreateAction => 'タグ付け';
 
   @override
   String get placeLabelField => 'ここは何ですか?';
@@ -4128,7 +4128,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placePrecision1000 => '約1 km';
 
   @override
-  String get placeSent => '報告しました。期限が来ると自動で消えます。';
+  String get placeSent => 'タグ付けしました。期限が来ると自動で消えます。';
 
   @override
   String placeBudgetRefused(int n, String time) {
@@ -4136,7 +4136,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get placeNoIdentity => '先に無線機に接続してください。場所はあなたとして報告されます。';
+  String get placeNoIdentity => '先に無線機に接続してください。場所はあなたの名前でタグ付けされます。';
 
   @override
   String get placeLabelEmpty => '場所には短い言葉が必要です。';
@@ -4157,7 +4157,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String placeReportedBy(String name, String time) {
-    return '$name が $time に報告';
+    return '$name が $time にタグ付け';
   }
 
   @override
@@ -4220,7 +4220,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeHistoryTitle => '場所';
 
   @override
-  String get placeHistoryEmpty => 'まだ場所はありません。地図を長押しして報告できます。';
+  String get placeHistoryEmpty => 'まだ場所はありません。地図を長押しするとタグ付けできます。';
 
   @override
   String get placeStateLive => '有効';
@@ -4229,7 +4229,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeStateExpired => '期限切れ';
 
   @override
-  String get placeSearchHint => 'ラベルまたは報告者で検索';
+  String get placeSearchHint => 'ラベルまたはタグ付けした人で検索';
 
   @override
   String get placeWithinAny => '残り時間の指定なし';
@@ -4478,7 +4478,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get degradedNoLocation =>
-      '位置情報が無効のため、距離・方位・プレイス報告の基準がありません。それ以外は動作します。';
+      '位置情報が無効のため、距離・方位・場所のタグの基準がありません。それ以外は動作します。';
 
   @override
   String get degradedMapOffline =>
@@ -4773,7 +4773,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mediaPhotoSemantics => 'メッシュで受信した写真';
 
   @override
-  String get placePhotoNotFetched => '写真は未取得です。報告自体は完全で、写真は任意であり届かないこともあります。';
+  String get placePhotoNotFetched => '写真は未取得です。項目自体は完全で、写真は任意であり届かないこともあります。';
 
   @override
   String get placePhotoMayNotArrive => '写真は届かないことがあります。テキストは届きます。';
@@ -5100,10 +5100,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get blockedKeysUnblockedUnnamed => 'ブロックを解除しました。メッセージが再び表示されます。';
 
   @override
-  String get reportAction => '報告…';
+  String get reportAction => '書き出し…';
 
   @override
-  String get reportSheetTitle => 'このメッセージを報告';
+  String get reportSheetTitle => 'このメッセージを書き出す';
 
   @override
   String get reportObservationLabel => '何を見ましたか？（任意）';
@@ -5114,17 +5114,17 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String reportBundleWritten(String path) {
-    return 'レポートを $path に保存しました';
+    return '$path に保存しました';
   }
 
   @override
-  String get reportShareBundle => 'レポートを共有';
+  String get reportShareBundle => 'ファイルを共有';
 
   @override
-  String get reportCopyBundle => 'レポートをコピー';
+  String get reportCopyBundle => 'ファイルをコピー';
 
   @override
-  String get reportCopied => 'レポートをコピーしました。';
+  String get reportCopied => 'コピーしました。';
 
   @override
   String get blockedKeysNotPersisted =>
@@ -5135,7 +5135,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '保存された一覧を読み取れなかったため、現在は何もブロックしていません。壊れたファイルのコピーは保存され、新しいブロックは通常どおり保存されます。';
 
   @override
-  String get reportActionSub => '送信先を選べるよう、端末にファイルを作成します。自動送信はしません。';
+  String get reportActionSub => '送信先を選べるよう、端末にファイルを作成します。アプリの外には出ません。';
 
   @override
   String sosDestinationContactsLimit(int count) {
@@ -5195,7 +5195,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get mapReportPlace => '場所を報告';
+  String get mapReportPlace => '場所をタグ付け';
 
   @override
   String get settingsAppGroupRadio => '無線';
@@ -5496,13 +5496,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get placeSuggestReport => '場所を報告';
+  String get placeSuggestReport => '場所をタグ付け';
 
   @override
   String get placeSuggestDismiss => '閉じる';
 
   @override
-  String get placeSuggestNeedsLocation => '場所を報告するには位置情報をオンにしてください。';
+  String get placeSuggestNeedsLocation => '場所をタグ付けするには位置情報をオンにしてください。';
 
   @override
   String get mapCompassLegend => '矢印はこの端末の方位磁針です。';

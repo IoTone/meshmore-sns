@@ -108,6 +108,12 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     // Asked at launch, before the app decides whether to reach for a paired radio.
                     "isYielded" -> result.success(RadioLeaseReceiver.isYielded(this))
+                    // The operator connected by hand. That outranks any hold, including one whose
+                    // holder is gone, so the flag is dropped rather than obeyed on the next launch.
+                    "clear" -> {
+                        RadioLeaseReceiver.clear(this)
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }

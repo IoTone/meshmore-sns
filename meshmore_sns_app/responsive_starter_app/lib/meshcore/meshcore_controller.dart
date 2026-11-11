@@ -1162,6 +1162,9 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     if (_connecting) return;
     _connecting = true;
     if (!isRetry) {
+      // The operator asked by hand, so the stored hold is dropped too. Leaving
+      // it made this connect work and the next launch start disconnected again.
+      if (_yielded) await RadioLease.clear();
       _yielded = false;
       _manualDisconnect = false;
       _gaveUp = false;

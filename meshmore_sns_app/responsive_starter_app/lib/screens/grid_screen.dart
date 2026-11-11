@@ -24,6 +24,7 @@ import 'node_detail_sheet.dart';
 import 'sns_cells_view.dart';
 import 'grid_notice.dart';
 import 'grid_prefs_store.dart';
+import '../maps/compass.dart';
 import 'weather_view.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
@@ -224,6 +225,11 @@ class _GridScreenState extends State<GridScreen>
   late final AnimationController _tick;
   StreamSubscription<ChatMessage>? _msgSub;
 
+  /// Which way the phone is pointing. Started with the screen and disposed with
+  /// it; null until the first sample, and every consumer falls back to north-up
+  /// while it is null.
+  final CompassHeading _compass = CompassHeading();
+
   /// R18's anonymous-channel ripple: anchors a transient centre-out
   /// wave on every incoming channel message. The painter reads this
   /// each frame and decays it over `_rippleDuration`.
@@ -273,6 +279,7 @@ class _GridScreenState extends State<GridScreen>
       vsync: this,
       duration: const Duration(seconds: 4), // arbitrary; we read .value
     )..repeat();
+    _compass.start();
     final MeshcoreController mc = context.read<MeshcoreController>();
     _snapshot = List<DiscoveredNode>.of(mc.nodes); // initial paused frame
     _msgSub = mc.incomingChannelMessages.listen((_) {
@@ -328,6 +335,7 @@ class _GridScreenState extends State<GridScreen>
     _refreshTimer?.cancel();
     _msgSub?.cancel();
     _tick.dispose();
+    _compass.dispose();
     super.dispose();
   }
 
@@ -636,6 +644,7 @@ class _GridScreenState extends State<GridScreen>
         selfLat: selfLat,
         selfLon: selfLon,
         scaleKm: scaleKm,
+        headingDegrees: _compass.heading,
       );
       final double d = (p - tap).distance;
       if (d <= _tapRadius && d < bestDist) {
@@ -947,6 +956,8 @@ class _GridScreenState extends State<GridScreen>
                                             rippleAt: _rippleAt,
                                             rippleDuration: _rippleDuration,
                                             scaleKm: scaleKm,
+                                            northMarker: cs.error,
+                                            headingDegrees: _compass.heading,
                                           ),
                                         ),
                                       ),
@@ -1158,6 +1169,8 @@ class _GridPainter extends CustomPainter {
     required this.rippleAt,
     required this.rippleDuration,
     required this.scaleKm,
+    required this.northMarker,
+    this.headingDegrees,
   });
 
   final List<DiscoveredNode> nodes;
@@ -1180,6 +1193,18 @@ class _GridPainter extends CustomPainter {
   final DateTime? rippleAt;
   final Duration rippleDuration;
   final double scaleKm;
+
+  /// Which way the phone is pointing, or null when nothing knows.
+  ///
+  /// The radar plots peers by real bearing, which is only honest while the
+  /// phone faces north. With a heading the whole dial turns so its top is the
+  /// phone's own facing, and the red marker on the rim says where north went.
+  final double? headingDegrees;
+
+  /// The red the north marker is drawn in. Passed in rather than written here,
+  /// so it is the scheme's own red on every skin and the colour ratchet keeps
+  /// its meaning.
+  final Color northMarker;
 
   static bool _selfHasGpsStatic(double? lat, double? lon) =>
       lat != null && lon != null && !(lat == 0 && lon == 0);
@@ -1219,6 +1244,7 @@ class _GridPainter extends CustomPainter {
     required double? selfLat,
     required double? selfLon,
     required double scaleKm,
+    double? headingDegrees,
   }) {
     final bool selfGps = _selfHasGpsStatic(selfLat, selfLon);
     final double angle;
@@ -1238,7 +1264,8 @@ class _GridPainter extends CustomPainter {
       radius = maxR;
       angle = _hashAngle(node.pubKeyHex);
     }
-    return center + Offset(radius * math.sin(angle), -radius * math.cos(angle));
+    final double shown = angle - (headingDegrees ?? 0) * math.pi / 180;
+    return center + Offset(radius * math.sin(shown), -radius * math.cos(shown));
   }
 
   @override
@@ -1281,23 +1308,21 @@ class _GridPainter extends CustomPainter {
         Offset(center.dx + maxR * f - tp.width - 4, center.dy - tp.height - 2),
       );
     }
-    // North, named. The radar is north-up, and nothing on it said so: a
-    // reader could only assume, and on a phone with a compass in it the
-    // assumption is worth stating. A tick on the outer ring plus the letter is
-    // the cheapest honest way to say which way is which.
-    canvas.drawLine(
-      Offset(center.dx, center.dy - maxR),
-      Offset(center.dx, center.dy - maxR + 8),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..color = ringStroke,
-    );
+    // North, as a red marker that moves with the dial.
+    //
+    // The radar plots every peer by *real* bearing, so with a heading the dial
+    // turns and north is no longer the top. A letter painted at 12 o'clock then
+    // lies: it would keep saying north while the dial said otherwise. The
+    // triangle is drawn at the bearing north actually sits at, and stays at the
+    // top only in the north-up fallback, where it is telling the truth.
+    final double northAt = CompassHeading.northMarkerDegrees(headingDegrees);
+    paintNorthMarker(canvas, center, maxR - 2,
+        markerDegrees: northAt, color: northMarker);
     final TextPainter north = TextPainter(
       text: TextSpan(
         text: 'N',
         style: TextStyle(
-            color: base,
+            color: northMarker,
             fontSize: type.sizeMicro,
             fontWeight: FontWeight.w700,
             letterSpacing: 1,
@@ -1305,7 +1330,15 @@ class _GridPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    north.paint(canvas, Offset(center.dx - north.width / 2, center.dy - maxR - north.height - 2));
+    final double na = northAt * math.pi / 180;
+    final double labelR = maxR + 4;
+    north.paint(
+      canvas,
+      Offset(
+        center.dx + labelR * math.sin(na) - north.width / 2,
+        center.dy - labelR * math.cos(na) - north.height / 2,
+      ),
+    );
 
     // Cross-hair guides (faint).
     final Paint cross = Paint()

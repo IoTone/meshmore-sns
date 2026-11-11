@@ -1982,7 +1982,7 @@
   "toolsRunning": "RUNNING",
   "toolsStart": "Start",
   "toolsStop": "Stop",
-  "toolsCopyReport": "Copy report",
+  "toolsCopyReport": "Copy results",
   "toolsCopied": "Copied to the clipboard",
   "toolsCount": "COUNT",
   "toolsInterval": "INTERVAL",
@@ -2490,8 +2490,8 @@
       }
     }
   },
-  "selfTestCopy": "Copy report",
-  "selfTestCopied": "Report copied",
+  "selfTestCopy": "Copy results",
+  "selfTestCopied": "Results copied",
   "selfCheckReach": "Map servers reachable",
   "selfCheckViewCache": "Viewed tiles are kept",
   "selfCheckRevalidate": "Stale tiles re-checked politely",
@@ -2713,8 +2713,8 @@
   },
   "diagnosticsSectionSoak": "Soak",
   "diagnosticsSoakEmpty": "No scopes bound",
-  "diagnosticsCopySoak": "Copy soak report",
-  "diagnosticsSoakCopied": "Soak report copied",
+  "diagnosticsCopySoak": "Copy soak results",
+  "diagnosticsSoakCopied": "Soak results copied",
   "nodesClearSearch": "Clear search",
   "networksTitle": "Networks",
   "networksEmpty": "No networks yet. A network is the radio settings your radios agree on.",
@@ -2827,7 +2827,7 @@
   "networksDeleteBody": "Only the saved settings are removed. Radios keep what they are set to.",
   "networksDeleteConfirm": "Delete",
   "placeCreateTitle": "Drop a place",
-  "placeCreateAction": "Report",
+  "placeCreateAction": "Tag",
   "placeLabelField": "What is here?",
   "placeLabelHint": "A few words, 60 characters at most",
   "placeTypeTitle": "Type",
@@ -2836,7 +2836,7 @@
   "placePrecisionExact": "Exact",
   "placePrecision100": "About 100 m",
   "placePrecision1000": "About 1 km",
-  "placeSent": "Place reported. It expires on its own.",
+  "placeSent": "Place tagged. It expires on its own.",
   "placeBudgetRefused": "You have sent {n} in the last hour. The next one can go at {time}.",
   "@placeBudgetRefused": {
     "placeholders": {
@@ -2848,7 +2848,7 @@
       }
     }
   },
-  "placeNoIdentity": "Connect a radio first: a place is reported as you.",
+  "placeNoIdentity": "Connect a radio first: a place is tagged as you.",
   "placeLabelEmpty": "A place needs a few words.",
   "placeLabelTooLong": "A label is at most 60 characters.",
   "placeLabelCarriesTtl": "A label cannot contain a TTL token.",
@@ -2861,7 +2861,7 @@
     }
   },
   "placeExpired": "Expired",
-  "placeReportedBy": "Reported by {name}, {time}",
+  "placeReportedBy": "Tagged by {name}, {time}",
   "@placeReportedBy": {
     "placeholders": {
       "name": {
@@ -2917,10 +2917,10 @@
   "placeDirections": "Directions",
   "placeDirectionsCopied": "Coordinates copied",
   "placeHistoryTitle": "Places",
-  "placeHistoryEmpty": "No places yet. Long-press the map to report one.",
+  "placeHistoryEmpty": "No places yet. Long-press the map to tag one.",
   "placeStateLive": "live",
   "placeStateExpired": "expired",
-  "placeSearchHint": "Search label or reporter",
+  "placeSearchHint": "Search label or who tagged it",
   "placeWithinAny": "Any time left",
   "placeWithinHour": "Expires within 1 h",
   "placeWithinDay": "Expires within 24 h",
@@ -3126,7 +3126,7 @@
   "@degradedRadioAbsent": {},
   "degradedRadioSilent": "The radio is paired but has not answered. It may still have carried out the last request; check the radio before retrying.",
   "@degradedRadioSilent": {},
-  "degradedNoLocation": "Location is off, so distances, bearings and place reports have no fix. Everything else works.",
+  "degradedNoLocation": "Location is off, so distances, bearings and place tags have no fix. Everything else works.",
   "@degradedNoLocation": {},
   "degradedMapOffline": "Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.",
   "@degradedMapOffline": {},
@@ -3382,7 +3382,7 @@
   "@mediaDecodeFailed": {},
   "mediaPhotoSemantics": "Photo received over the mesh",
   "@mediaPhotoSemantics": {},
-  "placePhotoNotFetched": "Photo not fetched. The report itself is complete; the picture is optional and may never arrive.",
+  "placePhotoNotFetched": "Photo not fetched. The entry itself is complete; the picture is optional and may never arrive.",
   "@placePhotoNotFetched": {},
   "placePhotoMayNotArrive": "The photo may not arrive. The text will.",
   "@placePhotoMayNotArrive": {},
@@ -3682,11 +3682,11 @@
     }
   },
   "blockedKeysUnblockedUnnamed": "The key is unblocked. Its messages appear again.",
-  "reportAction": "Report…",
-  "reportSheetTitle": "Report this message",
+  "reportAction": "Export…",
+  "reportSheetTitle": "Export this message",
   "reportObservationLabel": "What did you see? (optional)",
   "reportNothingSent": "Nothing was sent. The app wrote a file on this device; you decide where it goes.",
-  "reportBundleWritten": "Report saved to {path}",
+  "reportBundleWritten": "Saved to {path}",
   "@reportBundleWritten": {
     "placeholders": {
       "path": {
@@ -3694,12 +3694,12 @@
       }
     }
   },
-  "reportShareBundle": "Share the report",
-  "reportCopyBundle": "Copy the report",
-  "reportCopied": "Report copied.",
+  "reportShareBundle": "Share the file",
+  "reportCopyBundle": "Copy the file",
+  "reportCopied": "Copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
   "blockedKeysUnreadable": "The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept, and new blocks will be saved normally.",
-  "reportActionSub": "Writes a file on this device for you to send. Nothing is transmitted.",
+  "reportActionSub": "Writes a file on this device for you to send. Nothing leaves the app.",
   "sosDestinationContactsLimit": "Up to {count} contacts",
   "sosDestinationChange": "Change",
   "sosDestinationPickerTitle": "Where the alarm goes",
@@ -3716,7 +3716,7 @@
   "placeTtlMinutes": "{count} min",
   "placeTtlHours": "{count} h",
   "placeTtlDays": "{count} d",
-  "mapReportPlace": "Report a place",
+  "mapReportPlace": "Tag a place",
   "@sosDestinationContactsLimit": {
     "placeholders": {
       "count": {
@@ -3962,9 +3962,9 @@
       }
     }
   },
-  "placeSuggestReport": "Report place",
+  "placeSuggestReport": "Tag place",
   "placeSuggestDismiss": "Dismiss",
-  "placeSuggestNeedsLocation": "Turn on location to report a place.",
+  "placeSuggestNeedsLocation": "Turn on location to tag a place.",
   "mapCompassLegend": "The arrow is this phone's compass.",
   "diagnosticsPosition": "Position, as the app sees it",
   "diagnosticsPositionRadio": "radio {lat}, {lon}",
