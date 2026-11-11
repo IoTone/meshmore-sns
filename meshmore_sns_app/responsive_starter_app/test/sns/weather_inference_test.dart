@@ -288,6 +288,33 @@ void _measurementRules() {
       expect(parseWxMeasurements('rain later').isEmpty, isTrue);
       expect(parseWxMeasurements('nice weather').isEmpty, isTrue);
     });
+
+    test('a Fahrenheit report is converted before it is judged', () {
+      // The range guard ran before the conversion, so every US reading above
+      // 70 was dropped as "not a temperature anyone reports": 95F is 35 C and
+      // is the most ordinary summer report there is.
+      expect(parseWxMeasurements('95F').tempsC, <double>[35.0]);
+      expect(parseWxMeasurements('95 °F').tempsC, <double>[35.0]);
+      expect(parseWxMeasurements('90f').tempsC.length, 1);
+      expect(parseWxMeasurements('30C').tempsC, <double>[30.0]);
+      // And the guard still works after conversion: 250 C is not a report.
+      expect(parseWxMeasurements('482F').tempsC, isEmpty);
+    });
+
+    test('a temperature is never read as a humidity percentage', () {
+      // "hot and humid 95F" reported 95 % relative humidity with no
+      // temperature, which is both wrong and the opposite of what was written.
+      final WxMeasurements m = parseWxMeasurements('hot and humid 95F');
+      expect(m.humidityPct, isNull);
+      expect(m.tempsC, <double>[35.0]);
+      // A percentage has to be written as one, or the word has to carry it.
+      expect(parseWxMeasurements('humid 40').humidityPct, isNull);
+      expect(parseWxMeasurements('humid 40 percent').humidityPct, 40);
+      expect(parseWxMeasurements('humidity 40%').humidityPct, 40);
+      // The abbreviation is its own unit, which is how weather nets read it.
+      expect(parseWxMeasurements('rh 62').humidityPct, 62);
+      expect(parseWxMeasurements('RH: 45').humidityPct, 45);
+    });
   });
 }
 

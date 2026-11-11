@@ -185,8 +185,18 @@ final RegExp _numberThenHumidity = RegExp(
   r'(\d{1,3})\s*%\s*(?:rh|relative\s+humidity|humidity|相対湿度|湿度)',
   caseSensitive: false,
 );
+/// "humidity 40" / "humid 40 percent" — the word then the number, but the
+/// number must be a percentage and not a temperature: "humid 95F" is 95
+/// degrees at high humidity, not 95 % relative humidity.
 final RegExp _humidityWordThenNumber = RegExp(
-  r'(?:humid(?:ity)?|rh)[^.\n]{0,16}?(\d{1,3})(?!\s*(?:mph|kt|km|m/s))',
+  r'(?:humid(?:ity)?|rh)[^.\n]{0,16}?(\d{1,3})\s*'
+  r'(?:%|percent|pct|パーセント)',
+  caseSensitive: false,
+);
+/// "rh 62" — the abbreviation is itself the unit, which is how weather nets
+/// read it. "humid 95" is not, because that number can be a temperature.
+final RegExp _rhThenNumber = RegExp(
+  r'\brh\s*[:=]?\s*(\d{1,3})\b',
   caseSensitive: false,
 );
 
@@ -231,7 +241,9 @@ WxMeasurements parseWxMeasurements(String text) {
       if (g == null) continue;
       final double? v = double.tryParse(g);
       if (v == null) continue;
-      if (v.abs() > 70) continue; // not a temperature anyone reports
+      // Convert FIRST, then judge: 95F is 35 C and is a perfectly ordinary
+      // report, while the old order rejected anything over 70 before the
+      // Fahrenheit conversion and silently dropped every warm US reading.
       final double c = isF ? (v - 32) * 5 / 9 : v;
       if (c < -90 || c > 60) continue;
       temps.add(c);
@@ -246,7 +258,11 @@ WxMeasurements parseWxMeasurements(String text) {
   final RegExpMatch? h3 = (h1 == null && h2 == null)
       ? _humidityWordThenNumber.firstMatch(text)
       : null;
-  final String? hRaw = h1?.group(1) ?? h2?.group(1) ?? h3?.group(1);
+  final RegExpMatch? h4 = (h1 == null && h2 == null && h3 == null)
+      ? _rhThenNumber.firstMatch(text)
+      : null;
+  final String? hRaw =
+      h1?.group(1) ?? h2?.group(1) ?? h3?.group(1) ?? h4?.group(1);
   final int? hVal = hRaw == null ? null : int.tryParse(hRaw);
   if (hVal != null && hVal >= 0 && hVal <= 100) humidity = hVal;
 
