@@ -730,14 +730,19 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                     ),
                   ],
                 ),
+                // The same action, the same control as Diagnostics offers it
+                // with: an `OutlinedButton.icon` here was a third button style
+                // on a page that already shows `MmAction` and `FilledButton`,
+                // and "Pair a radio" should not look like a different act
+                // depending on which screen you reach it from.
                 if (!ready)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.add_link, size: 16),
-                        label: Text(l.diagnosticsPairRadio),
+                      child: MmAction(
+                        icon: Icons.add_link,
+                        label: l.diagnosticsPairRadio,
                         onPressed: () => context.push('/pair'),
                       ),
                     ),
