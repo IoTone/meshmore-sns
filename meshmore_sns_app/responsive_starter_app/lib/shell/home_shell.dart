@@ -246,14 +246,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     _playNavCue(from, i);
   }
 
-  /// R67 — an edge swipe on the map: one view back (-1) or forward (+1),
-  /// clamped to the ends. R109 keeps it for every skin: the map holds the
-  /// drag claim while it shows, so the band is its only gesture exit and the
-  /// band's own drag must not also page the body.
-  void _edgeSwipe(int delta) {
-    _select((_index + delta).clamp(0, MmView.values.length - 1));
-  }
-
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
@@ -356,7 +348,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   ChatScreen(isCurrent: _index == MmView.chat.index),
                   const NodesScreen(),
                   const GridScreen(),
-                  MapScreen(onEdgeSwipe: _edgeSwipe),
+                  const MapScreen(),
                   const _SettingsView(),
                 ],
               );

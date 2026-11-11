@@ -16,7 +16,6 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/main.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/map_screen.dart';
-import 'package:meshmore_sns_app/screens/street_map_view.dart';
 import 'package:meshmore_sns_app/shell/home_shell.dart';
 import 'package:meshmore_sns_app/shell/horizontal_drag_claim.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -577,8 +576,8 @@ void main() {
     }
   });
 
-  testWidgets('the map edge bands step exactly one view in every skin (R109)',
-      (WidgetTester t) async {
+  testWidgets('the map has no gesture exit: a drag is the map\'s, and the '
+      'strip is how a page changes', (WidgetTester t) async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     GridScreen.resetSession();
     await _pumpApp(t, preset: MmThemePreset.studio);
@@ -587,21 +586,20 @@ void main() {
     await openFromStrip(t, 'Map');
     expect(find.byType(MapScreen), findsOneWidget);
 
-    // R67's bands are the map's gesture exit (R109): an inward fling from
-    // the left edge goes back exactly one view. Two would mean the band's
-    // drag also paged the body.
+    // A fling from the left edge used to step back one view through the band.
+    // The band is gone by the owner's ruling, so the same gesture must leave
+    // the map in place: the drag belongs to it, and paging is a tap at the top.
     await t.flingFrom(const Offset(2, 300), const Offset(300, 0), 1200);
     await settle(t);
-    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
-        reason: 'the left band leaves the map by one view');
-    expect(find.byType(MapScreen), findsNothing,
-        reason: 'the map is gone, so its claim is too');
+    expect(find.byType(MapScreen), findsOneWidget,
+        reason: 'the edge fling is the map\'s');
+    expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsNothing);
     expect(t.takeException(), isNull);
   });
 
   testWidgets(
-      'the grid locks the body swipe in pan mode, and every visit '
-      'starts in swipe mode (R109)', (WidgetTester t) async {
+      'the grid claims the body swipe on a pannable view and never on the radar',
+      (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(800, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
     SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -609,43 +607,27 @@ void main() {
     shellDragClaim.reset();
     await _pumpApp(t);
     await openFromStrip(t, 'Hyperlocal grid');
-    // The radar has no drag of its own: no toggle and no claim.
+    // The radar has no drag of its own: no claim, and the shell may page.
     expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
     expect(shellDragClaim.isClaimed, isFalse);
 
-    // A pannable view offers the toggle, and starts in swipe mode so the
-    // drag is the shell's.
+    // A pannable view claims it with no control to press first: the toggle is
+    // gone by the owner's ruling, so the claim follows the view.
     await t.tap(find.byTooltip('View'));
     await settle(t);
     await t.tap(find.text('Message heat').last);
     await settle(t);
-    expect(find.byKey(const ValueKey<String>('grid-pan-toggle')),
-        findsOneWidget);
-    expect(shellDragClaim.isClaimed, isFalse,
-        reason: 'swipe mode is the default on every visit');
-
-    // Pan mode takes the drag: the shell stops paging.
-    await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
-    await settle(t);
+    expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
     expect(shellDragClaim.heldBy(GridScreen.dragHolder), isTrue);
     await t.fling(find.byType(PageView), const Offset(-400, 0), 1000);
     await settle(t);
     expect(find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget,
-        reason: 'pan mode owns the drag, so the fling moves the map');
+        reason: 'a pannable view owns the drag, so the fling pans');
 
-    // The view is remembered for the session, the lock is not: a fresh visit
-    // can always be swiped away from.
+    // Leaving the tab releases the claim.
     await openFromStrip(t, 'Settings');
     expect(shellDragClaim.isClaimed, isFalse,
         reason: 'leaving the tab releases the claim');
-    await openFromStrip(t, 'Hyperlocal grid');
-    expect(shellDragClaim.heldBy(GridScreen.dragHolder), isFalse,
-        reason: 'pan mode is per visit, not per session');
-    await t.fling(find.byType(PageView), const Offset(-600, 0), 2000);
-    await settle(t);
-    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
-        reason: 'a fresh visit is in swipe mode again');
-    expect(t.takeException(), isNull);
   });
 
   testWidgets(
@@ -687,142 +669,6 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
-  group('Map edge swipe (R67)', () {
-    Future<Rect> openMap(WidgetTester t) async {
-      GridScreen.resetSession();
-      await _pumpApp(t);
-      await openFromStrip(t, 'Map');
-      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
-      return t.getRect(find.byType(PageView));
-    }
-
-    testWidgets('a fling from the left edge goes to the previous view',
-        (WidgetTester t) async {
-      final Rect r = await openMap(t);
-      await t.flingFrom(
-          Offset(r.left + 10, r.center.dy), const Offset(300, 0), 1000);
-      await settle(t);
-      expect(
-          find.widgetWithText(AppBar, 'Hyperlocal grid'), findsOneWidget);
-      expect(t.takeException(), isNull);
-    });
-
-    testWidgets('a fling from the right edge goes to the next view',
-        (WidgetTester t) async {
-      final Rect r = await openMap(t);
-      // 20 dp above the bottom, not 60: the band starts below the map's tool
-      // column (R70), and on this 600 dp test surface that column now reaches
-      // within 44 dp of the bottom. The band is still there and still wins,
-      // which is what this test is about.
-      await t.flingFrom(
-          Offset(r.right - 10, r.bottom - 20), const Offset(-300, 0), 1000);
-      await settle(t);
-      expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
-      expect(t.takeException(), isNull);
-    });
-
-    testWidgets('a slow short drag from the edge does not change view',
-        (WidgetTester t) async {
-      final Rect r = await openMap(t);
-      final TestGesture g =
-          await t.startGesture(Offset(r.left + 10, r.center.dy));
-      await g.moveBy(const Offset(20, 0));
-      await t.pump(const Duration(milliseconds: 600));
-      await g.up();
-      await settle(t);
-      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
-    });
-
-    testWidgets('an outward drag from the edge does nothing',
-        (WidgetTester t) async {
-      final Rect r = await openMap(t);
-      await t.flingFrom(
-          Offset(r.left + 10, r.center.dy), const Offset(-300, 0), 1000);
-      await settle(t);
-      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
-    });
-
-    testWidgets(
-        'a fling just inside the band is the map\'s, not the '
-        'shell\'s', (WidgetTester t) async {
-      final Rect r = await openMap(t);
-      // Band is 24 dp; 40 dp in is the map's.
-      await t.flingFrom(
-          Offset(r.left + 40, r.center.dy), const Offset(300, 0), 1000);
-      await settle(t);
-      expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
-    });
-
-    testWidgets('the map receives no touch inside a band',
-        (WidgetTester t) async {
-      final Rect r = await openMap(t);
-      // The topmost hit-test target at an edge point is the band.
-      final HitTestResult hit = HitTestResult();
-      t.binding
-          .hitTestInView(hit, Offset(r.left + 10, r.center.dy), t.view.viewId);
-      final Iterable<String> targets =
-          hit.path.map((HitTestEntry e) => e.target.runtimeType.toString());
-      expect(t.widgetList(find.byKey(const ValueKey<String>('mm-edge-left'))),
-          isNotEmpty);
-      final RenderObject band =
-          t.renderObject(find.byKey(const ValueKey<String>('mm-edge-left')));
-      expect(hit.path.any((HitTestEntry e) => e.target == band), isTrue,
-          reason: 'band is in the path: $targets');
-      final RenderObject map = t.renderObject(find.byType(StreetMapView));
-      expect(hit.path.any((HitTestEntry e) => e.target == map), isFalse,
-          reason: 'the map must not be hit in the band');
-      // And in the middle the map is hit, the band is not.
-      final HitTestResult mid = HitTestResult();
-      t.binding.hitTestInView(mid, r.center, t.view.viewId);
-      expect(mid.path.any((HitTestEntry e) => e.target == band), isFalse);
-    });
-
-    testWidgets('the bands do not shadow the map tool column',
-        (WidgetTester t) async {
-      final Rect r = await openMap(t);
-      // Every map tool, including the two the tab contributes, is inside the
-      // one column on the right. R70: the column renders with no fix (R69
-      // made the map browsable), and the right band starts at or below it.
-      final Rect col =
-          t.getRect(find.byKey(const ValueKey<String>('map-controls')));
-      final Rect rightBand =
-          t.getRect(find.byKey(const ValueKey<String>('mm-edge-right')));
-      expect(rightBand.top, greaterThanOrEqualTo(col.bottom));
-      expect(rightBand.width, 24);
-
-      // A tap on the last tool in the column reaches the tool, not the band.
-      final Finder btn =
-          find.byKey(const ValueKey<String>('map-places-button'));
-      expect(
-          find.descendant(
-              of: find.byKey(const ValueKey<String>('map-controls')),
-              matching: btn),
-          findsOneWidget);
-      final Offset p = t.getCenter(btn);
-      final RenderObject band =
-          t.renderObject(find.byKey(const ValueKey<String>('mm-edge-right')));
-      final HitTestResult hit = HitTestResult();
-      t.binding.hitTestInView(hit, p, t.view.viewId);
-      expect(hit.path.any((HitTestEntry e) => e.target == t.renderObject(btn)),
-          isTrue,
-          reason: 'the button wins over the band');
-      expect(hit.path.any((HitTestEntry e) => e.target == band), isFalse,
-          reason: 'the right band must not cover the tool column');
-
-      // And the left edge is the band's alone now: no map tool sits there to
-      // be lost behind a thumb that uses the right-hand column.
-      expect(r.left + 20, lessThan(col.left));
-      expect(find.byKey(const ValueKey<String>('map-offline-maps-button')),
-          findsOneWidget);
-      expect(
-          t
-              .getRect(
-                  find.byKey(const ValueKey<String>('map-offline-maps-button')))
-              .left,
-          greaterThan(r.center.dx),
-          reason: 'the offline-maps tool belongs in the right-hand column');
-    });
-  });
 
   group('the view strip fills the width', () {
     const List<String> labels = <String>[

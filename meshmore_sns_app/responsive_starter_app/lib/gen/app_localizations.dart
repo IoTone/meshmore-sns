@@ -10761,6 +10761,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cells {size}'**
   String mapDensityCellSize(String size);
+
+  /// No description provided for @meshTreeFilteredEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No contact has a known route of {n} hops or fewer. {unknown} of them have routes the radio has not learned yet.'**
+  String meshTreeFilteredEmpty(int n, int unknown);
+
+  /// No description provided for @meshTreeShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get meshTreeShowAll;
 }
 
 class _AppLocalizationsDelegate

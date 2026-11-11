@@ -6197,4 +6197,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String mapDensityCellSize(String size) {
     return 'セル $size';
   }
+
+  @override
+  String meshTreeFilteredEmpty(int n, int unknown) {
+    return '$n ホップ以内で経路が判明している相手はいません。$unknown 件は経路がまだ不明です。';
+  }
+
+  @override
+  String get meshTreeShowAll => 'すべて表示';
 }

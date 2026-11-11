@@ -237,15 +237,13 @@ class _GridScreenState extends State<GridScreen>
   /// and written back to, [GridScreen._sessionMode].
   _GridViewMode _viewMode = GridScreen._sessionMode;
 
-  /// R109 — pan mode, from the toggle that only pannable views show. Off
-  /// means swipe mode: the view is held still and a horizontal drag changes
-  /// tab. Starts off on every visit, so arriving by a swipe can never leave
-  /// the shell locked under the finger mid-drag.
-  bool _panMode = false;
-
-  /// The map takes horizontal drags only when it both pans and is in pan
-  /// mode; anything else hands the drag to the shell.
-  bool get _mapOwnsDrags => _panMode && _viewMode.pansHorizontally;
+  /// A view that pans always owns its horizontal drags.
+  ///
+  /// There used to be a Swipe ⇄ Pan toggle (R109): in "swipe" the graph was
+  /// held still so a drag changed tab. The owner's ruling removed it — a drag
+  /// on a graph or a map is a drag, and a page change is a tap on the strip at
+  /// the top. So the claim follows the view, not a mode.
+  bool get _mapOwnsDrags => _viewMode.pansHorizontally;
 
   /// Maximum hit-test radius (logical px) for tap-to-select on the grid.
   static const double _tapRadius = 28.0;
@@ -280,9 +278,8 @@ class _GridScreenState extends State<GridScreen>
     _msgSub = mc.incomingChannelMessages.listen((_) {
       if (mounted) _rippleAt = DateTime.now();
     });
-    // R109 — pan mode is per visit, not per session: the view mode is
-    // remembered, the gesture lock is not.
-    _panMode = false;
+    // The view mode is remembered for the session, the drag claim is not: it
+    // is published from the mode that is showing.
     _publishDragClaim();
     // Restore last-used grid preferences (scale / orientation / refresh)
     // so they don't reset when re-opening the grid. The view itself is
@@ -311,11 +308,6 @@ class _GridScreenState extends State<GridScreen>
   void _selectMode(_GridViewMode m) {
     setState(() => _viewMode = m);
     GridScreen._sessionMode = m;
-    _publishDragClaim();
-  }
-
-  void _togglePanMode() {
-    setState(() => _panMode = !_panMode);
     _publishDragClaim();
   }
 
@@ -802,20 +794,6 @@ class _GridScreenState extends State<GridScreen>
                     ),
                   ),
                 ),
-                // R109 — Swipe ⇄ Pan, only where the view has a drag of its own.
-                // In swipe mode the view is held still so the drag is the shell's;
-                // in pan mode the view takes it and the shell stops paging.
-                if (_viewMode.pansHorizontally)
-                  IconButton(
-                    key: const ValueKey<String>('grid-pan-toggle'),
-                    tooltip: _panMode
-                        ? l.gridPanModeTooltip
-                        : l.gridSwipeModeTooltip,
-                    isSelected: _panMode,
-                    icon: const Icon(Icons.swipe),
-                    selectedIcon: const Icon(Icons.pan_tool),
-                    onPressed: _togglePanMode,
-                  ),
                 // Only the five views that draw a legend get the button, so it
                 // can no longer be a silent no-op in the other five.
                 if (_hasLegend)
@@ -894,7 +872,7 @@ class _GridScreenState extends State<GridScreen>
                   SnsCellsView(
                     filteredNodes: visible,
                     frozen: !_live && _userInteracted,
-                    interactive: _panMode,
+                    interactive: true,
                   ),
                   if (_legendVisible)
                     Positioned(

@@ -6458,4 +6458,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String mapDensityCellSize(String size) {
     return 'Cells $size';
   }
+
+  @override
+  String meshTreeFilteredEmpty(int n, int unknown) {
+    return 'No contact has a known route of $n hops or fewer. $unknown of them have routes the radio has not learned yet.';
+  }
+
+  @override
+  String get meshTreeShowAll => 'Show all';
 }

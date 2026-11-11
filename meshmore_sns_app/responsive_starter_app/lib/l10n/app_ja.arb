@@ -2828,5 +2828,7 @@
   "bootFailedTitle": "Meshmore SNS を起動できませんでした。",
   "bootTryAgain": "再試行",
   "notifGroupBody": "{count, plural, other{{count} 件}} · {body}",
-  "mapDensityCellSize": "セル {size}"
+  "mapDensityCellSize": "セル {size}",
+  "meshTreeFilteredEmpty": "{n} ホップ以内で経路が判明している相手はいません。{unknown} 件は経路がまだ不明です。",
+  "meshTreeShowAll": "すべて表示"
 }

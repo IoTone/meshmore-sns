@@ -132,7 +132,7 @@ void main() {
     await t.pump(const Duration(seconds: 30));
   });
 
-  testWidgets('R70: controls are 48dp and the right band starts below them',
+  testWidgets('R70: the controls are 48dp and there is no edge band any more',
       (WidgetTester t) async {
     final MeshcoreController c = await _pump(t, const MapScreen());
     final Rect col =
@@ -140,10 +140,10 @@ void main() {
     expect(col.width, greaterThanOrEqualTo(48));
     expect(col.height, greaterThanOrEqualTo(5 * 48),
         reason: 'five controls, 48dp each');
-    final Rect band =
-        t.getRect(find.byKey(const ValueKey<String>('mm-edge-right')));
-    expect(band.top, greaterThanOrEqualTo(col.bottom),
-        reason: 'the band must not overlap any control');
+    // The edge-swipe bands are gone by the owner's ruling: a drag near an edge
+    // is the map's, and paging happens on the strip at the top.
+    expect(find.byKey(const ValueKey<String>('mm-edge-right')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('mm-edge-left')), findsNothing);
     c.dispose();
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));

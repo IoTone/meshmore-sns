@@ -194,108 +194,37 @@ void main() {
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });
-  testWidgets('R109 swipe mode drops the drag, not the taps',
+  testWidgets('a view that pans owns its drags, with no mode to switch',
       (WidgetTester t) async {
+    // The Swipe ⇄ Pan toggle is gone by the owner's ruling: a drag on a graph
+    // or a heat map is a drag, and a page change is a tap on the strip. What
+    // remains to prove is that the claim follows the view and the view is
+    // interactive, with no control to press first.
     await t.binding.setSurfaceSize(const Size(800, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
     final MeshcoreController mc = MeshcoreController(
         transportFactory: () async => FakeMeshcoreTransport());
     await t.pumpWidget(_host(mc));
     await t.pump();
-    await t.tap(find.byTooltip('View'));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Message heat').last);
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
+    await t.pump(const Duration(milliseconds: 200));
 
-    // Swipe mode: the map does not take the drag, and it is still tappable.
-    // Before this, the whole body was inside an IgnorePointer, so a node you
-    // could see could not be opened until you switched modes.
-    expect(
-        t.widget<SnsCellsView>(find.byType(SnsCellsView)).interactive, isFalse);
-    await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
-    await t.pump();
-    expect(
-        t.widget<SnsCellsView>(find.byType(SnsCellsView)).interactive, isTrue);
-  });
-
-  testWidgets('R109 the Swipe ⇄ Pan toggle exists only where the view pans, '
-      'and the claim follows it', (WidgetTester t) async {
-    await t.binding.setSurfaceSize(const Size(800, 1600));
-    addTearDown(() => t.binding.setSurfaceSize(null));
-    final MeshcoreController mc = MeshcoreController(
-        transportFactory: () async => FakeMeshcoreTransport());
-    await t.pumpWidget(_host(mc));
-    await t.pump();
-
-    // Radar: no drag of its own, so no toggle and no claim.
+    // Radar: no drag of its own, so no claim.
     expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
     expect(shellDragClaim.isClaimed, isFalse);
 
-    // A pannable view: the toggle, in swipe mode, with the view held still.
     await t.tap(find.byTooltip('View'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.text('Message heat').last);
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    expect(
-        find.byKey(const ValueKey<String>('grid-pan-toggle')), findsOneWidget);
-    expect(find.byTooltip('Swipe mode: swipe left/right for other screens. '
-        'Tap to pan and zoom this map'), findsOneWidget);
-    expect(shellDragClaim.isClaimed, isFalse);
 
-    // Pan mode holds the claim; tapping again releases it.
-    await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
-    await t.pump();
-    expect(shellDragClaim.heldBy(GridScreen.dragHolder), isTrue);
-    expect(
-        find.byTooltip('Pan & zoom mode: drags move the map. Tap to swipe '
-            'between screens again'),
-        findsOneWidget);
-    await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
-    await t.pump();
-    expect(shellDragClaim.isClaimed, isFalse);
-
-    // The equal grid was deleted with R117: equal-area cells answered the same
-    // question the Map tab answers better, and its own doc called it a stage-1
-    // skeleton. The picker lists every view at one level now, so the check is
-    // simply that no row offers it.
-    await t.tap(find.byTooltip('View'));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-    expect(find.text('Equal grid'), findsNothing,
-        reason: 'the equal grid view is gone, so no picker row may offer it');
-    // Close the sheet before the next step: a modal sheet left open swallows
-    // the next tap and the assertions after it would test the wrong view.
-    await t.tapAt(const Offset(4, 4));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-
-    // A report view draws to fit, so the toggle disappears.
-    await t.tap(find.byTooltip('View'));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Weather').last);
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-    expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing);
-
-    // Disposing the tab in pan mode must not leave the shell locked.
-    await t.tap(find.byTooltip('View'));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.text('Message heat').last);
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-    await t.tap(find.byKey(const ValueKey<String>('grid-pan-toggle')));
-    await t.pump();
-    expect(shellDragClaim.heldBy(GridScreen.dragHolder), isTrue);
-    await t.pumpWidget(const SizedBox());
-    expect(shellDragClaim.isClaimed, isFalse,
-        reason: 'the tab lets go of the drag when it is disposed');
-    mc.dispose();
+    expect(find.byKey(const ValueKey<String>('grid-pan-toggle')), findsNothing,
+        reason: 'there is no mode to toggle');
+    expect(t.widget<SnsCellsView>(find.byType(SnsCellsView)).interactive, isTrue,
+        reason: 'the view takes the drag because it is the view that pans');
+    expect(shellDragClaim.heldBy(GridScreen.dragHolder), isTrue,
+        reason: 'the shell must not page while a pannable view shows');
   });
 
   testWidgets('R91 the transport bar fits a 320dp phone at 2.0x text',

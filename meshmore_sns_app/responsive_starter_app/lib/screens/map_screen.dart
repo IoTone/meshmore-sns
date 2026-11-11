@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
-import '../ui/mm_edge_swipe.dart';
 import '../places/place_history_sheet.dart';
 import '../places/place_store.dart';
 import '../places/place_wiring.dart';
@@ -23,20 +22,15 @@ import 'street_map_view.dart';
 /// ([MapsScreen]) is unchanged and is one tap away from the corner
 /// button here.
 ///
-/// A pan/zoom map owns every horizontal drag in the middle of the screen, so
-/// while this page is the current one the shell does not page (R109, the
-/// `HomeShell` rule; the page is built as a neighbour before it is shown, so
-/// the lock cannot be a mount-time claim). **Edge swipe** is then the way out
-/// by gesture: a 24 dp band on each screen edge ([MmEdgeSwipe]) is hit-tested
-/// before the map, and an inward fling there calls [onEdgeSwipe] (`-1`
-/// previous, `+1` next). Back and the view strip also leave. The band is
-/// hit-tested above the map, so its drag never also pages the body.
+/// A pan/zoom map owns every horizontal drag on this page, so while it shows
+/// the shell does not page (R109, the `HomeShell` rule; the page is built as a
+/// neighbour before it is shown, so the lock cannot be a mount-time claim).
+/// **The view strip and Back are how you leave.** The edge-swipe bands that
+/// used to be the gesture exit are gone by the owner's ruling: a drag that
+/// started near an edge is a pan, and a page change is a tap at the top.
 class MapScreen extends StatelessWidget {
-  const MapScreen({super.key, this.onEdgeSwipe});
+  const MapScreen({super.key});
 
-  /// Called with -1 (previous view) or +1 (next view) by an edge swipe.
-  /// Null (a bare `MapScreen` in a test) means the bands do nothing.
-  final ValueChanged<int>? onEdgeSwipe;
 
   /// The two controls this page contributes to the map's own column.
   static const int _controlExtras = 2;
@@ -55,10 +49,10 @@ class MapScreen extends StatelessWidget {
         // sits above the canvas rather than floating over it: a floating box
         // would cover the thing you are trying to read.
         Expanded(
-          child: MmEdgeSwipe(
-            onSwipe: (int d) => onEdgeSwipe?.call(d),
-            rightInsets: EdgeInsets.only(top: rightControlsBottom),
-            child: StreetMapView(
+          // No edge-swipe bands: on this screen a horizontal drag is the map's,
+          // and a page change is the strip at the top. The owner's ruling, after
+          // the bands kept fighting a pan that started near an edge.
+          child: StreetMapView(
               // Both map tools live in the map's own right-hand column, under
               // the built-in controls. They used to sit on the left edge, and
               // with the zoom column on the right the left ones were the
@@ -90,7 +84,6 @@ class MapScreen extends StatelessWidget {
                 ),
               ],
             ),
-          ),
         ),
       ],
     );
