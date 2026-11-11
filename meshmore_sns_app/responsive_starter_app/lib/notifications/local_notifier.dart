@@ -66,6 +66,14 @@ NotifierHealth healthFrom({
   );
 }
 
+/// Whether opening [opened] should also clear the batch line.
+///
+/// Pure, because the call it guards is a platform cancel and the rule is what
+/// can be wrong: a batch standing for `ch:2` must not survive the user opening
+/// `ch:2`, and must not be cleared by opening `ch:5`.
+bool digestClearedBy({required String opened, required String digestPayload}) =>
+    opened.isNotEmpty && opened == digestPayload;
+
 class LocalNotifier implements Notifier {
   LocalNotifier({FlutterLocalNotificationsPlugin? plugin})
       : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
@@ -123,6 +131,11 @@ class LocalNotifier implements Notifier {
   /// and the count only has to be plausible.
   final List<String> _recentPayloads = <String>[];
   static const int _recentMax = 20;
+
+  /// The thread the batch line routes to, so opening that thread clears it the
+  /// same way it clears the messages' own entries. Empty when no batch line is
+  /// showing.
+  String _digestPayload = '';
 
   /// Notification ids still on screen, per tap payload, so a thread that is
   /// opened can clear exactly its own notifications and leave the rest.
@@ -265,6 +278,7 @@ class LocalNotifier implements Notifier {
       ),
       payload: d.payload,
     );
+    _digestPayload = d.payload;
   }
 
   /// Two bundles ship, so anything but Japanese is English.
@@ -386,6 +400,13 @@ class LocalNotifier implements Notifier {
 
   @override
   Future<void> cancelFor(String payload) async {
+    // A batch line stands for the messages whose thread this is, so opening
+    // that thread clears it. Without this it stayed on the lock screen after
+    // the user had read every message it counted.
+    if (digestClearedBy(opened: payload, digestPayload: _digestPayload)) {
+      _digestPayload = '';
+      await _plugin.cancel(id: digestId);
+    }
     final Set<int>? ids = _live.remove(payload);
     if (ids == null) return;
     for (final int id in ids) {
