@@ -55,6 +55,19 @@ class DensityCell {
   String get id => '$ix:$iy';
 }
 
+/// The smallest a square may be drawn, in logical pixels, before its count is
+/// dropped.
+///
+/// A count needs about this much room to be readable, and past that a map is
+/// better off as a tint than as a page of clipped numbers. The rule is the
+/// square's own size rather than how many squares there are: a metro view has
+/// three hundred squares and none of them can hold a digit, while a street view
+/// has four and every one of them can.
+const double kDensityLabelMinPx = 28.0;
+
+/// Whether a square this many logical pixels across can hold its count.
+bool densityLabelsFit(double cellPx) => cellPx >= kDensityLabelMinPx;
+
 /// A node's position and the key that names it.
 typedef DensityPoint = ({double lat, double lon, String pubKey});
 

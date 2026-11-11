@@ -122,6 +122,16 @@ void main() {
     expect(layer.polygons.first.hitValue!.count,
         layer.polygons.first.hitValue!.pubKeys.length);
 
+    // The count is drawn when the square is big enough to hold it: at the
+    // test's zoom a 250 m square is tens of pixels.
+    expect(find.byType(MarkerLayer), findsWidgets,
+        reason: 'the count markers are in the tree');
+    final Iterable<String> counts = t
+        .widgetList<Text>(find.byType(Text))
+        .map((Text x) => x.data ?? '')
+        .where((String d) => d == '1' || d == '2');
+    expect(counts, isNotEmpty, reason: 'a square shows its count');
+
     // And a tap on a square names the nodes in it. The screen point comes from
     // the camera rather than from a guess, so the tap lands inside the square
     // wherever the map happens to be centred.

@@ -6180,4 +6180,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get bootTryAgain => '再試行';
+
+  @override
+  String notifGroupBody(int count, String body) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 件 · $body',
+    );
+    return '$_temp0';
+  }
 }

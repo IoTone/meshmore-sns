@@ -2826,5 +2826,6 @@
   "mapDensityCellArea": "各区画は一辺 250 m で、どのセルも同じ面積です。",
   "mapDensityCellOpen": "このノードを開く",
   "bootFailedTitle": "Meshmore SNS を起動できませんでした。",
-  "bootTryAgain": "再試行"
+  "bootTryAgain": "再試行",
+  "notifGroupBody": "{count, plural, other{{count} 件 · {body}}}"
 }

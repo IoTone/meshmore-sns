@@ -10749,6 +10749,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get bootTryAgain;
+
+  /// No description provided for @notifGroupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 message · {body}} other{{count} messages · {body}}}'**
+  String notifGroupBody(int count, String body);
 }
 
 class _AppLocalizationsDelegate

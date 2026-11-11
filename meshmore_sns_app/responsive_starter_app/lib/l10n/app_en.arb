@@ -4376,5 +4376,16 @@
   "mapDensityCellArea": "Each square is 250 m across, so every cell covers the same area.",
   "mapDensityCellOpen": "Open this node",
   "bootFailedTitle": "Meshmore SNS could not start.",
-  "bootTryAgain": "Try again"
+  "bootTryAgain": "Try again",
+  "notifGroupBody": "{count, plural, =1{1 message · {body}} other{{count} messages · {body}}}",
+  "@notifGroupBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "body": {
+        "type": "String"
+      }
+    }
+  }
 }

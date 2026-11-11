@@ -6441,4 +6441,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bootTryAgain => 'Try again';
+
+  @override
+  String notifGroupBody(int count, String body) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages · $body',
+      one: '1 message · $body',
+    );
+    return '$_temp0';
+  }
 }

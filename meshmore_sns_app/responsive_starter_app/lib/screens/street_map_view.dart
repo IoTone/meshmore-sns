@@ -822,19 +822,35 @@ class _StreetMapViewState extends State<StreetMapView> {
                     color: VizPalette.of(context.skin).accent,
                   ),
                 ),
-              // The count is the reading and the square is the unit. Labels are
-              // capped: past sixty squares the numbers hide the map they are
-              // describing.
-              if (density.isNotEmpty && density.length <= 60)
+              // The count is the reading and the square is the unit. Whether a
+              // count fits is a property of the square on screen, not of how
+              // many squares there are: the first rule counted squares and hid
+              // every count on the metro view, where the squares are small, and
+              // every count on a street view of one node, which is where the
+              // number is the whole point.
+              if (density.isNotEmpty &&
+                  densityLabelsFit(kDensityCellMetres /
+                      StreetMapView.metersPerPixel(
+                          _zoom, hasFix ? start.centre.latitude : 0)))
                 MarkerLayer(
                   markers: <Marker>[
                     for (final DensityCell c in density)
                       Marker(
                         point: c.centre,
+                        // Offset so the count is not hidden under the pin that
+                        // stands at the cell's centre: with one node per square
+                        // that is every square, and a count nobody can see is
+                        // the one thing this overlay is for.
+                        alignment: Alignment.topRight,
                         width: 26,
                         height: 16,
                         child: IgnorePointer(
-                          child: Center(
+                          child: Container(
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: cs.surface.withValues(alpha: .72),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             child: Text(
                               '${c.count}',
                               style: TextStyle(

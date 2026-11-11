@@ -207,6 +207,17 @@ void main() {
       }
     });
 
+    test('a count is drawn when the square on screen can hold one', () {
+      // The rule is the square, not the count of squares: three hundred small
+      // ones on a metro view get no numbers, four large ones on a street view
+      // get all of theirs.
+      expect(densityLabelsFit(215), isTrue);
+      expect(densityLabelsFit(kDensityLabelMinPx), isTrue);
+      expect(densityLabelsFit(kDensityLabelMinPx - 1), isFalse);
+      expect(densityLabelsFit(3), isFalse,
+          reason: 'a 3 px square cannot hold a digit');
+    });
+
     test('the polygons carry the cell, so a tap can name its nodes', () {
       final List<DensityCell> cells = densityCells(
         points: <DensityPoint>[at(39.0, -105.0, 'x'), at(39.0, -105.0, 'y')],
