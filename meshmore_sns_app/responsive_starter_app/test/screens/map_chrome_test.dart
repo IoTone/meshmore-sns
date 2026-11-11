@@ -35,8 +35,6 @@ import '../meshcore/fake_transport.dart';
 /// marker must never imply one, and an estimate too large to fit the screen
 /// must not be drawn as an arc through the middle of it.
 const ValueKey<String> _controlsKey = ValueKey<String>('map-controls');
-const ValueKey<String> _offlineKey =
-    ValueKey<String>('map-offline-maps-button');
 const ValueKey<String> _placesKey = ValueKey<String>('map-places-button');
 const ValueKey<String> _layersKey = ValueKey<String>('map-layers-menu');
 
@@ -124,7 +122,6 @@ void main() {
     final Finder controls = find.byKey(_controlsKey);
     expect(controls, findsOneWidget);
     for (final ValueKey<String> k in <ValueKey<String>>[
-      _offlineKey,
       _placesKey,
     ]) {
       expect(find.descendant(of: controls, matching: find.byKey(k)),
@@ -134,9 +131,12 @@ void main() {
     // Under the built-in controls, not above them: the column reads zoom,
     // recentre, basemap, layers, then the host's tools.
     final double layersY = t.getTopLeft(find.byKey(_layersKey)).dy;
-    expect(t.getTopLeft(find.byKey(_offlineKey)).dy, greaterThan(layersY));
-    expect(t.getTopLeft(find.byKey(_placesKey)).dy,
-        greaterThan(t.getTopLeft(find.byKey(_offlineKey)).dy));
+    expect(t.getTopLeft(find.byKey(_placesKey)).dy, greaterThan(layersY));
+    // The offline-maps button is gone: it navigated to a Settings row rather
+    // than changing what the map shows, and every other button in this column
+    // changes the map.
+    expect(find.byKey(const ValueKey<String>('map-offline-maps-button')),
+        findsNothing);
     await _drain(t, mc, m);
   });
 

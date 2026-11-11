@@ -357,6 +357,11 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     accent: Color(0xFF35E0F0),
     alert: Color(0xFFFF3B6B),
     ok: Color(0xFF7CFF6B),
+    // The same red, lifted until it can be read as *text* on the raised layer.
+    // `alert` is 4.45:1 on `surfaceAlt`, which is under the 4.5 floor and is
+    // where every destructive label in a sheet lands; the fill keeps its own
+    // saturated value, because a fill is a graphic and answers to 3:1.
+    alertInk: Color(0xFFFF4371),
     // D11.5 — a control's outline, not a rule: `line` was 1.44:1 on the
     // page, so an outlined control here was outlined in a colour nobody
     // could see. Smallest blend of this preset's own line toward its own
@@ -826,7 +831,7 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
         // and not the hairline: a hairline is 2.1:1 on paper (and 1.4:1 on the
         // dark grounds), so an unselected segment read as body text in a row
         // rather than as a choice you can press.
-        side: WidgetStateProperty.all(BorderSide(color: t.line)),
+        side: WidgetStateProperty.all(BorderSide(color: t.edge)),
         shape: square
             ? WidgetStateProperty.all<OutlinedBorder?>(squareBorder)
             : null,
@@ -841,7 +846,7 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
       backgroundColor: Colors.transparent,
       selectedColor: t.accent,
       checkmarkColor: t.base,
-      side: BorderSide(color: t.line),
+      side: BorderSide(color: t.edge),
       labelStyle: TextStyle(color: t.fg),
       secondaryLabelStyle: TextStyle(color: t.base),
       shape: squareBorder ??

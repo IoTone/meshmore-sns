@@ -1,7 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -32,11 +31,18 @@ class MapScreen extends StatelessWidget {
   const MapScreen({super.key});
 
 
-  /// The two controls this page contributes to the map's own column.
-  static const int _controlExtras = 2;
+  /// The one control this page contributes to the map's own column.
+  ///
+  /// It used to be two. The offline-maps button was a navigation shortcut to a
+  /// row that already exists in Settings, sitting in a column of map controls:
+  /// every other button there changes what the map *shows*, and this one left
+  /// the screen. The places button stays, because places are a map layer rather
+  /// than a settings page.
+  static const int _controlExtras = 1;
 
-  /// R70 — the edge band starts below the whole column, built-in controls
-  /// plus the two this page adds, so it can never shadow a button.
+  /// R70 — anything placed on the right edge starts below the whole column,
+  /// built-in controls plus the one this page adds, so it can never shadow a
+  /// button.
   static double get rightControlsBottom =>
       StreetMapView.controlsBottomFor(_controlExtras);
 
@@ -53,21 +59,10 @@ class MapScreen extends StatelessWidget {
           // and a page change is the strip at the top. The owner's ruling, after
           // the bands kept fighting a pan that started near an edge.
           child: StreetMapView(
-              // Both map tools live in the map's own right-hand column, under
-              // the built-in controls. They used to sit on the left edge, and
-              // with the zoom column on the right the left ones were the
-              // buttons a thumb never found.
+              // The map's own tool lives in the map's right-hand column, under
+              // the built-in controls: it used to sit on the left edge, where a
+              // right thumb never found it.
               controlExtras: <Widget>[
-                IconButton(
-                  key: const ValueKey<String>('map-offline-maps-button'),
-                  tooltip: l.mapsTitle,
-                  iconSize: 18,
-                  constraints: const BoxConstraints(
-                      minWidth: StreetMapView.controlCell,
-                      minHeight: StreetMapView.controlCell),
-                  icon: const Icon(Icons.download_for_offline_outlined),
-                  onPressed: () => context.push('/settings/maps'),
-                ),
                 IconButton(
                   key: const ValueKey<String>('map-places-button'),
                   tooltip: l.placeHistoryTitle,
