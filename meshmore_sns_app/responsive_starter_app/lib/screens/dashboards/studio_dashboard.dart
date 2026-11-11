@@ -367,11 +367,24 @@ class _StatusRow extends StatelessWidget {
       builder: (BuildContext context, BoxConstraints c) {
         final bool stacked = c.maxWidth < 380 ||
             MediaQuery.textScalerOf(context).scale(14) > 20;
+        // Vertical padding is explicit and equal on both sides.
+        //
+        // It used to be none at all, with a `minHeight: 56` doing the work and
+        // a Row centring whatever fell inside it — so the band's height came
+        // from its tallest child and the space above the content was not the
+        // space below it. Measured on the phone against the hairline above and
+        // below: 51 px above the Retry button and 11 px below, which is the
+        // "more space above than below" the owner saw on the LINK LOST row and
+        // on its button alike. Equal padding cannot be lopsided.
         return Padding(
           padding: EdgeInsets.only(
-              left: skin.space.screenEdge, right: skin.space.labelToControl),
+            left: skin.space.screenEdge,
+            right: skin.space.labelToControl,
+            top: skin.space.rowInset,
+            bottom: skin.space.rowInset,
+          ),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 56),
+            constraints: const BoxConstraints(minHeight: 48),
             child: stacked
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

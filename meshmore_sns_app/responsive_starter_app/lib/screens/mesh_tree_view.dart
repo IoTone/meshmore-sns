@@ -365,13 +365,16 @@ class _MeshTreeViewState extends State<MeshTreeView>
             // Shown only when the user has taken manual control
             // (auto-fit off). Tapping re-enables auto-fit so the view
             // eases back to framing the whole graph.
+            // Recenter sits top-right, in the same corner as every other
+            // grid view's reset (the heat map has had it there all along).
+            // It used to be bottom-right, above the hop slider, after both
+            // were found sharing `bottom: 12` and the button was painted under
+            // the slider. Top-right is both the consistent answer and the one
+            // that cannot collide with the bottom strip.
             if (!_autoFit)
               Positioned(
                 right: 12,
-                // Above the hop slider, which owns the bottom strip: both at
-                // `bottom: 12` meant this button was painted under the slider
-                // and could not be tapped (seen on device).
-                bottom: _HopSlider.stripHeight + 20,
+                top: 12,
                 child: FilledButton.tonalIcon(
                   icon: const Icon(Icons.center_focus_strong, size: 16),
                   label: Text(l.meshTreeRecenter),
@@ -415,9 +418,6 @@ class _MeshTreeViewState extends State<MeshTreeView>
 /// Compact hop-depth slider for the tree view. 0..6 with a label
 /// chip showing the current setting.
 class _HopSlider extends StatelessWidget {
-  /// The strip's own height, so anything placed above it can clear it without
-  /// guessing. A Slider is 48 dp and the container adds its padding.
-  static const double stripHeight = 56;
 
   const _HopSlider({
     required this.index,

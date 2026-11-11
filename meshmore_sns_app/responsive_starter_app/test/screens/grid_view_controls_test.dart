@@ -109,18 +109,32 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 200));
 
-    final Finder recenter = find.byTooltip('Recenter');
     final Finder slider = find.byType(Slider);
     expect(slider, findsOneWidget, reason: 'the hop slider is on the strip');
+
+    // Recenter only exists once the view has been taken off auto-fit, so pan
+    // first — that is also the state in which it used to be painted under the
+    // slider.
+    // The tree runs a force-simulation ticker, so `pumpAndSettle` never
+    // settles here: pump fixed frames instead.
+    final Offset centre = t.getCenter(find.byType(InteractiveViewer));
+    await t.dragFrom(centre, const Offset(-80, -60));
+    for (int i = 0; i < 8; i++) {
+      await t.pump(const Duration(milliseconds: 50));
+    }
+
+    final Finder recenter = find.text('Recenter');
     if (recenter.evaluate().isNotEmpty) {
+      // Every grid view's reset lives in the top-right corner: the heat map had
+      // it there and the tree did not, which is how the two came to differ. It
+      // used to sit above the hop strip, after both were found sharing
+      // `bottom: 12`.
       final Rect r = t.getRect(recenter);
-      final Rect s = t.getRect(slider);
-      final bool overlaps = r.left < s.right &&
-          r.right > s.left &&
-          r.top < s.bottom &&
-          r.bottom > s.top;
-      expect(overlaps, isFalse,
-          reason: 'Recenter is painted under the slider, so it cannot be tapped');
+      final Rect strip = t.getRect(slider);
+      expect(r.bottom, lessThan(strip.top),
+          reason: 'Recenter must never touch the hop strip');
+      expect(r.center.dx, greaterThan(180),
+          reason: 'and it lives on the right-hand side, with the others');
     }
     mc.dispose();
     await t.pumpWidget(const SizedBox());
