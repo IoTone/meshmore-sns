@@ -1345,6 +1345,11 @@
   "snsCellsLegendChannel": "Channel messages carry the sender's name — they warm the sender's cell when we know their location, otherwise your own cell (the receive point).",
   "snsCellsLegendDecay": "Only the last hour is tracked; nothing is stored.",
   "meshTreeEmpty": "Waiting for contact sync — the tree is built from each contact's outPath.",
+  "meshTreeFilteredEmpty": "{count, plural, =1{None of your peers has a learned route within {n} hops. 1 is heard without one — Flood / All shows it.} other{None of your peers has a learned route within {n} hops. {count} are heard without one — Flood / All shows them.}}",
+  "@meshTreeFilteredEmpty": {
+    "description": "Shown instead of the no-peers notice when a hop limit is what emptied the tree.",
+    "placeholders": {"n": {"type": "int"}, "count": {"type": "int"}}
+  },
   "meshTreeHopsDirect": "Direct",
   "meshTreeHopsFlood": "Flood / All",
   "meshTreeHopsN": "≤{n} hops",

@@ -584,8 +584,11 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
           reason: '${preset.name}: Map is reachable from the grid');
       expect(find.byType(MapScreen), findsOneWidget);
-      expect(find.byTooltip('Offline maps'), findsOneWidget,
-          reason: 'the pack manager is one tap from the map');
+      // The offline-maps shortcut left the map's own control column: it
+      // navigated to a Settings row from a column where every other control
+      // changes what the map shows. Settings still reaches it.
+      expect(find.byTooltip('Offline maps'), findsNothing,
+          reason: 'the map column holds map layers, not a settings shortcut');
       expect(t.takeException(), isNull);
     }
   });

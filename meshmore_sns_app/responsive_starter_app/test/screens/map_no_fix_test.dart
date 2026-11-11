@@ -88,7 +88,10 @@ void main() {
     expect(fm.options.initialCenter, MapCentre.worldCentre);
     expect(find.text('Find me'), findsOneWidget,
         reason: 'the banner carries the action that helps');
-    expect(find.byTooltip('Offline maps'), findsOneWidget);
+    // The offline-maps shortcut is gone: it navigated to a Settings row from a
+    // column where every other control changes what the map shows, and the row
+    // in Settings was already the way to reach it.
+    expect(find.byTooltip('Offline maps'), findsNothing);
     c.dispose();
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));

@@ -3638,6 +3638,12 @@ abstract class AppLocalizations {
   /// **'Waiting for contact sync — the tree is built from each contact\'s outPath.'**
   String get meshTreeEmpty;
 
+  /// Shown instead of the no-peers notice when a hop limit is what emptied the tree.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{None of your peers has a learned route within {n} hops. 1 is heard without one — Flood / All shows it.} other{None of your peers has a learned route within {n} hops. {count} are heard without one — Flood / All shows them.}}'**
+  String meshTreeFilteredEmpty(int n, int count);
+
   /// No description provided for @meshTreeHopsDirect.
   ///
   /// In en, this message translates to:

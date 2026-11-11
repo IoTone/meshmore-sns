@@ -70,4 +70,17 @@ void main() {
           '\u226410 hops \u00b7 1 routed');
     });
   });
+
+  test('an empty tree says which thing emptied it', () {
+    // Two different "nothing here"s, and the notice must not confuse them.
+    // A peer heard only by advert has no learned route, so below Flood / All
+    // the limit hides it; "waiting for contact sync" would be a lie when 389
+    // peers are present and the filter is what removed them.
+    final AppLocalizationsEn l = AppLocalizationsEn();
+    expect(l.meshTreeEmpty, contains('Waiting for contact sync'));
+    expect(l.meshTreeFilteredEmpty(12, 3), contains('learned route'));
+    expect(l.meshTreeFilteredEmpty(12, 3), contains('Flood / All'));
+    expect(l.meshTreeFilteredEmpty(1, 1), contains('1 is heard'),
+        reason: 'one hidden peer reads as one, not "1 are"');
+  });
 }

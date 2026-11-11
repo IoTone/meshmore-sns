@@ -1265,6 +1265,11 @@
   "snsCellsLegendChannel": "チャンネルメッセージは送信者名を含みます — 送信者の位置が分かればそのセルを、分からなければ自分のセル（受信地点）を温めます。",
   "snsCellsLegendDecay": "直近1時間のみ追跡。保存はされません。",
   "meshTreeEmpty": "コンタクト同期を待機中 — ツリーは各コンタクトの outPath から構築されます。",
+  "meshTreeFilteredEmpty": "{count, plural, =1{{n} ホップ以内に経路が分かっている相手はいません。経路不明の相手が 1 台います。「Flood / All」で表示されます。} other{{n} ホップ以内に経路が分かっている相手はいません。経路不明の相手が {count} 台います。「Flood / All」で表示されます。}}",
+  "@meshTreeFilteredEmpty": {
+    "description": "Shown instead of the no-peers notice when a hop limit is what emptied the tree.",
+    "placeholders": {"n": {"type": "int"}, "count": {"type": "int"}}
+  },
   "meshTreeHopsDirect": "直接",
   "meshTreeHopsFlood": "フラッド / 全て",
   "meshTreeHopsN": "≤{n} ホップ",

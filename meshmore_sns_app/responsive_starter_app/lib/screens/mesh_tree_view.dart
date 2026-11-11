@@ -366,15 +366,22 @@ class _MeshTreeViewState extends State<MeshTreeView>
                 ),
               ),
             ),
-            // Nothing but us. A hop limit can no longer cause this: a peer
-            // whose depth is unknown is never filtered out (see
-            // `MeshGraph.fromController`), because an unknown depth is not a
-            // deep one. So this is the one real "nothing" — no peers yet — and
-            // it is a sync question, not a filter question.
+            // Nothing but us, and two different reasons for it.
+            //
+            // A hop limit *can* empty the tree now: below Flood / All a stop
+            // means "a learned route at most this deep", and a peer heard only
+            // by advert has no learned route. Saying "waiting for contact sync"
+            // there would be a lie — the peers are all present, the filter is
+            // what removed them — so the notice names the filter and the number
+            // it is holding back.
             if (graph.nodes.length <= 1)
               Positioned.fill(
                 child: GridNotice(
-                  message: l.meshTreeEmpty,
+                  message: graph.hidden > 0
+                      // `hidden > 0` only happens below Flood / All, so the
+                      // stop's own value is the one to name.
+                      ? l.meshTreeFilteredEmpty(graph.hidden, _maxHops)
+                      : l.meshTreeEmpty,
                   icon: Icons.account_tree,
                 ),
               ),
