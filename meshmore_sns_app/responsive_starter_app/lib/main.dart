@@ -46,6 +46,7 @@ import 'package:meshmore_sns_app/meshcore/block_store.dart';
 import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/city_lookup.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/meshcore/radio_lease.dart';
 import 'package:meshmore_sns_app/sos/sos_controller.dart';
 import 'package:meshmore_sns_app/bot/bot_controller.dart';
 import 'package:meshmore_sns_app/peer/peer_profiles.dart';
@@ -129,6 +130,12 @@ Future<void> startApp() async {
     backgroundKeepalive: createBackgroundKeepalive(),
     locationService: const GeolocatorLocationService(),
   );
+  // **The radio is shared.** Another app on this phone can ask Meshmore to let go of the BLE
+  // companion, and this is the wiring that makes the answer happen. Attached before the first
+  // connect, so a launch cannot race a request that arrived while the process was gone.
+  RadioLease.attach(controller);
+  // One read, before anything reaches for a companion.
+  await RadioLease.refresh();
   if (!demo.enabled) controller.autoConnectIfPaired();
   // D8.20 — one notifier, one focus record, one service. Created before the
   // tree so the notification permission is asked at first launch, not on

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'radio_lease.dart';
 import 'dart:async';
 
 import '../util/mesh_log.dart';
@@ -703,6 +704,14 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   BleMtuTooSmall? _mtuRefusal;
   bool _connecting = false;
   bool _manualDisconnect = false;
+
+  /// Another app on this phone holds the radio (see `RadioLease`). While this is set, nothing here
+  /// reaches for the companion: a second BLE central is not rejected by the firmware, it is accepted
+  /// and then dropped mid-traffic, which is the worst possible shape for both apps.
+  bool _yielded = false;
+
+  /// True while another app holds the radio, for the surfaces that want to say so.
+  bool get yielded => _yielded;
   bool _gaveUp = false;
   int _reconnectAttempt = 0;
   int _reconnectGen = 0;
@@ -1122,7 +1131,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   }
 
   void _maybeScheduleReconnect({bool immediate = false}) {
-    if (_manualDisconnect || _connecting) return;
+    if (_manualDisconnect || _connecting || _yielded) return;
     final int next = _reconnectAttempt + 1;
     if (!_reconnect.shouldRetry(next)) {
       if (!_gaveUp) {
@@ -1147,9 +1156,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// after a failure. A user-initiated call ([isRetry] false) clears
   /// the manual-disconnect latch and resets the backoff.
   Future<void> connect({bool isRetry = false}) async {
+    // A scheduled retry obeys the lease. An operator asking to connect is a decision that the radio
+    // is theirs to take, so it clears the latch rather than waiting for the other app to finish.
+    if (isRetry && _yielded) return;
     if (_connecting) return;
     _connecting = true;
     if (!isRetry) {
+      _yielded = false;
       _manualDisconnect = false;
       _gaveUp = false;
       _reconnectAttempt = 0;
@@ -5889,6 +5902,30 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// not a local one), so the dashboard would otherwise still read
   /// "READY" until something else triggered a rebuild. Setting
   /// state inline is idempotent with any later stream-driven update.
+  /// Let go of the radio because another app asked for it.
+  ///
+  /// Not a disconnect the operator asked for and not a failure: the flag is what suppresses the
+  /// retry ladder, so the link stays down until [resumeRadio] or a deliberate connect.
+  Future<void> yieldRadio() async {
+    if (_yielded) return;
+    _yielded = true;
+    await disconnect();
+    _yielded = true;
+    notifyListeners();
+  }
+
+  /// The radio is free again: take it back the way a launch would.
+  void resumeRadio() {
+    if (!_yielded) return;
+    _yielded = false;
+    _manualDisconnect = false;
+    _gaveUp = false;
+    _reconnectAttempt = 0;
+    _reconnectGen++;
+    notifyListeners();
+    if (hasPairedDevice) unawaited(connect(isRetry: true));
+  }
+
   Future<void> disconnect() async {
     _manualDisconnect = true;
     _reconnectGen++; // cancel any pending scheduled retry
@@ -5947,6 +5984,18 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// auto-reconnect to it (direct connect, scan fallback). Safe to
   /// call when nothing is paired (no-op).
   Future<void> autoConnectIfPaired() async {
+    // **The radio may already be somebody else's.** Read the lease before reaching for a paired
+    // companion: the request that set it may have arrived while this process was not running, and
+    // spending the first minute of another app's session trying to take the radio back is how both
+    // apps end up unusable.
+    // Read, not awaited: [RadioLease.refresh] runs in the boot chain before the
+    // first connect, so by here the answer is already in hand. Awaiting the
+    // channel here deadlocked every widget test that auto-connects.
+    if (RadioLease.yieldedNow) {
+      _yielded = true;
+      notifyListeners();
+      return;
+    }
     // Eagerly hydrate the history alongside the active pair so the
     // device-manager sheet has its "Recently paired" list ready on
     // first open — no second roundtrip needed.

@@ -99,6 +99,18 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // **The radio is shared, not owned.** Another app on this phone can ask Meshmore to let go of
+        // the BLE companion; the receiver in the manifest carries that request, and this channel is
+        // how it reaches the Dart side that actually holds the link. See RadioLeaseReceiver.
+        RadioLeaseReceiver.attach(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/radio_lease")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    // Asked at launch, before the app decides whether to reach for a paired radio.
+                    "isYielded" -> result.success(RadioLeaseReceiver.isYielded(this))
+                    else -> result.notImplemented()
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/app_lifecycle")
             .setMethodCallHandler { call, result ->
                 when (call.method) {

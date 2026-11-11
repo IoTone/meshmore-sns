@@ -113,6 +113,17 @@
             android:value="2" />
         <!-- flutter_foreground_task service (R17/U8). connectedDevice
              = hold a BLE peripheral connection for polling/sync. -->
+        <!-- The other-app handoff. Exported because the request comes from another app on this
+             phone, and declared here rather than registered at runtime so it is reached while
+             Meshmore is in the background. See RadioLeaseReceiver. -->
+        <receiver
+            android:name=".RadioLeaseReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="io.ldmux.mobile.action.RADIO_WANTED" />
+                <action android:name="io.ldmux.mobile.action.RADIO_FREE" />
+            </intent-filter>
+        </receiver>
         <service
             android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
             android:foregroundServiceType="connectedDevice"
