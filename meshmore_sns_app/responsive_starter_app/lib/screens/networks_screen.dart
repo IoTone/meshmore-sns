@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import 'package:meshcore/meshcore.dart' show SelfInfo, DeviceInfo;
+
 import '../meshcore/mesh_network.dart';
 import '../meshcore/mesh_network_store.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -139,6 +141,34 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
   bool _private = false;
   String? _nameError;
   String? _freqError;
+
+  /// Start from what the radio is actually doing.
+  ///
+  /// A network records the settings a group of radios already agrees on, so the
+  /// honest default is the connected radio's own tuple rather than a preset
+  /// chosen for the reader. When that tuple is a published preset the preset is
+  /// selected, so its label and the public-overlap test still apply. Nothing
+  /// user-visible is randomised: a frequency nobody chose is a network nobody
+  /// can join.
+  @override
+  void initState() {
+    super.initState();
+    final MeshcoreController? mc =
+        Provider.of<MeshcoreController?>(context, listen: false);
+    final SelfInfo? si = mc?.selfInfo;
+    final DeviceInfo? di = mc?.deviceInfo;
+    if (si == null) return;
+    for (final RegionPreset p in kRegionPresets) {
+      if (p.frequencyMhz == si.frequencyMhz &&
+          p.bandwidthKhz == si.bandwidthKhz &&
+          p.spreadingFactor == si.spreadingFactor &&
+          p.codingRate == si.codingRate) {
+        _preset = p;
+        break;
+      }
+    }
+    if (di != null) _hash = di.pathHashMode + 1;
+  }
 
   @override
   void dispose() {
