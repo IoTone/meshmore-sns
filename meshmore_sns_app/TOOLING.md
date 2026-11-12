@@ -187,13 +187,19 @@ $ANDROID_HOME/build-tools/37.0.0/apksigner verify --print-certs \
 tool/check_16k.sh build/app/outputs/flutter-apk/app-release.apk
 ```
 
-Measured once with a throwaway keystore, 2026-11-05, so the numbers are known before the publisher's key exists:
-`flutter build appbundle --release` 4 m 22 s, AAB 76 136 550 B (72.6 MiB); `flutter build apk --release
---target-platform android-arm64` 31 902 037 B; `jarsigner -verify` reports `jar verified`, signed by the generated
-certificate rather than `CN=Android Debug`; `tool/check_16k.sh` on that release APK failed only on `libavif_native.so`
-(D11.2) and passed everything else, `zipalign -P 16` included; that library was rebuilt on 2026-11-09 and a fresh
-release artifact has not been measured since. Delete `key.properties` afterwards: a throwaway key in
-the build is worse than no key.
+Measured with a throwaway keystore, so the numbers are known before the publisher's key exists. 2026-11-11:
+`flutter build apk --release --target-platform android-arm64` 3 m 13 s, **37 642 128 B**; `apksigner verify
+--print-certs` names the generated certificate rather than `CN=Android Debug`; `targetSdkVersion:'36'` from
+`aapt2 dump badging`; and `tool/check_16k.sh` passes **every library and `zipalign -P 16`**, `libavif_native.so`
+included, which is the first release artifact measured since that library was rebuilt on 2026-11-09.
+
+**`--target-platform` does not filter the vendored native libraries.** The release APK carries Flutter's own engine
+for arm64 only, but `android/app/src/main/jniLibs/` (Codec 2 and AVIF, 4.3 MB per ABI) is packed for all three
+ABIs regardless, so an arm64-only APK is about 8.6 MB larger than it needs to be. The App Bundle splits by ABI
+and does not pay that, which is another reason the bundle is the artifact to publish from. The 2026-11-05 AAB
+measurement (76 136 550 B) predates the Codec 2 and AVIF work, so it is stale in size, not in shape.
+
+Delete `key.properties` and the keystore afterwards: a throwaway key in the build is worse than no key.
 
 Verify the signer before every upload: a release signed with the debug certificate prints `CN=Android Debug`, and that
 line is the difference between an upload that is accepted and one that is not. `minifyEnabled` is not set for release,
