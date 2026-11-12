@@ -6,7 +6,6 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_compass/flutter_compass.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart' hide Path;
@@ -23,6 +22,7 @@ import '../maps/coverage_quilt.dart';
 import '../maps/density_overlay.dart';
 import '../theme/viz_palette.dart';
 import '../maps/basemap_prefs.dart';
+import '../maps/compass.dart';
 import '../maps/map_centre.dart';
 import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
@@ -302,7 +302,7 @@ class _StreetMapViewState extends State<StreetMapView> {
   }
 
   /// The self marker's bearing comes from the **phone's magnetometer**
-  /// (flutter_compass), never from the radio: a MeshCore GPS reports a
+  /// (`CompassHeading`), never from the radio: a MeshCore GPS reports a
   /// position, not a heading. A peer marker is therefore never rotated, and
   /// this stays null on a phone with no compass, which drops the wedge.
   void _noteCoverage(MapsController maps, GeoBox box, int z) {
@@ -313,7 +313,10 @@ class _StreetMapViewState extends State<StreetMapView> {
   }
 
   double? _headingDeg;
-  StreamSubscription<CompassEvent>? _compassSub;
+
+  /// The app's one compass. Started here and stopped with the view; the radars
+  /// hold their own instance because they are separate screens.
+  final CompassHeading _compass = CompassHeading();
 
   /// A peer's reach estimate in metres, from its signal and role.
   double _reachMeters(DiscoveredNode n, MeshcoreController mc, SelfInfo? si) =>
@@ -359,19 +362,32 @@ class _StreetMapViewState extends State<StreetMapView> {
         if (!_centered) _zoom = view.zoom;
       });
     });
-    _compassSub = FlutterCompass.events?.listen((CompassEvent e) {
-      final double? h = e.heading;
-      if (h == null || !mounted) return;
-      if (_headingDeg != null && (h - _headingDeg!).abs() < 1.0) return;
-      setState(() => _headingDeg = h);
-    });
+    // The same compass the radars use, rather than a second one from another
+    // plugin: two sensors answering "which way am I facing" gave two answers,
+    // and the map arrow and the dial disagreed at exactly the moment a user
+    // would look at both.
+    _compass.addListener(_onCompass);
+    _compass.start();
+  }
+
+  void _onCompass() {
+    final double? h = _compass.heading;
+    if (!mounted) return;
+    if (h == null) {
+      if (_headingDeg == null) return;
+      setState(() => _headingDeg = null);
+      return;
+    }
+    if (_headingDeg != null && (h - _headingDeg!).abs() < 1.0) return;
+    setState(() => _headingDeg = h);
   }
 
   @override
   void dispose() {
     _warm?.cancel();
     _saveView?.cancel();
-    _compassSub?.cancel();
+    _compass.removeListener(_onCompass);
+    _compass.dispose();
     super.dispose();
   }
 

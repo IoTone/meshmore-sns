@@ -722,14 +722,7 @@
       }
     }
   },
-  "eventMsgSent": "送信済み（{ack} が確認）",
-  "@eventMsgSent": {
-    "placeholders": {
-      "ack": {
-        "type": "String"
-      }
-    }
-  },
+  "eventMsgSent": "送信 · 無線機が確認しました",
   "eventDeviceInfo": "デバイス {version}",
   "@eventDeviceInfo": {
     "placeholders": {

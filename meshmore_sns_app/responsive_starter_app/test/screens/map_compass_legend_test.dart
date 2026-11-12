@@ -44,18 +44,31 @@ void main() {
     await t.binding.setSurfaceSize(const Size(400, 800));
     addTearDown(() => t.binding.setSurfaceSize(null));
 
-    // The plugin's own channel. The view subscribes to the real stream, so
-    // faking the platform side is what a phone with a magnetometer looks like
-    // from inside the app.
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockStreamHandler(
-      const EventChannel('hemanthraj/flutter_compass'),
-      MockStreamHandler.inline(
-        onListen: (Object? arguments, MockStreamHandlerEventSink sink) {
-          sink.success(<double>[90.0, 0.0, -1.0]);
-        },
-      ),
-    );
+    // The sensors the view subscribes to. It reads the same `CompassHeading`
+    // the radars do, so a phone's sensors are what a fake looks like from
+    // inside the app: accelerometer reporting the reaction to gravity (so the
+    // phone is flat) and a magnetometer pointing north.
+    final TestDefaultBinaryMessenger messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+        const MethodChannel('dev.fluttercommunity.plus/sensors/method'),
+        (MethodCall call) async => null);
+    final int micros = DateTime.now().microsecondsSinceEpoch;
+    void sensor(String channel, List<double> values) {
+      messenger.setMockStreamHandler(
+        EventChannel(channel),
+        MockStreamHandler.inline(
+          onListen: (Object? arguments, MockStreamHandlerEventSink sink) =>
+              sink.success(<double>[...values, micros.toDouble()]),
+        ),
+      );
+    }
+
+    sensor('dev.fluttercommunity.plus/sensors/accelerometer',
+        <double>[0, 0, 9.81]);
+    sensor('dev.fluttercommunity.plus/sensors/magnetometer',
+        <double>[0, 40, -46]);
+    sensor('dev.fluttercommunity.plus/sensors/gyroscope', <double>[0, 0, 0]);
 
     final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl = MeshcoreController(

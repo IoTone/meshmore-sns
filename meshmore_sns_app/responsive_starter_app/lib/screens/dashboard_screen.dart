@@ -509,7 +509,7 @@ String _eventLine(AppLocalizations l, MeshEvent e) {
     MeshEventKind.deviceClockSynced => l.eventDeviceClockSynced,
     MeshEventKind.deviceClockSkew =>
       l.eventDeviceClockSkew(a['seconds'] ?? '?'),
-    MeshEventKind.msgSent => l.eventMsgSent(a['ack'] ?? '?'),
+    MeshEventKind.msgSent => l.eventMsgSent,
     MeshEventKind.deviceInfo => l.eventDeviceInfo(a['version'] ?? '?'),
     MeshEventKind.selfInfo => l.eventSelfInfo(a['name'] ?? '?'),
     MeshEventKind.queuedWaiting => a.containsKey('count')
@@ -546,16 +546,24 @@ class _LocationTile extends StatelessWidget {
           // wire values and the radio's advert-location policy are a
           // diagnostic question, answered in Diagnostics where every line
           // names its frame; the home screen is not the place to read them.
-          Text(
-            '${loc.latitude.toStringAsFixed(5)}, '
-            '${loc.longitude.toStringAsFixed(5)}'
-            '${loc.altitudeMeters == null ? '' : '  '
-                '· ${l.dashboardLocationAltitude(loc.altitudeMeters!.round())}'}'
-            '  · ${loc.localizedSourceLabel(l)}',
-            style: TextStyle(
-                color: cs.onSurface,
-                fontFamily: context.skin.type.monoFamily,
-                height: 1.5),
+          // Two or three facts, laid out where the separators are. As one
+          // string it wrapped wherever the width ran out, and on the handset
+          // that was inside nothing in particular — a coordinate split after
+          // its decimal point is a number the reader has to reassemble.
+          MmValueFields(
+            fields: <String>[
+              '${loc.latitude.toStringAsFixed(5)}, '
+                  '${loc.longitude.toStringAsFixed(5)}',
+              // Zero altitude is the firmware's "not set": a radio that has
+              // never been given one reports 0, and printing "alt 0 m" in
+              // Denver states a fact nobody measured. The phone's own fix
+              // always carries a real altitude, so it is only the device
+              // source that can be absent this way.
+              if ((loc.altitudeMeters ?? 0) != 0)
+                l.dashboardLocationAltitude(loc.altitudeMeters!.round()),
+              loc.localizedSourceLabel(l),
+            ],
+            color: cs.onSurface,
           )
         else if (awaitingSelf)
           Text(l.dashboardAwaitingDeviceLocation,

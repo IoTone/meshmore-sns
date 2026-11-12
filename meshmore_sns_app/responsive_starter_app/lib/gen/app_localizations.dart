@@ -2387,8 +2387,8 @@ abstract class AppLocalizations {
   /// No description provided for @eventMsgSent.
   ///
   /// In en, this message translates to:
-  /// **'sent (confirmed by {ack})'**
-  String eventMsgSent(String ack);
+  /// **'sent · the radio acknowledged it'**
+  String get eventMsgSent;
 
   /// No description provided for @eventDeviceInfo.
   ///

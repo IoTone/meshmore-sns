@@ -7,8 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart' show Canvas, Color, Offset, Paint, PaintingStyle, Path;
 import 'package:sensors_plus/sensors_plus.dart';
 
-/// Which way the phone is pointing, so a radar can draw the world the right
-/// way round.
+/// Which way the phone is pointing, so a dial can draw the world the right way
+/// round.
 ///
 /// Both the hyperlocal radar and the grid's radar plot peers by *bearing*: a
 /// repeater to your east belongs on the right of the rings. That is only true
@@ -16,228 +16,386 @@ import 'package:sensors_plus/sensors_plus.dart';
 /// every peer a quarter turn away from where the antenna actually is, which is
 /// worse than no dial at all — it looks authoritative and is wrong.
 ///
-/// So the dials rotate: the top of the screen is the direction the phone is
-/// facing, and a red marker on the rim says where north is. North-up remains
-/// the fallback whenever there is no heading, because a dial that cannot know
-/// its orientation must not pretend to.
+/// **Why this is not a magnetometer reading with a tilt correction.** The phone
+/// this was measured on reads a magnetic field of ~157 µT where the Earth's is
+/// about 50, with the excess almost entirely on **z**: `mag=(27.3, 0.8, −154.3)`
+/// from `logcat` on 2026-11-11. That is a hard-iron offset fixed in the *device*
+/// frame, so it turns with the phone while the Earth's field does not. Feeding it
+/// through a tilt-compensated formula — which assumes the vector it is handed is
+/// the Earth's field — makes the computed bearing a nonlinear function of the
+/// real one: on that handset a small turn swung the dial tens of degrees, and it
+/// did not return to the same reading when the phone was turned back. That is the
+/// reported fault, and no amount of averaging fixes it, because the error is in
+/// the geometry rather than in the noise.
 ///
-/// **Magnetic north.** The magnetometer reports the field, not the meridian,
-/// and the difference (declination) varies by roughly ±20° over the planet. The
-/// dial therefore calls the red marker north in the magnetic sense, which is
-/// what every hand compass does when it has not been told where it is. Applying
-/// a real declination needs a geomagnetic model this app does not ship, so the
-/// claim stays as small as it can be.
+/// So the heading comes from two sources with different jobs:
+///
+///   * **The gyroscope integrates the turn.** Rotating about the *world* vertical
+///     is exactly a change of heading, and the gyroscope measures that rate
+///     directly, smoothly and without a magnetic bias. Its component along the
+///     measured up axis is the yaw rate, in any orientation, so a phone held at
+///     an angle turns the dial by the same angle it was turned.
+///   * **The magnetometer anchors it, only when the phone is near flat.** Flat,
+///     the bearing is `atan2(−mx, my)`: the horizontal pair only. A vertical
+///     offset — which is what this handset has — cannot reach it at all, and a
+///     horizontal one shifts it by a constant instead of warping it with the
+///     rotation. Anchoring is a slow correction towards that bearing, so the dial
+///     reads degree for degree while the phone turns and never drifts away.
+///
+/// Tilted, there is no trustworthy absolute bearing: tilt compensation needs the
+/// dip, and the dip is the part the offset ruins. The gyroscope still integrates
+/// the rotation correctly, and the next moment the phone is flat again the
+/// magnetometer re-anchors it. A dial that cannot know north does not claim it:
+/// with no anchor for [staleAfter] the heading is dropped and every dial draws
+/// north-up.
+///
+/// **Magnetic north.** The magnetometer reports the field, not the meridian, and
+/// the difference (declination) varies by roughly ±20° over the planet. The dial
+/// therefore calls the red marker north in the magnetic sense, which is what every
+/// hand compass does when it has not been told where it is.
 class CompassHeading extends ChangeNotifier {
   CompassHeading({
     Stream<MagnetometerEvent>? magnetometer,
     Stream<AccelerometerEvent>? accelerometer,
-    this.smoothing = 0.15,
+    Stream<GyroscopeEvent>? gyroscope,
     this.staleAfter = const Duration(seconds: 3),
+    this.anchorGain = 2.0,
+    this.flatCosine = 0.90,
   })  : _mag = magnetometer,
-        _acc = accelerometer;
+        _acc = accelerometer,
+        _gyro = gyroscope;
 
   /// Injected in tests. Null means "subscribe from `sensors_plus`", which is
-  /// what the app does; a test passes a controller it can drive.
+  /// what the app does; a test passes controllers it can drive.
   final Stream<MagnetometerEvent>? _mag;
   final Stream<AccelerometerEvent>? _acc;
+  final Stream<GyroscopeEvent>? _gyro;
 
-  /// How much of each new sample is taken. A magnetometer is noisy and a dial
-  /// redrawn 60 times a second from raw samples shivers; a low-pass keeps it
-  /// steady without lagging a whole turn behind a hand.
-  final double smoothing;
-
-  /// A heading older than this is not trusted. Phones that stop delivering
-  /// samples (screen off, sensor throttled) would otherwise leave a dial
-  /// rotated to a direction the phone no longer faces.
+  /// A heading with no anchor newer than this is not trusted. Phones that stop
+  /// delivering samples (screen off, sensor throttled) would otherwise leave a
+  /// dial rotated to a direction the phone no longer faces.
   final Duration staleAfter;
+
+  /// How hard a flat magnetometer reading pulls the heading towards itself, per
+  /// second. High enough to re-anchor a gyroscope that has drifted for a few
+  /// seconds, low enough that a single noisy sample cannot swing the dial.
+  final double anchorGain;
+
+  /// How flat counts as flat: the cosine between the screen normal and the
+  /// world's up axis. 0.90 is about 26° of tilt, which is the angle past which
+  /// a hand-held compass is being read off the top of the screen rather than
+  /// looked down at.
+  final double flatCosine;
 
   StreamSubscription<MagnetometerEvent>? _magSub;
   StreamSubscription<AccelerometerEvent>? _accSub;
+  StreamSubscription<GyroscopeEvent>? _gyroSub;
   Timer? _stale;
 
   double? _heading;
 
+  /// World "up" in device coordinates: the accelerometer, normalised. For a
+  /// phone lying flat and screen-up this is the device's +z.
+  ({double x, double y, double z})? _up;
+
+  int _lastGyroMs = 0;
+  int _lastMagMs = 0;
+
   /// Degrees clockwise from magnetic north, or null when nothing is known.
   ///
-  /// Null is the important case: no sensor, no permission, or a device whose
-  /// samples stopped. Every caller must draw north-up for null.
+  /// Null is the important case: no sensor, no permission, or a heading that has
+  /// not been anchored for [staleAfter]. Every caller must draw north-up for
+  /// null.
   double? get heading => _heading;
 
   /// Whether the dial should rotate at all.
   bool get hasHeading => _heading != null;
 
-  /// The last magnetometer sample, and the last accelerometer sample, kept so
-  /// a heading can be computed from two sensors that do not tick together.
-  ({double x, double y, double z})? _magVec;
-  ({double x, double y, double z})? _accVec;
+  /// Whether the last anchor was flat and recent enough to be believed as an
+  /// absolute bearing, rather than a gyroscope integration.
+  bool get anchored => _anchoredAt != 0 &&
+      DateTime.now().millisecondsSinceEpoch - _anchoredAt <
+          staleAfter.inMilliseconds;
 
-  /// Per-axis extents of the field seen so far, for the hard-iron offset.
-  ///
-  /// A phone's magnetometer reads the Earth's field **plus** whatever the
-  /// handset adds: a speaker magnet, a magnetic case, a car mount. Measured on
-  /// the test phone the raw vector had a magnitude of 141 µT where the Earth's
-  /// is about 50 and the dip came out at 82° instead of Denver's ~67°, so the
-  /// heading it produced was tens of degrees wrong — and it looked plausible,
-  /// which is worse. The offset is the centre of the sphere the samples sweep
-  /// out as the phone turns, so it is recovered by tracking each axis's extent
-  /// and subtracting the midpoint.
-  ({double x, double y, double z})? _lo;
-  ({double x, double y, double z})? _hi;
-  int _samples = 0;
+  int _anchoredAt = 0;
 
-  /// How many samples of extent before the offset is trusted. A phone lying
-  /// still gives every axis an extent of zero, so a single sample tells you
-  /// nothing about the centre.
-  static const int _calibrationSamples = 40;
-
-  /// The smallest per-axis spread that counts as "the phone has moved". Below
-  /// it the centre is still the raw reading, which is the best guess available.
-  static const double _minSpread = 12.0;
+  /// How much of the last reading was an absolute bearing rather than a turn.
+  /// Exposed for tests: the reported fault is a *bearing*, so the tests assert
+  /// that a turn of 30° reads 30° and nothing else.
+  bool get _flatNow {
+    final ({double x, double y, double z})? up = _up;
+    if (up == null) return false;
+    // The screen normal is the device's +z; its dot product with world up is
+    // just the z component of the normalised accelerometer.
+    return up.z.abs() >= flatCosine;
+  }
 
   bool _started = false;
 
   void start() {
     if (_started) return;
     _started = true;
-    final Stream<MagnetometerEvent> mag =
-        _mag ?? magnetometerEventStream(samplingPeriod: SensorInterval.uiInterval);
-    final Stream<AccelerometerEvent> acc =
-        _acc ?? accelerometerEventStream(samplingPeriod: SensorInterval.uiInterval);
+    final Stream<MagnetometerEvent> mag = _mag ??
+        magnetometerEventStream(samplingPeriod: SensorInterval.uiInterval);
+    final Stream<AccelerometerEvent> acc = _acc ??
+        accelerometerEventStream(samplingPeriod: SensorInterval.uiInterval);
     _magSub = mag.listen(_onMag, onError: (Object _) {}, cancelOnError: false);
     _accSub = acc.listen(_onAcc, onError: (Object _) {}, cancelOnError: false);
-  }
-
-  void _onMag(MagnetometerEvent e) {
-    _magVec = (x: e.x, y: e.y, z: e.z);
-    _recompute();
+    // The gyroscope is the responsive half. A device without one still gets a
+    // magnetometer heading, which is correct while flat and coarse while
+    // tilted; it is the case the tilt formula below exists for.
+    final Stream<GyroscopeEvent> gyro = _gyro ??
+        gyroscopeEventStream(samplingPeriod: SensorInterval.uiInterval);
+    _gyroSub =
+        gyro.listen(_onGyro, onError: (Object _) {}, cancelOnError: false);
   }
 
   void _onAcc(AccelerometerEvent e) {
-    _accVec = (x: e.x, y: e.y, z: e.z);
-    _recompute();
+    final double n = math.sqrt(e.x * e.x + e.y * e.y + e.z * e.z);
+    if (n == 0) return;
+    _up = (x: e.x / n, y: e.y / n, z: e.z / n);
+    // The very first reading can seed an absolute bearing without waiting for a
+    // turn, so a phone that is already held still still says which way it faces.
+    if (_heading == null) _seedFromMagnetometer();
   }
 
-  void _recompute() {
-    final ({double x, double y, double z})? raw = _magVec;
-    final ({double x, double y, double z})? g = _accVec;
-    if (raw == null) return;
-    _calibrate(raw);
-    final ({double x, double y, double z}) m = _corrected(raw);
-    // Tilt compensation needs gravity. Without it the simplest usable reading
-    // is the horizontal component of the field, which is right for a phone
-    // held flat — the case a radar is read in — and wrong by the tilt when it
-    // is not, which is why gravity is preferred when it exists.
-    final double? deg = g == null
-        ? _flatHeading(m)
-        : tiltCompensatedHeading(
-            mx: m.x, my: m.y, mz: m.z, gx: g.x, gy: g.y, gz: g.z);
-    if (deg == null) return;
-    _apply(deg);
+  void _onGyro(GyroscopeEvent e) {
+    final ({double x, double y, double z})? up = _up;
+    final double? heading = _heading;
+    final int ms = e.timestamp.millisecondsSinceEpoch;
+    final int last = _lastGyroMs;
+    _lastGyroMs = ms;
+    if (up == null || heading == null || last == 0) return;
+    final double dt = (ms - last) / 1000.0;
+    // A gap is not an integration step: the phone may have been turned while
+    // nothing was listening, and integrating across it would invent the turning.
+    if (dt <= 0 || dt > 0.25) return;
+    // The rate about the world's vertical axis, in degrees per second. Turning
+    // clockwise raises the bearing, which is a *negative* rotation about up in
+    // the right-handed device frame.
+    final double rate =
+        -(e.x * up.x + e.y * up.y + e.z * up.z) * 180 / math.pi;
+    _set(_wrap(heading + rate * dt));
   }
 
-  void _calibrate(({double x, double y, double z}) m) {
-    final ({double x, double y, double z})? lo = _lo;
-    final ({double x, double y, double z})? hi = _hi;
-    _lo = lo == null
-        ? (x: m.x, y: m.y, z: m.z)
-        : (
-            x: math.min(lo.x, m.x),
-            y: math.min(lo.y, m.y),
-            z: math.min(lo.z, m.z)
-          );
-    _hi = hi == null
-        ? (x: m.x, y: m.y, z: m.z)
-        : (
-            x: math.max(hi.x, m.x),
-            y: math.max(hi.y, m.y),
-            z: math.max(hi.z, m.z)
-          );
-    if (_samples < 1 << 30) _samples++;
-  }
-
-  /// The field with the hard-iron offset removed.
-  ({double x, double y, double z}) _corrected(
-      ({double x, double y, double z}) m) {
-    final ({double x, double y, double z})? lo = _lo;
-    final ({double x, double y, double z})? hi = _hi;
-    if (lo == null || hi == null) return m;
-    // Until the phone has actually turned, every extent is zero and the
-    // "centre" is simply the current reading: subtracting it would leave a
-    // zero vector and a dial that says nothing. Raw is the better guess then.
-    // A phone turned flat spins the field about the vertical axis, which moves
-    // x and y and leaves z where it was, so the horizontal pair is the test.
-    final double spread = math.min(hi.x - lo.x, hi.y - lo.y);
-    if (spread < _minSpread) return m;
-    final ({double x, double y, double z}) c = (
-      x: (lo.x + hi.x) / 2,
-      y: (lo.y + hi.y) / 2,
-      z: (lo.z + hi.z) / 2,
-    );
-    // z is corrected only when it has an extent of its own: on a flat turn it
-    // does not, and subtracting its "centre" would erase the dip that tilt
-    // compensation needs.
-    final bool zKnown = (hi.z - lo.z) >= _minSpread;
-    return (x: m.x - c.x, y: m.y - c.y, z: zKnown ? m.z - c.z : m.z);
-  }
-
-  /// Whether enough of the sphere has been seen for the offset to mean
-  /// something. Exposed because a dial drawn from an uncalibrated compass is
-  /// the case the tests exist for, and because the measurement above is not a
-  /// theory: 141 µT and an 82° dip is what an uncalibrated phone reads.
-  bool get calibrated {
-    final ({double x, double y, double z})? lo = _lo;
-    final ({double x, double y, double z})? hi = _hi;
-    if (lo == null || hi == null || _samples < _calibrationSamples) {
-      return false;
+  void _onMag(MagnetometerEvent e) {
+    _lastMagEvent = e;
+    final int ms = e.timestamp.millisecondsSinceEpoch;
+    final int last = _lastMagMs;
+    _lastMagMs = ms;
+    if (_heading == null) {
+      _seedFromMagnetometer();
+      return;
     }
-    // x and y only: see `_corrected` on why z carries no extent on a turn.
-    return (hi.x - lo.x) >= _minSpread && (hi.y - lo.y) >= _minSpread;
+    // The anchor is the flat bearing, and it is only an anchor while the phone
+    // is flat: tilted, the horizontal pair is not the horizontal field.
+    if (!_flatNow) return;
+    _accumulate(e.x, e.y);
+    final double target = flatHeading(e.x - _offset.x, e.y - _offset.y);
+    final double dt = last == 0 ? 0 : (ms - last) / 1000.0;
+    final double step = (anchorGain * (dt <= 0 ? 0.02 : dt.clamp(0.0, 0.25)))
+        .clamp(0.0, 0.5);
+    _set(_wrap(_heading! + _shortestDelta(_heading!, target) * step));
+    _anchoredAt = DateTime.now().millisecondsSinceEpoch;
+    _touch();
   }
 
-  void _apply(double raw) {
-    final double? prev = _heading;
-    double next;
-    if (prev == null) {
-      next = raw;
+  /// The first bearing of a session, from whatever the sensors can support.
+  void _seedFromMagnetometer() {
+    final MagnetometerEvent? m = _lastMagEvent;
+    if (m == null) return;
+    final double seed;
+    if (_flatNow) {
+      _accumulate(m.x, m.y);
+      seed = flatHeading(m.x - _offset.x, m.y - _offset.y);
     } else {
-      // Interpolate across the wrap, or a heading passing north would swing
-      // the long way round: 359° to 1° must move two degrees, not 358.
-      double delta = raw - prev;
-      while (delta > 180) {
-        delta -= 360;
-      }
-      while (delta < -180) {
-        delta += 360;
-      }
-      next = (prev + delta * smoothing) % 360;
-      if (next < 0) next += 360;
+      final ({double x, double y, double z})? up = _up;
+      if (up == null) return;
+      final double? tilted = tiltCompensatedHeading(
+        mx: m.x,
+        my: m.y,
+        mz: m.z,
+        // The accelerometer is the reaction to gravity, so it already points
+        // along world up; passing it as the gravity vector is the same frame
+        // the sensor fusion uses.
+        gx: up.x,
+        gy: up.y,
+        gz: up.z,
+      );
+      if (tilted == null) return;
+      seed = tilted;
     }
-    _heading = next;
+    _set(_wrap(seed));
+    _anchoredAt = DateTime.now().millisecondsSinceEpoch;
+    _touch();
+  }
+
+  MagnetometerEvent? _lastMagEvent;
+
+  /// The horizontal field samples seen while the phone was flat, for the
+  /// hard-iron fit below. A ring: the field in a new place is a new problem, so
+  /// the fit always describes where the phone is now.
+  final List<({double x, double y})> _fitPoints = <({double x, double y})>[];
+
+  /// The accepted horizontal offset. Zero until a fit is good enough to trust.
+  ({double x, double y}) _offset = (x: 0, y: 0);
+  int _sinceFit = 0;
+
+  /// A hard-iron offset rotates with the *phone*, so on a flat turn the field
+  /// sweeps a circle whose centre is the offset and whose radius is the Earth's
+  /// horizontal component. The centre is what the bearing needs removed, and a
+  /// least-squares circle fit recovers it — unlike a min/max box, which is only
+  /// the centre when the sweep happens to be a full turn and wastes the reading
+  /// entirely when it is not. `calibratedCircle` is the gate: a partial arc, or
+  /// points that do not lie on a circle, are rejected rather than applied.
+  static const int _fitWindow = 240;
+  static const int _fitMinPoints = 48;
+
+  void _accumulate(double x, double y) {
+    _fitPoints.add((x: x, y: y));
+    if (_fitPoints.length > _fitWindow) _fitPoints.removeAt(0);
+    _sinceFit++;
+    if (_sinceFit < 20 || _fitPoints.length < _fitMinPoints) return;
+    _sinceFit = 0;
+    final ({double x, double y, double r, double rms})? fit = fitCircle(_fitPoints);
+    if (fit == null) return;
+    _offset = (x: fit.x, y: fit.y);
+  }
+
+  /// A least-squares circle through the horizontal field samples.
+  ///
+  /// Kasa's algebraic fit: every point satisfies `2ax + 2by + c = x² + y²`, so
+  /// the centre `(a, b)` is a 3×3 linear solve. Returns null when the points do
+  /// not describe a circle, which is the normal case for a phone that has only
+  /// been turned a little: a short arc is satisfied by a family of circles, and
+  /// the one the algebra picks has a meaningless centre.
+  @visibleForTesting
+  static ({double x, double y, double r, double rms})? fitCircle(
+      List<({double x, double y})> pts) {
+    final int n = pts.length;
+    if (n < 12) return null;
+    double sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+    double sxz = 0, syz = 0, sz = 0;
+    for (final ({double x, double y}) p in pts) {
+      final double z = p.x * p.x + p.y * p.y;
+      sx += p.x;
+      sy += p.y;
+      sxx += p.x * p.x;
+      syy += p.y * p.y;
+      sxy += p.x * p.y;
+      sxz += p.x * z;
+      syz += p.y * z;
+      sz += z;
+    }
+    // Normal equations for 2a·x + 2b·y + c = z.
+    final List<List<double>> m = <List<double>>[
+      <double>[2 * sxx, 2 * sxy, sx, sxz],
+      <double>[2 * sxy, 2 * syy, sy, syz],
+      <double>[2 * sx, 2 * sy, n.toDouble(), sz],
+    ];
+    // Gaussian elimination with partial pivoting.
+    for (int col = 0; col < 3; col++) {
+      int piv = col;
+      for (int r = col + 1; r < 3; r++) {
+        if (m[r][col].abs() > m[piv][col].abs()) piv = r;
+      }
+      if (m[piv][col].abs() < 1e-9) return null;
+      final List<double> tmp = m[col];
+      m[col] = m[piv];
+      m[piv] = tmp;
+      for (int r = 0; r < 3; r++) {
+        if (r == col) continue;
+        final double f = m[r][col] / m[col][col];
+        for (int k = col; k < 4; k++) {
+          m[r][k] -= f * m[col][k];
+        }
+      }
+    }
+    final double a = m[0][3] / m[0][0];
+    final double b = m[1][3] / m[1][1];
+    final double c = m[2][3] / m[2][2];
+    final double rr = c + a * a + b * b;
+    if (!rr.isFinite || rr <= 0) return null;
+    final double r = math.sqrt(rr);
+    // Residual: how far the points actually are from that circle.
+    double sq = 0;
+    for (final ({double x, double y}) p in pts) {
+      final double d = math.sqrt(
+              (p.x - a) * (p.x - a) + (p.y - b) * (p.y - b)) -
+          r;
+      sq += d * d;
+    }
+    return (x: a, y: b, r: r, rms: math.sqrt(sq / n));
+  }
+
+  /// Whether the horizontal offset has been measured well enough to subtract.
+  ///
+  /// The radius has to be an Earth-like horizontal field and the points have to
+  /// lie on the circle: `rms < 0.15 r` rejects a short arc, whose algebraically
+  /// best circle is huge and whose centre is nowhere near the offset.
+  bool get calibratedCircle {
+    if (_fitPoints.length < _fitMinPoints) return false;
+    final ({double x, double y, double r, double rms})? fit =
+        fitCircle(_fitPoints);
+    if (fit == null) return false;
+    return fit.r >= 5 && fit.r <= 90 && fit.rms <= fit.r * 0.15;
+  }
+
+  void _set(double deg) => _heading = deg;
+
+  void _touch() {
     _stale?.cancel();
     _stale = Timer(staleAfter, () {
+      // No anchor for a whole staleness window: the gyroscope may have drifted
+      // and the magnetometer is not saying otherwise. Stop claiming a direction
+      // rather than drawing one that is merely plausible.
       _heading = null;
+      _anchoredAt = 0;
       notifyListeners();
     });
     notifyListeners();
   }
 
-  /// A phone held flat: the horizontal field points north, so the bearing of
-  /// the field from the phone's +Y axis is the heading.
-  static double? _flatHeading(({double x, double y, double z}) m) {
-    if (m.x == 0 && m.y == 0) return null;
-    // atan2 with x and y swapped, because `heading` is degrees clockwise from
-    // north and the sensor's axes are x-right, y-up-the-screen.
-    double deg = math.atan2(-m.x, m.y) * 180 / math.pi;
+  /// The shorter way round from [from] to [to], in (−180, 180].
+  static double _shortestDelta(double from, double to) {
+    double d = to - from;
+    while (d > 180) {
+      d -= 360;
+    }
+    while (d < -180) {
+      d += 360;
+    }
+    return d;
+  }
+
+  static double _wrap(double deg) {
+    double d = deg % 360;
+    if (d < 0) d += 360;
+    return d;
+  }
+
+  /// A phone held flat: the field's horizontal pair points north, so the bearing
+  /// of the field from the phone's +Y axis is the heading.
+  ///
+  /// This is the one formula that does not touch the field's vertical component,
+  /// and that is the point: a hard-iron offset on z — which is what this handset
+  /// has, 154 µT of it — cannot move the answer. `atan2(-x, y)` because the
+  /// sensor's axes are x-right, y-up-the-screen and the bearing is clockwise from
+  /// north.
+  @visibleForTesting
+  static double flatHeading(double mx, double my) {
+    double deg = math.atan2(-mx, my) * 180 / math.pi;
     if (deg < 0) deg += 360;
     return deg;
   }
 
-  /// The standard tilt-compensated compass, in degrees clockwise from north.
+  /// The standard tilt-compensated compass, for a *well calibrated* sensor.
   ///
-  /// Built from the two vectors Android hands us: the accelerometer, which for
-  /// a phone lying flat and screen-up reports **+z** (the reaction to gravity,
-  /// pointing out of the screen), and the magnetometer, which reports the
-  /// field. From them:
+  /// Used only to seed the very first heading on a phone that is already tilted
+  /// (and, on a device with no gyroscope, as the whole answer). It is not used to
+  /// track a turn: it assumes the vector it is given is the Earth's field, and
+  /// with an uncorrected hard-iron offset it is not — which is why the heading
+  /// is integrated from the gyroscope instead.
   ///
   ///   * `a` is the unit up-axis of the world,
   ///   * `E = m x a` is east in device coordinates,
@@ -297,6 +455,7 @@ class CompassHeading extends ChangeNotifier {
   void dispose() {
     _magSub?.cancel();
     _accSub?.cancel();
+    _gyroSub?.cancel();
     _stale?.cancel();
     super.dispose();
   }

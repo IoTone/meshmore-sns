@@ -1349,9 +1349,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String eventMsgSent(String ack) {
-    return 'sent (confirmed by $ack)';
-  }
+  String get eventMsgSent => 'sent · the radio acknowledged it';
 
   @override
   String eventDeviceInfo(String version) {

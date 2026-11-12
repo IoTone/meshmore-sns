@@ -178,7 +178,7 @@ String _eventLine(AppLocalizations l, MeshEvent e) {
     MeshEventKind.deviceClockSynced => l.eventDeviceClockSynced,
     MeshEventKind.deviceClockSkew =>
       l.eventDeviceClockSkew(a['seconds'] ?? '?'),
-    MeshEventKind.msgSent => l.eventMsgSent(a['ack'] ?? '?'),
+    MeshEventKind.msgSent => l.eventMsgSent,
     MeshEventKind.deviceInfo => l.eventDeviceInfo(a['version'] ?? '?'),
     MeshEventKind.selfInfo => l.eventSelfInfo(a['name'] ?? '?'),
     MeshEventKind.queuedWaiting => a.containsKey('count')

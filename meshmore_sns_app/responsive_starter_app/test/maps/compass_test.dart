@@ -11,54 +11,269 @@ import 'package:meshmore_sns_app/maps/compass.dart';
 /// A dial that cannot know its orientation must not pretend to.
 ///
 /// The arithmetic is the risky part, not the plumbing: a sign error puts north
-/// on the wrong side, and the dial still looks plausible. So the tilt-compensated
-/// compass, the north marker and the smoothing across the 359°/1° wrap are all
-/// asserted directly.
+/// on the wrong side, and the dial still looks plausible. So every case here is
+/// a *bearing* asserted against a known rotation, including the one the owner
+/// reported: turning a phone flat on a desk 30° must read 30°, not 60° and not
+/// "somewhere else", on a handset whose magnetometer carries a large vertical
+/// offset.
+/// The shorter way round between two bearings, in degrees (0..180).
+double apart(double a, double b) {
+  double d = (a - b) % 360;
+  if (d > 180) d -= 360;
+  if (d < -180) d += 360;
+  return d.abs();
+}
+
 void main() {
-  /// A phone lying flat, screen up. `sensors_plus` reports the reaction to
-  /// gravity, so the accelerometer reads **+z**; the magnetic field points
-  /// north, which is the device's +y while the top of the screen faces north.
-  double flat(double fieldNorth, double fieldEast) =>
-      CompassHeading.tiltCompensatedHeading(
-        mx: fieldEast,
-        my: fieldNorth,
-        mz: 0,
-        gx: 0,
-        gy: 0,
-        gz: 9.81,
-      )!;
+  /// A phone flat on a desk, screen up, with the Earth's field along north at
+  /// 20 µT horizontal and 46 µT down — Denver's, which is where the reported
+  /// fault was measured. The top of the screen faces [facing] degrees clockwise
+  /// from north.
+  ///
+  /// Device axes: x right, y up-the-screen, z out of the screen (so up, when
+  /// the phone is flat).
+  ({double x, double y, double z}) fieldAt(double facing) {
+    // The world's north, expressed in device coordinates.
+    final double t = facing * math.pi / 180;
+    final double northX = -math.sin(t);
+    final double northY = math.cos(t);
+    // East = north rotated 90° clockwise, so it points along device x for a
+    // north-facing phone.
+    final double eastX = math.cos(t);
+    final double eastY = math.sin(t);
+    const double h = 20.0, down = 46.0;
+    return (
+      x: northX * h + eastX * 0,
+      y: northY * h + eastY * 0,
+      z: -down,
+    );
+  }
 
-  test('flat, field along +y reads north', () {
-    expect(flat(30, 0), closeTo(0, 0.01));
+  /// The same, with the hard-iron offset the handset in the fault report has:
+  /// ~154 µT on z and a little on the horizontal pair, fixed in the *device*
+  /// frame, so it stays put while the Earth's field turns underneath it.
+  ({double x, double y, double z}) biasedFieldAt(double facing) {
+    final ({double x, double y, double z}) f = fieldAt(facing);
+    return (x: f.x + 7.3, y: f.y + 0.8, z: f.z - 108.0);
+  }
+
+  group('the flat bearing', () {
+    test('a phone facing north reads north', () {
+      expect(CompassHeading.flatHeading(0, 30), closeTo(0, 0.01));
+    });
+
+    test('facing each cardinal reads that cardinal', () {
+      expect(CompassHeading.flatHeading(-30, 0), closeTo(90, 0.01));
+      expect(CompassHeading.flatHeading(0, -30), closeTo(180, 0.01));
+      expect(CompassHeading.flatHeading(30, 0), closeTo(270, 0.01));
+    });
+
+    test('a vertical offset cannot move it, at any angle', () {
+      for (int deg = 0; deg < 360; deg += 15) {
+        final ({double x, double y, double z}) clean = fieldAt(deg.toDouble());
+        // The measured handset: 108 µT of bias, all of it on z. The flat
+        // bearing takes only the horizontal pair, so it cannot see it.
+        final ({double x, double y, double z}) biased =
+            (x: clean.x, y: clean.y, z: clean.z - 108);
+        expect(CompassHeading.flatHeading(biased.x, biased.y),
+            closeTo(CompassHeading.flatHeading(clean.x, clean.y), 0.001));
+      }
+    });
+
+    test('the circle fit recovers a horizontal offset the box could not', () {
+      // A hard-iron offset in the horizontal plane is what a box centre gets
+      // wrong: at the top of a sweep the box centre is the arc's chord, not the
+      // circle's. A full turn is enough for the fit, and the recovered centre
+      // takes the bearing from tens of degrees out to a couple.
+      const double ox = 12, oy = -9, r = 20;
+      final List<({double x, double y})> pts = <({double x, double y})>[];
+      for (int deg = 0; deg < 360; deg += 6) {
+        final double t = deg * math.pi / 180;
+        pts.add((x: ox + r * math.sin(t), y: oy + r * math.cos(t)));
+      }
+      final ({double x, double y, double r, double rms})? fit =
+          CompassHeading.fitCircle(pts);
+      expect(fit, isNotNull);
+      expect(fit!.x, closeTo(ox, 0.5));
+      expect(fit.y, closeTo(oy, 0.5));
+      expect(fit.r, closeTo(r, 0.5));
+      // The bearing of a field seen at -34.4° from the phone's forward axis is
+      // 34.4°. With the fit's centre subtracted it reads that; raw it is out by
+      // the offset's own angle.
+      final ({double x, double y}) sample =
+          (x: ox + r * math.sin(-0.6), y: oy + r * math.cos(-0.6));
+      final double corrected =
+          CompassHeading.flatHeading(sample.x - fit.x, sample.y - fit.y);
+      final double raw = CompassHeading.flatHeading(sample.x, sample.y);
+      expect(apart(corrected, 34.4), lessThan(1.0));
+      expect(apart(raw, 34.4), greaterThan(8),
+          reason: 'the offset this phone has really does move the bearing');
+    });
+
+    test('a short, noisy arc is rejected by the gate', () {
+      // Real samples have noise, and noise on a 40° arc leaves the circle
+      // radius unconstrained: the fit walks off to a huge circle, which the
+      // r <= 90 µT test refuses. That is the case a phone that has only been
+      // nudged produces, and it must not be trusted as a calibration.
+      const double ox = 12, oy = -9, r = 20;
+      final List<({double x, double y})> pts = <({double x, double y})>[];
+      for (int deg = 0; deg <= 40; deg += 2) {
+        final double t = deg * math.pi / 180;
+        final double jitter = (deg % 4 == 0) ? 1.2 : -1.2;
+        pts.add(
+            (x: ox + r * math.sin(t) + jitter, y: oy + r * math.cos(t) - jitter));
+      }
+      final ({double x, double y, double r, double rms})? fit =
+          CompassHeading.fitCircle(pts);
+      final bool trusted = fit != null &&
+          fit.r >= 5 &&
+          fit.r <= 90 &&
+          fit.rms <= fit.r * 0.15;
+      expect(trusted, isFalse,
+          reason: 'a short noisy arc must not be mistaken for a calibration');
+    });
   });
 
-  test('flat, field along +x reads east', () {
-    // The field coming from the phone's right means the phone faces east.
-    expect(flat(0, -30), closeTo(90, 0.01));
+  group('tracking a turn', () {
+    late StreamController<MagnetometerEvent> mag;
+    late StreamController<AccelerometerEvent> acc;
+    late StreamController<GyroscopeEvent> gyro;
+    late CompassHeading compass;
+    late DateTime clock;
+
+    setUp(() {
+      mag = StreamController<MagnetometerEvent>.broadcast();
+      acc = StreamController<AccelerometerEvent>.broadcast();
+      gyro = StreamController<GyroscopeEvent>.broadcast();
+      compass = CompassHeading(
+        magnetometer: mag.stream,
+        accelerometer: acc.stream,
+        gyroscope: gyro.stream,
+        staleAfter: const Duration(seconds: 30),
+      )..start();
+      clock = DateTime(2026, 11, 11, 23, 59);
+      // Flat on the desk: screen up, so the accelerometer reads +z.
+      acc.add(AccelerometerEvent(0, 0, 9.81, clock));
+    });
+
+    tearDown(() async {
+      compass.dispose();
+      await mag.close();
+      await acc.close();
+      await gyro.close();
+    });
+
+    /// Turn the phone by [deg] over [steps] gyroscope samples of 20 ms.
+    ///
+    /// A clockwise turn raises the bearing, which is a negative rate about the
+    /// world's up axis.
+    Future<void> turn(double deg, {int steps = 30}) async {
+      final double perStep = deg / steps;
+      for (int i = 0; i < steps; i++) {
+        clock = clock.add(const Duration(milliseconds: 20));
+        final double ratePerSec = -perStep / 0.020;
+        gyro.add(GyroscopeEvent(
+            0, 0, ratePerSec * math.pi / 180, clock));
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    test('a flat turn of 30° reads 30°', () async {
+      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      await Future<void>.delayed(Duration.zero);
+      expect(compass.heading, closeTo(0, 0.5));
+
+      await turn(30);
+      expect(apart(compass.heading!, 30), lessThan(1.5),
+          reason: 'degree for degree: this is the reported fault');
+      // And it keeps going: a second 30 is 60, not something else.
+      await turn(30);
+      expect(apart(compass.heading!, 60), lessThan(1.5));
+    });
+
+    test('turning back returns to the same reading', () async {
+      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      await Future<void>.delayed(Duration.zero);
+      await turn(40);
+      await turn(-40);
+      expect(apart(compass.heading!, 0), lessThan(1.5),
+          reason: 'the old tilt-compensated path did not come back');
+    });
+
+    test('a turn across north wraps instead of unwinding', () async {
+      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      await Future<void>.delayed(Duration.zero);
+      await turn(-20); // 340
+      expect(apart(compass.heading!, 340), lessThan(1.5));
+    });
+
+    test('a tilted phone still tracks the turn', () async {
+      // Held at about 45°: the accelerometer leans, so the up axis is not the
+      // device's +z. The yaw rate is taken along that axis, so a turn about the
+      // world's vertical still reads degree for degree.
+      acc.add(AccelerometerEvent(0, 6.94, 6.94, clock));
+      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      await Future<void>.delayed(Duration.zero);
+      final double? before = compass.heading;
+      // The gyroscope reports the same world rotation, expressed in device axes
+      // that now lean: its component along up is 0.707 of the z rate.
+      for (int i = 0; i < 30; i++) {
+        clock = clock.add(const Duration(milliseconds: 20));
+        const double perStep = 20 / 30; // 20 degrees total
+        final double rate = -(perStep / 0.020) * math.pi / 180;
+        gyro.add(GyroscopeEvent(0, rate * 0.707, rate * 0.707, clock));
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect((compass.heading! - before!) % 360, closeTo(20, 2),
+          reason: 'a leaned phone turns the dial by the angle it was turned');
+    });
+
+    test('a magnetometer anchor drifts the heading back to the field', () async {
+      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      await Future<void>.delayed(Duration.zero);
+      await turn(30);
+      // Now the field says the phone is back at 0 while the gyroscope believes
+      // 30: the anchor pulls towards the field rather than ignoring it.
+      for (int i = 0; i < 10; i++) {
+        clock = clock.add(const Duration(milliseconds: 100));
+        final ({double x, double y, double z}) f = biasedFieldAt(0);
+        mag.add(MagnetometerEvent(f.x, f.y, f.z, clock));
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(apart(compass.heading!, 0), lessThan(20),
+          reason: 'the absolute bearing wins once the phone is flat again');
+    });
+
   });
 
-  test('flat, field along -y reads south', () {
-    expect(flat(-30, 0), closeTo(180, 0.01));
-  });
+  test('a heading with no anchor for a staleness window goes away', () async {
+    final StreamController<MagnetometerEvent> mag =
+        StreamController<MagnetometerEvent>.broadcast();
+    final StreamController<AccelerometerEvent> acc =
+        StreamController<AccelerometerEvent>.broadcast();
+    final StreamController<GyroscopeEvent> gyro =
+        StreamController<GyroscopeEvent>.broadcast();
+    final CompassHeading compass = CompassHeading(
+      magnetometer: mag.stream,
+      accelerometer: acc.stream,
+      gyroscope: gyro.stream,
+      staleAfter: const Duration(milliseconds: 60),
+    )..start();
+    final DateTime now = DateTime(2026, 11, 11, 23, 59);
+    acc.add(AccelerometerEvent(0, 0, 9.81, now));
+    mag.add(MagnetometerEvent(0, 30, -154, now));
+    await Future<void>.delayed(Duration.zero);
+    expect(compass.hasHeading, isTrue);
 
-  test('flat, field along -x reads west', () {
-    expect(flat(0, 30), closeTo(270, 0.01));
-  });
-
-  test('a tilted phone still reads north', () {
-    // Both vectors rotated 30 degrees about the device's x axis: the world
-    // still has north along the screen's forward direction, but the field and
-    // gravity are no longer axis-aligned. Without tilt compensation this reads
-    // tens of degrees off; with it, north stays north.
-    final double h = CompassHeading.tiltCompensatedHeading(
-      mx: 0,
-      my: 0.866,
-      mz: -0.5,
-      gx: 0,
-      gy: 0.5,
-      gz: 0.866,
-    )!;
-    expect(h, closeTo(0, 0.5));
+    // Real elapsed time, because the staleness timer is a wall clock and a
+    // widget test's fake clock would never reach it.
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    expect(compass.hasHeading, isFalse,
+        reason: 'a dial must not keep a direction the phone no longer faces');
+    compass.dispose();
+    await mag.close();
+    await acc.close();
+    await gyro.close();
   });
 
   test('no heading means north is up and nothing rotates', () {
@@ -75,98 +290,34 @@ void main() {
     expect(CompassHeading.relativeDegrees(0, 90), closeTo(270, 0.001));
   });
 
-  test('a biased sensor is corrected once the phone has turned', () async {
-    // What the device actually reported on 2026-11-11: a field of ~141 µT with
-    // an 82° dip, against the Earth's ~50 µT. The bias is a hard-iron offset,
-    // and a heading taken from the raw vector is tens of degrees wrong.
-    const double biasX = 60, biasY = -80, biasZ = 100;
-    final StreamController<MagnetometerEvent> mag =
-        StreamController<MagnetometerEvent>.broadcast();
-    final StreamController<AccelerometerEvent> acc =
-        StreamController<AccelerometerEvent>.broadcast();
-    final CompassHeading compass = CompassHeading(
-      magnetometer: mag.stream,
-      accelerometer: acc.stream,
-      smoothing: 1.0,
-      staleAfter: const Duration(seconds: 30),
-    )..start();
-    acc.add(AccelerometerEvent(0, 0, 9.81, DateTime.now()));
+  group('the tilt formula, for a calibrated sensor', () {
+    // Kept because it seeds the first bearing on a phone that is already
+    // tilted, and because it is the whole answer on a device with no
+    // gyroscope. It is not used to track a turn: see the class comment.
+    double flat(double fieldNorth, double fieldEast) =>
+        CompassHeading.tiltCompensatedHeading(
+          mx: fieldEast,
+          my: fieldNorth,
+          mz: 0,
+          gx: 0,
+          gy: 0,
+          gz: 9.81,
+        )!;
 
-    // Sweep the phone through a full turn with the top facing north the whole
-    // way, plus the bias. The field's horizontal part stays along +y.
-    for (int i = 0; i < 72; i++) {
-      final double t = i * 5 * math.pi / 180;
-      // Rotating the phone rotates the *bias* in device coordinates while the
-      // Earth's field stays put in the world.
-      mag.add(MagnetometerEvent(
-        biasX * math.cos(t) - biasY * math.sin(t),
-        biasX * math.sin(t) + biasY * math.cos(t),
-        biasZ,
-        DateTime.now(),
-      ));
-      await Future<void>.delayed(Duration.zero);
-    }
-    expect(compass.calibrated, isTrue,
-        reason: 'a full turn gives every axis its extent');
-    // The bias no longer drags the reading: the dial is within a few degrees
-    // of where the raw field put it (which was ~40° out).
-    expect(compass.heading, isNotNull);
-    compass.dispose();
-    await mag.close();
-    await acc.close();
-  });
-
-  group('smoothing', () {
-    late StreamController<MagnetometerEvent> mag;
-    late StreamController<AccelerometerEvent> acc;
-    late CompassHeading compass;
-
-    setUp(() {
-      mag = StreamController<MagnetometerEvent>.broadcast();
-      acc = StreamController<AccelerometerEvent>.broadcast();
-      compass = CompassHeading(
-        magnetometer: mag.stream,
-        accelerometer: acc.stream,
-        smoothing: 0.5,
-        staleAfter: const Duration(milliseconds: 60),
-      )..start();
-      // Flat, screen up, so the accelerometer reads +z.
-      acc.add(AccelerometerEvent(0, 0, 9.81, DateTime.now()));
+    test('flat, field along +y reads north', () {
+      expect(flat(30, 0), closeTo(0, 0.01));
     });
 
-    tearDown(() async {
-      compass.dispose();
-      await mag.close();
-      await acc.close();
-    });
-
-    test('a sample produces a heading', () async {
-      mag.add(MagnetometerEvent(0, 30, 0, DateTime.now()));
-      await Future<void>.delayed(Duration.zero);
-      expect(compass.hasHeading, isTrue);
-      expect(compass.heading, closeTo(0, 0.01));
-    });
-
-    test('crossing north moves two degrees, not the long way round', () async {
-      mag.add(MagnetometerEvent(1, 30, 0, DateTime.now())); // ~358
-      await Future<void>.delayed(Duration.zero);
-      final double first = compass.heading!;
-      expect(first, greaterThan(355));
-
-      // Now a couple of degrees the other side of north.
-      mag.add(MagnetometerEvent(-1, 30, 0, DateTime.now())); // ~2
-      await Future<void>.delayed(Duration.zero);
-      // Half of a two-degree step from ~359 lands near 0, never near 180.
-      expect(compass.heading!, anyOf(lessThan(5), greaterThan(355)));
-    });
-
-    test('a heading nobody refreshed goes away', () async {
-      mag.add(MagnetometerEvent(0, 30, 0, DateTime.now()));
-      await Future<void>.delayed(Duration.zero);
-      expect(compass.hasHeading, isTrue);
-      await Future<void>.delayed(const Duration(milliseconds: 120));
-      expect(compass.hasHeading, isFalse,
-          reason: 'a dial must not keep a direction the phone no longer faces');
+    test('a tilted phone still reads north', () {
+      final double h = CompassHeading.tiltCompensatedHeading(
+        mx: 0,
+        my: 0.866,
+        mz: -0.5,
+        gx: 0,
+        gy: 0.5,
+        gz: 0.866,
+      )!;
+      expect(h, closeTo(0, 0.5));
     });
   });
 }

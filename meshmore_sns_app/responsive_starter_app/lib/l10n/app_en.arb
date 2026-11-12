@@ -774,14 +774,7 @@
       }
     }
   },
-  "eventMsgSent": "sent (confirmed by {ack})",
-  "@eventMsgSent": {
-    "placeholders": {
-      "ack": {
-        "type": "String"
-      }
-    }
-  },
+  "eventMsgSent": "sent · the radio acknowledged it",
   "eventDeviceInfo": "device {version}",
   "@eventDeviceInfo": {
     "placeholders": {

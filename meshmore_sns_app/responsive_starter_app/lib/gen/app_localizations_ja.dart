@@ -1283,9 +1283,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String eventMsgSent(String ack) {
-    return '送信済み（$ack が確認）';
-  }
+  String get eventMsgSent => '送信 · 無線機が確認しました';
 
   @override
   String eventDeviceInfo(String version) {

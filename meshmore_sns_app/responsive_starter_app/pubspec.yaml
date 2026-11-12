@@ -96,12 +96,6 @@ dependencies:
   #     only in this pass; scanning side is captured separately.
   qr_flutter: ^4.1.0
 
-  # --- Magnetometer-derived compass heading for the radial /grid
-  #     "facing arrow" overlay. Wraps the platform's native sensor
-  #     fusion (Android ROTATION_VECTOR, iOS CLLocationManager
-  #     heading). Subscribed only while the radial view is mounted.
-  flutter_compass: ^0.8.1
-
   # --- External-URL launcher for "Show on map" (NodeDetailSheet
   #     → Apple Maps / Google Maps), QR-share text fallback, etc.
   url_launcher: ^6.3.1
