@@ -1242,6 +1242,9 @@
   "snsCellsLegendDecay": "直近1時間のみ追跡。保存はされません。",
   "meshTreeEmpty": "コンタクト同期を待機中 — ツリーは各コンタクトの outPath から構築されます。",
   "meshTreeFilteredEmptyFor": "{count, plural, =1{{stop} に経路が分かっている相手はいません。経路不明の相手が 1 台います。「Flood / All」で表示されます。} other{{stop} に経路が分かっている相手はいません。経路不明の相手が {count} 台います。「Flood / All」で表示されます。}}",
+  "meshTreeKey": "■ 中継機   ● クライアント   ◆ ルーム   ○ アナウンスのみ",
+  "meshTreeLearnRoutes": "無線機に経路を問い合わせる",
+  "meshTreeLearning": "無線機に問い合わせ中…",
   "meshTreeNoRoutes": "この無線機はまだ経路を学習していないため、すべての相手を表示しています。学習すると停止位置が使えるようになります。",
   "@meshTreeFilteredEmptyFor": {
     "description": "Shown instead of the no-peers notice when the hop stop is what emptied the tree.",

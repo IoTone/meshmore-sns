@@ -2157,6 +2157,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get meshTreeKey => '■ repeater   ● client   ◆ room   ○ advert only';
+
+  @override
+  String get meshTreeLearnRoutes => 'Ask the radio for routes';
+
+  @override
+  String get meshTreeLearning => 'Asking the radio…';
+
+  @override
   String get meshTreeNoRoutes =>
       'This radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.';
 

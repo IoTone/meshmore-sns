@@ -4,10 +4,29 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show BuildContext;
 import 'package:provider/provider.dart';
 import 'package:flutter/painting.dart' show Canvas, Color, Offset, Paint, PaintingStyle, Path;
 import 'package:sensors_plus/sensors_plus.dart';
+
+/// One reading from the platform's fused orientation sensor.
+@immutable
+class CompassReading {
+  const CompassReading({required this.heading, required this.accuracy});
+
+  /// Degrees clockwise from magnetic north, for the direction the screen faces.
+  final double heading;
+
+  /// The OS's own accuracy figure in degrees, or −1 when it will not say
+  /// (which is what an uncalibrated magnetometer reports).
+  final int accuracy;
+
+  /// Android's accuracy figures: 15 high, 30 medium, 45 low, −1 unreliable.
+  /// Anything worse than 45 means the phone itself is asking for calibration,
+  /// and a dial drawn from it is a guess with a confident face.
+  bool get usable => accuracy >= 0 && accuracy <= 45;
+}
 
 /// Which way the phone is pointing, so a dial can draw the world the right way
 /// round.
@@ -60,12 +79,29 @@ class CompassHeading extends ChangeNotifier {
     Stream<MagnetometerEvent>? magnetometer,
     Stream<AccelerometerEvent>? accelerometer,
     Stream<GyroscopeEvent>? gyroscope,
+    Stream<CompassReading>? platform,
     this.staleAfter = const Duration(seconds: 3),
     this.anchorGain = 2.0,
     this.flatCosine = 0.90,
   })  : _mag = magnetometer,
         _acc = accelerometer,
-        _gyro = gyroscope;
+        _gyro = gyroscope,
+        _platform = platform;
+
+  /// The platform channel the app's Android build answers with the OS's fused
+  /// rotation vector.
+  static const EventChannel platformChannel = EventChannel('meshmore/compass');
+
+  /// The OS's own compass, when the platform has one.
+  ///
+  /// This is the first choice and the hand-rolled path below is the fallback.
+  /// Sensor fusion is something a platform does better than an app: it has the
+  /// gyroscope, the accelerometer and the magnetometer already combined, and the
+  /// factory magnetometer calibration already applied, and it reports the
+  /// accuracy it has. Doing it by hand here was measurably wrong on a handset
+  /// whose field reads 157 µT where the Earth's is about 50.
+  final Stream<CompassReading>? _platform;
+  StreamSubscription<CompassReading>? _platformSub;
 
   /// Injected in tests. Null means "subscribe from `sensors_plus`", which is
   /// what the app does; a test passes controllers it can drive.
@@ -137,6 +173,40 @@ class CompassHeading extends ChangeNotifier {
   void start() {
     if (_started) return;
     _started = true;
+    // Injected streams mean "use these": that is what a test does, and what a
+    // platform without the channel gets. Otherwise, on Android, the OS's own
+    // fused sensor is the answer.
+    final bool usePlatform = _platform != null ||
+        (_mag == null &&
+            _acc == null &&
+            _gyro == null &&
+            defaultTargetPlatform == TargetPlatform.android);
+    if (usePlatform) {
+      final Stream<CompassReading> stream = _platform ??
+          platformChannel.receiveBroadcastStream().map((Object? event) {
+            final Map<Object?, Object?> m = event! as Map<Object?, Object?>;
+            return CompassReading(
+              heading: (m['heading']! as num).toDouble(),
+              accuracy: (m['accuracy']! as num).toInt(),
+            );
+          });
+      _platformSub = stream.listen(_onPlatform,
+          onError: (Object _) {
+            // No fused sensor on this device: fall back to the sensors below.
+            if (!_platformUnavailable) {
+              _platformUnavailable = true;
+              _startSensors();
+            }
+          },
+          cancelOnError: false);
+      return;
+    }
+    _startSensors();
+  }
+
+  bool _platformUnavailable = false;
+
+  void _startSensors() {
     final Stream<MagnetometerEvent> mag = _mag ??
         magnetometerEventStream(samplingPeriod: SensorInterval.uiInterval);
     final Stream<AccelerometerEvent> acc = _acc ??
@@ -151,6 +221,39 @@ class CompassHeading extends ChangeNotifier {
     _gyroSub =
         gyro.listen(_onGyro, onError: (Object _) {}, cancelOnError: false);
   }
+
+  /// A reading from the platform's fused sensor.
+  ///
+  /// The OS has fused, calibrated and tilt-compensated this already, so it is
+  /// taken as the heading rather than feeding any arithmetic here. What is added
+  /// is the one thing a raw reading cannot say: the accuracy. A phone that
+  /// reports "unreliable" is asking to be calibrated, and a dial must not draw a
+  /// confident arrow from a reading the sensor itself does not believe.
+  void _onPlatform(CompassReading r) {
+    _platformReadings++;
+    _platformAccuracy = r.accuracy;
+    if (!r.usable) {
+      // Held, not adopted: the last good direction is better than a wrong one,
+      // and the staleness timer drops it if the sensor never recovers.
+      return;
+    }
+    _set(_wrap(r.heading));
+    _anchoredAt = DateTime.now().millisecondsSinceEpoch;
+    _touch();
+  }
+
+  int _platformAccuracy = -1;
+
+  /// Whether the OS says its own compass cannot be trusted right now.
+  ///
+  /// Only meaningful once a reading has arrived: a compass that has not spoken
+  /// yet is *unknown*, not uncalibrated, and saying "the field is too strong"
+  /// before the first sample is a claim the app cannot make.
+  bool get needsCalibration =>
+      _platformReadings > 0 &&
+      (_platformAccuracy < 0 || _platformAccuracy > 45);
+
+  int _platformReadings = 0;
 
   void _onAcc(AccelerometerEvent e) {
     final double n = math.sqrt(e.x * e.x + e.y * e.y + e.z * e.z);
@@ -324,7 +427,14 @@ class CompassHeading extends ChangeNotifier {
 
   /// A field reading has arrived and cannot be used: the phone is sitting in a
   /// magnetic mess (a case, a mount, a speaker) that nobody has calibrated.
-  bool get disturbed => _lastMagEvent != null && !fieldTrusted;
+  /// Whether a dial must draw north-up and say why.
+  ///
+  /// Two different unknowns, kept apart: on the platform path the OS tells us
+  /// its accuracy, and only a reading it will not vouch for counts; on the
+  /// fallback path the test is whether the field looks like the Earth's.
+  bool get disturbed => _platformSub != null
+      ? needsCalibration
+      : (_lastMagEvent != null && !fieldTrusted);
 
   /// Whether the horizontal offset has been measured from a real turn.
   ///
@@ -516,6 +626,7 @@ class CompassHeading extends ChangeNotifier {
 
   @override
   void dispose() {
+    _platformSub?.cancel();
     _magSub?.cancel();
     _accSub?.cancel();
     _gyroSub?.cancel();

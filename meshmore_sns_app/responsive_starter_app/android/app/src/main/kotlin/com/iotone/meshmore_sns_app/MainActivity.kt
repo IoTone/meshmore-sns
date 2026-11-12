@@ -9,6 +9,7 @@ import android.os.storage.StorageManager
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
@@ -103,6 +104,13 @@ class MainActivity : FlutterActivity() {
         // the BLE companion; the receiver in the manifest carries that request, and this channel is
         // how it reaches the Dart side that actually holds the link. See RadioLeaseReceiver.
         RadioLeaseReceiver.attach(flutterEngine)
+        // The phone's heading, from the platform's own fused rotation vector. A
+        // compass is one of the few things an OS does better than an app: the
+        // fusion and the factory magnetometer calibration live there, and the
+        // hand-rolled Dart version was measurably wrong on a handset whose field
+        // reads three times the Earth's.
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/compass")
+            .setStreamHandler(CompassStreamHandler(this))
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "meshmore/radio_lease")
             .setMethodCallHandler { call, result ->
                 when (call.method) {

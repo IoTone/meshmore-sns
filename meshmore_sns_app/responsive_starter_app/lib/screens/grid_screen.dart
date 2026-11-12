@@ -25,6 +25,7 @@ import 'sns_cells_view.dart';
 import 'grid_notice.dart';
 import 'grid_prefs_store.dart';
 import '../maps/compass.dart';
+import '../maps/radar_scale.dart';
 import '../theme/viz_palette.dart';
 import 'weather_view.dart';
 import '../ui/mm_shape.dart';
@@ -589,10 +590,12 @@ class _GridScreenState extends State<GridScreen>
                   1000.0]);
       // Nothing located to frame: the rings fall back to a stated fixed
       // window rather than inventing a scale from signal-strength guesses.
-      return framed ?? base;
+      return _roundRimKm(framed ?? base);
     }
     final bool isRegion = _scaleIndex == GridScreen.rangeStops.length - 2;
-    if (!isRegion || selfLat == null || selfLon == null) return base;
+    if (!isRegion || selfLat == null || selfLon == null) {
+      return _roundRimKm(base);
+    }
     double maxKm = 0;
     for (final DiscoveredNode n in visible) {
       if (!n.hasLocation) continue;
@@ -601,10 +604,17 @@ class _GridScreenState extends State<GridScreen>
               1000.0;
       if (km > maxKm) maxKm = km;
     }
-    if (maxKm <= 0) return base;
+    if (maxKm <= 0) return _roundRimKm(base);
     // Pad 10% so the farthest node sits just inside the rim; clamp to
-    // a sane window.
-    return (maxKm * 1.1).clamp(50.0, 2000.0);
+    // a sane window, then round the rim so the labels are round too.
+    return _roundRimKm((maxKm * 1.1).clamp(50.0, 2000.0));
+  }
+
+  /// A rim distance rounded up to three whole steps, so the dial's labels are
+  /// round numbers: 25 / 50 / 75 km rather than 66 / 132 / 198.
+  static double _roundRimKm(double km) {
+    if (!km.isFinite || km <= 0) return km;
+    return radarRingStepMeters(km * 1000) * 3 / 1000;
   }
 
   /// Pretty distance label for a scale stop (e.g. "25 m" / "5 km").
@@ -1320,10 +1330,8 @@ class _GridPainter extends CustomPainter {
     // right (+X) axis so they don't collide with node markers in
     // typical fleets.
     for (final double f in ringFracs) {
-      final double meters = scaleKm * f * 1000;
-      final String label = meters < 1000
-          ? '${meters.round()} m'
-          : '${(meters / 1000).toStringAsFixed(meters < 10000 ? 1 : 0)} km';
+      // The rim is three whole steps, so each label lands on one.
+      final String label = radarDistanceLabel(scaleKm * f * 1000);
       final TextPainter tp = TextPainter(
         text: TextSpan(
           text: label,

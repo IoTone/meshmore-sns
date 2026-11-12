@@ -13,6 +13,7 @@ import '../meshcore/discovered_node.dart';
 import '../meshcore/mesh_graph.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/mesh_radial_layout.dart';
+import '../ui/mm_components.dart';
 import '../util/force_layout.dart';
 import 'node_detail_sheet.dart';
 import '../ui/mm_shape.dart';
@@ -211,10 +212,33 @@ class _MeshTreeViewState extends State<MeshTreeView> {
     super.dispose();
   }
 
+  /// Asking the radio for the routes the tree is drawn from.
+  ///
+  /// A route is learned by the *radio*, not by this app: each contact in its
+  /// table carries the outbound path it took, and a contact that has never been
+  /// routed to has none. So the tree's "no learned routes" state is not a bug to
+  /// work around but a fact, and the one action that changes it is asking the
+  /// radio to stream its contact table again.
+  Future<void> _learnRoutes(MeshcoreController mc) async {
+    setState(() => _learning = true);
+    try {
+      await mc.requestContacts();
+      // The frames arrive as they arrive; give the table a moment to land so a
+      // reader who pressed the button sees it end, not a spinner forever.
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+    } finally {
+      if (mounted) setState(() => _learning = false);
+    }
+  }
+
+  bool _learning = false;
+
   void _recenter() {
-    // Re-enable auto-fit so the view eases back to framing the whole
-    // graph. (Manual pinch/pan had turned it off.)
+    // Re-enable auto-fit *and* do the fitting. The ticker that used to lerp the
+    // transform every frame is gone with the force simulation, so setting the
+    // flag alone left the button doing nothing at all.
     setState(() => _autoFit = true);
+    _fitToContent();
   }
 
   /// Rebuild the radial tree when the graph's node-set or the viewport
@@ -451,6 +475,21 @@ class _MeshTreeViewState extends State<MeshTreeView> {
             // stay, drawn as floaters: a limit cannot exclude a depth nobody
             // measured. Default 6 keeps everything visible on a mesh with no
             // learned routes, which is the public mesh most of the time.
+            // What the shapes mean. A square and a circle are two node kinds,
+            // and a reader who is not told which is which is looking at
+            // decoration.
+            Positioned(
+              left: 16,
+              top: 8,
+              child: IgnorePointer(
+                child: Text(
+                  l.meshTreeKey,
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeMicro),
+                ),
+              ),
+            ),
             Positioned(
               left: 12,
               right: 12,
@@ -469,11 +508,37 @@ class _MeshTreeViewState extends State<MeshTreeView> {
                         borderRadius: mmRadius(context, 8),
                         border: Border.all(color: cs.outline),
                       ),
-                      child: Text(
-                        l.meshTreeNoRoutes,
-                        style: TextStyle(
-                            color: cs.onSurfaceVariant,
-                            fontSize: context.skin.type.sizeSm),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            l.meshTreeNoRoutes,
+                            style: TextStyle(
+                                color: cs.onSurfaceVariant,
+                                fontSize: context.skin.type.sizeSm),
+                          ),
+                          // The routes come from the radio's contact table, so
+                          // "learn routes" is "ask the radio for its contacts".
+                          // It is offered only where the tree has nothing to
+                          // draw, which is the moment a reader wants it.
+                          if (mc.isReady)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: MmAction(
+                                label: _learning
+                                    ? l.meshTreeLearning
+                                    : l.meshTreeLearnRoutes,
+                                icon: _learning
+                                    ? Icons.hourglass_empty
+                                    : Icons.download_for_offline_outlined,
+                                dense: true,
+                                onPressed: _learning
+                                    ? null
+                                    : () => _learnRoutes(mc),
+                              ),
+                            ),
+                        ],
                       ),
                     )
                   : _HopSlider(

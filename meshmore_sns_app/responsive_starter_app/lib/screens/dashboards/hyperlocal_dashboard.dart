@@ -10,6 +10,7 @@ import '../../meshcore/discovered_node.dart';
 import '../../meshcore/meshcore_controller.dart';
 import '../../meshcore/own_location.dart';
 import '../../maps/compass.dart';
+import '../../maps/radar_scale.dart';
 import '../../theme/mm_skin.dart';
 import '../../theme/theme_controller.dart';
 import '../../theme/viz_palette.dart';
@@ -144,6 +145,7 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
                                   painter: _RadarPainter(
                                     center: center,
                                     maxR: maxR,
+                                    rimMeters: rimMeters,
                                     blips: laid.blips,
                                     hasSelf: laid.self != null,
                                     sweep: reduceMotion ? null : _sweep.value,
@@ -223,6 +225,9 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
 
   /// Project nodes onto the radar. Self (if present in the fabric) is
   /// returned separately — it always sits at the centre.
+  /// The rim distance this dial is drawn at, in metres, set by `_layout`.
+  double rimMeters = 1000;
+
   ({DiscoveredNode? self, List<_PositionedBlip> blips}) _layout(
       MeshcoreController mc, MmSkin skin, Offset center, double maxR) {
     final String? selfPk = mc.ownPubKeyHex;
@@ -256,14 +261,20 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
       if (dv != null) maxMeters = (maxMeters == null) ? dv : math.max(maxMeters, dv);
     }
     if (maxMeters != null && maxMeters < 1000) maxMeters = 1000;
+    // The rim is three round steps, not whatever the furthest peer happens to be
+    // at: the labels are a third, two thirds and the rim, so a step of 75 km
+    // reads 75 / 150 / 225 where a raw maximum read 66 / 132 / 198.
+    rimMeters = maxMeters == null
+        ? 1000.0
+        : radarRingStepMeters(maxMeters) * 3;
 
     final List<_PositionedBlip> blips = <_PositionedBlip>[];
     for (final DiscoveredNode n in peers) {
       final NodeProximity prox = mc.proximityFor(n);
       final double? d = dist[n.pubKeyHex];
       double frac;
-      if (d != null && maxMeters != null) {
-        frac = (d / maxMeters).clamp(0.08, 0.97);
+      if (d != null) {
+        frac = (d / rimMeters).clamp(0.08, 0.97);
       } else {
         // No distance, so the radius is a *band* rather than a value: each
         // node gets its own place inside the band its proximity implies.
@@ -345,6 +356,7 @@ class _RadarPainter extends CustomPainter {
   _RadarPainter({
     required this.center,
     required this.maxR,
+    required this.rimMeters,
     required this.blips,
     required this.hasSelf,
     required this.sweep,
@@ -363,6 +375,10 @@ class _RadarPainter extends CustomPainter {
 
   final Offset center;
   final double maxR;
+
+  /// The distance at the rim, in metres: three round steps, so the ring labels
+  /// are round too. See `radarRingStepMeters`.
+  final double rimMeters;
   final List<_PositionedBlip> blips;
   final bool hasSelf;
 
@@ -419,7 +435,7 @@ class _RadarPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..color = grid.withValues(alpha: 0.45);
-    for (final double f in <double>[0.33, 0.66, 1.0]) {
+    for (final double f in <double>[1 / 3, 2 / 3, 1.0]) {
       canvas.drawCircle(center, maxR * f, ring);
     }
     // Cross-hairs.

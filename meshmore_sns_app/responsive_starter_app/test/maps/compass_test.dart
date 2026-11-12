@@ -320,6 +320,44 @@ void main() {
     await gyro.close();
   });
 
+  group('the platform compass', () {
+    test('a good reading is adopted as-is', () async {
+      final StreamController<CompassReading> platform =
+          StreamController<CompassReading>.broadcast();
+      final CompassHeading compass = CompassHeading(
+        platform: platform.stream,
+        staleAfter: const Duration(seconds: 30),
+      )..start();
+      platform.add(const CompassReading(heading: 137.5, accuracy: 15));
+      await Future<void>.delayed(Duration.zero);
+      expect(compass.heading, closeTo(137.5, 0.001));
+      expect(compass.needsCalibration, isFalse);
+      compass.dispose();
+      await platform.close();
+    });
+
+    test('an unreliable reading is not drawn', () async {
+      // The OS says its magnetometer is uncalibrated: a dial drawn from it is a
+      // guess with a confident face, which is exactly the reported fault.
+      final StreamController<CompassReading> platform =
+          StreamController<CompassReading>.broadcast();
+      final CompassHeading compass = CompassHeading(
+        platform: platform.stream,
+        staleAfter: const Duration(seconds: 30),
+      )..start();
+      platform.add(const CompassReading(heading: 10, accuracy: 15));
+      await Future<void>.delayed(Duration.zero);
+      expect(compass.heading, closeTo(10, 0.001));
+      platform.add(const CompassReading(heading: 200, accuracy: -1));
+      await Future<void>.delayed(Duration.zero);
+      expect(compass.needsCalibration, isTrue);
+      expect(compass.heading, closeTo(10, 0.001),
+          reason: 'the last good direction is held, not replaced by a guess');
+      compass.dispose();
+      await platform.close();
+    });
+  });
+
   group('a field that cannot be believed', () {
     test('a 157 µT reading starts no dial and anchors none', () async {
       final StreamController<MagnetometerEvent> mag =

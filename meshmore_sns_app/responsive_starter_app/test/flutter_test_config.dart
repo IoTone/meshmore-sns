@@ -38,6 +38,16 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
     // error handler, so there is nothing a subscriber could swallow. A handler
     // that never emits is a phone with no sensors, which is a state every
     // screen already draws.
+    // The app's own compass channel. In the app the platform answers it with
+    // the OS's fused rotation vector; here it stays silent, which is a phone
+    // with no compass — a state every dial already draws.
+    messenger.setMockStreamHandler(
+      const EventChannel('meshmore/compass'),
+      MockStreamHandler.inline(
+        onListen: (Object? arguments, MockStreamHandlerEventSink sink) {},
+        onCancel: (Object? arguments) {},
+      ),
+    );
     for (final String sensor in <String>[
       'accelerometer',
       'user_accel',

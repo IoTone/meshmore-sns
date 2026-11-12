@@ -44,31 +44,17 @@ void main() {
     await t.binding.setSurfaceSize(const Size(400, 800));
     addTearDown(() => t.binding.setSurfaceSize(null));
 
-    // The sensors the view subscribes to. It reads the same `CompassHeading`
-    // the radars do, so a phone's sensors are what a fake looks like from
-    // inside the app: accelerometer reporting the reaction to gravity (so the
-    // phone is flat) and a magnetometer pointing north.
+    // The platform's own compass, which is what the app reads: a heading with
+    // the OS's accuracy figure, exactly as `CompassStreamHandler` reports it.
     final TestDefaultBinaryMessenger messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(
-        const MethodChannel('dev.fluttercommunity.plus/sensors/method'),
-        (MethodCall call) async => null);
-    final int micros = DateTime.now().microsecondsSinceEpoch;
-    void sensor(String channel, List<double> values) {
-      messenger.setMockStreamHandler(
-        EventChannel(channel),
-        MockStreamHandler.inline(
-          onListen: (Object? arguments, MockStreamHandlerEventSink sink) =>
-              sink.success(<double>[...values, micros.toDouble()]),
-        ),
-      );
-    }
-
-    sensor('dev.fluttercommunity.plus/sensors/accelerometer',
-        <double>[0, 0, 9.81]);
-    sensor('dev.fluttercommunity.plus/sensors/magnetometer',
-        <double>[0, 40, -46]);
-    sensor('dev.fluttercommunity.plus/sensors/gyroscope', <double>[0, 0, 0]);
+    messenger.setMockStreamHandler(
+      const EventChannel('meshmore/compass'),
+      MockStreamHandler.inline(
+        onListen: (Object? arguments, MockStreamHandlerEventSink sink) =>
+            sink.success(<String, Object?>{'heading': 90.0, 'accuracy': 15}),
+      ),
+    );
 
     final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl = MeshcoreController(

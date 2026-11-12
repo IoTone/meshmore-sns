@@ -3638,6 +3638,24 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{None of your peers has a learned route at {stop}. 1 is heard without one — Flood / All shows it.} other{None of your peers has a learned route at {stop}. {count} are heard without one — Flood / All shows them.}}'**
   String meshTreeFilteredEmptyFor(String stop, int count);
 
+  /// No description provided for @meshTreeKey.
+  ///
+  /// In en, this message translates to:
+  /// **'■ repeater   ● client   ◆ room   ○ advert only'**
+  String get meshTreeKey;
+
+  /// No description provided for @meshTreeLearnRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the radio for routes'**
+  String get meshTreeLearnRoutes;
+
+  /// No description provided for @meshTreeLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Asking the radio…'**
+  String get meshTreeLearning;
+
   /// No description provided for @meshTreeNoRoutes.
   ///
   /// In en, this message translates to:

@@ -1322,6 +1322,9 @@
   "snsCellsLegendDecay": "Only the last hour is tracked; nothing is stored.",
   "meshTreeEmpty": "Waiting for contact sync — the tree is built from each contact's outPath.",
   "meshTreeFilteredEmptyFor": "{count, plural, =1{None of your peers has a learned route at {stop}. 1 is heard without one — Flood / All shows it.} other{None of your peers has a learned route at {stop}. {count} are heard without one — Flood / All shows them.}}",
+  "meshTreeKey": "■ repeater   ● client   ◆ room   ○ advert only",
+  "meshTreeLearnRoutes": "Ask the radio for routes",
+  "meshTreeLearning": "Asking the radio…",
   "meshTreeNoRoutes": "This radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.",
   "@meshTreeFilteredEmptyFor": {
     "description": "Shown instead of the no-peers notice when the hop stop is what emptied the tree. The stop is named by its own label (Direct, <=3 hops, ...) rather than as a number, so it reads the same as the slider above it.",

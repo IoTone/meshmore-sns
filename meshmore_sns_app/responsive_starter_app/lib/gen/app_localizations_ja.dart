@@ -2061,6 +2061,15 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get meshTreeKey => '■ 中継機   ● クライアント   ◆ ルーム   ○ アナウンスのみ';
+
+  @override
+  String get meshTreeLearnRoutes => '無線機に経路を問い合わせる';
+
+  @override
+  String get meshTreeLearning => '無線機に問い合わせ中…';
+
+  @override
   String get meshTreeNoRoutes =>
       'この無線機はまだ経路を学習していないため、すべての相手を表示しています。学習すると停止位置が使えるようになります。';
 
