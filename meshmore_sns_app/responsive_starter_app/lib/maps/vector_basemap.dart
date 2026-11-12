@@ -157,7 +157,12 @@ class VectorSkinPalette {
       waterway: mix(t.surfaceAlt, t.link, .34),
       forest: mix(t.base, t.ok, .18),
       grass: mix(t.base, t.ok, .10),
-      sand: mix(t.base, t.accent, .10),
+      // Sand leans on the *warn* token rather than the accent, because on the
+      // skins where the accent and `ok` are the same colour (AG-HUD, Recon) the
+      // two derived fills came out identical and the beach was the park. A
+      // beach is warm, `warn` is the palette's warm token, and the two are now
+      // independent of the accent by construction.
+      sand: mix(t.base, t.warn, .16),
       rock: mix(t.base, t.surfaceAlt, .50),
       site: mix(t.surface, t.base, .50),
       building: mix(t.surfaceAlt, t.base, .40),
