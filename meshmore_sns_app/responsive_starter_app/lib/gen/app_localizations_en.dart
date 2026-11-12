@@ -6438,6 +6438,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapKeyDensity => 'Nodes per square';
 
   @override
+  String get mapKeyCoverage => 'Reception, from adverts you heard';
+
+  @override
+  String get mapKeyGeofence => 'A fence you set';
+
+  @override
+  String get mapKeyTrail => 'Your own track';
+
+  @override
+  String get mapKeyMessage => 'A node that just sent a message';
+
+  @override
   String mapMessageBubble(String name) {
     return 'A message from $name just arrived';
   }

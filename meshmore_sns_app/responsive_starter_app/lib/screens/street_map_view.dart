@@ -615,6 +615,7 @@ class _StreetMapViewState extends State<StreetMapView> {
       showDragHandle: true,
       builder: (BuildContext c) {
         final MmSkin skin = c.skin;
+        final ColorScheme cs = Theme.of(c).colorScheme;
         Widget row(Widget glyph, String label) => Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(
@@ -686,6 +687,35 @@ class _StreetMapViewState extends State<StreetMapView> {
                         .accent
                         .withValues(alpha: 0.35)),
                   l.mapKeyDensity),
+              // The rest of what this map draws. The key named six of the marks
+              // and left the four layers that change what the map *means*
+              // unlabelled, which is how three different coloured things came to
+              // look like one.
+              row(
+                  Container(
+                    width: 20,
+                    height: 12,
+                    decoration: BoxDecoration(
+                        color: cs.secondary.withValues(alpha: 0.35),
+                        border: Border.all(color: cs.secondary)),
+                  ),
+                  l.mapKeyCoverage),
+              row(
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: skin.color.alert, width: 2)),
+                  ),
+                  l.mapKeyGeofence),
+              row(
+                  Container(
+                    width: 20,
+                    height: 3,
+                    color: cs.secondary.withValues(alpha: 0.7)),
+                  l.mapKeyTrail),
+              row(circle(VizPalette.companion), l.mapKeyMessage),
             ],
           ),
         );
@@ -1320,7 +1350,10 @@ class _StreetMapViewState extends State<StreetMapView> {
                         point: c.centre,
                         width: 48,
                         height: 48,
-                        alignment: Alignment.topRight,
+                        // Centred on the cell's own centre. `topRight` put the
+                        // badge's corner at the centre, so it covered the cell
+                        // that was tapped and three neighbours with it.
+                        alignment: Alignment.center,
                         child: Semantics(
                           key: ValueKey<String>('density-count-${c.id}'),
                           button: true,
@@ -1688,7 +1721,10 @@ class _StreetMapViewState extends State<StreetMapView> {
         if (_outsidePacks && !(maps?.online ?? true))
           Positioned(
             left: 12,
-            right: 12,
+            // Clear of the right-hand control column, whose top cell is the
+            // density toggle: the banner and "you are offline" co-occur, so this
+            // used to cover the control exactly when it mattered.
+            right: StreetMapView.controlsInset + StreetMapView.controlCell,
             top: 12,
             child: IgnorePointer(
               child: Container(

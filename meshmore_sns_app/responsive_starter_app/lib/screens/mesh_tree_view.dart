@@ -234,11 +234,13 @@ class _MeshTreeViewState extends State<MeshTreeView> {
   bool _learning = false;
 
   void _recenter() {
-    // Re-enable auto-fit *and* do the fitting. The ticker that used to lerp the
-    // transform every frame is gone with the force simulation, so setting the
-    // flag alone left the button doing nothing at all.
+    // Re-enable auto-fit *and* do the fitting, in one frame. The ticker that
+    // used to lerp the transform every frame is gone with the force simulation,
+    // so a non-immediate call scheduled nothing to finish the ease: one tap moved
+    // the camera 18 % of the way and the rebuild then hid the button, leaving a
+    // user who had panned away with no way back.
     setState(() => _autoFit = true);
-    _fitToContent();
+    _fitToContent(immediate: true);
   }
 
   /// Rebuild the radial tree when the graph's node-set or the viewport
@@ -292,9 +294,15 @@ class _MeshTreeViewState extends State<MeshTreeView> {
   }
 
   void _maybeShowDetail(MeshcoreController mc, Offset tap) {
-    // Hit-test by finding the closest node within ~24 px.
+    // Hit-test by finding the closest node within 24 *screen* pixels. The
+    // positions are in child coordinates and the child is inside an
+    // `InteractiveViewer` down to 0.1×, so a fixed 24 in child space is a 2.4 px
+    // target at fit zoom — smaller than a fingertip — and 96 px at 4×. Dividing
+    // by the live scale keeps the target the size of the finger at every zoom.
+    final double scale = _transform.value.getMaxScaleOnAxis();
+    final double reach = 24 / (scale <= 0 ? 1 : scale);
     String? hitId;
-    double bestD2 = 24 * 24.0;
+    double bestD2 = reach * reach;
     _positions.forEach((String id, NodePosition p) {
       final double dx = p.x - tap.dx;
       final double dy = p.y - tap.dy;

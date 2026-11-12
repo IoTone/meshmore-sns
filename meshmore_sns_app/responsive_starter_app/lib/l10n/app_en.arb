@@ -4346,6 +4346,10 @@
   "mapKeyHeading": "Which way the phone points",
   "mapKeyReach": "Estimated reach of a peer",
   "mapKeyDensity": "Nodes per square",
+  "mapKeyCoverage": "Reception, from adverts you heard",
+  "mapKeyGeofence": "A fence you set",
+  "mapKeyTrail": "Your own track",
+  "mapKeyMessage": "A node that just sent a message",
   "mapMessageBubble": "A message from {name} just arrived",
   "@mapMessageBubble": {
     "description": "Screen-reader label for the bubble drawn on the map at a node that has just sent a message; shown for one minute.",

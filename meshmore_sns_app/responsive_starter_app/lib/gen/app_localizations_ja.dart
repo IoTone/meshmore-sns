@@ -6179,6 +6179,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapKeyDensity => '区画あたりのノード数';
 
   @override
+  String get mapKeyCoverage => '受信できたアドバートからの受信状況';
+
+  @override
+  String get mapKeyGeofence => '設定したフェンス';
+
+  @override
+  String get mapKeyTrail => '自分の軌跡';
+
+  @override
+  String get mapKeyMessage => '直前にメッセージを送ったノード';
+
+  @override
   String mapMessageBubble(String name) {
     return '$name からメッセージが届きました';
   }

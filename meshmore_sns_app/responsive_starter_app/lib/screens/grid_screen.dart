@@ -284,6 +284,21 @@ class _GridScreenState extends State<GridScreen>
   /// twice in a row.
   int _scaleIndex = GridScreen.autoScaleIndex;
 
+  /// Run the ticker only while something it drives is actually drawn.
+  ///
+  /// The sweep and the pulse are the ticker's whole job, and reduce-motion
+  /// removes both. The ticker used to repeat forever regardless, rebuilding a
+  /// full-screen dial sixty times a second to paint a frame the user could not
+  /// see — the one accessibility setting in this app that cost more battery than
+  /// the animation it replaces.
+  void _syncTickToMotion(bool still) {
+    if (still && _tick.isAnimating) {
+      _tick.stop();
+    } else if (!still && !_tick.isAnimating && _live) {
+      _tick.repeat();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -300,6 +315,11 @@ class _GridScreenState extends State<GridScreen>
     _msgSub = mc.incomingChannelMessages.listen((_) {
       if (mounted) _rippleAt = DateTime.now();
     });
+    // The screen opens in its "live" state and the sweep says "I am polling this
+    // often", but nothing started the timer: the only two places that created it
+    // were the pause button and the interval picker. A live-looking screen with a
+    // frozen picture is worse than a paused one, so the timer starts here.
+    if (_live) _startRefresh();
     // The view mode is remembered for the session, the drag claim is not: it
     // is published from the mode that is showing.
     _publishDragClaim();
@@ -313,6 +333,15 @@ class _GridScreenState extends State<GridScreen>
           _scaleIndex = p.scaleIndex;
         }
         _interval = Duration(seconds: p.intervalSec.clamp(1, 600));
+        // The dial's revolution follows the interval that was just restored,
+        // and the poll timer is retimed with it so the two cannot disagree.
+        _tick
+          ..stop()
+          ..duration = _interval;
+        if (_live) {
+          _tick.repeat();
+          _startRefresh();
+        }
         // Don't auto-restore `live` — the screen intentionally opens paused
         // (a fresh snapshot), and live restore is handled by the existing
         // follow-mc-until-interacted behaviour.
@@ -464,7 +493,12 @@ class _GridScreenState extends State<GridScreen>
                       current: _scaleIndex,
                       items: <MmPickerItem<int>>[
                         for (int k = 0; k < GridScreen.rangeStops.length; k++)
-                          MmPickerItem<int>.option(k, _rangeLabel(l, k)),
+                          // The stop's own name, and the distance the dial
+                          // actually draws for it. A picker entry reading "1 km"
+                          // beside a chip reading "1.5 km" was two scales on one
+                          // screen; the rounded rim is the one that is true.
+                          MmPickerItem<int>.option(
+                              k, _rangePickerLabel(l, k)),
                       ],
                     );
                     if (i != null) {
@@ -527,6 +561,13 @@ class _GridScreenState extends State<GridScreen>
         _GridViewMode.elevation => l.gridPurposeElevation,
       };
 
+  /// Start the periodic refresh the "live" state promises. Idempotent, because
+  /// three callers start it (init, the pause button, the interval picker).
+  void _startRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_interval, (_) => _refreshSnapshot());
+  }
+
   void _togglePlay() {
     setState(() {
       _userInteracted = true;
@@ -535,7 +576,7 @@ class _GridScreenState extends State<GridScreen>
     _refreshTimer?.cancel();
     if (_live) {
       _refreshSnapshot(); // immediate snap on Play
-      _refreshTimer = Timer.periodic(_interval, (_) => _refreshSnapshot());
+      _startRefresh();
     } else {
       // Pause taps: re-capture current state so the frozen view
       // matches what the user sees at the moment of pause.
@@ -582,6 +623,17 @@ class _GridScreenState extends State<GridScreen>
     };
   }
 
+  /// A stop's name with the rim the dial draws for it, so the picker and the
+  /// chip cannot state two different scales.
+  String _rangePickerLabel(AppLocalizations l, int idx) {
+    final String name = _rangeLabel(l, idx);
+    if (idx == GridScreen.autoScaleIndex ||
+        idx == GridScreen.rangeStops.length - 2) {
+      return name;
+    }
+    return '$name · ${_rangeValue(_roundRimKm(GridScreen.rangeStops[idx].km))}';
+  }
+
   /// The outer-ring scale in km for the current stop.
   ///
   /// **Auto** (the default) frames the mesh in hand: the ninth decile of the
@@ -606,6 +658,10 @@ class _GridScreenState extends State<GridScreen>
       // window rather than inventing a scale from signal-strength guesses.
       return _roundRimKm(framed ?? base);
     }
+    // A fixed stop's rim is rounded up to whole ring steps, so its labels are
+    // round numbers. The *picker* prints the rounded rim rather than the raw
+    // stop, because a dial whose chip reads 1.5 km while its picker says 1 km is
+    // two scales on one screen — the owner's report.
     final bool isRegion = _scaleIndex == GridScreen.rangeStops.length - 2;
     if (!isRegion || selfLat == null || selfLon == null) {
       return _roundRimKm(base);
@@ -712,6 +768,10 @@ class _GridScreenState extends State<GridScreen>
   Widget build(BuildContext context) {
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final ThemeController tc = context.watch<ThemeController>();
+    // The ticker is the sweep's and the pulse's engine, and reduce-motion removes
+    // both. It used to repeat forever regardless, rebuilding this whole dial
+    // sixty times a second for a frame nothing draws.
+    _syncTickToMotion(tc.reduceMotion);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final bool ready = mc.state == MeshcoreConnectionState.ready;
 
@@ -1553,6 +1613,13 @@ class _GridPainter extends CustomPainter {
       old.nodes != nodes ||
       old.favorites != favorites ||
       old.known != known ||
+      // The painted text and the north glyph are laid out from these two. They
+      // were missing, and the omission was invisible only because `tick` moves
+      // on every frame, so this painter had no gate at all. With the ticker
+      // stopped under reduce-motion, a missing input would freeze a font-size
+      // change into the dial while every widget around it resized.
+      old.textScale != textScale ||
+      old.northMarker != northMarker ||
       old.tick != tick ||
       old.reduceMotion != reduceMotion ||
       old.rippleAt != rippleAt ||

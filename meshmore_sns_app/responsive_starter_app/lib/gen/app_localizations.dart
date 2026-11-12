@@ -10756,6 +10756,30 @@ abstract class AppLocalizations {
   /// **'Nodes per square'**
   String get mapKeyDensity;
 
+  /// No description provided for @mapKeyCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Reception, from adverts you heard'**
+  String get mapKeyCoverage;
+
+  /// No description provided for @mapKeyGeofence.
+  ///
+  /// In en, this message translates to:
+  /// **'A fence you set'**
+  String get mapKeyGeofence;
+
+  /// No description provided for @mapKeyTrail.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own track'**
+  String get mapKeyTrail;
+
+  /// No description provided for @mapKeyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A node that just sent a message'**
+  String get mapKeyMessage;
+
   /// Screen-reader label for the bubble drawn on the map at a node that has just sent a message; shown for one minute.
   ///
   /// In en, this message translates to:
