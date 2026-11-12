@@ -104,7 +104,15 @@ class NervDashboard extends StatelessWidget {
               children: <Widget>[
                 MmSectionHeader(l.dashboardRadio),
                 SizedBox(height: skin.space.rowGap),
-                Text(m.radioLine ?? l.dashboardAwaitingDevice, style: mono),
+                m.radioFields == null
+                    ? Text(l.dashboardAwaitingDevice, style: mono)
+                    : MmValueFields(
+                        fields: m.radioFields!,
+                        separator: '  ',
+                        // Two spaces, not the default middle dot: the radio's
+                        // settings are a tuple, not four separate facts.
+                        color: mono.color,
+                      ),
                 SizedBox(height: skin.space.insideText),
                 MyPubkeyLine(pubKeyHex: m.pubKeyHex, style: mono),
                 SizedBox(height: skin.space.labelToControl),

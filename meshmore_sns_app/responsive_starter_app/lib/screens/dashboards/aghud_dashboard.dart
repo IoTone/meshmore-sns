@@ -9,6 +9,7 @@ import '../../gen/app_localizations.dart';
 import '../../meshcore/discovered_node.dart';
 import '../../meshcore/meshcore_controller.dart';
 import '../../theme/mm_skin.dart';
+import '../../ui/mm_components.dart';
 import '../../theme/theme_controller.dart';
 import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_scaffold.dart';
@@ -516,8 +517,13 @@ class _RadioStrip extends StatelessWidget {
               Icon(Icons.cell_tower, size: 16, color: skin.color.accent),
               SizedBox(width: skin.space.rowGap),
               Expanded(
-                child: Text(model.radioLine ?? '—',
-                    overflow: TextOverflow.ellipsis, style: mono),
+                child: model.radioFields == null
+                    ? Text('—', overflow: TextOverflow.ellipsis, style: mono)
+                    : MmValueFields(
+                        fields: model.radioFields!,
+                        separator: '  ',
+                        color: mono.color,
+                      ),
               ),
               if (model.contactsLabel != null) ...<Widget>[
                 SizedBox(width: skin.space.rowGap),

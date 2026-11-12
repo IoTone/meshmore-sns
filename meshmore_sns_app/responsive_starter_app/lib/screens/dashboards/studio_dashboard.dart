@@ -130,7 +130,12 @@ class StudioDashboard extends StatelessWidget {
                       iconColor: muted,
                     ),
                     SizedBox(height: skin.space.labelToControl),
-                    Text(m.radioLine ?? '', style: data),
+                    if (m.radioFields != null)
+                      MmValueFields(
+                        fields: m.radioFields!,
+                        separator: '  ',
+                        color: data.color,
+                      ),
                     InkWell(
                       onTap: () => context.push('/settings/device'),
                       child: ConstrainedBox(

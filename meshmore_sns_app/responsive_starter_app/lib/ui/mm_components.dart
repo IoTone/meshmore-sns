@@ -78,15 +78,26 @@ class MmSectionHeader extends StatelessWidget {
     // The label is the one unbounded child: at 200 % text a heading like
     // "PERMISSIONS AND WHY" is wider than a 320 dp phone, and a bare Row
     // overflowed by 370 px instead of wrapping.
+    //
+    // The stripes are ornament and the label is the content, so the stripes
+    // yield first. As an `Expanded` they claimed every pixel the label did not
+    // take, and beside two 48 dp controls on a 320 dp phone that left the
+    // heading so narrow it broke mid-word — measured as "LINK" on two lines and
+    // "EVENTS" on two at 2.0 text. Bounded and loose, they take what they need
+    // and hand the rest back.
     return Row(
       children: <Widget>[
         Flexible(child: labelWidget),
         if (skin.ornament.warningStripes) ...<Widget>[
           const SizedBox(width: 8),
-          Expanded(
-            child: CustomPaint(
-              painter: _HazardStripes(skin.color.accent, skin.color.line),
-              child: const SizedBox(height: 8),
+          Flexible(
+            fit: FlexFit.loose,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 64),
+              child: CustomPaint(
+                painter: _HazardStripes(skin.color.accent, skin.color.line),
+                child: const SizedBox(height: 8, width: double.infinity),
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -148,46 +159,80 @@ class MmReadout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: <Widget>[
-        // Flexible, not fixed: at the accessibility floor a label in caps is
-        // wider than a 320 dp screen on its own, and a fixed child in a Row
-        // cannot give the width back (it overflowed by 96 px on NERV).
-        Flexible(
-          child: Text(
-            skin.type.upperHeadings ? label.toUpperCase() : label,
-            style: TextStyle(
-              fontFamily: skin.type.wordsMono,
-              color: skin.color.fgMuted,
-              fontSize: skin.type.sizeBody,
-              letterSpacing: 1,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: skin.type.monoFamily,
-              color: valueColor ?? skin.color.fg,
-              fontSize:
-                  emphasize ? skin.type.size(18) : skin.type.sizeBodyLg,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
-              fontFeatures: skin.type.slashedZero
-                  ? const <FontFeature>[FontFeature.slashedZero()]
-                  : null,
-            ),
-          ),
-        ),
-      ],
+    final String shown =
+        skin.type.upperHeadings ? label.toUpperCase() : label;
+    final TextStyle labelStyle = TextStyle(
+      fontFamily: skin.type.wordsMono,
+      color: skin.color.fgMuted,
+      fontSize: skin.type.sizeBody,
+      letterSpacing: 1,
+    );
+    final Widget labelText = Text(
+      shown,
+      style: labelStyle,
+      // A readout is a label and a figure on one line. Left free, the label
+      // wrapped the moment it was a character too wide — measured on NERV at
+      // 411 dp and 1.0 text, "NODES IN RANGE" broke into two lines beside a
+      // value that stayed on one, and the row read as a ragged pair rather
+      // than a reading.
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    final Widget valueText = Text(
+      value,
+      textAlign: TextAlign.right,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontFamily: skin.type.monoFamily,
+        color: valueColor ?? skin.color.fg,
+        fontSize: emphasize ? skin.type.size(18) : skin.type.sizeBodyLg,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.5,
+        fontFeatures: skin.type.slashedZero
+            ? const <FontFeature>[FontFeature.slashedZero()]
+            : null,
+      ),
+    );
+    // When the two cannot share a line they stop sharing one: the label takes
+    // its own line and the value follows it, right-aligned so the figures still
+    // line up down the panel. Measured with the real painter rather than
+    // guessed, so the switch happens exactly where the label would otherwise
+    // have been truncated.
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints c) {
+        final TextPainter p = TextPainter(
+          text: TextSpan(text: shown, style: labelStyle),
+          textDirection: Directionality.of(context),
+          maxLines: 1,
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        final bool fits = p.width + 8 + _valueMinWidth <= c.maxWidth;
+        p.dispose();
+        if (fits) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: <Widget>[
+              // Flexible, not fixed: at the accessibility floor a label in caps
+              // is wider than a 320 dp screen on its own, and a fixed child in
+              // a Row cannot give the width back (it overflowed by 96 px on
+              // NERV).
+              Flexible(child: labelText),
+              const SizedBox(width: 8),
+              Expanded(child: valueText),
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[labelText, valueText],
+        );
+      },
     );
   }
+
+  /// The narrowest a value is given before the label gives up its line.
+  static const double _valueMinWidth = 56;
 }
 
 /// A technical value made of fields, laid out where its separators are.

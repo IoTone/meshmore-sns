@@ -22,7 +22,7 @@ class DashboardModel {
     required this.knownCount,
     required this.nodeName,
     required this.pubKeyHex,
-    required this.radioLine,
+    required this.radioFields,
     required this.channelLabel,
     required this.region,
     required this.batteryLine,
@@ -56,7 +56,17 @@ class DashboardModel {
   final String? pubKeyHex;
 
   /// `915.0MHz SF7 CR5 22dBm`, or null awaiting SelfInfo.
-  final String? radioLine;
+  /// The radio's own settings, one field each.
+  ///
+  /// A joined string was rendered as a bare `Text` and broke wherever the width
+  /// ran out, so "910.525MHz  SF7" ended a line and "CR5  22dBm" began the next
+  /// — a config readout split mid-tuple. The fields are kept apart so
+  /// [MmValueFields] can decide where a line may break.
+  final List<String>? radioFields;
+
+  /// The same facts on one line, for a caller that has its own sentence to
+  /// build around them.
+  String? get radioLine => radioFields?.join('  ');
   final String channelLabel;
   final String region;
   final String? batteryLine;
@@ -115,10 +125,14 @@ class DashboardModel {
           ? null
           : (si.name.isEmpty ? l.dashboardUnnamed : si.name),
       pubKeyHex: mc.ownPubKeyHex,
-      radioLine: si == null
+      radioFields: si == null
           ? null
-          : '${si.frequencyMhz}MHz  SF${si.spreadingFactor}  '
-              'CR${si.codingRate}  ${si.txPowerDbm}dBm',
+          : <String>[
+              '${si.frequencyMhz}MHz',
+              'SF${si.spreadingFactor}',
+              'CR${si.codingRate}',
+              '${si.txPowerDbm}dBm',
+            ],
       channelLabel: 'CH${mc.activeChannel}',
       region: rp == null ? l.deviceRegionCustom : localizedPresetLabel(l, rp.id),
       batteryLine: battery,

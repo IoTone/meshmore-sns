@@ -204,15 +204,19 @@ class DashboardScreen extends StatelessWidget {
                 // needs to add you as a contact and DM you.
                 MyPubkeyLine(pubKeyHex: mc.ownPubKeyHex),
                 SizedBox(height: context.skin.space.insideText),
-                Text(
-                  '${selfInfo.frequencyMhz}MHz  '
-                  'SF${selfInfo.spreadingFactor}  '
-                  'CR${selfInfo.codingRate}  '
-                  '${selfInfo.txPowerDbm}dBm',
-                  style: TextStyle(
-                      color: cs.onSurface,
-                      fontFamily: context.skin.type.monoFamily,
-                      height: 1.5),
+                // The radio's tuple, broken only between its own fields. As a
+                // single `Text` it wrapped wherever the width ran out, so
+                // "910.525MHz  SF7" ended one line and "CR5  22dBm" began the
+                // next and a reader had to reassemble a configuration.
+                MmValueFields(
+                  fields: <String>[
+                    '${selfInfo.frequencyMhz}MHz',
+                    'SF${selfInfo.spreadingFactor}',
+                    'CR${selfInfo.codingRate}',
+                    '${selfInfo.txPowerDbm}dBm',
+                  ],
+                  separator: '  ',
+                  color: cs.onSurface,
                 ),
                 // R39 — the region answer stays on the dashboard. Matched
                 // against the radio's live tuple; "Custom" when none fits.
