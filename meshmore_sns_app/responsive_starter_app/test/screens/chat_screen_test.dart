@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:meshmore_sns_app/chat/draft_store.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
+import 'package:meshmore_sns_app/meshcore/chat_message.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
 import 'package:meshmore_sns_app/screens/chat_screen.dart';
@@ -429,7 +430,46 @@ void main() {
       mc.dispose();
     });
 
-    testWidgets('a refused send gives the text back, and keeps it as a draft',
+    testWidgets('a channel switch takes the typed text with it', (t) async {
+      final _MemoryDrafts sink = _MemoryDrafts();
+      DraftStore.sinkOverride = sink;
+      addTearDown(() => DraftStore.sinkOverride = null);
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => fake,
+        connection:
+            MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await t.binding.setSurfaceSize(const Size(900, 1600));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      await t.pumpWidget(_host(mc, TtsController(speaker: FakeTtsSpeaker())));
+      await mc.connect();
+      fake.emit(selfInfoFrame());
+      fake.emit(channelInfoFrame(idx: 1, name: 'Local'));
+      await t.pumpAndSettle();
+
+      await t.enterText(find.byType(TextField), 'for public eyes only');
+      await t.pump();
+      expect(t.widget<TextField>(find.byType(TextField)).controller?.text,
+          'for public eyes only');
+
+      // The composer belongs to the thread on screen. Leaving the text in place
+      // offered one channel's half-written message to the next.
+      mc.setActiveChannel(1);
+      await t.pumpAndSettle();
+      expect(t.widget<TextField>(find.byType(TextField)).controller?.text, isEmpty,
+          reason: 'the other channel does not inherit what was typed here');
+
+      // And coming back finds it again, because it was saved as a draft.
+      mc.setActiveChannel(0);
+      await t.pumpAndSettle();
+      expect(t.widget<TextField>(find.byType(TextField)).controller?.text,
+          'for public eyes only',
+          reason: 'the draft belongs to the channel it was typed in');
+      mc.dispose();
+    });
+
+    testWidgets('a failed send leaves the composer empty and the row retryable',
         (t) async {
       final _MemoryDrafts sink = _MemoryDrafts();
       DraftStore.sinkOverride = sink;
@@ -455,11 +495,21 @@ void main() {
       fake.emit(Uint8List.fromList(<int>[0x01, 3]));
       await t.pumpAndSettle();
 
+      // The owner's ruling. Putting the text back on a failed send left the
+      // composer holding the last message the moment anything went wrong, and
+      // blocked the next one. The failed row is in the thread with a retry
+      // action, so the words are recoverable without holding the box.
       final TextField field = t.widget<TextField>(find.byType(TextField));
-      expect(field.controller?.text, 'hello mesh',
-          reason: 'a failure must not cost the user what they typed');
-      expect(sink.values.values, contains('hello mesh'),
-          reason: 'and the draft comes back with it');
+      expect(field.controller?.text, isEmpty,
+          reason: 'a send empties the composer, whatever the radio answers');
+      expect(sink.values.values, isNot(contains('hello mesh')),
+          reason: 'and the text is not silently kept as a draft either');
+      expect(
+          mc.messagesFor(mc.activeChannel)
+              .where((ChatMessage m) => m.delivery == MessageDelivery.failed)
+              .length,
+          1,
+          reason: 'the failed row is where the text lives now');
       mc.dispose();
     });
   });

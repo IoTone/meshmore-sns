@@ -110,8 +110,6 @@ class _ChatScreenState extends State<ChatScreen>
   );
 
   /// The message the last send created, so a failure can put the text back.
-  String? _sentId;
-  String _sentText = '';
 
   /// R29 — number of new messages that have arrived while the user
   /// has scrolled away from the bottom. Drives the "↓ N new" pill.
@@ -140,6 +138,11 @@ class _ChatScreenState extends State<ChatScreen>
   /// switching to a channel whose row count happened to equal the previous
   /// one's left the new thread never marked at all.
   int? _markedChannel;
+
+  /// The channel the composer's text belongs to, so a scope change can tell a
+  /// channel switch (which empties the field) from a radio hand-off (which
+  /// must not).
+  int? _draftChannel;
   BlockFilter? _fallbackFilter;
 
   /// Vertical slack in pixels — within this we treat the user as
@@ -169,7 +172,6 @@ class _ChatScreenState extends State<ChatScreen>
       if (!mounted) return;
       _syncBudget(mc);
       _syncDraftScope(mc);
-      _restoreIfFailed(mc);
     }
 
     _listener = listener;
@@ -202,11 +204,28 @@ class _ChatScreenState extends State<ChatScreen>
     );
     if (key == _draftKey) return;
     final String? previous = _draftKey;
+    final bool sameChannel = _draftChannel == mc.activeChannel;
     final String typed = _input.text;
     _draftKey = key;
+    _draftChannel = mc.activeChannel;
     _draftTimer?.cancel();
     _draftTimer = null;
+    // The composer belongs to the conversation that is on screen. Saving the
+    // draft and leaving the text in place offered one channel's half-written
+    // message to the next — the owner's "it keeps the same message you typed
+    // when you change channel". The listener is detached around the clear so
+    // the empty text is not written as a draft for the *new* key.
     if (previous != null) unawaited(DraftStore.save(previous, typed));
+    // Only a *channel* change empties the composer. A radio scope change with
+    // the same channel is a migration — the draft typed before the radio
+    // answered belongs to the thread that is still on screen — and clearing
+    // there would throw away the sentence the user was writing while the link
+    // came up.
+    if (previous != null && !sameChannel) {
+      _input.removeListener(_onComposerChanged);
+      _input.clear();
+      _input.addListener(_onComposerChanged);
+    }
     unawaited(_recall(key));
   }
 
@@ -242,33 +261,6 @@ class _ChatScreenState extends State<ChatScreen>
       );
     }
     setState(() {});
-  }
-
-  /// A send that fails gives the text back: the composer keeps what the user
-  /// typed instead of clearing it into a red row they have to retype.
-  void _restoreIfFailed(MeshcoreController mc) {
-    final String? id = _sentId;
-    if (id == null || _sentText.isEmpty) return;
-    ChatMessage? found;
-    for (final ChatMessage m in mc.messagesFor(mc.activeChannel)) {
-      if (m.id == id) {
-        found = m;
-        break;
-      }
-    }
-    if (found == null ||
-        (found.delivery != MessageDelivery.failed &&
-            found.delivery != MessageDelivery.unknown)) {
-      return;
-    }
-    _sentId = null;
-    final String text = _sentText;
-    _sentText = '';
-    if (!mounted || _input.text.isNotEmpty) return;
-    setState(() => _input.text = text);
-    _input.selection = TextSelection.collapsed(offset: text.length);
-    final String? key = _draftKey;
-    if (key != null) unawaited(DraftStore.save(key, text));
   }
 
   MeshcoreController? _owner;
@@ -552,19 +544,16 @@ class _ChatScreenState extends State<ChatScreen>
       return;
     }
     final String? key = _draftKey;
-    // The draft is cleared only when the radio has taken the text; a failure
-    // puts it back through `_restoreIfFailed`.
+    // A sent message is no longer a draft, and a *failed* send is not put back
+    // into the composer either. The failed row is already in the thread with a
+    // retry action on it, so restoring the text duplicated it and left the box
+    // holding the last message the moment a send went wrong — the owner's "it
+    // keeps the message after you send it".
     if (key != null) {
       _draftTimer?.cancel();
       unawaited(DraftStore.clear(key));
     }
-    _sentText = t;
-    _sentId = null;
-    unawaited(mc.sendChannelTextTo(mc.activeChannel, t).then(
-      (ChatMessage? m) {
-        if (m != null) _sentId = m.id;
-      },
-    ));
+    unawaited(mc.sendChannelTextTo(mc.activeChannel, t));
     _input.clear();
     _nearWarned = false;
   }
