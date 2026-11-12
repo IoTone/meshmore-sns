@@ -40,9 +40,14 @@ class HyperlocalDashboard extends StatefulWidget {
 
 class _HyperlocalDashboardState extends State<HyperlocalDashboard>
     with SingleTickerProviderStateMixin {
+  /// One revolution per refresh interval, matching the grid's default poll. The
+  /// dial is a picture of how fresh the reading is, so the line that sweeps it
+  /// keeps the same time as the thing it is measuring.
+  static const Duration sweepPeriod = Duration(seconds: 15);
+
   late final AnimationController _sweep = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 4),
+    duration: sweepPeriod,
   );
 
   /// Which way the phone points, so the dial's top is the phone's own facing.

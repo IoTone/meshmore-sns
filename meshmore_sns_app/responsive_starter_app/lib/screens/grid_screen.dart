@@ -278,10 +278,10 @@ class _GridScreenState extends State<GridScreen>
   @override
   void initState() {
     super.initState();
-    _tick = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4), // arbitrary; we read .value
-    )..repeat();
+    // One revolution per refresh interval: at 15 s the line takes 15 s to come
+    // round, so the sweep *is* the polling cadence rather than a decoration that
+    // happens to move. The controller is retimed whenever the interval changes.
+    _tick = AnimationController(vsync: this, duration: _interval)..repeat();
     final CompassHeading? shared = context.sharedCompass;
     _ownsCompass = shared == null;
     _compass = shared ?? CompassHeading();
@@ -538,6 +538,11 @@ class _GridScreenState extends State<GridScreen>
     setState(() {
       _userInteracted = true;
       _interval = d;
+      // The dial keeps time with the radio: one revolution per poll.
+      _tick
+        ..stop()
+        ..duration = d
+        ..repeat();
     });
     _savePrefs();
     if (_live) {
@@ -973,6 +978,10 @@ class _GridScreenState extends State<GridScreen>
                                             nowUnix: nowUnix,
                                             windowSec: windowSec,
                                             tick: _tick.value,
+                                            sweep: _viewMode ==
+                                                    _GridViewMode.radial
+                                                ? _tick.value
+                                                : null,
                                             reduceMotion: tc.reduceMotion,
                                             accent: cs.primary,
                                             subtle: cs.onSurface
@@ -1196,6 +1205,7 @@ class _GridPainter extends CustomPainter {
     required this.nowUnix,
     required this.windowSec,
     required this.tick,
+    required this.sweep,
     required this.reduceMotion,
     required this.accent,
     required this.subtle,
@@ -1217,6 +1227,12 @@ class _GridPainter extends CustomPainter {
   final int nowUnix;
   final int windowSec;
   final double tick; // 0..1, repeating
+
+  /// The radar sweep phase (0..1) or null in a view that is not a dial.
+  ///
+  /// One revolution per refresh interval, set by the screen, so the line that
+  /// sweeps the dial is also the thing that says how stale the picture is.
+  final double? sweep;
   final bool reduceMotion;
   final Color accent;
   final Color subtle;
@@ -1326,6 +1342,40 @@ class _GridPainter extends CustomPainter {
     for (final double f in ringFracs) {
       canvas.drawCircle(center, maxR * f, ring);
     }
+    // The sweep: a leading line and a faint wedge behind it, one revolution
+    // per refresh interval. Drawn over the rings and under the markers so a
+    // blip is never hidden by the line.
+    final double? sweepPhase = sweep;
+    if (sweepPhase != null && !reduceMotion) {
+      final double a = sweepPhase * 2 * math.pi;
+      const double trail = math.pi / 3;
+      final Rect rect = Rect.fromCircle(center: center, radius: maxR);
+      canvas.drawArc(
+        rect,
+        a - trail,
+        trail,
+        true,
+        Paint()
+          ..shader = SweepGradient(
+            startAngle: 0,
+            endAngle: trail,
+            colors: <Color>[
+              accent.withValues(alpha: 0.0),
+              accent.withValues(alpha: 0.18),
+            ],
+            transform: GradientRotation(a - trail),
+          ).createShader(rect),
+      );
+      canvas.drawLine(
+        center,
+        Offset(center.dx + maxR * math.cos(a),
+            center.dy + maxR * math.sin(a)),
+        Paint()
+          ..strokeWidth = 1.4
+          ..color = accent.withValues(alpha: 0.55),
+      );
+    }
+
     // Ring labels. Position each label just inside the ring on the
     // right (+X) axis so they don't collide with node markers in
     // typical fleets.
