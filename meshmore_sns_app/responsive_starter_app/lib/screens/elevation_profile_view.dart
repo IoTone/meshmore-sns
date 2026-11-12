@@ -194,6 +194,7 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
               child: CustomPaint(
                 painter: _ElevationProfilePainter(
                   type: context.skin.type,
+                  textScale: MediaQuery.textScalerOf(context).scale(1),
                   selfAltMeters: selfAlt,
                   peers: peers,
                   peerAltOverrides: peerAlt,
@@ -379,8 +380,14 @@ class _ElevationProfilePainter extends CustomPainter {
   /// The skin's type roles, passed in because a painter has no [BuildContext].
   final MmType type;
 
+  /// The user's text scale, multiplied into every label this painter draws.
+  /// `MmType` carries the skin's scale only, so a painted label otherwise
+  /// ignores the font setting while the widgets around it honour it.
+  final double textScale;
+
   _ElevationProfilePainter({
     required this.type,
+    required this.textScale,
     required this.selfAltMeters,
     required this.peers,
     required this.peerAltOverrides,
@@ -507,7 +514,7 @@ class _ElevationProfilePainter extends CustomPainter {
               : '${meLabel.toUpperCase()} ALT?',
           style: TextStyle(
               color: warn,
-              fontSize: type.sizeMicro,
+              fontSize: type.sizeMicro * textScale,
               letterSpacing: 1,
               fontFamily: type.monoFamily,
               fontWeight: FontWeight.w700),
@@ -581,7 +588,7 @@ class _ElevationProfilePainter extends CustomPainter {
             '$unknownCount $unknownLabel',
         style: TextStyle(
             color: accentDim,
-            fontSize: type.size(9),
+            fontSize: type.size(9) * textScale,
             letterSpacing: 2,
             fontFamily: type.monoFamily),
       ),
@@ -618,7 +625,7 @@ class _ElevationProfilePainter extends CustomPainter {
         text: '[ $header ]',
         style: TextStyle(
             color: accent,
-            fontSize: type.sizeSm,
+            fontSize: type.sizeSm * textScale,
             letterSpacing: 3,
             fontFamily: type.monoFamily,
             fontWeight: FontWeight.w700),
@@ -651,7 +658,7 @@ class _ElevationProfilePainter extends CustomPainter {
         text: altLabel.toUpperCase(),
         style: TextStyle(
             color: accentDim,
-            fontSize: type.size(9),
+            fontSize: type.size(9) * textScale,
             letterSpacing: 2,
             fontFamily: type.monoFamily),
       ),
@@ -680,7 +687,7 @@ class _ElevationProfilePainter extends CustomPainter {
           text: a < 1000 ? '${a.round()} m' : '${(a / 1000).toStringAsFixed(1)} km',
           style: TextStyle(
               color: accent,
-              fontSize: type.size(9),
+              fontSize: type.size(9) * textScale,
               letterSpacing: 1,
               fontFamily: type.monoFamily),
         ),
@@ -701,7 +708,7 @@ class _ElevationProfilePainter extends CustomPainter {
             : '${(r.altMeters / 1000).toStringAsFixed(1)}km'}',
         style: TextStyle(
             color: accent,
-            fontSize: type.size(9),
+            fontSize: type.size(9) * textScale,
             letterSpacing: 1,
             fontFamily: type.monoFamily),
       ),
@@ -743,7 +750,7 @@ class _ElevationProfilePainter extends CustomPainter {
         text: '/ ${unknownLabel.toUpperCase()}',
         style: TextStyle(
             color: accentDim,
-            fontSize: type.size(8),
+            fontSize: type.size(8) * textScale,
             letterSpacing: 2,
             fontFamily: type.monoFamily),
       ),

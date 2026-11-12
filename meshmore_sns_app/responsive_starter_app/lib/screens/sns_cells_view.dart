@@ -213,6 +213,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
             child: CustomPaint(
               painter: _SnsCellsPainter(
                 type: context.skin.type,
+                textScale: MediaQuery.textScalerOf(context).scale(1),
                 selfLat: selfLat,
                 selfLon: selfLon,
                 maxHalfMeters: _frame.maxHalfMeters,
@@ -333,6 +334,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
 class _SnsCellsPainter extends CustomPainter {
   _SnsCellsPainter({
     required this.type,
+    required this.textScale,
     required this.selfLat,
     required this.selfLon,
     required this.maxHalfMeters,
@@ -357,6 +359,11 @@ class _SnsCellsPainter extends CustomPainter {
 
   /// The skin's type roles, passed in because a painter has no [BuildContext].
   final MmType type;
+
+  /// The user's text scale, multiplied into every label this painter draws.
+  /// A `MmType` carries the skin's scale only, so a painted label otherwise
+  /// ignores the font setting while the widgets around it honour it.
+  final double textScale;
 
   final double selfLat;
   final double selfLon;
@@ -728,7 +735,7 @@ class _SnsCellsPainter extends CustomPainter {
         text: text,
         style: TextStyle(
           color: (onHot ? Colors.white : Colors.black).withValues(alpha: .85),
-          fontSize: type.sizeMicro,
+          fontSize: type.sizeMicro * textScale,
           fontWeight: FontWeight.w700,
           fontFamily: type.monoFamily,
           shadows: <Shadow>[
@@ -754,7 +761,7 @@ class _SnsCellsPainter extends CustomPainter {
         text: trimmed,
         style: TextStyle(
           color: label.withValues(alpha: opacity),
-          fontSize: type.sizeSm,
+          fontSize: type.sizeSm * textScale,
           fontWeight: FontWeight.w600,
         ),
       ),

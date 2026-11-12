@@ -959,6 +959,9 @@ class _GridScreenState extends State<GridScreen>
                                                 .withValues(alpha: .35),
                                             base: cs.onSurfaceVariant,
                                             type: context.skin.type,
+                                            textScale:
+                                                MediaQuery.textScalerOf(context)
+                                                    .scale(1),
                                             rippleAt: _rippleAt,
                                             rippleDuration: _rippleDuration,
                                             scaleKm: scaleKm,
@@ -1162,6 +1165,7 @@ class _NotConnectedStrip extends StatelessWidget {
 
 class _GridPainter extends CustomPainter {
   _GridPainter({
+    required this.textScale,
     required this.nodes,
     required this.favorites,
     required this.known,
@@ -1200,6 +1204,11 @@ class _GridPainter extends CustomPainter {
   /// The active skin's type system: the ring labels are painted, not built,
   /// so the ladder reaches them through this.
   final MmType type;
+
+  /// The user's text scale, multiplied into every label this painter draws.
+  /// `MmType` carries the skin's scale only, so a painted label otherwise
+  /// ignores the font setting while the widgets around it honour it.
+  final double textScale;
   final DateTime? rippleAt;
   final Duration rippleDuration;
   final double scaleKm;
@@ -1308,7 +1317,7 @@ class _GridPainter extends CustomPainter {
           text: label,
           style: TextStyle(
               color: base,
-              fontSize: type.sizeMicro,
+              fontSize: type.sizeMicro * textScale,
               fontFamily: type.monoFamily),
         ),
         textDirection: TextDirection.ltr,
@@ -1333,7 +1342,7 @@ class _GridPainter extends CustomPainter {
         text: 'N',
         style: TextStyle(
             color: northMarker,
-            fontSize: type.sizeMicro,
+            fontSize: type.sizeMicro * textScale,
             fontWeight: FontWeight.w700,
             letterSpacing: 1,
             fontFamily: type.monoFamily),

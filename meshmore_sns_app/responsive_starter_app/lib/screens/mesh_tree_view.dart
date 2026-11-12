@@ -348,6 +348,7 @@ class _MeshTreeViewState extends State<MeshTreeView>
                       child: CustomPaint(
                         painter: _MeshTreePainter(
                           type: context.skin.type,
+                          textScale: MediaQuery.textScalerOf(context).scale(1),
                           graph: graph,
                           positions: _positions,
                           knownPubKeys: mc.known,
@@ -522,6 +523,7 @@ class _HopSlider extends StatelessWidget {
 class _MeshTreePainter extends CustomPainter {
   _MeshTreePainter({
     required this.type,
+    required this.textScale,
     required this.graph,
     required this.positions,
     required this.knownPubKeys,
@@ -537,6 +539,13 @@ class _MeshTreePainter extends CustomPainter {
 
   /// The skin's type roles, passed in because a painter has no [BuildContext].
   final MmType type;
+
+  /// The user's text scale, multiplied into every label this painter draws.
+  ///
+  /// `MmType` carries the *skin's* scale only, so a painted label was the one
+  /// text in the app that ignored the font setting: at 200 % the list, the
+  /// sheets and the notice grew and the tree's own node names did not.
+  final double textScale;
 
   final MeshGraph graph;
   final Map<String, NodePosition> positions;
@@ -618,7 +627,7 @@ class _MeshTreePainter extends CustomPainter {
           text: n.label,
           style: TextStyle(
             color: label,
-            fontSize: type.sizeMicro,
+            fontSize: type.sizeMicro * textScale,
             fontFamily: type.monoFamily,
             letterSpacing: 0.5,
           ),

@@ -147,6 +147,8 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
                                     fgMuted: skin.color.fgMuted,
                                     monoFamily: skin.type.monoFamily,
                                     type: skin.type,
+                                    textScale: MediaQuery.textScalerOf(context)
+                                        .scale(1),
                                     northLabel: 'N',
                                     headingDegrees: _compass.heading,
                                     northMarker: VizPalette.north,
@@ -346,6 +348,7 @@ class _RadarPainter extends CustomPainter {
     required this.monoFamily,
     required this.type,
     required this.northLabel,
+    required this.textScale,
     required this.headingDegrees,
     required this.northMarker,
   });
@@ -370,6 +373,15 @@ class _RadarPainter extends CustomPainter {
   /// the in-app font size and the system one while everything around it grew.
   final MmType type;
   final String northLabel;
+
+  /// The user's text scale, multiplied into every size this painter draws.
+  ///
+  /// A `CustomPainter` has no `MediaQuery`, and `MmType` only carries the
+  /// *skin's* scale, so before this the dial's names and its north letter were
+  /// the one text in the app that ignored the font setting entirely: at 200 %
+  /// every other label grew and the radar's stayed the same, which is the
+  /// opposite of what a person who raised the setting needs.
+  final double textScale;
 
   /// Which way the phone points, or null when nothing knows. The dial turns so
   /// its top is the phone's own facing and the red marker says where north is;
@@ -451,7 +463,7 @@ class _RadarPainter extends CustomPainter {
           center.dy - (maxR + 4) * math.cos(na),
         ),
         northMarker,
-        radarLabelSizes(type).north,
+        radarLabelSizes(type, textScale: textScale).north,
         center: true);
 
     // Blips (dots only — in-range names are drawn as decluttered
@@ -483,7 +495,8 @@ class _RadarPainter extends CustomPainter {
   /// lines back to their blips. Split into left/right columns and pushed
   /// vertically apart so they never overlap each other or the radar.
   void _drawCallouts(Canvas canvas, Size size) {
-    final double fontSize = radarLabelSizes(type).callout;
+    final double fontSize =
+        radarLabelSizes(type, textScale: textScale).callout;
     final double minGap = 15;
     final double top = 10, bottom = size.height - 10;
     final double gutter = (size.width / 2 - maxR - 8).clamp(34, 96);
@@ -565,13 +578,17 @@ class _RadarPainter extends CustomPainter {
       );
 
   void _label(Canvas canvas, String text, Offset at, Color color,
-      double size,
+      double skinSize,
       {bool center = false}) {
+    // Callers pass a skin size; the user's own scale is applied here, once, so
+    // no label on this dial can be drawn at a size the font setting does not
+    // reach.
+    final double scaledSize = skinSize * textScale;
     final TextPainter tp = TextPainter(
       text: TextSpan(
         text: text,
         style: TextStyle(
-            color: color, fontSize: size, fontFamily: monoFamily),
+            color: color, fontSize: scaledSize, fontFamily: monoFamily),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -786,6 +803,10 @@ TextPainter radarCalloutPainter({
 /// labels come from the same scale as everything else and never from a literal,
 /// which is what they did until 2026-11-11 (11.5 for a name, 10 for the north
 /// letter), leaving the dial as the one surface that ignored the font setting.
+/// [textScale] is the user's own text size, which a painter cannot read for
+/// itself. It multiplies both sizes, so the dial's names grow with the setting
+/// like every other label in the app: they were the one surface that did not.
 @visibleForTesting
-({double callout, double north}) radarLabelSizes(MmType type) =>
-    (callout: type.sizeSm, north: type.sizeMicro);
+({double callout, double north}) radarLabelSizes(MmType type,
+        {double textScale = 1}) =>
+    (callout: type.sizeSm * textScale, north: type.sizeMicro * textScale);

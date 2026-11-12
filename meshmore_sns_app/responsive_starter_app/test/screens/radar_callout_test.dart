@@ -70,4 +70,17 @@ void main() {
     expect(big.callout, greaterThan(plain.callout));
     expect(big.north, greaterThan(plain.north));
   });
+
+  test("the dial follows the user's text size, which a painter cannot read", () {
+    // A `CustomPainter` has no MediaQuery and `MmType` only carries the skin's
+    // scale, so the dial's names were the one text in the app that ignored the
+    // font setting: at 200 % everything around the dial grew and its own labels
+    // did not.
+    const MmType base = MmType(monoFamily: 'monospace');
+    final ({double callout, double north}) plain = radarLabelSizes(base);
+    final ({double callout, double north}) twice =
+        radarLabelSizes(base, textScale: 2.0);
+    expect(twice.callout, closeTo(plain.callout * 2, 0.001));
+    expect(twice.north, closeTo(plain.north * 2, 0.001));
+  });
 }
