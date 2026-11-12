@@ -9454,12 +9454,6 @@ abstract class AppLocalizations {
   /// **'SNR {snr} dB'**
   String chatMetaSnr(String snr);
 
-  /// No description provided for @chatActionsMeta.
-  ///
-  /// In en, this message translates to:
-  /// **'Delivery, route and signal'**
-  String get chatActionsMeta;
-
   /// No description provided for @chatMoreActions.
   ///
   /// In en, this message translates to:

@@ -20,12 +20,14 @@ import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
 import '../meshcore/fake_transport.dart';
 
-/// The send time is revealed, not printed.
+/// The send time is in the message's own sheet, and nowhere else.
 ///
-/// A channel thread where every line carries `16:07` reads as a log file, and
-/// on a busy channel the stamps are most of the ink. The stamp appears when the
-/// reader asks for it — hold the row, or open its actions — and stays for that
-/// row, because hiding it again under the reader's eyes is its own hostility.
+/// A channel thread where every line carries `16:07` reads as a log file, and on
+/// a busy channel the stamps are most of the ink. An earlier version revealed
+/// the stamp on the row when it was held, which widened a column mid-thread and
+/// moved every line sideways under the reader's finger as they reached for the
+/// menu. The time is a property of the message, so it is the first line of the
+/// sheet you open to act on that message.
 class _Silent implements TtsSpeaker {
   @override
   Future<void> speak(String text) async {}
@@ -94,35 +96,29 @@ void main() {
     MmThemePreset.hyperlocal,
     MmThemePreset.drPop,
   ]) {
-    testWidgets('${preset.name}: no stamp until asked, then it is there',
+    testWidgets('${preset.name}: the stamp is in the sheet, not on the row',
         (WidgetTester t) async {
       final MeshcoreController mc = await _pump(t, preset);
       expect(find.textContaining(stamp), findsNothing,
           reason: '${preset.name} printed a time nobody asked for');
 
-      // The actions button on the row is one of the two ways in.
-      // Two ways in, and both must work: the actions button where the row has
-      // one, and the hold everywhere.
+      // Open the message's actions. The sheet's first line is the time, with
+      // whatever else the row has no space for.
       final Finder actions = find.byTooltip('Message actions');
       if (actions.evaluate().isNotEmpty) {
         await t.tap(actions.first);
-        await t.pumpAndSettle();
       } else {
-        // The bubble and block rows carry no visible actions button: the hold
-        // is the affordance they have, and it reveals the same stamp.
-        await t.longPress(
-            find.text('a long line of ordinary prose').first);
-        await t.pumpAndSettle();
+        await t.longPress(find.text('a long line of ordinary prose').first);
       }
-      // The sheet is open over the row; the stamp is on the row behind it.
-      expect(find.textContaining(stamp), findsWidgets,
-          reason: '${preset.name} did not reveal the stamp from its actions');
+      await t.pumpAndSettle();
+      expect(find.textContaining(stamp), findsOneWidget,
+          reason: '${preset.name} did not put the stamp in the sheet');
 
-      // Dismiss the sheet and confirm the stamp stays for that row.
+      // Close the sheet: the stamp goes with it, and the row never grew one.
       await t.tapAt(const Offset(210, 40));
       await t.pumpAndSettle();
-      expect(find.textContaining(stamp), findsWidgets,
-          reason: '${preset.name} hid the stamp again after showing it');
+      expect(find.textContaining(stamp), findsNothing,
+          reason: '${preset.name} left a stamp on the row');
       mc.dispose();
       await t.pumpWidget(const SizedBox());
       await t.pump(const Duration(seconds: 30));

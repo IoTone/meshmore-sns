@@ -20,6 +20,7 @@ import '../screens/delivery_status_icon.dart';
 // forward is the same question a tool asks: which conversation?
 import '../screens/tools/tool_pickers.dart';
 import '../ui/mm_confirm.dart';
+import '../util/clock_model.dart';
 import 'draft_store.dart';
 
 /// R20 / U11 — per-message Reply / Copy / Delete actions (+ R76 Retry
@@ -189,13 +190,17 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
 /// out, how strong it arrived, and, for our own rows, what the app can vouch
 /// for. Null when there is nothing to say, so the sheet stays short.
 String? _metaLine(AppLocalizations l, ChatMessage m) {
+  // The time leads, because it is the fact a row deliberately does not print:
+  // a thread of stamps reads as a log file, so the sheet is where you go to ask
+  // and this is the first thing it answers.
   final List<String> parts = <String>[
+    clockStamp(l, m.at),
     if (m.isFlood) l.chatMetaFlood,
     if (m.snrDb != null) l.chatMetaSnr(m.snrDb!.toStringAsFixed(1)),
     if (m.outgoing && m.delivery != null) deliveryLabel(l, m.delivery!),
   ];
   if (parts.isEmpty) return null;
-  return '${l.chatActionsMeta}: ${parts.join(' · ')}';
+  return parts.join(' · ');
 }
 
 /// Apply a Copy action: write [m]'s text to the clipboard and show

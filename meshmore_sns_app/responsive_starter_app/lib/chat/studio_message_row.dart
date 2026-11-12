@@ -8,7 +8,6 @@ import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import '../screens/delivery_status_icon.dart';
 import '../theme/mm_skin.dart';
-import '../util/clock_model.dart';
 
 /// R71 — one chat / DM row under a skin whose [MmType.sansLabels] is on
 /// (Studio). The older terminal "log" rows set every part in mono, which
@@ -66,24 +65,14 @@ class _StudioMessageRowState extends State<StudioMessageRow> {
   Widget? get echo => widget.echo;
   VoidCallback get onAction => widget.onAction;
 
-  /// The send time appears when asked for: hold the row or open its actions.
-  /// A thread where every line prints `16:07` reads as a log file.
-  bool _showTime = false;
-
-  void _revealThenAct() {
-    if (!_showTime) setState(() => _showTime = true);
-    onAction();
-  }
-
-  /// APP-N3 — absolute only while the sender's clock agrees with this phone;
-  /// see `clockStamp`.
-  String _time(AppLocalizations l) => clockStamp(l, message.at);
+  /// The send time is not on the row: a thread where every line prints `16:07`
+  /// reads as a log file, and revealing it on hold moved every line sideways as
+  /// the reader reached for the menu. It is the first line of the actions sheet.
+  void _revealThenAct() => onAction();
 
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
-    final AppLocalizations l = AppLocalizations.of(context);
-    final String mono = skin.type.monoFamily;
     final bool out = message.outgoing;
     final bool delivery = out && message.delivery != null;
     return InkWell(
@@ -98,23 +87,9 @@ class _StudioMessageRowState extends State<StudioMessageRow> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // R102 — the gutter follows the text scale. At 1.3x a 56 dp
-            // box was too narrow for "16:07" in mono and the time wrapped
-            // one character per line ("16:0" / "7") beside the sender.
-            SizedBox(
-              width: (_showTime ? 56 : 12) *
-                  MediaQuery.textScalerOf(context).scale(1),
-              child: Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: Text(_showTime ? _time(l) : '',
-                    maxLines: 1,
-                    softWrap: false,
-                    style: TextStyle(
-                        color: out ? skin.color.accent : skin.color.fgMuted,
-                        fontFamily: mono,
-                        fontSize: skin.type.sizeBody)),
-              ),
-            ),
+            // A quiet 12 dp inset scaled with the text: the row's own accent
+            // edge is the outgoing cue, so no column has to hold a stamp.
+            SizedBox(width: 12 * MediaQuery.textScalerOf(context).scale(1)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

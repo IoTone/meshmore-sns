@@ -5646,9 +5646,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chatActionsMeta => 'Delivery, route and signal';
-
-  @override
   String get chatMoreActions => 'More';
 
   @override

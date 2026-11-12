@@ -2507,7 +2507,6 @@
   "chatBudgetEstimateNear": "残り約 {remaining}",
   "chatMetaFlood": "フラッド経由",
   "chatMetaSnr": "SNR {snr} dB",
-  "chatActionsMeta": "配送・経路・信号",
   "chatMoreActions": "その他",
   "dmKeyCopied": "相手の鍵をコピーしました",
   "channelsInfoTooltip": "チャンネルの仕組み",

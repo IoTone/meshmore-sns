@@ -5416,9 +5416,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatActionsMeta => '配送・経路・信号';
-
-  @override
   String get chatMoreActions => 'その他';
 
   @override

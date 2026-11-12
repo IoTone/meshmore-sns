@@ -1201,25 +1201,16 @@ class _MessageRowState extends State<_MessageRow> {
   VoidCallback get onAction => widget.onAction;
   Duration? get sinceLast => widget.sinceLast;
 
-  /// The send time is revealed, not printed.
+  /// The send time is *not* on the row, in any state.
   ///
-  /// A terminal thread where every line carries `16:07` reads as a log file,
-  /// and on a channel that is busy the stamps are most of the ink. The time
-  /// is a detail you go looking for, so it appears when you ask: hold the row,
-  /// or open its actions. It stays revealed for that row afterwards, because
-  /// hiding it again under the reader's eyes is its own small hostility.
-  bool _showTime = false;
-
-  void _revealTime() {
-    if (_showTime) return;
-    setState(() => _showTime = true);
-  }
-
-  /// Hold or the actions button: reveal the stamp, then do the thing asked.
-  VoidCallback get _revealThenAct => () {
-        _revealTime();
-        onAction();
-      };
+  /// A terminal thread where every line carries `16:07` reads as a log file, and
+  /// on a busy channel the stamps are most of the ink. An earlier version
+  /// revealed the stamp on the row when it was held, which widened a column in
+  /// the middle of the thread and moved every line sideways under the reader's
+  /// finger as they reached for the menu. The time is a property of the message,
+  /// so it belongs in the message's own sheet, at the top, with the rest of what
+  /// the row has no space for.
+  VoidCallback get _revealThenAct => onAction;
 
   /// APP-N3 — a stamp the reader can trust: the sender's own `HH:MM` when
   /// that clock agrees with this phone, and a named marker when it does not
@@ -1299,15 +1290,12 @@ class _MessageRowState extends State<_MessageRow> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              // R102 — scale the gutter with the text (see StudioMessageRow).
-              // Narrow while the stamp is hidden: the gutter is the time's
-              // place, and an empty 56 dp column is a hole in every row. The
-              // direction glyph stays, because it is not a timestamp.
+              // A fixed direction glyph, scaled with the text. The gutter is
+              // not the time's place any more: the time is in the actions
+              // sheet, so nothing in the row moves when the reader asks for it.
               SizedBox(
-                width: (_showTime ? 56 : 16) *
-                    MediaQuery.textScalerOf(context).scale(1),
-                child: Text(_showTime ? '${_time(l)} ${m.outgoing ? '»' : '«'}'
-                    : m.outgoing ? '»' : '«',
+                width: 16 * MediaQuery.textScalerOf(context).scale(1),
+                child: Text(m.outgoing ? '»' : '«',
                     maxLines: 1,
                     softWrap: false,
                     style: TextStyle(
@@ -1393,7 +1381,6 @@ class _MessageRowState extends State<_MessageRow> {
   // (unique per name, stable for the session) plus the cadence since that
   // name last spoke.
   Widget _block(BuildContext context, MmSkin skin) {
-    final AppLocalizations l = AppLocalizations.of(context);
     final ({String? sender, String body}) s = _split();
     final Color base = skin.color.base;
     final String idKey = _identityKey(m);
@@ -1439,15 +1426,8 @@ class _MessageRowState extends State<_MessageRow> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              if (m.outgoing && m.delivery != null) ...<Widget>[
+              if (m.outgoing && m.delivery != null)
                 DeliveryStatusIcon(m.delivery!),
-                const SizedBox(width: 4),
-              ],
-              if (_showTime)
-                Text(_time(l),
-                    style: TextStyle(
-                        color: ink.withValues(alpha: 0.65),
-                        fontSize: skin.type.sizeMicro)),
             ],
           ),
         ],
@@ -1507,7 +1487,6 @@ class _MessageRowState extends State<_MessageRow> {
     FontWeight? bodyWeight,
     required Color metaColor,
   }) {
-    final AppLocalizations l = AppLocalizations.of(context);
     return Align(
       alignment: m.outgoing ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
@@ -1540,20 +1519,12 @@ class _MessageRowState extends State<_MessageRow> {
                 if (PlaceEchoLine.placeOf(m) case final Place place)
                   PlaceEchoLine(
                       place: place, store: context.read<PlaceStore>()),
-                if ((m.outgoing && m.delivery != null) || _showTime) ...<Widget>[
+                if (m.outgoing && m.delivery != null) ...<Widget>[
                   const SizedBox(height: 2),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      if (m.outgoing && m.delivery != null) ...<Widget>[
-                        DeliveryStatusIcon(m.delivery!),
-                        const SizedBox(width: 4),
-                      ],
-                      if (_showTime)
-                        Text(_time(l),
-                            style: TextStyle(
-                                color: metaColor,
-                                fontSize: skin.type.sizeMicro)),
+                      DeliveryStatusIcon(m.delivery!),
                     ],
                   ),
                 ],
