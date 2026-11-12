@@ -6158,6 +6158,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get elevationEmpty => 'まだ誰も高度を報告していません。センサーを持つ相手に問い合わせるか、広告を待ってください。';
 
   @override
+  String get mapKeyTitle => '地図の凡例';
+
+  @override
+  String get mapKeyRepeater => '中継機';
+
+  @override
+  String get mapKeyClient => 'クライアント無線機';
+
+  @override
+  String get mapKeyYou => '自分';
+
+  @override
+  String get mapKeyHeading => '端末が向いている方向';
+
+  @override
+  String get mapKeyReach => '相手の推定到達距離';
+
+  @override
+  String get mapKeyDensity => '区画あたりのノード数';
+
+  @override
   String get mapDensityShow => 'セルごとのノード密度';
 
   @override

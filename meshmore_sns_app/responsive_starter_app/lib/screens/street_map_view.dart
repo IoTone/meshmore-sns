@@ -566,6 +566,92 @@ class _StreetMapViewState extends State<StreetMapView> {
     BasemapPrefs.save(_rasterOverride);
   }
 
+  /// The map's key: one row per mark, in the order they are drawn.
+  Future<void> _showKey(
+      BuildContext context, AppLocalizations l) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext c) {
+        final MmSkin skin = c.skin;
+        Widget row(Widget glyph, String label) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                children: <Widget>[
+                  SizedBox(width: 32, height: 20, child: Center(child: glyph)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(label,
+                        style: TextStyle(
+                            color: skin.color.fg,
+                            fontSize: skin.type.sizeBodyLg)),
+                  ),
+                ],
+              ),
+            );
+        Widget square(Color colour) => Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                  color: colour,
+                  border: Border.all(color: skin.color.fg, width: 1)),
+            );
+        Widget circle(Color colour) => Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                  color: colour,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: skin.color.fg, width: 1)),
+            );
+        return SafeArea(
+          top: false,
+          child: ListView(
+            key: const ValueKey<String>('map-key-sheet'),
+            shrinkWrap: true,
+            padding: const EdgeInsets.only(bottom: 12),
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+                child: Text(l.mapKeyTitle,
+                    style: TextStyle(
+                        color: skin.color.fgMuted,
+                        fontSize: skin.type.sizeSm,
+                        letterSpacing: 1.4,
+                        fontWeight: FontWeight.w600)),
+              ),
+              row(square(VizPalette.repeater), l.mapKeyRepeater),
+              row(circle(VizPalette.companion), l.mapKeyClient),
+              row(circle(skin.color.fg), l.mapKeyYou),
+              row(
+                  Icon(Icons.navigation,
+                      size: 16, color: skin.color.fgMuted),
+                  l.mapKeyHeading),
+              row(
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: skin.color.accent, width: 1.2)),
+                  ),
+                  l.mapKeyReach),
+              row(
+                  Container(
+                    width: 16,
+                    height: 16,
+                    color: VizPalette.of(skin)
+                        .accent
+                        .withValues(alpha: 0.35)),
+                  l.mapKeyDensity),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   /// The event-layer switches. A sheet rather than a menu because there is one
   /// switch per layer and turning three on is three taps, not three openings;
   /// and because a `Switch` here is the same control the layers are managed
@@ -1495,6 +1581,20 @@ class _StreetMapViewState extends State<StreetMapView> {
                       minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.add_location_alt_outlined),
                   onPressed: () => _createPlace(context, _map.camera.center),
+                ),
+                // What the marks mean. The map draws a coloured square, a
+                // circle, a ring, a lattice and an arrow, and nothing on it
+                // said which was which — the owner's "there is no key view
+                // button on the map".
+                IconButton(
+                  key: const ValueKey<String>('map-key-button'),
+                  tooltip: l.mapKeyTitle,
+                  iconSize: 18,
+                  constraints: const BoxConstraints(
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
+                  icon: const Icon(Icons.key_outlined),
+                  onPressed: () => _showKey(context, l),
                 ),
                 // Host tools (the Map tab's offline maps and places) join the
                 // same column, under the built-in controls, so every map tool

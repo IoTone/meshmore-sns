@@ -10714,6 +10714,48 @@ abstract class AppLocalizations {
   /// **'Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.'**
   String get elevationEmpty;
 
+  /// No description provided for @mapKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Map key'**
+  String get mapKeyTitle;
+
+  /// No description provided for @mapKeyRepeater.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeater'**
+  String get mapKeyRepeater;
+
+  /// No description provided for @mapKeyClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Client radio'**
+  String get mapKeyClient;
+
+  /// No description provided for @mapKeyYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get mapKeyYou;
+
+  /// No description provided for @mapKeyHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Which way the phone points'**
+  String get mapKeyHeading;
+
+  /// No description provided for @mapKeyReach.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated reach of a peer'**
+  String get mapKeyReach;
+
+  /// No description provided for @mapKeyDensity.
+  ///
+  /// In en, this message translates to:
+  /// **'Nodes per square'**
+  String get mapKeyDensity;
+
   /// No description provided for @mapDensityShow.
   ///
   /// In en, this message translates to:

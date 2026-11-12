@@ -6417,6 +6417,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.';
 
   @override
+  String get mapKeyTitle => 'Map key';
+
+  @override
+  String get mapKeyRepeater => 'Repeater';
+
+  @override
+  String get mapKeyClient => 'Client radio';
+
+  @override
+  String get mapKeyYou => 'You';
+
+  @override
+  String get mapKeyHeading => 'Which way the phone points';
+
+  @override
+  String get mapKeyReach => 'Estimated reach of a peer';
+
+  @override
+  String get mapKeyDensity => 'Nodes per square';
+
+  @override
   String get mapDensityShow => 'Node density per cell';
 
   @override

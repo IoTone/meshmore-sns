@@ -141,6 +141,26 @@ void main() {
     await _drain(t, mc, m);
   });
 
+  testWidgets('the map has a key that names every mark it draws',
+      (WidgetTester t) async {
+    final (MapsController m, MeshcoreController mc) = await _pump(t);
+    await t.tap(find.byKey(const ValueKey<String>('map-key-button')));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    for (final String label in <String>[
+      'Repeater',
+      'Client radio',
+      'You',
+      'Which way the phone points',
+      'Estimated reach of a peer',
+      'Nodes per square',
+    ]) {
+      expect(find.text(label), findsOneWidget,
+          reason: '$label is drawn on the map and must be explained');
+    }
+    await _drain(t, mc, m);
+  });
+
   testWidgets('no marker is drawn with a bearing', (WidgetTester t) async {
     final (MapsController m, MeshcoreController mc) = await _pump(t);
     // The test host has no compass, so the self wedge has no source and is not
