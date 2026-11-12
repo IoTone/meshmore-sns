@@ -568,6 +568,25 @@ class _ElevationProfilePainter extends CustomPainter {
     // advert field → telemetry cache → null. Peers absent from
     // peerAltOverrides land in the unknown band; peers present
     // plot at their resolved height.
+    // A profile is read left to right, so the peers that have an altitude are
+    // sorted by it and spread evenly across the plot. They used to be placed by
+    // `(i * 53) % width` over the *unsorted* list, which at 250 peers in a 250 px
+    // work area put every marker within a pixel of its neighbour — the view was
+    // least readable exactly when it had the most to say.
+    final List<DiscoveredNode> placed = <DiscoveredNode>[
+      for (final DiscoveredNode n in peers)
+        if (peerAltOverrides[n.pubKeyHex] != null) n,
+    ]..sort((DiscoveredNode a, DiscoveredNode b) => peerAltOverrides[a.pubKeyHex]!
+        .compareTo(peerAltOverrides[b.pubKeyHex]!));
+    final double plotLeft = 40;
+    final double plotRight = math.max(plotLeft, size.width - axisWidth - 24);
+    final double step =
+        placed.length <= 1 ? 0 : (plotRight - plotLeft) / (placed.length - 1);
+    final Map<String, double> placedX = <String, double>{
+      for (int i = 0; i < placed.length; i++)
+        placed[i].pubKeyHex: plotLeft + step * i,
+    };
+
     int unknownCount = 0;
     for (int i = 0; i < peers.length; i++) {
       final DiscoveredNode n = peers[i];
@@ -579,15 +598,15 @@ class _ElevationProfilePainter extends CustomPainter {
             16 -
             (unknownCount * 14.0) % (size.width - axisWidth - 32);
         final double y = groundY + 12.0;
-        _drawPeerMarker(canvas, Offset(x, y), n, isUnknownAlt: true);
+        _drawPeerMarker(canvas, Offset(x, y), n,
+            isUnknownAlt: true, groundY: groundY);
         unknownCount++;
       } else {
         final double y = groundY -
             _altToYOffset(alt.clamp(0.0, _altMax), pxPerSqrtMeter);
-        final double x = 40 +
-            ((i * 53) % ((size.width - axisWidth - 80).toInt()))
-                .toDouble();
-        _drawPeerMarker(canvas, Offset(x, y), n, isUnknownAlt: false);
+        final double x = placedX[n.pubKeyHex] ?? plotLeft;
+        _drawPeerMarker(canvas, Offset(x, y), n,
+            isUnknownAlt: false, groundY: groundY);
       }
     }
 
@@ -770,7 +789,7 @@ class _ElevationProfilePainter extends CustomPainter {
   }
 
   void _drawPeerMarker(Canvas canvas, Offset at, DiscoveredNode n,
-      {required bool isUnknownAlt}) {
+      {required bool isUnknownAlt, double groundY = 0}) {
     final Color base = n.type == 2 ? accent : warn;
     final Paint fill = Paint()..color = base;
     if (n.type == 2) {
@@ -791,7 +810,10 @@ class _ElevationProfilePainter extends CustomPainter {
       final Paint rope = Paint()
         ..color = base.withValues(alpha: .3)
         ..strokeWidth = 1.0;
-      canvas.drawLine(at, Offset(at.dx, at.dy + 200), rope);
+      // To the ground, not to a fixed 200 px below the marker: on a short
+      // viewport the rope hung in mid-air and on a tall one it stopped short of
+      // the axis it is meant to reach.
+      canvas.drawLine(at, Offset(at.dx, groundY > at.dy ? groundY : at.dy), rope);
     }
     // Star pip for favourite, dot for known.
     if (favPubKeys.contains(n.pubKeyHex)) {
