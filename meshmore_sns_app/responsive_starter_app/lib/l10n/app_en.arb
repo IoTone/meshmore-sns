@@ -1726,7 +1726,7 @@
     "description": "Radio/network setting. MeshCore path hash length."
   },
   "devicePathHashSizeHelp": "The hash length this radio stamps on the packets it sends. Repeaters follow each packet's own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.",
-  "devicePathHashUnread": "unknown",
+  "devicePathHashUnread": "The radio has not said which length it uses yet.",
   "devicePathHashMismatch": "On the radio: {device}. Yours: {form}. Tap Apply to send yours.",
   "@devicePathHashMismatch": {
     "placeholders": {
@@ -3859,7 +3859,7 @@
   "chatMoreActions": "More",
   "dmKeyCopied": "Peer key copied",
   "channelsInfoTooltip": "How channels work",
-  "channelsOptionsTooltip": "Channel settings",
+  "channelsOptionsTooltip": "Notifications and behaviour",
   "sosSafeUnconfirmed": "Not confirmed. The link dropped while sending, so this may or may not have been heard.",
   "sosSendUnconfirmed": "{count, plural, =1{One repeat was not confirmed. The schedule continues.} other{{count} repeats were not confirmed. The schedule continues.}}",
   "@sosSendUnconfirmed": {

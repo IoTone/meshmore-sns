@@ -4649,7 +4649,7 @@ abstract class AppLocalizations {
   /// No description provided for @devicePathHashUnread.
   ///
   /// In en, this message translates to:
-  /// **'unknown'**
+  /// **'The radio has not said which length it uses yet.'**
   String get devicePathHashUnread;
 
   /// No description provided for @devicePathHashMismatch.
@@ -9475,7 +9475,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsOptionsTooltip.
   ///
   /// In en, this message translates to:
-  /// **'Channel settings'**
+  /// **'Notifications and behaviour'**
   String get channelsOptionsTooltip;
 
   /// No description provided for @sosSafeUnconfirmed.

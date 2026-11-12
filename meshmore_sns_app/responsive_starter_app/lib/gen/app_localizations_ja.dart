@@ -2630,7 +2630,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'このラジオが送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、直接送信のペイロード容量が減ります。';
 
   @override
-  String get devicePathHashUnread => '不明';
+  String get devicePathHashUnread => '無線機はまだハッシュ長を伝えていません。';
 
   @override
   String devicePathHashMismatch(String device, String form) {
@@ -5429,7 +5429,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsInfoTooltip => 'チャンネルの仕組み';
 
   @override
-  String get channelsOptionsTooltip => 'チャンネル設定';
+  String get channelsOptionsTooltip => '通知と動作';
 
   @override
   String get sosSafeUnconfirmed => '確認できません。送信中に接続が切れたため、届いたかどうかは不明です。';

@@ -2747,7 +2747,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'The hash length this radio stamps on the packets it sends. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.';
 
   @override
-  String get devicePathHashUnread => 'unknown';
+  String get devicePathHashUnread =>
+      'The radio has not said which length it uses yet.';
 
   @override
   String devicePathHashMismatch(String device, String form) {
@@ -5659,7 +5660,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsInfoTooltip => 'How channels work';
 
   @override
-  String get channelsOptionsTooltip => 'Channel settings';
+  String get channelsOptionsTooltip => 'Notifications and behaviour';
 
   @override
   String get sosSafeUnconfirmed =>
