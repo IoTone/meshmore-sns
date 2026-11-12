@@ -414,7 +414,10 @@ class _DmScreenState extends State<DmScreen> {
           _SpeechMenu(tts: tts, peerPubKeyHex: widget.peerPubKeyHex, l: l),
           IconButton(
             tooltip: l.dmOpenPeerDetail,
-            icon: const Icon(Icons.info_outline),
+            // The peer, not the page: this opens their details sheet, and an
+            // `info` mark in an app bar is read as "about this screen"
+            // everywhere else in the app.
+            icon: const Icon(Icons.person_outline),
             onPressed: () => _openPeerDetail(mc),
           ),
         ],

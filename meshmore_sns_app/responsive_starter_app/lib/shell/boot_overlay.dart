@@ -9,6 +9,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
 import '../theme/mm_tokens.dart';
+import '../ui/mm_components.dart';
 import 'package:meshcore/meshcore.dart';
 
 /// Boot-time busy overlay (R8 polish). On a cold launch the
@@ -208,44 +209,59 @@ class _BootSurface extends StatelessWidget {
                   painter: _CornerBracketsPainter(accent),
                 ),
               ),
-              // Top header strip. Both labels are letter-spaced
-              // monospace; on narrow screens (or with JA copy where
-              // `MESHMORE / 同期中` and `待機 / WAIT` are dense)
-              // they can overflow the available width. Wrap each in
-              // Flexible + ellipsis so the row clips gracefully
-              // instead of throwing a RenderFlex overflow.
+              // Top header strip. Both labels are letter-spaced monospace, and
+              // between them they are wider than a phone at 1.3 text: measured
+              // on the handset at 432 dp, two `Flexible`s sharing the row split
+              // it evenly and the boot screen's own name read
+              // "MESHMORE / SY…" — the first thing a launch shows, cut.
+              //
+              // So the pair is measured with the real painter: on one line at
+              // the two edges while both fit, and one above the other (header
+              // at the start, subtitle under it at the end) when they do not.
+              // Nothing is ellipsised, because a clipped name is not a name.
               Positioned(
                 top: 24,
                 left: 24,
                 right: 24,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: <Widget>[
-                    Flexible(
-                      child: Text(
-                        header,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            color: accent,
-                            fontFamily: context.skin.type.wordsMono,
-                            fontSize: 11,
-                            letterSpacing: 4),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      child: Text(
-                        subtitle,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
-                        style: TextStyle(
-                            color: alt,
-                            fontFamily: context.skin.type.wordsMono,
-                            fontSize: 11,
-                            letterSpacing: 4),
-                      ),
-                    ),
-                  ],
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints c) {
+                    final TextStyle headStyle = TextStyle(
+                        color: accent,
+                        fontFamily: context.skin.type.wordsMono,
+                        fontSize: 11,
+                        letterSpacing: 4);
+                    final TextStyle subStyle = TextStyle(
+                        color: alt,
+                        fontFamily: context.skin.type.wordsMono,
+                        fontSize: 11,
+                        letterSpacing: 4);
+                    final bool oneLine = mmPairFitsOneLine(
+                      context,
+                      a: header,
+                      aStyle: headStyle,
+                      b: subtitle,
+                      bStyle: subStyle,
+                      gap: 12,
+                      width: c.maxWidth,
+                    );
+                    final Widget head = Text(header, style: headStyle);
+                    final Widget sub = Text(subtitle,
+                        textAlign: TextAlign.end, style: subStyle);
+                    if (oneLine) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[head, sub],
+                      );
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        head,
+                        const SizedBox(height: 6),
+                        Align(alignment: Alignment.centerRight, child: sub),
+                      ],
+                    );
+                  },
                 ),
               ),
               // Centre spinner.

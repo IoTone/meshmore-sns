@@ -214,17 +214,36 @@ class LocationSettingsScreen extends StatelessWidget {
                             color: skin.color.line,
                             width: skin.shape.borderWidth),
                       ),
-                      child: Text(
-                        l.locLastPublished(
-                          ap.lastLat!.toStringAsFixed(5),
-                          ap.lastLon!.toStringAsFixed(5),
-                          _hms(ap.lastPublishedAt!),
-                          _triggerLabel(l, ap.lastTrigger),
-                        ),
-                        style: TextStyle(
+                      // Three facts and a label, laid out where the
+                      // separators are. As one sentence the coordinates, the
+                      // time and the trigger wrapped wherever the width ran out
+                      // — a coordinate split after its decimal point is a
+                      // number the reader has to reassemble.
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            skin.type.upperHeadings
+                                ? l.locLastPublishedLabel.toUpperCase()
+                                : l.locLastPublishedLabel,
+                            style: TextStyle(
+                                color: skin.color.fgMuted,
+                                fontFamily: skin.type.wordsMono,
+                                fontSize: skin.type.sizeSm,
+                                letterSpacing: 1),
+                          ),
+                          const SizedBox(height: 2),
+                          MmValueFields(
+                            fields: <String>[
+                              '${ap.lastLat!.toStringAsFixed(5)}, '
+                                  '${ap.lastLon!.toStringAsFixed(5)}',
+                              _hms(ap.lastPublishedAt!),
+                              _triggerLabel(l, ap.lastTrigger),
+                            ],
                             color: cs.onSurface,
-                            fontFamily: skin.type.monoFamily,
-                            fontSize: skin.type.sizeBody),
+                          ),
+                        ],
                       ),
                     ),
                   ),

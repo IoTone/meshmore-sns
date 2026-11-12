@@ -297,7 +297,9 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
           ),
           IconButton(
             tooltip: l.deviceContactsImport,
-            icon: const Icon(Icons.input),
+            // The action pastes a contact link into a dialog, so it wears the
+            // paste glyph rather than `input`, which reads as a keyboard mode.
+            icon: const Icon(Icons.content_paste),
             onPressed: mc.isReady ? () => _importLink(mc, l) : null,
           ),
           PopupMenuButton<String>(
