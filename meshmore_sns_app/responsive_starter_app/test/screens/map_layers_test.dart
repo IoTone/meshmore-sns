@@ -240,9 +240,9 @@ void main() {
       (WidgetTester t) async {
     final (MapsController m, MeshcoreController mc) = await _pump(t, _Net());
     // A long-press was the only way in, and the empty state had to teach it in
-    // a sentence (UX audit C7). The control is labelled, so the gesture is one
-    // option rather than the secret.
-    expect(find.text('Tag a place'), findsOneWidget);
+    // a sentence (UX audit C7). It is a named control in the map's own column
+    // now — still shown here, not only in a menu.
+    expect(find.byTooltip('Tag a place'), findsOneWidget);
 
     await t.tap(find.byKey(const ValueKey<String>('map-report-place')));
     await t.pumpAndSettle();

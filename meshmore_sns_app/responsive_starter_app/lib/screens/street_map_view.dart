@@ -1209,53 +1209,6 @@ class _StreetMapViewState extends State<StreetMapView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              // Reporting a place is a labelled control, not only a
-              // long-press: a hidden gesture was the only way in and the
-              // empty state had to teach it in a sentence (UX audit C7). The
-              // long-press stays as the fast path, and the point reported is
-              // the one at the middle of the screen.
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Material(
-                    // Solid, and the edge is the control-border tier: the
-                    // label sits on a map, and at 92 % the streets ran through
-                    // the word "place".
-                    color: cs.surface,
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: mmRadius(context, 6),
-                      side: BorderSide(color: cs.outline),
-                    ),
-                    child: InkWell(
-                      key: const ValueKey<String>('map-report-place'),
-                      onTap: () => _createPlace(context, _map.camera.center),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 6),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Icon(Icons.add_location_alt_outlined,
-                                size: context.skin.type.sizeLg,
-                                color: cs.onSurface),
-                            Text(
-                              l.mapReportPlace,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  color: cs.onSurface,
-                                  fontSize: context.skin.type.sizeMicro),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
               // The credit line follows what is actually drawn. R82 draws
               // OSM's own vector service, so one credit covers the tiles and
               // the data; a raster source keeps its own credit.
@@ -1526,6 +1479,22 @@ class _StreetMapViewState extends State<StreetMapView> {
                       onPressed: () => ctx.push('/settings/maps'),
                     );
                   },
+                ),
+                // Reporting a place is a control in this column, not a panel
+                // on the left: a labelled box at the bottom left overlapped the
+                // density chip above the attribution, and put one map tool on
+                // the opposite edge from every other one. The long-press stays
+                // as the fast path, and the point reported is the one at the
+                // middle of the screen either way.
+                IconButton(
+                  key: const ValueKey<String>('map-report-place'),
+                  tooltip: l.mapReportPlace,
+                  iconSize: 18,
+                  constraints: const BoxConstraints(
+                      minWidth: StreetMapView.controlCell,
+                      minHeight: StreetMapView.controlCell),
+                  icon: const Icon(Icons.add_location_alt_outlined),
+                  onPressed: () => _createPlace(context, _map.camera.center),
                 ),
                 // Host tools (the Map tab's offline maps and places) join the
                 // same column, under the built-in controls, so every map tool

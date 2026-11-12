@@ -173,9 +173,19 @@ class PlaceInferenceEngine {
       }
     }
 
-    // 4. Bare proper-name runs not already consumed.
+    // 4. Bare proper-name runs, under a much narrower gate than "capitalised".
+    //
+    // The owner reported a channel message containing the ordinary word "can"
+    // producing a "looks like a place" offer, because a gazetteer of every
+    // settlement on Earth contains a village called Can. Any capitalised English
+    // word is a place name somewhere, so capitalisation alone is not evidence
+    // that a *place* was meant. A bare run now has to be either a name of more
+    // than one word ("Salt Lake City") or a city big enough that people name it
+    // in ordinary speech ([bareNameMinPopulation]) — which keeps "downtown
+    // Seattle" and drops "Can".
     for (final RegExpMatch m in _properRe.allMatches(message)) {
       if (_overlaps(m.start, m.end, consumed)) continue;
+      if (!_bareNameWorthPlacing(m.group(0)!)) continue;
       final InferredPlace? p = _resolvePhrase(
           m.group(0)!, PlaceCueKind.bareName, m.group(0)!,
           originLat, originLon);
@@ -236,14 +246,33 @@ class PlaceInferenceEngine {
         consumed.add(_Match(m.start, m.end));
       }
     }
-    // A bare capitalised run is the weakest cue: "Sam says" reads as a place
-    // only because it is capitalised, so it is tried last and only for text
-    // the stronger cues did not already explain.
+    // A bare capitalised run, under the same gate `infer` applies: a village
+    // called "Can" is not something a channel message is talking about.
     for (final RegExpMatch m in _properRe.allMatches(message)) {
       if (_overlaps(m.start, m.end, consumed)) continue;
+      if (!_bareNameWorthPlacing(m.group(0)!)) continue;
       consider(m.group(0)!, allowLowercase: false);
     }
     return out;
+  }
+
+  /// Whether a bare capitalised run is worth *asking* about as a place.
+  ///
+  /// Two things make a word a name rather than a word: it is longer than one
+  /// token, or it belongs to a city big enough to be named in ordinary speech.
+  /// The bar is deliberately high, because this rung exists for "downtown
+  /// Seattle" and a false offer costs a row under every message on a busy
+  /// channel.
+  static const int bareNameMinPopulation = 200000;
+
+  bool _bareNameWorthPlacing(String run) {
+    final String trimmed = run.trim();
+    if (trimmed.isEmpty) return false;
+    if (trimmed.contains(RegExp(r'\s'))) return true;
+    for (final GazPlace p in gazetteer.lookup(trimmed)) {
+      if (p.population >= bareNameMinPopulation) return true;
+    }
+    return false;
   }
 
   // --- Resolution -----------------------------------------------------
@@ -705,6 +734,9 @@ final RegExp _pairRe = RegExp(
     r'([A-Z][A-Za-z.\-]+(?:\s+[A-Z][A-Za-z.\-]+)?)');
 
 // Bare capitalised run (1–3 words).
+
+/// A capitalised run of up to three words — the *candidate* shape for a bare
+/// place name. It is matched only so the gate below can reject most of it.
 final RegExp _properRe =
     RegExp(r'\b[A-Z][A-Za-z.\-]+(?:\s+[A-Z][A-Za-z.\-]+){0,2}\b');
 

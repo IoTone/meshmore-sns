@@ -143,6 +143,19 @@ void main() {
   });
 
   group('rejection / no false positives', () {
+    test('an ordinary word that is also a village is not a place', () {
+      // The reported case: a channel message containing "can" produced a
+      // "looks like a place" offer, because a gazetteer of every settlement on
+      // Earth has a village called Can. Capitalisation is not evidence.
+      expect(_infer('Can you hear me now'), isEmpty);
+      expect(_engine().placeNames('Can you hear me now'), isEmpty);
+      expect(_infer('I can do that tomorrow'), isEmpty);
+    });
+
+    test('a city people actually name is still a place', () {
+      expect(_infer('grabbing lunch downtown Seattle'), isNotEmpty);
+    });
+
     test('non-place capitalised words do not place', () {
       final List<InferredPlace> r =
           _infer('See you Monday! Thanks Bob, great work');
