@@ -285,4 +285,32 @@ void main() {
       expect(r, inInclusiveRange(200.0, 20000.0));
     });
   });
+
+  test('a peer reach ring needs a measurement to exist', () {
+    // The map's rule, stated where the arithmetic lives: with neither RSSI nor
+    // a distance, the estimate is the radio's own link budget — tens of km for
+    // the USA/Canada preset — which is a claim about the radio, not the peer.
+    // The default estimate is still available (the self ring uses it); what
+    // changed is that the map no longer draws it per peer.
+    final double linkBudget = estimatedPeerReachMeters(
+      rssiDbm: null,
+      distanceMeters: null,
+      ourSpreadingFactor: 7,
+      ourBandwidthKhz: 125,
+      ourTxPowerDbm: 22,
+      peerType: 2,
+    );
+    expect(linkBudget, greaterThan(5000),
+        reason: 'this is why an unmeasured ring was unusable on a map');
+    // With a measurement, the same call is a peer-sized number.
+    final double measured = estimatedPeerReachMeters(
+      rssiDbm: -105,
+      distanceMeters: 1200,
+      ourSpreadingFactor: 7,
+      ourBandwidthKhz: 125,
+      ourTxPowerDbm: 22,
+      peerType: 2,
+    );
+    expect(measured, lessThanOrEqualTo(20000));
+  });
 }

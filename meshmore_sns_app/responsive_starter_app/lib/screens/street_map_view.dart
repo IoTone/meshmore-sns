@@ -328,15 +328,36 @@ class _StreetMapViewState extends State<StreetMapView> {
   late final bool _ownsCompass;
 
   /// A peer's reach estimate in metres, from its signal and role.
-  double _reachMeters(DiscoveredNode n, MeshcoreController mc, SelfInfo? si) =>
-      estimatedPeerReachMeters(
-        rssiDbm: n.rssi?.toDouble(),
-        distanceMeters: mc.distanceMetersTo(n.latitude!, n.longitude!),
-        peerType: n.type,
-        ourSpreadingFactor: si?.spreadingFactor ?? 7,
-        ourBandwidthKhz: si?.bandwidthKhz ?? 125.0,
-        ourTxPowerDbm: si?.txPowerDbm ?? 14,
-      );
+  /// The radius of a peer's reach ring, or null when nothing was measured.
+  ///
+  /// A ring is a claim about *this peer*, so it needs evidence: a signal
+  /// strength, or at least the distance we heard it from. Without either, the
+  /// honest drawing is no ring — the old fallback drew the *radio's* link-budget
+  /// range, which for the USA/Canada preset is tens of kilometres, so every
+  /// unmeasured peer got a circle far larger than anything the map could show
+  /// and the picture read as a field of huge green bubbles rather than as a
+  /// mesh.
+  ///
+  /// The cap is the second half of the same point: on the ground, with a mast at
+  /// one end and a handset at the other, a few kilometres is the practical
+  /// ceiling whatever the link budget says. A ring beyond that would describe the
+  /// radio rather than the peer, which is the self ring's job.
+  static const double kPeerReachCeilingMeters = 5000;
+
+  double? _reachMeters(
+      DiscoveredNode n, MeshcoreController mc, SelfInfo? si) {
+    final double? distance = mc.distanceMetersTo(n.latitude!, n.longitude!);
+    if (n.rssi == null && distance == null) return null;
+    final double meters = estimatedPeerReachMeters(
+      rssiDbm: n.rssi?.toDouble(),
+      distanceMeters: distance,
+      peerType: n.type,
+      ourSpreadingFactor: si?.spreadingFactor ?? 7,
+      ourBandwidthKhz: si?.bandwidthKhz ?? 125.0,
+      ourTxPowerDbm: si?.txPowerDbm ?? 14,
+    );
+    return meters.clamp(200, kPeerReachCeilingMeters);
+  }
 
   /// R25+3 / R61 — basemap source. Starts on OSM; the picker offers
   /// every source in the maps catalogue (built-ins + custom servers).
@@ -970,16 +991,16 @@ class _StreetMapViewState extends State<StreetMapView> {
         StreetMapView.metersPerPixel(_zoom, selfLat ?? 0);
     final List<CircleMarker> peerReachRings = <CircleMarker>[
       for (final DiscoveredNode n in withLoc)
-        if (StreetMapView.reachRingReadable(
-            _reachMeters(n, mc, si), viewportMeters))
-          CircleMarker(
-            point: LatLng(n.latitude!, n.longitude!),
-            radius: _reachMeters(n, mc, si),
-            useRadiusInMeter: true,
-            color: const Color(0x00000000),
-            borderColor: cs.tertiary.withValues(alpha: .55),
-            borderStrokeWidth: 1.0,
-          ),
+        if (_reachMeters(n, mc, si) case final double meters)
+          if (StreetMapView.reachRingReadable(meters, viewportMeters))
+            CircleMarker(
+              point: LatLng(n.latitude!, n.longitude!),
+              radius: meters,
+              useRadiusInMeter: true,
+              color: const Color(0x00000000),
+              borderColor: cs.tertiary.withValues(alpha: .55),
+              borderStrokeWidth: 1.0,
+            ),
     ];
     final List<LatLng> trail = StreetMapView.trailPathFor(
       mc.ownTrail,
