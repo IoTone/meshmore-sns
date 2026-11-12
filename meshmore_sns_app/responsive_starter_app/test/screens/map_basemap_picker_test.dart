@@ -106,10 +106,16 @@ Future<List<String>> _names(WidgetTester t) async {
   for (final Text w in t.widgetList<Text>(find.byType(Text))) {
     final String? data = w.data;
     if (data == null) continue;
-    final String first = data.split('\n').first;
-    if (kBuiltInSources.any((MapSource s) => s.name == first)) out.add(first);
+    if (kBuiltInSources.any((MapSource s) => s.name == data)) out.add(data);
   }
+  await _close(t);
   return out;
+}
+
+/// Dismiss the sheet, or the next `_open` would stack a second one on it.
+Future<void> _close(WidgetTester t) async {
+  Navigator.of(t.element(find.byType(Scaffold).first)).pop();
+  await t.pumpAndSettle();
 }
 
 /// Let the map's debounced warm-up timer fire and the tree go away, or the
@@ -122,7 +128,9 @@ Future<void> _settle(WidgetTester t) async {
 /// Choose a source by its name, through the sheet's own row.
 Future<void> _select(WidgetTester t, MapSource source) async {
   await _open(t);
-  await t.tap(find.textContaining(source.name).last);
+  // Two USGS entries can share a display name, so the tap targets the row the
+  // picker built for this source id.
+  await t.tap(find.byKey(ValueKey<String>('mm-picker-${source.id}')));
   await t.pump();
   await t.pump(const Duration(milliseconds: 500));
 }
@@ -139,6 +147,10 @@ void main() {
     // The vector basemap must be an offered choice, not an implicit one.
     final List<String> names = await _names(t);
     expect(names, contains(kOsmVector.name));
+    // Each source names itself and its credit under it: the sheet carries the
+    // attribution as its own muted line, which is two of them on screen while
+    // the map is drawing the same credit.
+    expect(find.text(kOsmVector.attribution), findsOneWidget);
     expect(names.length, kBuiltInSources.length,
         reason: 'every built-in source, vector included');
 

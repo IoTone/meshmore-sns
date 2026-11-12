@@ -780,8 +780,9 @@ class MmPickerItem<T> {
       : value = null,
         icon = null,
         isHeader = true,
-        onAction = null;
-  const MmPickerItem.option(this.value, this.label, {this.icon})
+        onAction = null,
+        detail = null;
+  const MmPickerItem.option(this.value, this.label, {this.icon, this.detail})
       : isHeader = false,
         onAction = null;
 
@@ -790,11 +791,18 @@ class MmPickerItem<T> {
   /// push a route or another sheet without fighting the dismissal.
   const MmPickerItem.action(this.label, {this.icon, this.onAction})
       : value = null,
-        isHeader = false;
+        isHeader = false,
+        detail = null;
 
   final T? value;
   final String label;
   final IconData? icon;
+
+  /// A second, quieter line under the label, for the fact a chooser needs to
+  /// decide. The map's basemap picker is the reason: a source's name alone does
+  /// not say who is credited for it, and drawing the credit as a second line of
+  /// the *same* text made the list read as eight lines of equal weight.
+  final String? detail;
   final bool isHeader;
   final VoidCallback? onAction;
 }
@@ -850,14 +858,22 @@ Future<T?> showMmPicker<T>({
               )
             else
               InkWell(
+                // A row is addressable by the value it carries, so a test can
+                // choose a source whose name two entries share.
+                key: it.value == null
+                    ? null
+                    : ValueKey<String>('mm-picker-${it.value}'),
                 onTap: () {
                   Navigator.pop<T>(c, it.value);
                   it.onAction?.call();
                 },
-                child: SizedBox(
-                  height: 48,
+                // A row is at least a 48 dp target and grows with its
+                // detail line rather than clipping it.
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: skin.space.step(7)),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: skin.space.step(7), vertical: 6),
                     child: Row(
                       children: <Widget>[
                         SizedBox(
@@ -872,13 +888,24 @@ Future<T?> showMmPicker<T>({
                           const SizedBox(width: 10),
                         ],
                         Expanded(
-                          child: Text(it.label,
-                              style: TextStyle(
-                                  color: skin.color.fg,
-                                  fontSize: skin.type.size(15),
-                                  fontWeight: it.value == current
-                                      ? FontWeight.w600
-                                      : FontWeight.w400)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              Text(it.label,
+                                  style: TextStyle(
+                                      color: skin.color.fg,
+                                      fontSize: skin.type.size(15),
+                                      fontWeight: it.value == current
+                                          ? FontWeight.w600
+                                          : FontWeight.w400)),
+                              if (it.detail != null)
+                                Text(it.detail!,
+                                    style: TextStyle(
+                                        color: skin.color.fgMuted,
+                                        fontSize: skin.type.sizeSm)),
+                            ],
+                          ),
                         ),
                       ],
                     ),

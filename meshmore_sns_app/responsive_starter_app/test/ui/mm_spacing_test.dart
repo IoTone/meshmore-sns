@@ -124,7 +124,7 @@ void main() {
       'lib/screens/weather_view.dart': 12,
       'lib/shell/home_shell.dart': 3,
       'lib/splash/branded_splash_screen.dart': 1,
-      'lib/ui/mm_components.dart': 5,
+      'lib/ui/mm_components.dart': 4,
       'lib/ui/mm_edge_swipe.dart': 1,
     };
 

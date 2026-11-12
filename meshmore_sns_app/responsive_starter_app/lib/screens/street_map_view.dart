@@ -520,7 +520,8 @@ class _StreetMapViewState extends State<StreetMapView> {
         for (final MapSource s in sources)
           MmPickerItem<String>.option(
             s.id,
-            s.attribution.isEmpty ? s.name : '${s.name}\n${s.attribution}',
+            s.name,
+            detail: s.attribution.isEmpty ? null : s.attribution,
           ),
       ],
     );
