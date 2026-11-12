@@ -68,7 +68,10 @@ class _CheckinScreenState extends State<CheckinScreen> {
                       color: skin.color.alert, fontSize: skin.type.sizeBody)),
             if (watch == null) ...<Widget>[
               SizedBox(height: skin.space.step(3)),
-              MmSectionHeader(l.checkinInMinutes(_minutes)),
+              // The header names the setting; the chips are the choices. It
+              // used to print the current choice as a heading and then repeat
+              // that same sentence on all three chips underneath it.
+              MmSectionHeader(l.checkinDeadline),
               SizedBox(height: skin.space.step(2)),
               Wrap(
                 spacing: skin.space.step(2),
@@ -76,7 +79,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
                   for (final int m in CheckinScreen.intervals)
                     MmChoiceChip(
                       key: ValueKey<String>('checkin-interval-$m'),
-                      label: Text(l.checkinInMinutes(m)),
+                      label: Text(l.checkinMinutes(m)),
                       selected: _minutes == m,
                       onSelected: (_) => setState(() => _minutes = m),
                     ),

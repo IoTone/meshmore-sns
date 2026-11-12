@@ -2997,7 +2997,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toolsTitle => 'ツール';
 
   @override
-  String get toolsOffline => '未接続 — ツールには無線機が必要です。';
+  String get toolsOffline => '未接続 — ツールには無線機が必要です。設定 → 接続と診断';
 
   @override
   String get toolsRunning => '実行中';
@@ -4662,8 +4662,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get checkinIntro => '期限付きの1通のみ。期限切れはこのアプリが判断します。無線側にタイマーはありません。';
 
   @override
-  String checkinInMinutes(int minutes) {
-    return '期限は $minutes 分後';
+  String get checkinDeadline => '期限';
+
+  @override
+  String checkinMinutes(int minutes) {
+    return '$minutes 分';
   }
 
   @override

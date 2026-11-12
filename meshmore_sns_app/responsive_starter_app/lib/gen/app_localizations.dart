@@ -5303,7 +5303,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolsOffline.
   ///
   /// In en, this message translates to:
-  /// **'Not connected — the tools need the radio.'**
+  /// **'Not connected — the tools need the radio. Settings → Diagnostics & connect'**
   String get toolsOffline;
 
   /// No description provided for @toolsRunning.
@@ -8176,11 +8176,17 @@ abstract class AppLocalizations {
   /// **'One message with a deadline. The app marks it overdue here; the radio keeps no timer.'**
   String get checkinIntro;
 
-  /// No description provided for @checkinInMinutes.
+  /// No description provided for @checkinDeadline.
   ///
   /// In en, this message translates to:
-  /// **'Deadline in {minutes} min'**
-  String checkinInMinutes(int minutes);
+  /// **'Deadline'**
+  String get checkinDeadline;
+
+  /// A deadline choice in minutes; the section header above already says what the number is.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String checkinMinutes(int minutes);
 
   /// No description provided for @checkinSend.
   ///

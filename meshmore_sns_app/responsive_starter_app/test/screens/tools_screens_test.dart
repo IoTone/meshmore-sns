@@ -74,8 +74,15 @@ void main() {
       'Soak test',
       'Range test',
     ]) {
+      // The hub is a list: a row past the fold is still listed. The offline
+      // banner grew a line when it started naming the way to fix the state.
+      await t.scrollUntilVisible(find.text(name), 120,
+          scrollable: find.byType(Scrollable).first);
       expect(find.text(name), findsOneWidget);
     }
+    await t.scrollUntilVisible(
+        find.textContaining('the tools need the radio'), -120,
+        scrollable: find.byType(Scrollable).first);
     expect(find.textContaining('the tools need the radio'), findsOneWidget);
     await t.tap(find.text('Ping'));
     await t.pumpAndSettle();

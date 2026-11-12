@@ -1761,7 +1761,7 @@
   "deliveryUnknown": "アプリ終了中に送信 — 無線機が送信したかは不明です",
   "settingsHubTools": "ツール",
   "toolsTitle": "ツール",
-  "toolsOffline": "未接続 — ツールには無線機が必要です。",
+  "toolsOffline": "未接続 — ツールには無線機が必要です。設定 → 接続と診断",
   "toolsRunning": "実行中",
   "toolsStart": "開始",
   "toolsStop": "停止",
@@ -2258,7 +2258,16 @@
   "sosRefusedHold": "長押しが完了していません。",
   "checkinTitle": "チェックイン",
   "checkinIntro": "期限付きの1通のみ。期限切れはこのアプリが判断します。無線側にタイマーはありません。",
-  "checkinInMinutes": "期限は {minutes} 分後",
+  "checkinDeadline": "期限",
+  "checkinMinutes": "{minutes} 分",
+  "@checkinMinutes": {
+    "description": "A deadline choice in minutes; the section header above already says what the number is.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "checkinSend": "チェックインを送信",
   "checkinOneMessage": "チェックインは1通のみで、繰り返しません。",
   "checkinUntil": "期限 {time}",

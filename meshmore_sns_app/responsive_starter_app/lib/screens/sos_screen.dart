@@ -261,7 +261,16 @@ class _SosScreenState extends State<SosScreen> {
       AppLocalizations l, MmSkin skin, bool radioReady) {
     final bool armed = sos.state == SosState.arming;
     final bool enabled = radioReady && !armed;
-    final Color fg = enabled ? skin.color.fg : skin.color.fgMuted;
+    // The one control on a stress screen. It was a `surfaceAlt` row with an
+    // alert-coloured border, which on the dark grounds is the same weight as a
+    // settings row: measured on the handset, "Hold to raise the alarm" read as
+    // a list item between two lines of prose. It is the filled alert control
+    // now, in the pair the palette defines for it (`onAlert` on `alert`, held
+    // to 4.5:1 by `test/theme/role_floors_test.dart`). A filled control invites
+    // a tap and the three-second hold is the guard, which is the same bargain
+    // every emergency control makes.
+    final bool filled = enabled;
+    final Color fg = filled ? skin.color.onAlert : skin.color.fgDisabled;
     // A screen reader cannot press and hold, and the semantic action used to be
     // an empty closure, so the alarm was reachable by finger only (UX audit E3).
     // Both semantic actions run the same three-second hold the finger runs, and
@@ -285,11 +294,11 @@ class _SosScreenState extends State<SosScreen> {
             padding: EdgeInsets.symmetric(
                 horizontal: skin.space.step(4), vertical: skin.space.step(3)),
             decoration: ShapeDecoration(
-              color: skin.color.surfaceAlt,
+              color: filled ? skin.color.alert : skin.color.surfaceAlt,
               shape: mmShapeBorder(
                 skin.shape,
                 side: BorderSide(
-                    color: enabled ? skin.color.alert : skin.color.line,
+                    color: enabled ? skin.color.alert : skin.color.fgDisabled,
                     width: skin.shape.borderWidth),
               ),
             ),
@@ -299,7 +308,7 @@ class _SosScreenState extends State<SosScreen> {
                 Row(
                   children: <Widget>[
                     Icon(Icons.emergency_share,
-                        size: skin.type.sizeXl, color: skin.color.alert),
+                        size: skin.type.sizeXl, color: fg),
                     SizedBox(width: skin.space.step(3)),
                     Expanded(
                       child: Text(
@@ -322,8 +331,9 @@ class _SosScreenState extends State<SosScreen> {
                   LinearProgressIndicator(
                     value: _held,
                     minHeight: 4,
-                    color: skin.color.alert,
-                    backgroundColor: skin.color.line,
+                    color: skin.color.onAlert,
+                    backgroundColor:
+                        skin.color.onAlert.withValues(alpha: .25),
                   ),
                 ],
               ],

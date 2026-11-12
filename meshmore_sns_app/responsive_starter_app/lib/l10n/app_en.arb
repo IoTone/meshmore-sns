@@ -1972,7 +1972,7 @@
   "deliveryUnknown": "Sent while the app was closing — whether the radio transmitted it is not knowable",
   "settingsHubTools": "Tools",
   "toolsTitle": "Tools",
-  "toolsOffline": "Not connected — the tools need the radio.",
+  "toolsOffline": "Not connected — the tools need the radio. Settings → Diagnostics & connect",
   "toolsRunning": "RUNNING",
   "toolsStart": "Start",
   "toolsStop": "Stop",
@@ -3239,7 +3239,16 @@
   "sosRefusedHold": "The hold is not finished.",
   "checkinTitle": "Check-in",
   "checkinIntro": "One message with a deadline. The app marks it overdue here; the radio keeps no timer.",
-  "checkinInMinutes": "Deadline in {minutes} min",
+  "checkinDeadline": "Deadline",
+  "checkinMinutes": "{minutes} min",
+  "@checkinMinutes": {
+    "description": "A deadline choice in minutes; the section header above already says what the number is.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "@checkinInMinutes": {
     "placeholders": {
       "minutes": {

@@ -3130,7 +3130,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toolsTitle => 'Tools';
 
   @override
-  String get toolsOffline => 'Not connected — the tools need the radio.';
+  String get toolsOffline =>
+      'Not connected — the tools need the radio. Settings → Diagnostics & connect';
 
   @override
   String get toolsRunning => 'RUNNING';
@@ -4852,8 +4853,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'One message with a deadline. The app marks it overdue here; the radio keeps no timer.';
 
   @override
-  String checkinInMinutes(int minutes) {
-    return 'Deadline in $minutes min';
+  String get checkinDeadline => 'Deadline';
+
+  @override
+  String checkinMinutes(int minutes) {
+    return '$minutes min';
   }
 
   @override
