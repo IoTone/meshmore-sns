@@ -308,7 +308,9 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     fg: Color(0xFFE6ECF5),
     fgMuted: Color(0xFFA6B2C8),
     accent: Color(0xFFFF7A00),
-    alert: Color(0xFFE6005C),
+    // Was #E6005C: 4.14:1 against this skin's near-black `onAlert`, under the
+    // 4.5 every label is held to. One step brighter keeps the NERV magenta.
+    alert: Color(0xFFFA1F6E),
     ok: Color(0xFF9CFF00),
     // D11.5 — a control's outline, not a rule: `line` was 1.46:1 on the
     // page, so an outlined control here was outlined in a colour nobody
@@ -382,7 +384,11 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     fg: Color(0xFFF2F0E6),
     fgMuted: Color(0xFFB0B0C0),
     accent: Color(0xFFFF2E88),
-    alert: Color(0xFFFF2E88),
+    // Was the accent itself (#FF2E88): an attention colour that is also the
+    // primary action is not an attention colour, and an unread count drawn in it
+    // disappeared into a selected chip of the same colour. A hot red-orange
+    // keeps DR Pop's loudness and says "look here" instead of "press me".
+    alert: Color(0xFFFF5A3C),
     ok: Color(0xFFD7FF00),
     // D11.5 — a control's outline, not a rule: `line` was 1.52:1 on the
     // page, so an outlined control here was outlined in a colour nobody
@@ -404,7 +410,9 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     fg: Color(0xFFFFB000),
     fgMuted: Color(0xFFC79433),
     accent: Color(0xFFFFB000),
-    alert: Color(0xFFB8302C),
+    // Was #B8302C: 3.50:1 on black, the worst of the set. Lifted along its own
+    // ramp so the pair clears 4.5 without turning into a different red.
+    alert: Color(0xFFD24540),
     ok: Color(0xFFFFB000),
     // D11.5 — a control's outline, not a rule: `line` was 2.75:1 on the
     // page, so an outlined control here was outlined in a colour nobody

@@ -763,7 +763,6 @@ class _ChatScreenState extends State<ChatScreen>
                             ? _UnreadBadge(
                                 key: ValueKey<String>('unread-${ch.key}'),
                                 count: unread[ch.key]!,
-                                onSelectedColor: ch.key == active,
                               )
                             : null,
                         onSelected: (_) => mc.setActiveChannel(ch.key),
@@ -1801,20 +1800,23 @@ class _JumpToNewestPill extends StatelessWidget {
 /// number stays legible on both.
 class _UnreadBadge extends StatelessWidget {
   const _UnreadBadge(
-      {super.key, required this.count, required this.onSelectedColor});
+      {super.key, required this.count});
 
   final int count;
-  final bool onSelectedColor;
 
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
-    final ColorScheme cs = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: skin.space.step(1)),
       constraints: BoxConstraints(minWidth: skin.space.step(5)),
+      // The attention pair, not the accent pair. On a *selected* chip the
+      // accent is already the chip's own fill, so an accent badge vanished into
+      // the chip it was counting for — the owner's "the numbers and bubbles in
+      // the channel tags are wrong". `alert`/`onAlert` is the app's one
+      // attention pair and reads on both states of every skin.
       decoration: BoxDecoration(
-        color: onSelectedColor ? cs.onPrimary : cs.primary,
+        color: skin.color.alert,
         borderRadius: BorderRadius.circular(skin.shape.cornerSize),
       ),
       child: Text(
@@ -1823,7 +1825,7 @@ class _UnreadBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: skin.type.sizeMicro,
           fontWeight: FontWeight.w700,
-          color: onSelectedColor ? cs.primary : cs.onPrimary,
+          color: skin.color.onAlert,
         ),
       ),
     );

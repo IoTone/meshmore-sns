@@ -152,4 +152,19 @@ void main() {
         reason: 'build chips through MmFilterChip/MmChoiceChip: '
             '${offenders.join(', ')}');
   });
+
+  // An unread count is drawn twice: as a chip avatar in the chat strip and as a
+  // badge on the tab strip. Both used the accent pair, and on a *selected* chip
+  // the accent is already the chip's own fill, so the count vanished into the
+  // thing it was counting for. The attention pair fixes both, and the pair has
+  // to hold on every skin.
+  test('an unread count reads against its own fill on every skin', () {
+    for (final MmThemePreset p in MmThemePreset.values) {
+      final MmTokens t = mmSkinFor(p).color;
+      expect(contrast(t.onAlert, t.alert), greaterThanOrEqualTo(4.5),
+          reason: '${p.name}: the count must be legible on its own badge');
+      // And it must not be the accent, or it disappears on a selected chip.
+      expect(t.alert, isNot(t.accent), reason: p.name);
+    }
+  });
 }

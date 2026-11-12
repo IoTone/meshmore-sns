@@ -802,8 +802,11 @@ class _StripBadge extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: skin.space.step(1)),
               constraints: BoxConstraints(minWidth: skin.space.step(4)),
+              // The attention pair, so the count is legible over *both* icon
+              // states: the selected icon is drawn in the accent, and an
+              // accent badge on top of it disappeared.
               decoration: BoxDecoration(
-                color: cs.primary,
+                color: skin.color.alert,
                 borderRadius: BorderRadius.circular(skin.shape.cornerSize),
               ),
               child: Text(
@@ -812,7 +815,7 @@ class _StripBadge extends StatelessWidget {
                 style: TextStyle(
                   fontSize: skin.type.sizeMicro,
                   fontWeight: FontWeight.w700,
-                  color: cs.onPrimary,
+                  color: skin.color.onAlert,
                 ),
               ),
             ),
