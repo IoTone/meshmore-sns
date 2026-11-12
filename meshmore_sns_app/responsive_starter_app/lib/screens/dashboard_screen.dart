@@ -130,7 +130,10 @@ class DashboardScreen extends StatelessWidget {
 
         if (hasPeers) ...<Widget>[
           _blockGap(context),
-          Text(l.dashboardPeersInRange,
+          Text(
+              mc.state == MeshcoreConnectionState.ready
+                  ? l.dashboardPeersInRange
+                  : l.dashboardPeersInRangeStale,
               style: mmSectionLabelStyle(context.skin)),
           // The one dominant numeral on the screen. It scales with the skin
           // and with the user's text size up to a point, past which it would

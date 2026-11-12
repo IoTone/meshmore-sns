@@ -10,6 +10,7 @@
   "tabSettings": "Settings",
   "tabAbout": "About",
   "dashboardPeersInRange": "NODES IN RANGE",
+  "dashboardPeersInRangeStale": "NODES NEAR YOU (LAST KNOWN)",
   "dashboardKnownCount": "{n, plural, =0{0 known} =1{1 known} other{{n} known}}",
   "@dashboardKnownCount": {
     "placeholders": {

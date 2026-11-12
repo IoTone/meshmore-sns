@@ -66,7 +66,7 @@ class StudioDashboard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(cap(l.dashboardPeersInRange), style: label),
+              Text(cap(m.peersLabel(l)), style: label),
               SizedBox(height: skin.space.labelToControl),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,

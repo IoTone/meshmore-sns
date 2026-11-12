@@ -79,6 +79,55 @@ void main() {
     ctrl.dispose();
   });
 
+  // Measured on the handset: LINK LOST sat directly above "NODES IN RANGE 52",
+  // a reachability claim no dead link can support. The count is real (nodes
+  // whose stored position is within 10 km, or heard in the last five minutes),
+  // so it stays; its name says what it is now.
+  testWidgets('the peers count is not called "in range" without a link',
+      (WidgetTester t) async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _kLocaleDelegates,
+        home: ChangeNotifierProvider<MeshcoreController>.value(
+          value: ctrl,
+          child: const Scaffold(body: DashboardScreen()),
+        ),
+      ),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    fake.emit(advertFrameAt(lat: 39.7, lon: -104.9, name: 'Nearby'));
+    // Bounded pumps: a live dashboard keeps a timer running for the feed, so
+    // `pumpAndSettle` never returns.
+    for (int i = 0; i < 10; i++) {
+      await t.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('NODES IN RANGE'), findsOneWidget,
+        reason: 'a live link can say what it reaches');
+
+    // The link goes away with the count still on screen: what is left is the
+    // last positions the app heard, not what the radio can reach now.
+    fake.setConnected(false);
+    for (int i = 0; i < 20; i++) {
+      await t.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('NODES NEAR YOU (LAST KNOWN)'), findsOneWidget,
+        reason: 'no link, so no reachability claim');
+
+    // Dispose inside the body: the feed's timer is checked before teardowns.
+    ctrl.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
   testWidgets('a block says its name once, and one refresh belongs to it',
       (WidgetTester t) async {
     final FakeMeshcoreTransport fake =

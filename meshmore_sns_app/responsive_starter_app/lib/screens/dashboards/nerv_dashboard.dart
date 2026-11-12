@@ -130,7 +130,7 @@ class NervDashboard extends StatelessWidget {
                 MmSectionHeader(l.dashNervMesh),
                 SizedBox(height: skin.space.rowGap),
                 MmReadout(
-                    label: l.dashboardPeersInRange,
+                    label: m.peersLabel(l),
                     value: '${m.peersInRange}',
                     emphasize: true),
                 SizedBox(height: skin.space.labelToControl),

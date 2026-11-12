@@ -38,6 +38,16 @@ class DashboardModel {
   final bool linked;
   final bool busy;
   final int peersInRange;
+
+  /// What the count above may be called.
+  ///
+  /// `proximityFor` answers "near" from a *stored position* within 10 km and
+  /// "recent" from a hearing inside five minutes, so with the link down the
+  /// count is a fact about the last positions the app heard, not about what the
+  /// radio can reach now. Measured on the handset: LINK LOST beside "NODES IN
+  /// RANGE 52", which is a claim no dead link can support.
+  String peersLabel(AppLocalizations l) =>
+      linked ? l.dashboardPeersInRange : l.dashboardPeersInRangeStale;
   final int knownCount;
 
   /// Radio (MeshCore firmware) contact-list level — `"12/350"` or `"12"`

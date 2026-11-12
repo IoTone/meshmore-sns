@@ -158,6 +158,12 @@ abstract class AppLocalizations {
   /// **'NODES IN RANGE'**
   String get dashboardPeersInRange;
 
+  /// No description provided for @dashboardPeersInRangeStale.
+  ///
+  /// In en, this message translates to:
+  /// **'NODES NEAR YOU (LAST KNOWN)'**
+  String get dashboardPeersInRangeStale;
+
   /// No description provided for @dashboardKnownCount.
   ///
   /// In en, this message translates to:

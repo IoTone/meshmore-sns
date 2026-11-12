@@ -39,6 +39,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboardPeersInRange => '範囲内のノード';
 
   @override
+  String get dashboardPeersInRangeStale => '付近のノード（既知の位置）';
+
+  @override
   String dashboardKnownCount(int n) {
     return '$n件 既知';
   }

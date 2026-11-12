@@ -10,6 +10,7 @@
   "tabSettings": "設定",
   "tabAbout": "アプリ情報",
   "dashboardPeersInRange": "範囲内のノード",
+  "dashboardPeersInRangeStale": "付近のノード（既知の位置）",
   "dashboardKnownCount": "{n}件 既知",
   "@dashboardKnownCount": {
     "placeholders": {
