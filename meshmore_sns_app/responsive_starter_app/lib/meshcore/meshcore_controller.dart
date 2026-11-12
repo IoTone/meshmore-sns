@@ -1680,6 +1680,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return v;
   }
 
+  /// The node with this pubkey, or null when it has not been discovered.
+  ///
+  /// A sender's key is the only handle a message carries, and the map needs the
+  /// node behind it to know where a bubble belongs.
+  DiscoveredNode? nodeByPubKey(String pubKeyHex) =>
+      _nodes[pubKeyHex.toLowerCase()];
+
   /// R49 — resolved topology chain for a peer, ordered from the
   /// first hop *from us* to the last hop *before the peer*. Each
   /// entry is the known repeater whose pubkey starts with the
@@ -3106,6 +3113,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       peerPubKeyHex: peer ?? prefixHex,
     );
     _addMessage(m);
+    _noteSpeaker(peer ?? prefixHex);
     if (!_incomingDm.isClosed) _incomingDm.add(m);
   }
 
@@ -3142,6 +3150,10 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         isFlood: cm.isFlood,
       );
       _addMessage(m);
+      // A channel message carries no key, so the only handle on the sender is
+      // the name in its text: attributed only on an unambiguous match, the same
+      // rule the heat map uses.
+      _noteSpeaker(_resolveChannelSender(cm.text)?.pubKeyHex);
       if (!_incomingCh.isClosed) _incomingCh.add(m);
     } else if (f is ChannelInfoFrame) {
       final ChannelInfo ci = f.info;
@@ -3171,6 +3183,32 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   // -------------------------------------------------------------------
 
   final MessageHeatTracker _heat = MessageHeatTracker();
+
+  // -------------------------------------------------------------------
+  // Who has spoken in the last minute, for the map's message bubble.
+  //
+  // A message arrives on the chat tab; the map is a different page and has no
+  // reason to know that anything happened. Keyed by sender so a burst refreshes
+  // one bubble rather than stacking a dozen, and stamped so the map can fade it
+  // out on its own clock without a second source of truth.
+  // -------------------------------------------------------------------
+
+  static const Duration recentSpeakerWindow = Duration(minutes: 1);
+
+  final Map<String, DateTime> _recentSpeakers = <String, DateTime>{};
+
+  /// Sender pubkey → when they last sent something, within
+  /// [recentSpeakerWindow]. The map draws a bubble at each of these nodes.
+  Map<String, DateTime> get recentSpeakers =>
+      Map<String, DateTime>.unmodifiable(_recentSpeakers);
+
+  void _noteSpeaker(String? pubKeyHex) {
+    if (pubKeyHex == null || pubKeyHex.isEmpty) return;
+    final DateTime now = DateTime.now();
+    _recentSpeakers.removeWhere((String _, DateTime at) =>
+        now.difference(at) > recentSpeakerWindow);
+    _recentSpeakers[pubKeyHex] = now;
+  }
 
   /// cellKey → hotness in [0, 1] over the last hour. Pruned on read.
   Map<String, double> messageHeatScores() => _heat.scores();

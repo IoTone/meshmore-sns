@@ -6438,6 +6438,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapKeyDensity => 'Nodes per square';
 
   @override
+  String mapMessageBubble(String name) {
+    return 'A message from $name just arrived';
+  }
+
+  @override
   String get mapDensityShow => 'Node density per cell';
 
   @override

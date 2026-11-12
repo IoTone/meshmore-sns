@@ -4346,6 +4346,15 @@
   "mapKeyHeading": "Which way the phone points",
   "mapKeyReach": "Estimated reach of a peer",
   "mapKeyDensity": "Nodes per square",
+  "mapMessageBubble": "A message from {name} just arrived",
+  "@mapMessageBubble": {
+    "description": "Screen-reader label for the bubble drawn on the map at a node that has just sent a message; shown for one minute.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "mapDensityShow": "Node density per cell",
   "mapDensityHide": "Hide node density",
   "mapDensityCellTitle": "{count, plural, =1{1 node in this square} other{{count} nodes in this square}}",

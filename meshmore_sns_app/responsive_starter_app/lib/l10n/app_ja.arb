@@ -2811,6 +2811,7 @@
   "mapKeyHeading": "端末が向いている方向",
   "mapKeyReach": "相手の推定到達距離",
   "mapKeyDensity": "区画あたりのノード数",
+  "mapMessageBubble": "{name} からメッセージが届きました",
   "mapDensityShow": "セルごとのノード密度",
   "mapDensityHide": "ノード密度を隠す",
   "mapDensityCellTitle": "{count, plural, =1{この区画に 1 ノード} other{この区画に {count} ノード}}",

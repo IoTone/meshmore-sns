@@ -6179,6 +6179,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapKeyDensity => '区画あたりのノード数';
 
   @override
+  String mapMessageBubble(String name) {
+    return '$name からメッセージが届きました';
+  }
+
+  @override
   String get mapDensityShow => 'セルごとのノード密度';
 
   @override

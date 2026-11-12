@@ -10756,6 +10756,12 @@ abstract class AppLocalizations {
   /// **'Nodes per square'**
   String get mapKeyDensity;
 
+  /// Screen-reader label for the bubble drawn on the map at a node that has just sent a message; shown for one minute.
+  ///
+  /// In en, this message translates to:
+  /// **'A message from {name} just arrived'**
+  String mapMessageBubble(String name);
+
   /// No description provided for @mapDensityShow.
   ///
   /// In en, this message translates to:

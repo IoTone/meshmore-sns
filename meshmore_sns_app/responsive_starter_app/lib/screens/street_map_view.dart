@@ -20,6 +20,7 @@ import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
 import '../maps/coverage_quilt.dart';
 import '../maps/density_overlay.dart';
+import '../maps/message_bubble.dart';
 import '../theme/viz_palette.dart';
 import '../maps/basemap_prefs.dart';
 import '../maps/compass.dart';
@@ -370,6 +371,24 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// vector layer ignored it, so choosing USGS Imagery did nothing.
   String? _rasterOverride;
 
+  /// One-second tick that keeps a message bubble's fade honest.
+  ///
+  /// Only runs while a bubble is alive: a map that ticks every second forever
+  /// to fade a mark that is not drawn is a battery complaint waiting to happen.
+  Timer? _bubbleTick;
+
+  void _ensureBubbleTick(bool anyLive) {
+    if (anyLive && _bubbleTick == null) {
+      _bubbleTick = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() {});
+      });
+    } else if (!anyLive && _bubbleTick != null) {
+      _bubbleTick!.cancel();
+      _bubbleTick = null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -417,6 +436,7 @@ class _StreetMapViewState extends State<StreetMapView> {
 
   @override
   void dispose() {
+    _bubbleTick?.cancel();
     _warm?.cancel();
     _saveView?.cancel();
     _compass.removeListener(_onCompass);
@@ -1002,6 +1022,24 @@ class _StreetMapViewState extends State<StreetMapView> {
               borderStrokeWidth: 1.0,
             ),
     ];
+    // Who has spoken in the last minute, at the place they spoke from. A node
+    // with no position is left out rather than pinned to our own fix: a bubble
+    // at the wrong place is a worse answer than no bubble.
+    final DateTime now = DateTime.now();
+    final List<MessageBubbleMark> bubbles = <MessageBubbleMark>[
+      for (final MapEntry<String, DateTime> e in mc.recentSpeakers.entries)
+        if (now.difference(e.value) <= MeshcoreController.recentSpeakerWindow)
+          if (mc.nodeByPubKey(e.key) case final DiscoveredNode n)
+            if (n.latitude != null && n.longitude != null)
+              MessageBubbleMark(
+                node: n,
+                remaining: 1 -
+                    now.difference(e.value).inMilliseconds /
+                        MeshcoreController.recentSpeakerWindow.inMilliseconds,
+              ),
+    ];
+    _ensureBubbleTick(bubbles.isNotEmpty);
+
     final List<LatLng> trail = StreetMapView.trailPathFor(
       mc.ownTrail,
       selfLat: hasFix ? selfLat : null,
@@ -1227,6 +1265,25 @@ class _StreetMapViewState extends State<StreetMapView> {
                             known: mc.known.contains(n.pubKeyHex),
                             favourite: mc.favorites.contains(n.pubKeyHex),
                           ),
+                        ),
+                      ),
+                    ),
+                  // A bubble over whoever just spoke, under the self marker so
+                  // the reader's own position is never covered.
+                  for (final MessageBubbleMark b in bubbles)
+                    Marker(
+                      point: LatLng(b.node.latitude!, b.node.longitude!),
+                      width: MessageBubble.size,
+                      height: MessageBubble.size,
+                      alignment: Alignment.center,
+                      child: IgnorePointer(
+                        child: MessageBubble(
+                          key: ValueKey<String>(
+                              'map-msg-bubble-${b.node.pubKeyHex}'),
+                          remaining: b.remaining,
+                          color: VizPalette.companion,
+                          label: l.mapMessageBubble(
+                              b.node.name.isEmpty ? b.node.shortId : b.node.name),
                         ),
                       ),
                     ),
