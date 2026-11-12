@@ -130,7 +130,7 @@ void main() {
     // covers; this one asserts the label that makes them readable.
     expect(find.byKey(const ValueKey<String>('map-density-size')),
         findsOneWidget);
-    expect(find.textContaining('Cells'), findsOneWidget);
+    expect(find.textContaining('Squares'), findsOneWidget);
 
     // And a tap on a square names the nodes in it. The screen point comes from
     // the camera rather than from a guess, so the tap lands inside the square

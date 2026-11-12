@@ -6479,7 +6479,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mapDensityCellSize(String size) {
-    return 'Cells $size';
+    return 'Squares: nodes per $size';
   }
 
   @override

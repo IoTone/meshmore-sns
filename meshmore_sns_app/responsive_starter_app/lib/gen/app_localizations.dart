@@ -10777,7 +10777,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapDensityCellSize.
   ///
   /// In en, this message translates to:
-  /// **'Cells {size}'**
+  /// **'Squares: nodes per {size}'**
   String mapDensityCellSize(String size);
 
   /// No description provided for @actionReplyMention.

@@ -71,6 +71,17 @@ class VizPalette {
   /// as another node.
   static const Color north = Color(0xFFFF2D2D);
 
+  /// A repeater, and a chat node, on the map.
+  ///
+  /// A node's *type* is data, like a temperature, so it does not follow the
+  /// chrome: on this skin set the theme's primary and tertiary are both pale
+  /// greys, and a reader could not tell a repeater from a companion except by
+  /// squinting at a 13 px shape. Two mid-luminance hues read on the dimmed
+  /// vector basemap and on the pale raster one alike, and each glyph keeps the
+  /// skin's foreground as its ring so a light ground cannot swallow it.
+  static const Color repeater = Color(0xFFF0A030);
+  static const Color companion = Color(0xFF40B0FF);
+
   factory VizPalette.of(MmSkin skin) => VizPalette(
         hot: skin.color.alert,
         cool: skin.color.fg,

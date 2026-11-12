@@ -2818,7 +2818,7 @@
     "description": "The body of the one line standing for a queue of messages the app did not announce one by one.",
     "placeholders": {"count": {"type": "int"}}
   },
-  "mapDensityCellSize": "セル {size}",
+  "mapDensityCellSize": "四角 = {size} あたりのノード数",
   "actionReplyMention": "{name} に返信",
   "actionReplyMentionSub": "名前を宛先にします。MeshCore のクライアントはこれを返信として読みます。",
   "actionQuote": "このメッセージを引用",

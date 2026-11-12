@@ -212,6 +212,14 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// something to dismiss on every visit.
   bool _showDensity = false;
 
+  /// Whether the density cells are large enough on screen to carry their
+  /// counts. The fills and the numbers are one piece of information, so they
+  /// appear and disappear together: a filled square with no number in it reads
+  /// as a large node pin, which is what the owner reported being confused by.
+  /// The band between the two thresholds is hysteresis, so a pinch that sits on
+  /// the boundary does not make the overlay flicker.
+  bool _densityCellsDrawn = true;
+
   /// The squares last drawn, so a tap on the map can name the one it landed in.
   /// Rebuilt with the layer, because the set depends on where the nodes are.
   List<DensityCell> _densityCells = const <DensityCell>[];
@@ -789,6 +797,21 @@ class _StreetMapViewState extends State<StreetMapView> {
           _zoom, hasFix ? start.centre.latitude : 39),
     );
     _densityCellMetresShown = densityCellMetres;
+    // Fill and number appear and disappear together, or a filled square with no
+    // number reads as a large node pin. Hysteresis: appear at the readable size,
+    // leave only once comfortably below it, so a pinch on the boundary does not
+    // make the whole overlay blink.
+    final double cellPx = densityCellMetres /
+        StreetMapView.metersPerPixel(
+            _zoom, hasFix ? start.centre.latitude : 39);
+    final bool wantCells = _densityCellsDrawn
+        ? cellPx >= kDensityLabelMinPx - 6
+        : cellPx >= kDensityLabelMinPx;
+    if (wantCells != _densityCellsDrawn) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _densityCellsDrawn = wantCells);
+      });
+    }
     final List<DensityPoint> densityPoints = _showDensity
         ? <DensityPoint>[
             for (final DiscoveredNode n in mc.nodes)
@@ -964,7 +987,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               // way the radar cannot. Under the pins and the reach circles,
               // over the quilt, because a cell is about where nodes are and a
               // ring is about how far they reach.
-              if (density.isNotEmpty)
+              if (density.isNotEmpty && _densityCellsDrawn)
                 PolygonLayer<DensityCell>(
                   // The skin's viz accent, not the theme's primary: a cell
                   // drawn in primary over this skin's own basemap was
@@ -1097,8 +1120,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                           child: _PeerGlyph(
                             node: n,
                             ring: context.skin.color.fg,
-                            companion: cs.tertiary,
-                            repeater: cs.primary,
+                            companion: VizPalette.companion,
+                            repeater: VizPalette.repeater,
                             known: mc.known.contains(n.pubKeyHex),
                             favourite: mc.favorites.contains(n.pubKeyHex),
                           ),
@@ -1130,10 +1153,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               // pin's own box covers its cell's centre, which is where a badge
               // there would sit — and a tap meant for the square opened the
               // node instead.
-              if (density.isNotEmpty &&
-                  densityLabelsFit(densityCellMetres /
-                      StreetMapView.metersPerPixel(
-                          _zoom, hasFix ? start.centre.latitude : 39)))
+              if (density.isNotEmpty && _densityCellsDrawn)
                 MarkerLayer(
                   markers: <Marker>[
                     for (final DensityCell c in density)

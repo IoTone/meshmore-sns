@@ -6217,7 +6217,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String mapDensityCellSize(String size) {
-    return 'セル $size';
+    return '四角 = $size あたりのノード数';
   }
 
   @override

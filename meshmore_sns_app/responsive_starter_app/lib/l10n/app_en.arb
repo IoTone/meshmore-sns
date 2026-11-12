@@ -4377,7 +4377,7 @@
       }
     }
   },
-  "mapDensityCellSize": "Cells {size}",
+  "mapDensityCellSize": "Squares: nodes per {size}",
   "@mapDensityCellSize": {
     "placeholders": {
       "size": {
