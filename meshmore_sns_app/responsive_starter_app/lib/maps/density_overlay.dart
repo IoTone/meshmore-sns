@@ -53,6 +53,31 @@ class DensityCell {
 
   /// Stable identity for a widget key or a rebuild comparison.
   String get id => '$ix:$iy';
+
+  /// The same cell drawn as a pointy-top hexagon, inscribed in the square.
+  ///
+  /// A hexagon says "this is a cell of a survey, not a pixel of a picture", and
+  /// six edges read as a lattice where four read as a spreadsheet. The hexagon
+  /// is *inscribed* in the cell's own box rather than replacing the lattice:
+  /// the addresses, the areas and the tap rule are all still the square's, so
+  /// nothing about what a cell means changes — only how it is drawn. Neighbours
+  /// therefore leave a small gap, which is honest: these cells are not a
+  /// tessellation of the ground, they are samples of it.
+  List<LatLng> get hexagon {
+    final double latC = centre.latitude;
+    final double lonC = centre.longitude;
+    final double halfLat = (bounds[2].latitude - bounds[0].latitude) / 2;
+    final double halfLon = (bounds[1].longitude - bounds[0].longitude) / 2;
+    // Pointy-top: vertices at the top and bottom, flat sides east and west.
+    return <LatLng>[
+      LatLng(latC + halfLat, lonC),
+      LatLng(latC + halfLat / 2, lonC + halfLon),
+      LatLng(latC - halfLat / 2, lonC + halfLon),
+      LatLng(latC - halfLat, lonC),
+      LatLng(latC - halfLat / 2, lonC - halfLon),
+      LatLng(latC + halfLat / 2, lonC - halfLon),
+    ];
+  }
 }
 
 /// The smallest a square may be drawn, in logical pixels, before its count is
@@ -227,7 +252,7 @@ List<Polygon<DensityCell>> densityPolygons({
   return <Polygon<DensityCell>>[
     for (final DensityCell c in list)
       Polygon<DensityCell>(
-        points: c.bounds,
+        points: c.hexagon,
         hitValue: c,
         color: color.withValues(alpha: densityAlpha(c.count, maxCount)),
         borderColor: color.withValues(alpha: 0.80),
