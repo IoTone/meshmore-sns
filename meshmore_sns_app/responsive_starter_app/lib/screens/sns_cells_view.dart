@@ -180,12 +180,11 @@ class _SnsCellsViewState extends State<SnsCellsView>
     // Nothing has been overheard in this window. The painter would draw an
     // empty grid under the legend, which reads as a broken view rather than as
     // a quiet channel — the same defect the other views fixed with a notice.
-    if (heat.isEmpty && _toasts.isEmpty) {
-      return GridNotice(
-        message: l.heatEmpty,
-        icon: Icons.graphic_eq,
-      );
-    }
+    // A quiet channel is a state of *this* view, not a reason to remove it.
+    // Replacing the dial with a notice meant the Clear control wiped the whole
+    // screen — the owner's "it should not completely take away the entire UX".
+    // The notice is drawn over the dial instead, and the lattice stays.
+    final bool quiet = heat.isEmpty && _toasts.isEmpty;
     final List<DiscoveredNode> source =
         widget.filteredNodes ?? mc.nodes;
     final List<DiscoveredNode> nodes = <DiscoveredNode>[
@@ -219,6 +218,8 @@ class _SnsCellsViewState extends State<SnsCellsView>
                 maxHalfMeters: _frame.maxHalfMeters,
                 heat: heat,
                 heatCounts: heatCounts,
+                quiet: quiet,
+                quietLabel: l.heatEmpty,
                 nodes: nodes,
                 toasts: _toasts,
                 flashPubKey: _flashPubKey,
@@ -340,6 +341,8 @@ class _SnsCellsPainter extends CustomPainter {
     required this.maxHalfMeters,
     required this.heat,
     required this.heatCounts,
+    required this.quiet,
+    required this.quietLabel,
     required this.nodes,
     required this.toasts,
     required this.flashPubKey,
@@ -372,6 +375,12 @@ class _SnsCellsPainter extends CustomPainter {
   final double maxHalfMeters;
   final Map<String, double> heat;
   final Map<String, int> heatCounts;
+
+  /// No heat and no toasts: the lattice is still drawn, with a line saying so.
+  final bool quiet;
+
+  /// That line's text, passed in because a painter has no localisations.
+  final String quietLabel;
   final List<DiscoveredNode> nodes;
   final List<_Toast> toasts;
   final String? flashPubKey;
@@ -437,6 +446,24 @@ class _SnsCellsPainter extends CustomPainter {
     // local magnification/glow as the beam passes) and the glitch
     // overlay (which draws the band itself).
     final double sweepY = ((nowMs % 3200) / 3200.0) * size.height;
+
+    // A quiet channel says so here, over its own dial, instead of replacing it.
+    if (quiet) {
+      final TextPainter tp = TextPainter(
+        text: TextSpan(
+          text: quietLabel,
+          style: TextStyle(
+            color: label,
+            fontSize: type.sizeSm * textScale,
+            fontFamily: type.monoFamily,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      )..layout(maxWidth: size.width * 0.8);
+      tp.paint(canvas,
+          Offset(centre.dx - tp.width / 2, centre.dy - tp.height / 2));
+    }
 
     // --- Reference grid (always on, CRT phosphor glow) ---
     // Aligned to the geographic cell lattice so heat squares sit
@@ -557,6 +584,31 @@ class _SnsCellsPainter extends CustomPainter {
         looseHeat.add((centre: cc, hotness: hotness, count: count));
       }
     });
+
+    // The halo first: a hot cell bleeds into the cells around it, so the
+    // picture reads as a temperature rather than as a filled square. Drawn
+    // under the solid cells, with a falloff wide enough to reach a neighbour.
+    for (final MapEntry<(int, int), double> e in gridHeat.entries) {
+      if (e.value < 0.15) continue;
+      final Rect r = Rect.fromLTWH(gridOriginX + e.key.$1 * gridPx,
+          gridOriginY + e.key.$2 * gridPx, gridPx, gridPx);
+      final Offset c = r.center;
+      final double radius = gridPx * 1.9;
+      canvas.drawCircle(
+        c,
+        radius,
+        Paint()
+          ..shader = RadialGradient(
+            colors: <Color>[
+              Color.lerp(cool, hot, e.value)!
+                  .withValues(alpha: 0.20 * e.value.clamp(0.0, 1.0)),
+              // The same colour at zero alpha rather than a literal black: the
+              // falloff has to end in the ground, whatever the ground is.
+              cool.withValues(alpha: 0),
+            ],
+          ).createShader(Rect.fromCircle(center: c, radius: radius)),
+      );
+    }
 
     void drawHeatRect(Rect r, double hotness) {
       // white (cool) → red (hot). Floor the alpha at 0.40 so even a
