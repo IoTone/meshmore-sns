@@ -93,15 +93,27 @@ class _SnsCellsViewState extends State<SnsCellsView>
   @override
   void initState() {
     super.initState();
+    // One repaint per second, not one per frame. The heat decays with a
+    // fifteen-minute time constant and the toasts fade over seconds, so sixty
+    // rebuilds a second bought nothing a reader can see — while each of those
+    // rebuilds re-walked every heat cell twice and copied the ping log. This was
+    // the most expensive screen in the app and the change is invisible.
     _ticker = Ticker(_onTick)..start();
   }
 
   void _resetView() => _transform.value = Matrix4.identity();
 
+  /// The wall clock the painter reads, advanced once a second.
+  int _nowMs = DateTime.now().millisecondsSinceEpoch;
+  int _lastPaintSecond = 0;
+
   void _onTick(Duration _) {
-    // Repaint ~every frame so heat visibly cools and toasts fade.
-    // Cheap — the painter only walks active cells (sparse).
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final int second =
+        DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    if (second == _lastPaintSecond) return;
+    _lastPaintSecond = second;
+    setState(() => _nowMs = second * 1000);
   }
 
   @override
@@ -125,7 +137,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
   void _ingestPing(HeatPing p) {
     if (p.seq <= _lastPingSeq) return;
     _lastPingSeq = p.seq;
-    final int now = DateTime.now().millisecondsSinceEpoch;
+    final int now = _nowMs;
     final bool located = p.latitude != null && p.longitude != null;
     _toasts.add(_Toast(
       text: p.text,

@@ -222,10 +222,22 @@ class _MeshTreeViewState extends State<MeshTreeView> {
   Future<void> _learnRoutes(MeshcoreController mc) async {
     setState(() => _learning = true);
     try {
+      final int before = mc.nodes.length;
+      final int routesBefore = MeshGraph.fromController(mc).routed;
       await mc.requestContacts();
-      // The frames arrive as they arrive; give the table a moment to land so a
-      // reader who pressed the button sees it end, not a spinner forever.
-      await Future<void>.delayed(const Duration(milliseconds: 600));
+      // Wait for the table to actually change rather than for a fixed 600 ms:
+      // the frames arrive as they arrive, so a slow radio showed "done" before
+      // any route had landed and a fast one kept the spinner up for nothing.
+      // Either a node appears or a peer gains a route; after three seconds the
+      // answer is "nothing came back", which is itself worth showing.
+      final Stopwatch waited = Stopwatch()..start();
+      while (mounted && waited.elapsed < const Duration(seconds: 3)) {
+        if (mc.nodes.length != before ||
+            MeshGraph.fromController(mc).routed != routesBefore) {
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
     } finally {
       if (mounted) setState(() => _learning = false);
     }

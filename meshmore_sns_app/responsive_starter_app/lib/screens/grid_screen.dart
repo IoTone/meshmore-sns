@@ -949,7 +949,10 @@ class _GridScreenState extends State<GridScreen>
               child: switch (_viewMode) {
             _GridViewMode.elevation => Stack(
                 children: <Widget>[
-                  ElevationProfileView(filteredNodes: visible),
+                  ElevationProfileView(
+                      filteredNodes: visible,
+                      reduceMotion: tc.reduceMotion,
+                    ),
                   if (_legendVisible)
                     Positioned(
                       left: 0,

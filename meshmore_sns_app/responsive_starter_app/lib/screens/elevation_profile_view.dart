@@ -37,9 +37,15 @@ class ElevationProfileView extends StatefulWidget {
   const ElevationProfileView({
     super.key,
     this.filteredNodes,
+    this.reduceMotion = false,
   });
 
   final List<DiscoveredNode>? filteredNodes;
+
+  /// Whether the decorative scan line should stand still. Passed in rather than
+  /// read from a provider so the view stays mountable on its own — the grid
+  /// already has the setting.
+  final bool reduceMotion;
 
   @override
   State<ElevationProfileView> createState() =>
@@ -51,7 +57,7 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
   late final AnimationController _scan = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 4),
-  )..repeat();
+  );
 
   /// Transient "request in flight" flag, just for the chip's spinner —
   /// the telemetry response lands asynchronously via the controller.
@@ -60,6 +66,10 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
   @override
   void initState() {
     super.initState();
+    // The scan line is decoration, and a decoration that repeats forever costs a
+    // full repaint sixty times a second for a reader who asked the system to stop
+    // animating things. It still runs for everyone else.
+    if (!widget.reduceMotion) _scan.repeat();
     // Poll our OWN telemetry once when the view opens so the ME line
     // reflects a fresh altitude. Gathering other nodes' telemetry is
     // deferred until lobospeak lands; press UPDATE to re-poll self.

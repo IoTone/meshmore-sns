@@ -138,6 +138,18 @@ void main() {
     // and goes there is worth one cell in the column.
     expect(find.byKey(const ValueKey<String>('map-offline-maps-button')),
         findsOneWidget);
+    // The declared cell count is what anything placed beside the column uses to
+    // avoid it, so it must equal what is actually drawn. It said seven while ten
+    // were drawn, which would have misplaced the next host control by 144 dp.
+    final int cells = t
+        .widgetList<Widget>(find.descendant(
+            of: controls, matching: find.byType(Padding)))
+        .length;
+    // Plus the one the Map tab adds (places), which is the host's extra.
+    expect(cells, StreetMapView.controlCount + 1,
+        reason: 'the column draws $cells cells: ${StreetMapView.controlCount} '
+            'built in and one from the host, but controlCount says '
+            '${StreetMapView.controlCount}');
     await _drain(t, mc, m);
   });
 

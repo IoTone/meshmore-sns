@@ -95,18 +95,20 @@ class StreetMapView extends StatefulWidget {
   static const LatLng browseCentre = MapCentre.worldCentre;
   static const double browseZoom = MapCentre.worldZoom;
 
-  /// R70 — the control column's geometry, shared with the Map tab's
-  /// edge band so the band's inset is derived, not a magic number: five
-  /// controls (zoom in, zoom out, recentre, basemap picker, tile
-  /// toggle), each 48 dp, `controlsInset` from the top-right corner.
+  /// The control column's cell size and inset, in logical pixels.
+  ///
+  /// The column is one right-hand edge with one cell per tool, so anything
+  /// placed on the right edge has to know how wide it is: `controlsInset` from
+  /// the screen edge plus one cell is where the map itself begins.
   static const double controlCell = 48;
-  static const int controlCount = 7;
   static const double controlsInset = 12;
-  static const double controlsBottom =
-      controlsInset + controlCount * controlCell;
 
-  /// Bottom edge of the column when the host adds [extras] controls, so the
-  /// Map tab's edge band starts below the last button rather than under it.
+  /// How many cells the column draws today, pinned by
+  /// `test/screens/map_chrome_test.dart` so a new control has to update this
+  /// rather than silently misplacing whatever is placed beside the column.
+  static const int controlCount = 10;
+
+  /// Bottom edge of the column when the host adds [extras] controls.
   static double controlsBottomFor(int extras) =>
       controlsInset + (controlCount + extras) * controlCell;
 
@@ -1056,6 +1058,11 @@ class _StreetMapViewState extends State<StreetMapView> {
     // with no position is left out rather than pinned to our own fix: a bubble
     // at the wrong place is a worse answer than no bubble.
     final DateTime now = DateTime.now();
+    // One copy of the coverage record for the whole build. The getter returns an
+    // unmodifiable copy, so reading it twice per build copies a mesh-sized map
+    // twice.
+    final Map<String, int> coverage = mc.coverageCells;
+
     final List<MessageBubbleMark> bubbles = <MessageBubbleMark>[
       for (final MapEntry<String, DateTime> e in mc.recentSpeakers.entries)
         if (now.difference(e.value) <= MeshcoreController.recentSpeakerWindow)
@@ -1144,10 +1151,14 @@ class _StreetMapViewState extends State<StreetMapView> {
               // (that view was a second map doing the map's job). Drawn under
               // the reach circles so a cell never hides a range, and only when
               // there is something to draw.
-              if (_showCoverage && mc.coverageCells.isNotEmpty)
+              // Bound once. `mc.coverageCells` copies the whole record into an
+              // unmodifiable map on every call, and this read it twice per
+              // rebuild — on a mesh that has heard a few thousand adverts that is
+              // two full map copies for one layer.
+              if (coverage.isNotEmpty && _showCoverage)
                 PolygonLayer(
                   polygons: coveragePolygons(
-                    cells: mc.coverageCells,
+                    cells: coverage,
                     nowUnix: DateTime.now().millisecondsSinceEpoch ~/ 1000,
                     color: cs.secondary,
                   ),
