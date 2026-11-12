@@ -3,7 +3,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
@@ -13,6 +12,7 @@ import '../theme/mm_skin.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/mesh_graph.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../meshcore/mesh_radial_layout.dart';
 import '../util/force_layout.dart';
 import 'node_detail_sheet.dart';
 import '../ui/mm_shape.dart';
@@ -108,12 +108,14 @@ class MeshTreeView extends StatefulWidget {
   State<MeshTreeView> createState() => _MeshTreeViewState();
 }
 
-class _MeshTreeViewState extends State<MeshTreeView>
-    with SingleTickerProviderStateMixin {
-  late final Ticker _ticker;
+class _MeshTreeViewState extends State<MeshTreeView> {
+  /// No ticker: the layout is a function of the graph, so there is nothing to
+  /// animate. The force simulation this replaced ran every frame and drew a
+  /// different picture of the same mesh each time it was opened.
+
   final Map<String, NodePosition> _positions = <String, NodePosition>{};
   final TransformationController _transform = TransformationController();
-  ForceLayout? _layout;
+  RadialLayout? _radial;
   int _lastGraphSignature = 0;
   Size _lastSize = Size.zero;
 
@@ -134,21 +136,6 @@ class _MeshTreeViewState extends State<MeshTreeView>
   /// the moment the user pinch-zooms or pans; re-enabled by the
   /// recenter button.
   bool _autoFit = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = Ticker(_onTick)..start();
-  }
-
-  void _onTick(Duration _) {
-    if (widget.frozen) return;
-    if (_layout == null) return;
-    _layout!.step();
-    if (_autoFit) _fitToContent();
-    // Touch state so CustomPaint repaints with the new positions.
-    if (mounted) setState(() {});
-  }
 
   /// Scale + pan the InteractiveViewer so every node fits the
   /// viewport with padding. Lerped toward the target each frame so
@@ -194,7 +181,6 @@ class _MeshTreeViewState extends State<MeshTreeView>
 
   @override
   void dispose() {
-    _ticker.dispose();
     _transform.dispose();
     super.dispose();
   }
@@ -205,69 +191,47 @@ class _MeshTreeViewState extends State<MeshTreeView>
     setState(() => _autoFit = true);
   }
 
-  /// Rebuild the simulation when the graph's node-set changes. We
-  /// hash node ids cheaply so a transient lat/lon update doesn't
-  /// invalidate the layout (re-randomising positions every frame
-  /// would never settle).
+  /// Rebuild the radial tree when the graph's node-set or the viewport
+  /// changes.
+  ///
+  /// Cheap enough to be a pure function of the graph: no simulation, no
+  /// settling, no frame-to-frame drift. The signature keeps a rebuild that only
+  /// changed a name or a timestamp from re-laying the tree out.
   void _ensureLayout(MeshGraph g, Size size) {
     int sig = 17;
     for (final MeshGraphNode n in g.nodes) {
       sig = (sig * 31 + n.id.hashCode) & 0x7fffffff;
     }
+    for (final MeshGraphEdge e in g.edges) {
+      sig = (sig * 31 + e.key.hashCode) & 0x7fffffff;
+    }
     final bool sizeChanged = (_lastSize.width - size.width).abs() > 8 ||
         (_lastSize.height - size.height).abs() > 8;
-    if (sig == _lastGraphSignature && _layout != null && !sizeChanged) {
+    if (sig == _lastGraphSignature && _radial != null && !sizeChanged) {
       return;
     }
     _lastGraphSignature = sig;
     _lastSize = size;
 
+    final RadialLayout radial = radialHopLayout(g);
     final double cx = size.width / 2;
     final double cy = size.height / 2;
-    // Seed positions on a circle around the centre so the initial
-    // burst of repulsion has somewhere to push toward. Self is
-    // pinned dead centre — every other node settles around it.
-    final math.Random rnd = math.Random(sig);
-    final double r0 = math.min(size.width, size.height) * 0.30;
+    // The outermost ring has to fit, and its labels sit just inside the edge.
+    final double maxR = math.max(24, math.min(size.width, size.height) / 2 - 34);
     final Map<String, NodePosition> next = <String, NodePosition>{};
-    int i = 0;
-    for (final MeshGraphNode n in g.nodes) {
-      if (n.isSelf) {
-        next[n.id] = NodePosition(x: cx, y: cy, pinned: true);
-      } else {
-        // Reuse the prior position if we already have one — keeps
-        // the layout stable when a peer's name/type updates.
-        final NodePosition? prev = _positions[n.id];
-        if (prev != null) {
-          next[n.id] = prev;
-        } else {
-          final double angle = 2 * math.pi * i / math.max(1, g.nodes.length);
-          final double jitter = (rnd.nextDouble() - 0.5) * r0 * 0.4;
-          next[n.id] = NodePosition(
-            x: cx + (r0 + jitter) * math.cos(angle),
-            y: cy + (r0 + jitter) * math.sin(angle),
-          );
-        }
-      }
-      i++;
+    for (final RadialPlace p in radial.places) {
+      final double r = p.radius * maxR;
+      next[p.id] = NodePosition(
+        x: cx + r * math.sin(p.angle),
+        y: cy - r * math.cos(p.angle),
+        pinned: p.id == 'self',
+      );
     }
     _positions
       ..clear()
       ..addAll(next);
-
-    _layout = ForceLayout(
-      positions: _positions,
-      edges: <(String, String)>[
-        for (final MeshGraphEdge e in g.edges) (e.fromId, e.toId),
-      ],
-      centerX: cx,
-      centerY: cy,
-      // No bounds — let the cloud spread to its natural size (capped
-      // by the centering force). Visibility is handled by auto-fit
-      // in the view, which scales the InteractiveViewer to frame the
-      // whole graph however large it gets. Clamping to the viewport
-      // instead just piles hundreds of nodes into overlapping blobs.
-    );
+    _radial = radial;
+    if (_autoFit) _fitToContent();
   }
 
   void _maybeShowDetail(MeshcoreController mc, Offset tap) {
@@ -381,6 +345,7 @@ class _MeshTreeViewState extends State<MeshTreeView>
                       child: CustomPaint(
                         painter: _MeshTreePainter(
                           type: context.skin.type,
+                          radial: _radial,
                           textScale: MediaQuery.textScalerOf(context).scale(1),
                           graph: graph,
                           positions: _positions,
@@ -584,6 +549,7 @@ class _MeshTreePainter extends CustomPainter {
   _MeshTreePainter({
     required this.type,
     required this.textScale,
+    required this.radial,
     required this.graph,
     required this.positions,
     required this.knownPubKeys,
@@ -607,6 +573,9 @@ class _MeshTreePainter extends CustomPainter {
   /// sheets and the notice grew and the tree's own node names did not.
   final double textScale;
 
+  /// The hop rings, so the canvas can draw and label them.
+  final RadialLayout? radial;
+
   final MeshGraph graph;
   final Map<String, NodePosition> positions;
   final Set<String> knownPubKeys;
@@ -622,6 +591,40 @@ class _MeshTreePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
+
+    // Hop rings, then the edges over them. The radius *is* the hop count, so
+    // the rings are the scale of the picture rather than decoration: ring 3 is
+    // "everything learned three hops out", and the outermost ring, labelled
+    // with a question mark, is the peers nobody has a route for.
+    final RadialLayout? r = radial;
+    if (r != null && r.rings > 0) {
+      final Offset c0 = size.center(Offset.zero);
+      final double maxR =
+          math.max(24, math.min(size.width, size.height) / 2 - 34);
+      final Paint ringPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = edgeFloat;
+      for (int d = 1; d <= r.rings; d++) {
+        final double radius = maxR * d / r.rings;
+        if (d < r.rings) {
+          canvas.drawCircle(c0, radius, ringPaint);
+        }
+        final String text = (r.hasUnknown && d == r.rings) ? '?' : '$d';
+        final TextPainter tp = TextPainter(
+          text: TextSpan(
+            text: text,
+            style: TextStyle(
+              color: edge,
+              fontSize: type.sizeMicro * textScale,
+              fontFamily: type.monoFamily,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(canvas, Offset(c0.dx + 4, c0.dy - radius + 2));
+      }
+    }
 
     // Edges first so node circles sit on top.
     final Paint edgePaint = Paint()

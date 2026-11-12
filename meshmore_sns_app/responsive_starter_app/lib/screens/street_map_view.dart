@@ -322,9 +322,10 @@ class _StreetMapViewState extends State<StreetMapView> {
 
   double? _headingDeg;
 
-  /// The app's one compass. Started here and stopped with the view; the radars
-  /// hold their own instance because they are separate screens.
-  final CompassHeading _compass = CompassHeading();
+  /// The app's one compass when there is one above us, so the arrow and both
+  /// radars answer from the same filter; its own only when shown alone.
+  late final CompassHeading _compass;
+  late final bool _ownsCompass;
 
   /// A peer's reach estimate in metres, from its signal and role.
   double _reachMeters(DiscoveredNode n, MeshcoreController mc, SelfInfo? si) =>
@@ -374,6 +375,9 @@ class _StreetMapViewState extends State<StreetMapView> {
     // plugin: two sensors answering "which way am I facing" gave two answers,
     // and the map arrow and the dial disagreed at exactly the moment a user
     // would look at both.
+    final CompassHeading? shared = context.sharedCompass;
+    _ownsCompass = shared == null;
+    _compass = shared ?? CompassHeading();
     _compass.addListener(_onCompass);
     _compass.start();
   }
@@ -395,7 +399,7 @@ class _StreetMapViewState extends State<StreetMapView> {
     _warm?.cancel();
     _saveView?.cancel();
     _compass.removeListener(_onCompass);
-    _compass.dispose();
+    if (_ownsCompass) _compass.dispose();
     super.dispose();
   }
 

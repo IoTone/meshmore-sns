@@ -45,17 +45,24 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
   );
 
   /// Which way the phone points, so the dial's top is the phone's own facing.
-  final CompassHeading _compass = CompassHeading();
+  ///
+  /// The app's one compass when there is one above us, so a heading does not
+  /// restart on every tab switch; its own only when the screen is shown alone.
+  late final CompassHeading _compass;
+  late final bool _ownsCompass;
 
   @override
   void initState() {
     super.initState();
+    final CompassHeading? shared = context.sharedCompass;
+    _ownsCompass = shared == null;
+    _compass = shared ?? CompassHeading();
     _compass.start();
   }
 
   @override
   void dispose() {
-    _compass.dispose();
+    if (_ownsCompass) _compass.dispose();
     _sweep.dispose();
     super.dispose();
   }

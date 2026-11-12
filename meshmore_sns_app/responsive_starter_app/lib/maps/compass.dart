@@ -4,6 +4,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show BuildContext;
+import 'package:provider/provider.dart';
 import 'package:flutter/painting.dart' show Canvas, Color, Offset, Paint, PaintingStyle, Path;
 import 'package:sensors_plus/sensors_plus.dart';
 
@@ -483,6 +485,28 @@ class CompassHeading extends ChangeNotifier {
     _gyroSub?.cancel();
     _stale?.cancel();
     super.dispose();
+  }
+}
+
+/// The app's one compass, or null when nothing above provided one.
+///
+/// Three screens draw a dial — the hyperlocal radar, the grid's radar and the
+/// map's own arrow — and each used to build its own `CompassHeading`. Two
+/// consequences, both visible: switching tabs started a *fresh* filter, whose
+/// first bearing is the raw magnetometer guess until the gyroscope has been
+/// running, so the dial could jump on the way in; and the calibration one screen
+/// accumulated was invisible to the next, so a phone that had been turned enough
+/// to calibrate on the dashboard had to be turned again on the map. One instance,
+/// provided once, is continuous by construction.
+extension CompassScope on BuildContext {
+  CompassHeading? get sharedCompass {
+    try {
+      return Provider.of<CompassHeading?>(this, listen: false);
+    } on ProviderNotFoundException {
+      // No provider above us: a widget test, or a screen shown on its own. The
+      // caller makes its own.
+      return null;
+    }
   }
 }
 

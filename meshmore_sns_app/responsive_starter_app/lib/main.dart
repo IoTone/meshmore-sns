@@ -19,6 +19,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'app/boot_guard.dart';
+import 'maps/compass.dart';
 import 'app/mm_text_scaler.dart';
 import 'package:provider/provider.dart';
 
@@ -242,6 +243,11 @@ Future<void> startApp() async {
       providers: [
         ChangeNotifierProvider<MmCollapseController>.value(value: collapse),
         ChangeNotifierProvider<AppState>(create: (_) => AppState()),
+        // One compass for every dial in the app: the two radars and the map's
+        // arrow. Started here and never stopped, because it is the same phone
+        // facing the same way whatever screen is open.
+        ChangeNotifierProvider<CompassHeading?>(
+            create: (_) => CompassHeading()..start()),
         ChangeNotifierProvider<ThemeController>(
           create: (_) => ThemeController()..load(),
         ),

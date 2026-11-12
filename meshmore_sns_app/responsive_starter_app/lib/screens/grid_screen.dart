@@ -229,7 +229,8 @@ class _GridScreenState extends State<GridScreen>
   /// Which way the phone is pointing. Started with the screen and disposed with
   /// it; null until the first sample, and every consumer falls back to north-up
   /// while it is null.
-  final CompassHeading _compass = CompassHeading();
+  late final CompassHeading _compass;
+  late final bool _ownsCompass;
 
   /// R18's anonymous-channel ripple: anchors a transient centre-out
   /// wave on every incoming channel message. The painter reads this
@@ -280,6 +281,9 @@ class _GridScreenState extends State<GridScreen>
       vsync: this,
       duration: const Duration(seconds: 4), // arbitrary; we read .value
     )..repeat();
+    final CompassHeading? shared = context.sharedCompass;
+    _ownsCompass = shared == null;
+    _compass = shared ?? CompassHeading();
     _compass.start();
     final MeshcoreController mc = context.read<MeshcoreController>();
     _snapshot = List<DiscoveredNode>.of(mc.nodes); // initial paused frame
@@ -336,7 +340,7 @@ class _GridScreenState extends State<GridScreen>
     _refreshTimer?.cancel();
     _msgSub?.cancel();
     _tick.dispose();
-    _compass.dispose();
+    if (_ownsCompass) _compass.dispose();
     super.dispose();
   }
 
