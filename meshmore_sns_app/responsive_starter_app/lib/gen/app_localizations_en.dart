@@ -1584,17 +1584,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dmSend => 'Send DM';
 
   @override
-  String get actionRetrySub => 'Send this message again';
-
-  @override
   String get actionCopy => 'Copy';
 
   @override
   String get actionDeleteLocal => 'Delete locally';
-
-  @override
-  String get actionDeleteLocalSub =>
-      'Removes this row from your history only — over-the-air messages cannot be recalled.';
 
   @override
   String get actionCopied => 'Copied to clipboard';
@@ -5373,10 +5366,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept, and new blocks will be saved normally.';
 
   @override
-  String get reportActionSub =>
-      'Writes a file on this device for you to send. Nothing leaves the app.';
-
-  @override
   String sosDestinationContactsLimit(int count) {
     return 'Up to $count contacts';
   }
@@ -6118,9 +6107,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionForward => 'Forward';
 
   @override
-  String get actionForwardSub => 'Into another conversation\'s composer.';
-
-  @override
   String get forwardNoTarget =>
       'Nothing to forward into: no channel and no contact.';
 
@@ -6481,22 +6467,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get actionReplyMentionSub =>
-      'Addresses them by name, the way MeshCore clients read a reply.';
-
-  @override
   String get actionQuote => 'Quote this message';
 
   @override
-  String get actionQuoteSub =>
-      'Puts their words in the box; nothing names them.';
-
-  @override
   String get actionReplyNoName => 'Reply';
-
-  @override
-  String get actionReplyNoNameSub =>
-      'No sender name on this message, so there is nobody to address.';
 
   @override
   String get chatActionsNoRadio =>

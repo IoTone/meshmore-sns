@@ -1502,16 +1502,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dmSend => 'DM 送信';
 
   @override
-  String get actionRetrySub => 'このメッセージをもう一度送信';
-
-  @override
   String get actionCopy => 'コピー';
 
   @override
   String get actionDeleteLocal => 'ローカル削除';
-
-  @override
-  String get actionDeleteLocalSub => '履歴からこの行のみ削除 — OTA 送信済みのメッセージは取り消せません。';
 
   @override
   String get actionCopied => 'クリップボードにコピーしました';
@@ -5152,9 +5146,6 @@ class AppLocalizationsJa extends AppLocalizations {
       '保存された一覧を読み取れなかったため、現在は何もブロックしていません。壊れたファイルのコピーは保存され、新しいブロックは通常どおり保存されます。';
 
   @override
-  String get reportActionSub => '送信先を選べるよう、端末にファイルを作成します。アプリの外には出ません。';
-
-  @override
   String sosDestinationContactsLimit(int count) {
     return '$count 件まで';
   }
@@ -5869,9 +5860,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionForward => '転送';
 
   @override
-  String get actionForwardSub => '別の会話の入力欄に移します。';
-
-  @override
   String get forwardNoTarget => '転送先がありません。チャンネルも連絡先もありません。';
 
   @override
@@ -6220,20 +6208,10 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get actionReplyMentionSub =>
-      '名前を宛先にします。MeshCore のクライアントはこれを返信として読みます。';
-
-  @override
   String get actionQuote => 'このメッセージを引用';
 
   @override
-  String get actionQuoteSub => '相手の言葉を入力欄に入れます。名前は宛先になりません。';
-
-  @override
   String get actionReplyNoName => '返信';
-
-  @override
-  String get actionReplyNoNameSub => 'このメッセージには送信者名がないため、宛先にできる相手がいません。';
 
   @override
   String get chatActionsNoRadio => '無線が未接続です。返信や引用は入力欄に保持され、接続後に使えます。';

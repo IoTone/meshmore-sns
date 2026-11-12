@@ -2714,12 +2714,6 @@ abstract class AppLocalizations {
   /// **'Send DM'**
   String get dmSend;
 
-  /// No description provided for @actionRetrySub.
-  ///
-  /// In en, this message translates to:
-  /// **'Send this message again'**
-  String get actionRetrySub;
-
   /// No description provided for @actionCopy.
   ///
   /// In en, this message translates to:
@@ -2731,12 +2725,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete locally'**
   String get actionDeleteLocal;
-
-  /// No description provided for @actionDeleteLocalSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Removes this row from your history only — over-the-air messages cannot be recalled.'**
-  String get actionDeleteLocalSub;
 
   /// No description provided for @actionCopied.
   ///
@@ -8974,12 +8962,6 @@ abstract class AppLocalizations {
   /// **'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept, and new blocks will be saved normally.'**
   String get blockedKeysUnreadable;
 
-  /// No description provided for @reportActionSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Writes a file on this device for you to send. Nothing leaves the app.'**
-  String get reportActionSub;
-
   /// No description provided for @sosDestinationContactsLimit.
   ///
   /// In en, this message translates to:
@@ -10222,12 +10204,6 @@ abstract class AppLocalizations {
   /// **'Forward'**
   String get actionForward;
 
-  /// No description provided for @actionForwardSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Into another conversation\'s composer.'**
-  String get actionForwardSub;
-
   /// No description provided for @forwardNoTarget.
   ///
   /// In en, this message translates to:
@@ -10780,35 +10756,17 @@ abstract class AppLocalizations {
   /// **'Reply to {name}'**
   String actionReplyMention(String name);
 
-  /// No description provided for @actionReplyMentionSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Addresses them by name, the way MeshCore clients read a reply.'**
-  String get actionReplyMentionSub;
-
   /// No description provided for @actionQuote.
   ///
   /// In en, this message translates to:
   /// **'Quote this message'**
   String get actionQuote;
 
-  /// No description provided for @actionQuoteSub.
-  ///
-  /// In en, this message translates to:
-  /// **'Puts their words in the box; nothing names them.'**
-  String get actionQuoteSub;
-
   /// No description provided for @actionReplyNoName.
   ///
   /// In en, this message translates to:
   /// **'Reply'**
   String get actionReplyNoName;
-
-  /// No description provided for @actionReplyNoNameSub.
-  ///
-  /// In en, this message translates to:
-  /// **'No sender name on this message, so there is nobody to address.'**
-  String get actionReplyNoNameSub;
 
   /// No description provided for @chatActionsNoRadio.
   ///

@@ -864,10 +864,8 @@
     }
   },
   "dmSend": "DM 送信",
-  "actionRetrySub": "このメッセージをもう一度送信",
   "actionCopy": "コピー",
   "actionDeleteLocal": "ローカル削除",
-  "actionDeleteLocalSub": "履歴からこの行のみ削除 — OTA 送信済みのメッセージは取り消せません。",
   "actionCopied": "クリップボードにコピーしました",
   "actionDeleteConfirmTitle": "このメッセージをローカルから削除しますか?",
   "actionDeleteConfirmBody": "ローカル履歴からこの行を削除します。MeshCore に取り消しはなく、受信者側には残ります。",
@@ -2399,7 +2397,6 @@
   "reportCopied": "コピーしました。",
   "blockedKeysNotPersisted": "この一覧を端末に保存できませんでした。今は機能しますが、再起動後は空になります。",
   "blockedKeysUnreadable": "保存された一覧を読み取れなかったため、現在は何もブロックしていません。壊れたファイルのコピーは保存され、新しいブロックは通常どおり保存されます。",
-  "reportActionSub": "送信先を選べるよう、端末にファイルを作成します。アプリの外には出ません。",
   "sosDestinationContactsLimit": "{count} 件まで",
   "sosDestinationChange": "変更",
   "sosDestinationPickerTitle": "警報の送信先",
@@ -2635,7 +2632,6 @@
   "repeaterNoAnswer": "応答がありません。リピーターが届かない可能性があります。",
   "repeaterSignOutDone": "サインアウトしました。",
   "actionForward": "転送",
-  "actionForwardSub": "別の会話の入力欄に移します。",
   "forwardNoTarget": "転送先がありません。チャンネルも連絡先もありません。",
   "forwardDone": "その会話の入力欄に入れました。送信前に編集できます。",
   "forwardFailed": "下書きを書けませんでした。この端末では暗号化ストアを開けません。",
@@ -2819,10 +2815,7 @@
   },
   "mapDensityCellSize": "四角 = {size} あたりのノード数",
   "actionReplyMention": "{name} に返信",
-  "actionReplyMentionSub": "名前を宛先にします。MeshCore のクライアントはこれを返信として読みます。",
   "actionQuote": "このメッセージを引用",
-  "actionQuoteSub": "相手の言葉を入力欄に入れます。名前は宛先になりません。",
   "actionReplyNoName": "返信",
-  "actionReplyNoNameSub": "このメッセージには送信者名がないため、宛先にできる相手がいません。",
   "chatActionsNoRadio": "無線が未接続です。返信や引用は入力欄に保持され、接続後に使えます。"
 }

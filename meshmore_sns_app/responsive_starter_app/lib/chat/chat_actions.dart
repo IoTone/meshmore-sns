@@ -12,7 +12,6 @@ import '../bot/bot_scope.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
-import '../meshcore/failure.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../screens/delivery_status_icon.dart';
@@ -117,7 +116,6 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
             ListTile(
               leading: const Icon(Icons.refresh),
               title: Text(l.actionRetrySend),
-              subtitle: Text(_retrySubtitle(l, m)),
               onTap: () => Navigator.pop(ctx, ChatAction.retry),
             trailing: const Icon(Icons.chevron_right, size: 18),
             ),
@@ -128,8 +126,6 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
             title: Text(sender == null
                 ? l.actionReplyNoName
                 : l.actionReplyMention(sender)),
-            subtitle:
-                Text(sender == null ? l.actionReplyNoNameSub : l.actionReplyMentionSub),
             enabled: sender != null,
             onTap: sender == null
                 ? null
@@ -139,7 +135,6 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
           ListTile(
             leading: const Icon(Icons.format_quote),
             title: Text(l.actionQuote),
-            subtitle: Text(l.actionQuoteSub),
             onTap: () => Navigator.pop(ctx, ChatAction.quote),
             trailing: const Icon(Icons.chevron_right, size: 18),
           ),
@@ -155,7 +150,6 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
           ListTile(
             leading: const Icon(Icons.forward_to_inbox_outlined),
             title: Text(l.actionForward),
-            subtitle: Text(l.actionForwardSub),
             onTap: () => Navigator.pop(ctx, ChatAction.forward),
             trailing: const Icon(Icons.chevron_right, size: 18),
           ),
@@ -166,7 +160,6 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
             ListTile(
               leading: const Icon(Icons.flag_outlined),
               title: Text(l.reportAction),
-              subtitle: Text(l.reportActionSub),
               onTap: () => Navigator.pop(ctx, ChatAction.report),
             trailing: const Icon(Icons.chevron_right, size: 18),
             ),
@@ -174,7 +167,6 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
             leading: Icon(Icons.delete_outline,
                 color: Theme.of(ctx).colorScheme.error),
             title: Text(l.actionDeleteLocal),
-            subtitle: Text(l.actionDeleteLocalSub),
             onTap: () => Navigator.pop(ctx, ChatAction.delete),
             trailing: const Icon(Icons.chevron_right, size: 18),
           ),
@@ -305,12 +297,3 @@ Future<bool> confirmDeleteMessage(BuildContext context, ChatMessage m) {
 
 /// The reason shown under Retry: the catalogue's translated sentence when the
 /// row carries a cause, the older stored sentence otherwise (APP-N2).
-String _retrySubtitle(AppLocalizations l, ChatMessage m) {
-  final FailureCause? cause = m.failCause;
-  if (cause != null) {
-    return '${l.actionRetrySub} (${failureText(l, Failure(cause))})';
-  }
-  return m.failReason == null
-      ? l.actionRetrySub
-      : '${l.actionRetrySub} (${m.failReason})';
-}

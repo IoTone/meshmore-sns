@@ -944,10 +944,8 @@
     }
   },
   "dmSend": "Send DM",
-  "actionRetrySub": "Send this message again",
   "actionCopy": "Copy",
   "actionDeleteLocal": "Delete locally",
-  "actionDeleteLocalSub": "Removes this row from your history only — over-the-air messages cannot be recalled.",
   "actionCopied": "Copied to clipboard",
   "actionDeleteConfirmTitle": "Delete this message locally?",
   "actionDeleteConfirmBody": "This removes the row from your local history. MeshCore has no recall — the recipient still has it.",
@@ -3692,7 +3690,6 @@
   "reportCopied": "Copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
   "blockedKeysUnreadable": "The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept, and new blocks will be saved normally.",
-  "reportActionSub": "Writes a file on this device for you to send. Nothing leaves the app.",
   "sosDestinationContactsLimit": "Up to {count} contacts",
   "sosDestinationChange": "Change",
   "sosDestinationPickerTitle": "Where the alarm goes",
@@ -4137,7 +4134,6 @@
   "repeaterNoAnswer": "No answer. The repeater may be out of reach.",
   "repeaterSignOutDone": "Signed out.",
   "actionForward": "Forward",
-  "actionForwardSub": "Into another conversation's composer.",
   "forwardNoTarget": "Nothing to forward into: no channel and no contact.",
   "forwardDone": "Forwarded into that thread's composer, where you can edit it before sending.",
   "forwardFailed": "Could not write the draft: the sealed store is not open on this device.",
@@ -4392,10 +4388,7 @@
       }
     }
   },
-  "actionReplyMentionSub": "Addresses them by name, the way MeshCore clients read a reply.",
   "actionQuote": "Quote this message",
-  "actionQuoteSub": "Puts their words in the box; nothing names them.",
   "actionReplyNoName": "Reply",
-  "actionReplyNoNameSub": "No sender name on this message, so there is nobody to address.",
   "chatActionsNoRadio": "No radio: a reply or quote waits in the box until one is connected."
 }
