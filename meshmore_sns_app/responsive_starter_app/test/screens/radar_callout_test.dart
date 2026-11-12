@@ -1,7 +1,10 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 
 import 'package:meshmore_sns_app/screens/dashboards/hyperlocal_dashboard.dart';
 import 'package:meshmore_sns_app/theme/mm_skin.dart';
@@ -82,5 +85,57 @@ void main() {
         radarLabelSizes(base, textScale: 2.0);
     expect(twice.callout, closeTo(plain.callout * 2, 0.001));
     expect(twice.north, closeTo(plain.north * 2, 0.001));
+  });
+
+  group('where a peer sits without a distance', () {
+    // A hash that walks the unit interval deterministically, so the spread can
+    // be asserted without a random number generator.
+    double unit(String key, int seed) {
+      int h = 2166136261;
+      for (final int c in '$key#$seed'.codeUnits) {
+        h = ((h ^ c) * 16777619) & 0x7fffffff;
+      }
+      return h / 0x7fffffff;
+    }
+
+    test('the same nodes are not all on one ring', () {
+      // The reported fault: 196 peers with no position drew as a clean circle
+      // around the rim. Their radii must describe a scatter.
+      final List<double> fracs = <double>[
+        for (int i = 0; i < 200; i++)
+          radarPlaceholderFraction(
+              NodeProximity.unknown, 'node$i', unit),
+      ];
+      final double lo = fracs.reduce(math.min);
+      final double hi = fracs.reduce(math.max);
+      expect(hi - lo, greaterThan(0.5),
+          reason: 'unknown peers must fill the dial, not trace a circle');
+      // And they must not pile onto either edge of it.
+      final int middle =
+          fracs.where((double f) => f > 0.4 && f < 0.8).length;
+      expect(middle, greaterThan(50));
+    });
+
+    test('a known band stays inside its band', () {
+      for (final (NodeProximity prox, double lo, double hi)
+          in <(NodeProximity, double, double)>[
+        (NodeProximity.near, 0.16, 0.38),
+        (NodeProximity.recent, 0.32, 0.56),
+        (NodeProximity.mid, 0.52, 0.76),
+        (NodeProximity.far, 0.74, 0.96),
+      ]) {
+        for (int i = 0; i < 40; i++) {
+          final double f =
+              radarPlaceholderFraction(prox, 'p$i', unit);
+          expect(f, greaterThanOrEqualTo(lo - 0.001), reason: '$prox');
+          expect(f, lessThanOrEqualTo(hi + 0.001), reason: '$prox');
+        }
+      }
+    });
+
+    test('a node keeps its place between rebuilds', () {
+      expect(radarPlaceholderFraction(NodeProximity.mid, 'abc', unit),
+          radarPlaceholderFraction(NodeProximity.mid, 'abc', unit));
+    });
   });
 }

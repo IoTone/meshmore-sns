@@ -742,8 +742,16 @@ class _GridScreenState extends State<GridScreen>
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
             child: Text(
-              _purposeFor(_viewMode, l),
-              maxLines: 1,
+              // A dial that cannot point says why, in the line it already uses
+              // to explain itself. Without this, a phone near a magnet simply
+              // does nothing when it is turned, which reads as a broken compass
+              // rather than as an unusable field.
+              _compass.disturbed && !_compass.hasHeading &&
+                      (_viewMode == _GridViewMode.radial ||
+                          _viewMode == _GridViewMode.tree)
+                  ? l.gridCompassDisturbed
+                  : _purposeFor(_viewMode, l),
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
@@ -1414,6 +1422,11 @@ class _GridPainter extends CustomPainter {
         selfLat: selfLat,
         selfLon: selfLon,
         scaleKm: scaleKm,
+        // The dial turns with the phone, and the *markers* have to turn with
+        // it. Omitting this drew every peer at its true bearing while the red
+        // north marker rotated — so the marker said where north was and the dots
+        // did not follow it, which is exactly what the owner reported.
+        headingDegrees: headingDegrees,
       );
 
       final bool isFav = favorites.contains(n.pubKeyHex);

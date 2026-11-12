@@ -187,18 +187,27 @@ class CompassHeading extends ChangeNotifier {
     final int ms = e.timestamp.millisecondsSinceEpoch;
     final int last = _lastMagMs;
     _lastMagMs = ms;
+
+    // Flat samples are collected whether or not there is a heading yet, because
+    // collecting them is how a 157 µT field stops being unusable: a turn
+    // measures the offset, and the corrected pair is trustworthy even when the
+    // raw one is not. Gating this behind "we already have a heading" deadlocks —
+    // no heading without a trusted field, no trusted field without a turn.
+    if (_flatNow) _accumulate(e.x, e.y);
+
     if (_heading == null) {
       _seedFromMagnetometer();
       return;
     }
     // The anchor is the flat bearing, and it is only an anchor while the phone
     // is flat: tilted, the horizontal pair is not the horizontal field.
-    if (!_flatNow) return;
-    _accumulate(e.x, e.y);
-    // No anchor until the offset is known: a bearing warped by an unmeasured
-    // offset is worse than no absolute bearing at all, because it drags a
-    // correct gyroscope track off course.
-    if (!_offsetTrusted) {
+    if (!_flatNow) {
+      _touch();
+      return;
+    }
+    if (!fieldTrusted) {
+      // A field of three times the Earth's is not a bearing. Leave the
+      // gyroscope track alone and let it carry the rotation.
       _touch();
       return;
     }
@@ -223,6 +232,11 @@ class CompassHeading extends ChangeNotifier {
   void _seedFromMagnetometer() {
     final MagnetometerEvent? m = _lastMagEvent;
     if (m == null) return;
+    // A 157 µT reading is not the Earth's field, and a dial started from it
+    // points wherever the phone's own magnet happens to be. No heading is the
+    // honest answer until the field is plausible or a turn has measured the
+    // offset.
+    if (!fieldTrusted) return;
     final double seed;
     if (_flatNow) {
       _accumulate(m.x, m.y);
@@ -289,6 +303,28 @@ class CompassHeading extends ChangeNotifier {
 
   bool _trusted(({double x, double y, double r, double rms}) fit) =>
       fit.r >= 10 && fit.r <= 40 && fit.rms <= fit.r * 0.12;
+
+  /// Whether the last field reading can be believed at all.
+  ///
+  /// The Earth's field is 25–65 µT. This handset reports 157 µT with the excess
+  /// on z, which is a hard-iron offset the OS never removed, and a horizontal
+  /// pair that is the offset and the field nearly cancelling: a bearing taken
+  /// from it is not "a few degrees out", it can be the opposite direction. So a
+  /// reading outside the plausible band is not used to start the dial off and
+  /// not used to anchor it — until a turn has measured the offset, after which
+  /// the corrected pair is trustworthy whatever the raw magnitude.
+  bool get fieldTrusted {
+    final MagnetometerEvent? m = _lastMagEvent;
+    if (m == null) return false;
+    if (_offsetTrusted) return true;
+    final double magnitude =
+        math.sqrt(m.x * m.x + m.y * m.y + m.z * m.z);
+    return magnitude >= 20 && magnitude <= 90;
+  }
+
+  /// A field reading has arrived and cannot be used: the phone is sitting in a
+  /// magnetic mess (a case, a mount, a speaker) that nobody has calibrated.
+  bool get disturbed => _lastMagEvent != null && !fieldTrusted;
 
   /// Whether the horizontal offset has been measured from a real turn.
   ///

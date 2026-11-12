@@ -179,7 +179,7 @@ void main() {
     }
 
     test('a flat turn of 30° reads 30°', () async {
-      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      mag.add(MagnetometerEvent(0, 20, -46, clock));
       await Future<void>.delayed(Duration.zero);
       expect(compass.heading, closeTo(0, 0.5));
 
@@ -192,7 +192,7 @@ void main() {
     });
 
     test('turning back returns to the same reading', () async {
-      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      mag.add(MagnetometerEvent(0, 20, -46, clock));
       await Future<void>.delayed(Duration.zero);
       await turn(40);
       await turn(-40);
@@ -201,7 +201,7 @@ void main() {
     });
 
     test('a turn across north wraps instead of unwinding', () async {
-      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      mag.add(MagnetometerEvent(0, 20, -46, clock));
       await Future<void>.delayed(Duration.zero);
       await turn(-20); // 340
       expect(apart(compass.heading!, 340), lessThan(1.5));
@@ -212,7 +212,7 @@ void main() {
       // device's +z. The yaw rate is taken along that axis, so a turn about the
       // world's vertical still reads degree for degree.
       acc.add(AccelerometerEvent(0, 6.94, 6.94, clock));
-      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      mag.add(MagnetometerEvent(0, 20, -46, clock));
       await Future<void>.delayed(Duration.zero);
       final double? before = compass.heading;
       // The gyroscope reports the same world rotation, expressed in device axes
@@ -244,7 +244,7 @@ void main() {
     }
 
     test('a turn through a full circle calibrates the offset', () async {
-      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      mag.add(MagnetometerEvent(0, 20, -46, clock));
       await Future<void>.delayed(Duration.zero);
       expect(compass.calibratedCircle, isFalse,
           reason: 'a phone that has not turned cannot be calibrated');
@@ -254,7 +254,7 @@ void main() {
     });
 
     test('with a calibrated offset the field wins again', () async {
-      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      mag.add(MagnetometerEvent(0, 20, -46, clock));
       await Future<void>.delayed(Duration.zero);
       await sweep(360);
       expect(compass.calibratedCircle, isTrue);
@@ -270,22 +270,22 @@ void main() {
           reason: 'the absolute bearing wins once the phone is flat again');
     });
 
-    test('an uncalibrated offset never anchors the heading', () async {
-      // A phone that has only been nudged: the field does not describe a circle,
-      // so nothing may be subtracted and nothing may drag the gyroscope track.
-      mag.add(MagnetometerEvent(0, 30, -154, clock));
+    test('an unusable field never anchors the heading', () async {
+      // A plausible field first, so there is a track worth protecting, then the
+      // kind of reading this handset produces: 157 µT with most of it on z. A
+      // bearing taken from that can be the opposite direction, so it may not
+      // drag the gyroscope track anywhere.
+      mag.add(MagnetometerEvent(0, 20, -46, clock));
       await Future<void>.delayed(Duration.zero);
       await turn(20);
       final double afterTurn = compass.heading!;
-      // A wildly different horizontal reading, which an uncalibrated bearing
-      // would chase.
       for (int i = 0; i < 20; i++) {
         clock = clock.add(const Duration(milliseconds: 100));
         mag.add(MagnetometerEvent(-24, 6, -154, clock));
         await Future<void>.delayed(Duration.zero);
       }
       expect(apart(compass.heading!, afterTurn), lessThan(3),
-          reason: 'no calibration, no anchor: the turn is what is trusted');
+          reason: 'a 157 µT field is not a bearing, so it anchors nothing');
     });
 
   });
@@ -305,7 +305,7 @@ void main() {
     )..start();
     final DateTime now = DateTime(2026, 11, 11, 23, 59);
     acc.add(AccelerometerEvent(0, 0, 9.81, now));
-    mag.add(MagnetometerEvent(0, 30, -154, now));
+    mag.add(MagnetometerEvent(0, 20, -46, now));
     await Future<void>.delayed(Duration.zero);
     expect(compass.hasHeading, isTrue);
 
@@ -318,6 +318,60 @@ void main() {
     await mag.close();
     await acc.close();
     await gyro.close();
+  });
+
+  group('a field that cannot be believed', () {
+    test('a 157 µT reading starts no dial and anchors none', () async {
+      final StreamController<MagnetometerEvent> mag =
+          StreamController<MagnetometerEvent>.broadcast();
+      final StreamController<AccelerometerEvent> acc =
+          StreamController<AccelerometerEvent>.broadcast();
+      final StreamController<GyroscopeEvent> gyro =
+          StreamController<GyroscopeEvent>.broadcast();
+      final CompassHeading compass = CompassHeading(
+        magnetometer: mag.stream,
+        accelerometer: acc.stream,
+        gyroscope: gyro.stream,
+        staleAfter: const Duration(seconds: 30),
+      )..start();
+      final DateTime now = DateTime(2026, 11, 12, 0, 30);
+      acc.add(AccelerometerEvent(0, 0, 9.81, now));
+      mag.add(MagnetometerEvent(3.6, 2.1, -157.8, now));
+      await Future<void>.delayed(Duration.zero);
+      expect(compass.fieldTrusted, isFalse);
+      expect(compass.disturbed, isTrue);
+      expect(compass.hasHeading, isFalse,
+          reason: 'north-up is the honest dial when the field is 3x the Earth');
+      compass.dispose();
+      await mag.close();
+      await acc.close();
+      await gyro.close();
+    });
+
+    test('a plausible field is believed straight away', () async {
+      final StreamController<MagnetometerEvent> mag =
+          StreamController<MagnetometerEvent>.broadcast();
+      final StreamController<AccelerometerEvent> acc =
+          StreamController<AccelerometerEvent>.broadcast();
+      final StreamController<GyroscopeEvent> gyro =
+          StreamController<GyroscopeEvent>.broadcast();
+      final CompassHeading compass = CompassHeading(
+        magnetometer: mag.stream,
+        accelerometer: acc.stream,
+        gyroscope: gyro.stream,
+      )..start();
+      final DateTime now = DateTime(2026, 11, 12, 0, 30);
+      acc.add(AccelerometerEvent(0, 0, 9.81, now));
+      mag.add(MagnetometerEvent(0, 20, -46, now));
+      await Future<void>.delayed(Duration.zero);
+      expect(compass.fieldTrusted, isTrue);
+      expect(compass.hasHeading, isTrue);
+      expect(apart(compass.heading!, 0), lessThan(1));
+      compass.dispose();
+      await mag.close();
+      await acc.close();
+      await gyro.close();
+    });
   });
 
   test('no heading means north is up and nothing rotates', () {

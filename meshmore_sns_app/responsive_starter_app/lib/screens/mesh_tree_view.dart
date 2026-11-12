@@ -116,6 +116,9 @@ class _MeshTreeViewState extends State<MeshTreeView> {
   final Map<String, NodePosition> _positions = <String, NodePosition>{};
   final TransformationController _transform = TransformationController();
   RadialLayout? _radial;
+
+  /// Who gets a name drawn; see `_labelsFor`.
+  Set<String> _labels = const <String>{'self'};
   int _lastGraphSignature = 0;
   Size _lastSize = Size.zero;
 
@@ -140,7 +143,7 @@ class _MeshTreeViewState extends State<MeshTreeView> {
   /// Scale + pan the InteractiveViewer so every node fits the
   /// viewport with padding. Lerped toward the target each frame so
   /// the framing eases as the layout settles instead of snapping.
-  void _fitToContent() {
+  void _fitToContent({bool immediate = false}) {
     if (_positions.isEmpty || _lastSize == Size.zero) return;
     double minX = double.infinity, minY = double.infinity;
     double maxX = -double.infinity, maxY = -double.infinity;
@@ -166,7 +169,7 @@ class _MeshTreeViewState extends State<MeshTreeView> {
     // Matrix4 storage is column-major; translation x/y live at 12/13.
     final double curTx = cur.storage[12];
     final double curTy = cur.storage[13];
-    const double k = 0.18; // lerp factor — smooth easing
+    final double k = immediate ? 1.0 : 0.18;
     final double ns = curScale + (target - curScale) * k;
     final double ntx = curTx + (tTx - curTx) * k;
     final double nty = curTy + (tTy - curTy) * k;
@@ -177,6 +180,29 @@ class _MeshTreeViewState extends State<MeshTreeView> {
       ..setEntry(1, 1, ns) // scale y
       ..setEntry(0, 3, ntx) // translate x
       ..setEntry(1, 3, nty); // translate y
+    if (immediate && mounted) setState(() {});
+  }
+
+  /// Who gets a name drawn, and who is just a mark.
+  ///
+  /// A hand-sized mesh labels everyone. A public mesh with two hundred peers on
+  /// one ring cannot: at 197 labels the text covers the whole dial and the
+  /// picture stops being a tree. So the cap sorts by *depth* first — the rings
+  /// nearest the radio keep their names — and the rest are marks you tap. Every
+  /// favourite and known contact is always named, because those are the ones a
+  /// reader is looking for.
+  static Set<String> _labelsFor(RadialLayout radial, MeshGraph g) {
+    final List<RadialPlace> ordered = radial.places.toList()
+      ..sort((RadialPlace a, RadialPlace b) {
+        final int d = (a.depth < 0 ? 999 : a.depth)
+            .compareTo(b.depth < 0 ? 999 : b.depth);
+        return d != 0 ? d : a.id.compareTo(b.id);
+      });
+    const int cap = 60;
+    return <String>{
+      'self',
+      for (final RadialPlace p in ordered.take(cap)) p.id,
+    };
   }
 
   @override
@@ -231,7 +257,14 @@ class _MeshTreeViewState extends State<MeshTreeView> {
       ..clear()
       ..addAll(next);
     _radial = radial;
-    if (_autoFit) _fitToContent();
+    _labels = _labelsFor(radial, g);
+    if (_autoFit) {
+      // Straight to the framing, not lerped: the layout arrives complete, so
+      // there is no settling to ease through. The ticker that used to do this
+      // every frame is gone with the force simulation.
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _fitToContent(immediate: true));
+    }
   }
 
   void _maybeShowDetail(MeshcoreController mc, Offset tap) {
@@ -346,6 +379,7 @@ class _MeshTreeViewState extends State<MeshTreeView> {
                         painter: _MeshTreePainter(
                           type: context.skin.type,
                           radial: _radial,
+                          labels: _labels,
                           textScale: MediaQuery.textScalerOf(context).scale(1),
                           graph: graph,
                           positions: _positions,
@@ -550,6 +584,7 @@ class _MeshTreePainter extends CustomPainter {
     required this.type,
     required this.textScale,
     required this.radial,
+    required this.labels,
     required this.graph,
     required this.positions,
     required this.knownPubKeys,
@@ -575,6 +610,10 @@ class _MeshTreePainter extends CustomPainter {
 
   /// The hop rings, so the canvas can draw and label them.
   final RadialLayout? radial;
+
+  /// The nodes whose names are drawn. See `_labelsFor` for why this is a cap
+  /// rather than everything.
+  final Set<String> labels;
 
   final MeshGraph graph;
   final Map<String, NodePosition> positions;
@@ -684,7 +723,8 @@ class _MeshTreePainter extends CustomPainter {
       if (n.isSelf) {
         canvas.drawCircle(c, 3.0, Paint()..color = style.colour);
       }
-      // Label.
+      // Label, if this node is inside the cap.
+      if (!labels.contains(n.id)) continue;
       final TextPainter tp = TextPainter(
         text: TextSpan(
           text: n.label,

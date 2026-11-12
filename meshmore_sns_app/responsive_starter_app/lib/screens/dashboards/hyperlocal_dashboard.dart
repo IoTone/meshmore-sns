@@ -265,16 +265,17 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
       if (d != null && maxMeters != null) {
         frac = (d / maxMeters).clamp(0.08, 0.97);
       } else {
-        frac = switch (prox) {
-          NodeProximity.near => 0.30,
-          NodeProximity.recent => 0.42,
-          NodeProximity.mid => 0.66,
-          NodeProximity.far => 0.92,
-          NodeProximity.unknown => 0.80,
-        };
-        // Deterministic jitter so same-band peers don't stack.
-        frac = (frac + _hashUnit(n.pubKeyHex, 1) * 0.10 - 0.05)
-            .clamp(0.08, 0.97);
+        // No distance, so the radius is a *band* rather than a value: each
+        // node gets its own place inside the band its proximity implies.
+        //
+        // One value per band put every peer the radio has no position for on a
+        // single circle — on the handset, 196 of them drew as a clean ring
+        // around the rim, which reads as a rendering fault rather than as a
+        // reading. The band says the same thing and looks like the scatter it
+        // is, and "unknown" is spread across the whole dial because that is
+        // exactly what is known about it.
+        frac = radarPlaceholderFraction(
+            prox, n.pubKeyHex, (String k, int seed) => _hashUnit(k, seed));
       }
       final double angle =
           bearing[n.pubKeyHex] ?? (_hashUnit(n.pubKeyHex, 7) * 2 * math.pi);
@@ -609,7 +610,13 @@ class _RadarPainter extends CustomPainter {
       old.sweep != sweep ||
       old.blips != blips ||
       old.maxR != maxR ||
-      old.center != center;
+      old.center != center ||
+      // The dial turns with the phone. Without this a heading change was only
+      // picked up because the sweep animation forced a repaint every frame, so
+      // with reduce-motion on — where `sweep` is null and never changes — the
+      // whole radar froze at whatever heading it was built with.
+      old.headingDegrees != headingDegrees ||
+      old.northMarker != northMarker;
 }
 
 class _TopBar extends StatelessWidget {
@@ -772,6 +779,31 @@ class _StatusRail extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Where a peer sits on the dial when the app has no distance for it.
+///
+/// The radius is a *band* per proximity, and each node takes its own place
+/// inside the band. One value per band put every peer the radio had no position
+/// for on a single circle — on the handset 196 of them drew as a clean ring
+/// around the rim, which reads as a rendering fault rather than as a reading.
+/// `unknown` is spread across the whole dial because that is exactly what is
+/// known about it, and every other band stays inside itself so the proximity
+/// still means something.
+@visibleForTesting
+double radarPlaceholderFraction(
+  NodeProximity prox,
+  String pubKey,
+  double Function(String key, int seed) hashUnit,
+) {
+  final (double start, double width) band = switch (prox) {
+    NodeProximity.near => (0.16, 0.22),
+    NodeProximity.recent => (0.32, 0.24),
+    NodeProximity.mid => (0.52, 0.24),
+    NodeProximity.far => (0.74, 0.22),
+    NodeProximity.unknown => (0.22, 0.72),
+  };
+  return (band.$1 + hashUnit(pubKey, 1) * band.$2).clamp(0.08, 0.97);
 }
 
 /// One callout line, ellipsised at [maxWidth].

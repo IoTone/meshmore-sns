@@ -3815,6 +3815,7 @@
   "fujiUnknownShort": "Striped · no altitude",
   "chatSpeechOffAction": "Speech is off in App settings",
   "nodeDetailAltitudeNotReported": "not reported",
+  "gridCompassDisturbed": "No heading — the magnetic field here is too strong. Turn the phone in a figure 8, away from magnets.",
   "gridPurposeRadial": "How far each node is, and how long ago it was heard.",
   "gridPurposeWeather": "Temperature, humidity and pressure, from nodes that report them.",
   "gridPurposeTree": "How nodes reach each other, from the routes they advertise.",

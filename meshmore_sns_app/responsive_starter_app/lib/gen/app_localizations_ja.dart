@@ -5355,6 +5355,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailAltitudeNotReported => '報告されません';
 
   @override
+  String get gridCompassDisturbed =>
+      '方位が取れません — ここは磁場が強すぎます。磁石から離れて、端末を 8 の字に回してください。';
+
+  @override
   String get gridPurposeRadial => '各ノードまでの距離と、最後に聞こえた時刻。';
 
   @override

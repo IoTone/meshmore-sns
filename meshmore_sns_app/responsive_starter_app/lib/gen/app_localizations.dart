@@ -9334,6 +9334,12 @@ abstract class AppLocalizations {
   /// **'not reported'**
   String get nodeDetailAltitudeNotReported;
 
+  /// No description provided for @gridCompassDisturbed.
+  ///
+  /// In en, this message translates to:
+  /// **'No heading — the magnetic field here is too strong. Turn the phone in a figure 8, away from magnets.'**
+  String get gridCompassDisturbed;
+
   /// No description provided for @gridPurposeRadial.
   ///
   /// In en, this message translates to:

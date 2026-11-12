@@ -2487,6 +2487,7 @@
   "fujiUnknownShort": "縞 · 標高なし",
   "chatSpeechOffAction": "読み上げはアプリ設定でオフです",
   "nodeDetailAltitudeNotReported": "報告されません",
+  "gridCompassDisturbed": "方位が取れません — ここは磁場が強すぎます。磁石から離れて、端末を 8 の字に回してください。",
   "gridPurposeRadial": "各ノードまでの距離と、最後に聞こえた時刻。",
   "gridPurposeWeather": "温度・湿度・気圧（報告するノードのみ）。",
   "gridPurposeTree": "ノード同士の経路（広告されたルートより）。",

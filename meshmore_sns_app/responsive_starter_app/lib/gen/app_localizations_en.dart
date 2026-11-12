@@ -5581,6 +5581,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodeDetailAltitudeNotReported => 'not reported';
 
   @override
+  String get gridCompassDisturbed =>
+      'No heading — the magnetic field here is too strong. Turn the phone in a figure 8, away from magnets.';
+
+  @override
   String get gridPurposeRadial =>
       'How far each node is, and how long ago it was heard.';
 
