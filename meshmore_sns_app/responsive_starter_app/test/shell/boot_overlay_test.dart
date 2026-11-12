@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/meshcore/reconnect_policy.dart';
 import 'package:meshmore_sns_app/shell/boot_overlay.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
@@ -72,6 +73,53 @@ void main() {
     expect(log, <String>['init'],
         reason: 'the shell must not be rebuilt as a second State');
     mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
+  // The overlay is a launch screen, not a gate. Measured on the handset: a
+  // paired radio that was out of range left the whole app behind a spinner for
+  // the length of the reconnect ladder (about two and a half minutes), and the
+  // only way through was the SKIP button.
+  testWidgets('a launch that never settles stops covering the app',
+      (WidgetTester t) async {
+    final MeshcoreController mc = MeshcoreController(
+      reconnectPolicy: ReconnectPolicy(
+        base: const Duration(milliseconds: 1),
+        random: () => 1.0,
+        maxAttempts: 20,
+      ),
+      reconnectDelay: (Duration d) async {},
+      transportFactory: () async => throw StateError('radio is out of range'),
+    );
+    addTearDown(mc.dispose);
+    await t.pumpWidget(
+      ChangeNotifierProvider<MeshcoreController>.value(
+        value: mc,
+        child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: LocaleController.supported,
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const BootOverlay(child: Text('shell')),
+        ),
+      ),
+    );
+    await t.pump();
+    // A paired radio that will not answer: the ladder keeps trying, and the
+    // overlay has to give the app back on its own.
+    await mc.connect();
+    await t.pump(const Duration(seconds: 1));
+    expect(find.text('boot'), findsNothing);
+    await t.pump(const Duration(seconds: 10));
+    await t.pump(const Duration(milliseconds: 500));
+    expect(find.text('shell'), findsOneWidget);
+    expect(find.text('CONNECTING TO RADIO…'), findsNothing,
+        reason: 'the launch screen gave the app back');
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));
   });

@@ -283,10 +283,11 @@ class _SnsCellsViewState extends State<SnsCellsView>
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: cs.surface.withValues(alpha: .85),
+              // Solid: the status chip sits on the cells canvas, where a 85 %
+              // wash let the cell fills read through its own digits.
+              color: cs.surface,
               borderRadius: mmRadius(context, 6),
-              border:
-                  Border.all(color: cs.outline.withValues(alpha: .55)),
+              border: Border.all(color: cs.outline),
             ),
             child: Text(
               l.snsCellsStatus(heat.length, hotCells),

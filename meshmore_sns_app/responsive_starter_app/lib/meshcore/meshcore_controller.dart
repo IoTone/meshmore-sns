@@ -4897,7 +4897,6 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   }
 
   void _ingestNode(MeshcoreInbound f) {
-    final int now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     if (f is ContactFrame) {
       final Contact c = f.contact;
       // R56 — a key the user reconciled away. The radio is asked to remove
@@ -4910,7 +4909,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       // per-contact telemetry permissions (R54 follow-on).
       _contacts[_hex(c.publicKey)] = c;
       _saveContactsSoon();
-      _nodes[_hex(c.publicKey)] = _nodeFromContact(c, now: now);
+      _nodes[_hex(c.publicKey)] = _nodeFromContact(c);
     } else if (f is AdvertFrame) {
       _upsertAdvert(f.advert);
     } else if (f is RfLogFrame) {
@@ -4936,17 +4935,24 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// RSSI/SNR/altitude, and it reports (0,0) for a node that hides its position.
   /// `lastAdvertTimestamp` is in the device clock, so it is translated through
   /// the learned offset (0 until `CURR_TIME`).
-  DiscoveredNode _nodeFromContact(Contact c, {int? now}) {
+  DiscoveredNode _nodeFromContact(Contact c) {
     final String hex = _hex(c.publicKey);
     final DiscoveredNode? prev = _nodes[hex];
-    final int stamp =
-        now ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final int adv = c.lastAdvertTimestamp;
     return DiscoveredNode(
       pubKeyHex: hex,
       name: c.name,
       type: c.type,
-      lastHeardUnix: adv == 0 ? stamp : adv + _deviceClockOffsetSec,
+      // An advert time of zero is the firmware's "never", not "now". Reporting
+      // it as `stamp` claimed a hearing that did not happen: measured on the
+      // handset, every contact-synced node in the list read "0s" and the
+      // recency badge called all of them recently heard. What the record does
+      // not carry is preserved from the previous entry, exactly as the rest of
+      // this method does with RSSI, SNR and altitude; failing that it stays
+      // unknown and the list says so.
+      lastHeardUnix: adv == 0
+          ? (prev?.lastHeardUnix ?? 0)
+          : adv + _deviceClockOffsetSec,
       deviceAdvertUnix: adv == 0 ? null : adv,
       latitude:
           c.latitudeMicros == 0 ? prev?.latitude : c.latitudeMicros / 1e6,

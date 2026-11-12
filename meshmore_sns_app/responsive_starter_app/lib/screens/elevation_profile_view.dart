@@ -249,10 +249,12 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: cs.surface.withValues(alpha: .85),
+                        // Solid and the control-border tier: this chip sits on
+                        // the chart's own grid and profile line, and at 85 %
+                        // both showed through the words.
+                        color: cs.surface,
                         borderRadius: mmRadius(context, 6),
-                        border: Border.all(
-                            color: cs.outline.withValues(alpha: .55)),
+                        border: Border.all(color: cs.outline),
                       ),
                       child: DefaultTextStyle(
                         style: TextStyle(

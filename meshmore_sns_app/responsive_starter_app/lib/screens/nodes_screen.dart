@@ -56,7 +56,13 @@ class _NodesScreenState extends State<NodesScreen> {
   /// heard", which is not an age.
   String _ago(int unix) {
     if (unix <= 0) return '—';
-    return compactAgo(ageSinceUnix(unix));
+    final Duration age = ageSinceUnix(unix);
+    // A stamp in the future is the phone and the radio disagreeing about the
+    // clock, not a hearing that has not happened yet. `readAge` folds a
+    // negative age into "0s", which reads as "heard just now" on every row of a
+    // table synced from a radio whose clock runs ahead.
+    if (age < const Duration(seconds: -60)) return '—';
+    return compactAgo(age);
   }
 
   bool _passesFilters(

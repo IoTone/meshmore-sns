@@ -1,5 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -67,8 +68,30 @@ class _BootOverlayState extends State<BootOverlay>
   /// signal "they actively asked me to leave").
   bool _skipped = false;
 
+  /// How long the overlay may sit on a launch that has not settled.
+  ///
+  /// The overlay exists to cover the app while the radio link comes up, and the
+  /// reconnect ladder is allowed to run for about two and a half minutes. That
+  /// is a fine rule for a background retry and a bad one for a launch screen:
+  /// measured on the handset with a paired radio that was out of range, the
+  /// whole app sat behind a spinner and the only way through was a SKIP button.
+  /// The app is offline-first, so after this the dashboard takes over and its
+  /// own slab says what the link is doing.
+  static const Duration _patience = Duration(seconds: 8);
+
+  Timer? _patienceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _patienceTimer = Timer(_patience, () {
+      if (mounted) _beginFadeOut();
+    });
+  }
+
   @override
   void dispose() {
+    _patienceTimer?.cancel();
     _spin.dispose();
     _fade.dispose();
     super.dispose();
@@ -109,7 +132,18 @@ class _BootOverlayState extends State<BootOverlay>
             !mc.isConnecting &&
             !mc.hasPairedDevice;
 
-    if ((ready || quiescent) &&
+    // **A radio that is paired and unreachable is not boot work.** Measured on
+    // the handset: the overlay sat on top of a perfectly usable app for the
+    // whole reconnect ladder (about two and a half minutes) because the state
+    // it waits for never arrives, and once the ladder gave up it sat there
+    // still, with only SKIP as the way through. The dashboard already has a slab
+    // that says LINK LOST and offers Retry, and the stored chats, places and
+    // maps do not need a radio, so the moment an attempt has failed the overlay
+    // gets out of the way.
+    final bool linkSettled = mc.state == MeshcoreConnectionState.failed ||
+        mc.gaveUp;
+
+    if ((ready || quiescent || linkSettled) &&
         !_skipped &&
         _fade.value > 0 &&
         !_fade.isAnimating) {

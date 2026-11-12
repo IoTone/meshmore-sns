@@ -26,6 +26,7 @@ import '../notifications/notification_focus.dart';
 import '../theme/mm_skin.dart';
 import '../util/clock_model.dart';
 import '../tts/tts_controller.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import 'node_detail_sheet.dart';
 import 'package:meshcore/meshcore.dart';
@@ -622,28 +623,32 @@ class _SpeechMenu extends StatelessWidget {
     final PeerSpeechMode mode = tts.peerSpeechMode(peerPubKeyHex);
     final bool audible = tts.peerSpeaks(peerPubKeyHex);
     final bool mastered = mode != PeerSpeechMode.never && !tts.speechAudible;
-    return PopupMenuButton<PeerSpeechMode>(
+    // A choice of three, so it is the app's picker rather than a menu: the
+    // same rule the map's basemap list follows. The menu had no tick on the
+    // current mode and no group name, and a popup cannot say either.
+    return IconButton(
       tooltip: mastered ? l.dmSpeechMutedByMaster : l.dmSpeech,
       icon: Icon(
         audible ? Icons.record_voice_over : Icons.voice_over_off,
         color: mastered ? Theme.of(context).colorScheme.error : null,
       ),
-      initialValue: mode,
-      onSelected: (PeerSpeechMode m) => tts.setPeerSpeechMode(peerPubKeyHex, m),
-      itemBuilder: (BuildContext _) => <PopupMenuEntry<PeerSpeechMode>>[
-        PopupMenuItem<PeerSpeechMode>(
-          value: PeerSpeechMode.inherit,
-          child: Text(l.dmSpeechInherit),
-        ),
-        PopupMenuItem<PeerSpeechMode>(
-          value: PeerSpeechMode.always,
-          child: Text(l.dmSpeechAlways),
-        ),
-        PopupMenuItem<PeerSpeechMode>(
-          value: PeerSpeechMode.never,
-          child: Text(l.dmSpeechNever),
-        ),
-      ],
+      onPressed: () async {
+        final PeerSpeechMode? picked = await showMmPicker<PeerSpeechMode>(
+          context: context,
+          title: l.dmSpeech,
+          current: mode,
+          items: <MmPickerItem<PeerSpeechMode>>[
+            MmPickerItem<PeerSpeechMode>.option(
+                PeerSpeechMode.inherit, l.dmSpeechInherit),
+            MmPickerItem<PeerSpeechMode>.option(
+                PeerSpeechMode.always, l.dmSpeechAlways),
+            MmPickerItem<PeerSpeechMode>.option(
+                PeerSpeechMode.never, l.dmSpeechNever),
+          ],
+        );
+        if (picked == null) return;
+        tts.setPeerSpeechMode(peerPubKeyHex, picked);
+      },
     );
   }
 }

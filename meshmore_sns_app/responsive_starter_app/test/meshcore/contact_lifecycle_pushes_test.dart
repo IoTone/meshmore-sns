@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore/meshcore.dart';
+import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -50,6 +51,53 @@ void main() {
   }
 
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
+
+  // A contact record that has never advertised carries `lastAdvertTimestamp:
+  // 0`, which is the firmware's "never". Reporting it as the phone's clock at
+  // sync time made every contact-synced node read "0s" in the list and put it
+  // in the recency tier of the proximity badge — a hearing that did not happen.
+  test('a contact that never advertised has no heard time', () async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await connected(fake);
+    fake.emit(contactFrame(
+        name: 'Never', firstPubByte: 0x70, lastAdvertTs: 0));
+    await settle();
+    final String hex = List<int>.generate(32, (int i) => (0x70 + i) & 0xFF)
+        .map((int b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+    final DiscoveredNode n = mc.nodes.firstWhere((DiscoveredNode d) => d.pubKeyHex == hex);
+    expect(n.lastHeardUnix, 0,
+        reason: 'unknown is 0, not the moment the table arrived');
+    expect(n.recentlyHeard, isFalse,
+        reason: 'a node nobody heard is not recently heard');
+    mc.dispose();
+  });
+
+  test('a contact synced again keeps the heard time it already had', () async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await connected(fake);
+    fake.emit(advertFrameAt(
+        name: 'Heard', firstPubByte: 0x80, lat: 39.7, lon: -104.9));
+    await settle();
+    final String hex = List<int>.generate(32, (int i) => (0x80 + i) & 0xFF)
+        .map((int b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+    final int heard = mc.nodes
+        .firstWhere((DiscoveredNode d) => d.pubKeyHex == hex)
+        .lastHeardUnix;
+    expect(heard, greaterThan(0));
+    // The radio's table now describes the same key with no advert time, which
+    // must not overwrite a hearing the app itself witnessed.
+    fake.emit(contactFrame(
+        name: 'Heard', firstPubByte: 0x80, lastAdvertTs: 0));
+    await settle();
+    expect(
+        mc.nodes
+            .firstWhere((DiscoveredNode d) => d.pubKeyHex == hex)
+            .lastHeardUnix,
+        heard);
+    mc.dispose();
+  });
 
   test('a contact the radio deleted stops being a contact', () async {
     final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
