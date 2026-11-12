@@ -53,6 +53,7 @@ import '../bot/bot_tag.dart';
 import '../theme/mm_skin.dart';
 import '../theme/mm_tokens.dart';
 import '../tts/tts_controller.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/clock_model.dart';
 import '../util/share.dart';
@@ -751,7 +752,11 @@ class _ChatScreenState extends State<ChatScreen>
                       selected: ch.key == active,
                       button: true,
                       excludeSemantics: true,
-                      child: ChoiceChip(
+                      // The label ink comes from MmChoiceChip rather than
+                      // from a local pair: one chip naming its own colours is
+                      // how the places sheet ended up with a light label on a
+                      // light fill.
+                      child: MmChoiceChip(
                         label: Text(ch.value),
                         selected: ch.key == active,
                         avatar: (unread[ch.key] ?? 0) > 0
@@ -761,12 +766,6 @@ class _ChatScreenState extends State<ChatScreen>
                                 onSelectedColor: ch.key == active,
                               )
                             : null,
-                        labelStyle: TextStyle(
-                          color: ch.key == active ? cs.onPrimary : cs.onSurface,
-                          fontWeight: ch.key == active
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        ),
                         onSelected: (_) => mc.setActiveChannel(ch.key),
                       ),
                     ),
@@ -938,13 +937,20 @@ class _ChatScreenState extends State<ChatScreen>
                   // control that does nothing, so the slot says why and opens
                   // the screen that turns it on. Losing this left a control
                   // that simply vanished for the user who switched speech off.
+                  //
+                  // The icon is the *settings* one, not a muted speaker. It
+                  // wears `volume_off` until the owner read it on the phone: a
+                  // speaker glyph in a toolbar promises a toggle, and this
+                  // button navigates. The state is in the tooltip, which is
+                  // also the row's label for a screen reader.
                   Padding(
                     padding: const EdgeInsets.only(left: 4),
                     child: IconButton(
                       key: const ValueKey<String>('chat-speech-off'),
                       tooltip: l.chatSpeechOffAction,
                       onPressed: () => context.push('/settings/app'),
-                      icon: Icon(Icons.volume_off, color: cs.onSurfaceVariant),
+                      icon: Icon(Icons.settings_outlined,
+                          color: cs.onSurfaceVariant),
                     ),
                   ),
               ],
@@ -1025,81 +1031,143 @@ class _ChatScreenState extends State<ChatScreen>
                       connecting: context.select<MeshcoreController, bool>(
                           (MeshcoreController mc) => mc.isConnecting),
                     )
-                  : Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Column(
+                  : LayoutBuilder(
+                      builder: (BuildContext c, BoxConstraints box) {
+                        // The field and three 48 dp buttons cannot share a
+                        // 320 dp row at 200 % text without the field shrinking
+                        // to the width of its own icon. Measured, not guessed:
+                        // the floor is what the hint needs on one line, and
+                        // below it the buttons take their own row instead of
+                        // the field being cut.
+                        final double fieldNeed = _fieldFloor(context);
+                        final double fieldRoom =
+                            box.maxWidth - _composerActionsWidth;
+                        final bool stacked = fieldRoom < fieldNeed;
+                        final Widget field = Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            TextField(
+                              controller: _input,
+                              textInputAction: TextInputAction.send,
+                              onSubmitted: (_) => _send(mc),
+                              decoration: composerFieldDecoration(context,
+                                  hint: l.chatComposerHint(activeName)),
+                            ),
+                            ComposerCounter(
+                              budget: _budget,
+                              text: _input.text,
+                              label: l,
+                            ),
+                          ],
+                        );
+                        if (stacked) {
+                          return Column(
                             mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: <Widget>[
-                              TextField(
-                                controller: _input,
-                                textInputAction: TextInputAction.send,
-                                onSubmitted: (_) => _send(mc),
-                                decoration: composerFieldDecoration(context,
-                                    hint: l.chatComposerHint(activeName)),
-                              ),
-                              ComposerCounter(
-                                budget: _budget,
-                                text: _input.text,
-                                label: l,
+                              field,
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: <Widget>[
+                                  ..._composerActions(context, mc, l),
+                                ],
                               ),
                             ],
-                          ),
+                          );
+                        }
+                        return Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: field,
                         ),
-                        IconButton(
-                          key: const ValueKey<String>('chat-voice'),
-                          tooltip: l.voiceTitle,
-                          onPressed: ready ? () => _openVoice(mc) : null,
-                          icon: const Icon(Icons.mic_none_outlined),
-                        ),
-                        IconButton(
-                          key: const ValueKey<String>('chat-attach'),
-                          tooltip: l.mediaComposerTitle,
-                          onPressed: ready
-                              ? () => MediaComposer.show(
-                                    context,
-                                    service: _media,
-                                    // The platform picker where this build has
-                                    // one, and a named "cannot read a photo"
-                                    // state where it does not, so a harness
-                                    // never reaches a plugin.
-                                    source: context.read<MediaPhotoSource?>() ??
-                                        kNoMediaPhotoSource,
-                                    channelPsk: mc.channelPsk(mc.activeChannel),
-                                    byteBudget: kMediaPhotoBudgetBytes,
-                                    sendBlob: (Uint8List blob) =>
-                                        mc.sendChannelData(
-                                      channelIdx: mc.activeChannel,
-                                      dataType: kChannelDataTypeDev,
-                                      blob: blob,
-                                    ),
-                                  )
-                              : null,
-                          icon: const Icon(Icons.add_photo_alternate_outlined),
-                        ),
-                        // The send control states whether it can act. It
-                        // used to be enabled with an empty field and with text
-                        // over the radio's byte budget, and `_send` returned
-                        // in silence in both cases: a control that looks
-                        // pressable and does nothing. The counter under the
-                        // field already says how far over the budget the text
-                        // is, so disabling here hides no explanation.
-                        IconButton(
-                          tooltip: l.chatSend,
-                          onPressed: _input.text.trim().isEmpty ||
-                                  !_budget.canSend(_input.text)
-                              ? null
-                              : () => _send(mc),
-                          icon: const Icon(Icons.send),
-                        ),
+                        ..._composerActions(context, mc, l),
                       ],
+                    );
+                      },
                     ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// The three composer actions, in order, as they appear on their row.
+  List<Widget> _composerActions(
+      BuildContext context, MeshcoreController mc, AppLocalizations l) {
+    final MeshcoreController m = mc;
+    final bool ready = m.isReady;
+    return <Widget>[
+      IconButton(
+        key: const ValueKey<String>('chat-voice'),
+        tooltip: l.voiceTitle,
+        onPressed: ready ? () => _openVoice(m) : null,
+        icon: const Icon(Icons.mic_none_outlined),
+      ),
+      IconButton(
+        key: const ValueKey<String>('chat-attach'),
+        tooltip: l.mediaComposerTitle,
+        onPressed: ready
+            ? () => MediaComposer.show(
+                  context,
+                  service: _media,
+                  // The platform picker where this build has one, and a named
+                  // "cannot read a photo" state where it does not, so a harness
+                  // never reaches a plugin.
+                  source: context.read<MediaPhotoSource?>() ??
+                      kNoMediaPhotoSource,
+                  channelPsk: m.channelPsk(m.activeChannel),
+                  byteBudget: kMediaPhotoBudgetBytes,
+                  sendBlob: (Uint8List blob) => m.sendChannelData(
+                    channelIdx: m.activeChannel,
+                    dataType: kChannelDataTypeDev,
+                    blob: blob,
+                  ),
+                )
+            : null,
+        icon: const Icon(Icons.add_photo_alternate_outlined),
+      ),
+      // The send control states whether it can act. It used to be enabled with
+      // an empty field and with text over the radio's byte budget, and `_send`
+      // returned in silence in both cases: a control that looks pressable and
+      // does nothing. The counter under the field already says how far over the
+      // budget the text is, so disabling here hides no explanation.
+      IconButton(
+        tooltip: l.chatSend,
+        onPressed: _input.text.trim().isEmpty || !_budget.canSend(_input.text)
+            ? null
+            : () => _send(m),
+        icon: const Icon(Icons.send),
+      ),
+    ];
+  }
+
+  /// What three 48 dp buttons and their gaps take from the composer row.
+  static const double _composerActionsWidth = 48 * 3 + 8;
+
+  /// The width the field needs before the buttons take their own row: ten
+  /// characters at the field's own size, plus its inset and its two icon slots.
+  /// Ten is a word and a space — under that the field is a search box, and the
+  /// three actions beside it are what is eating the row.
+  ///
+  /// Measured from the real face at the real text scale rather than fixed in dp,
+  /// because the buttons do not grow with the text and the field does not
+  /// shrink with it either: at 200 % a 148 dp field holds four or five
+  /// characters, which is a search box, not a composer. At 1.0 text on the
+  /// owner's handset the same rule leaves the row exactly as it was.
+  static double _fieldFloor(BuildContext context) {
+    final TextStyle style = Theme.of(context).textTheme.bodyLarge ??
+        TextStyle(fontSize: context.skin.type.sizeLg);
+    final TextPainter p = TextPainter(
+      text: TextSpan(text: 'n' * 10, style: style),
+      textDirection: Directionality.of(context),
+      maxLines: 1,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final double need = p.width + 56;
+    p.dispose();
+    return need;
   }
 }
 

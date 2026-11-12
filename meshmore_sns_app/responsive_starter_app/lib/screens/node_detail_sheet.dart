@@ -1706,13 +1706,13 @@ class _SignaturePicker extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: <Widget>[
-            ChoiceChip(
+            MmChoiceChip(
               label: Text(l.nodeDetailSignatureNone),
               selected: current == null,
               onSelected: (_) => choose(null),
             ),
             for (int i = 0; i < kSignatureSlots.length; i++)
-              ChoiceChip(
+              MmChoiceChip(
                 label: Text(l.nodeDetailSignatureSlot(i + 1)),
                 selected: current == kSignatureSlots[i],
                 onSelected: (_) => choose(kSignatureSlots[i]),

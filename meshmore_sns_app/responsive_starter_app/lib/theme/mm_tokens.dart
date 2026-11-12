@@ -839,16 +839,23 @@ ThemeData buildMmTheme(MmTokens t, {String? fontFamily, MmShape? shape}) {
             const TextStyle(fontWeight: FontWeight.w600)),
       ),
     ),
-    // ChoiceChip (chat channel selector): same idea — solid accent fill
-    // with dark label + checkmark when selected, so the active chip
-    // stands out rather than blending into the unselected row.
+    // A chip is a fill and a label decided as a pair: solid accent fill with
+    // the ink the accent was defined against (`onAccent`), so the selected
+    // chip stands out rather than blending into the row.
+    //
+    // Flutter merges ONE `labelStyle` into every state of a chip
+    // (`chip.dart`, `resolveAs` over a plain Color), so a chip cannot get its
+    // selected label from here: every chip in the app is built through
+    // `MmFilterChip`/`MmChoiceChip`, which state both halves. A bare
+    // `FilterChip` in this app paints `fg` on `accent` and, on a pale-accent
+    // skin, vanishes — `test/ui/chip_label_contrast_test.dart` forbids one.
     chipTheme: ChipThemeData(
       backgroundColor: Colors.transparent,
       selectedColor: t.accent,
-      checkmarkColor: t.base,
+      checkmarkColor: t.onAccent,
       side: BorderSide(color: t.edge),
       labelStyle: TextStyle(color: t.fg),
-      secondaryLabelStyle: TextStyle(color: t.base),
+      secondaryLabelStyle: TextStyle(color: t.onAccent),
       shape: squareBorder ??
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     ),

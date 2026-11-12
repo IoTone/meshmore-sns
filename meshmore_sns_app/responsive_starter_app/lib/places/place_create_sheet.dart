@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
+import '../ui/mm_components.dart';
 import 'place.dart';
 import 'place_codec.dart';
 import 'place_sender.dart';
@@ -176,7 +177,7 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
             runSpacing: skin.space.step(2),
             children: <Widget>[
               for (final PlaceType t in PlaceType.values)
-                ChoiceChip(
+                MmChoiceChip(
                   key: ValueKey<String>('place-type-${t.token}'),
                   label: Text(placeTypeLabel(l, t)),
                   avatar: Icon(placeIcon(t), size: 16),
@@ -231,7 +232,7 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
               spacing: skin.space.step(2),
               children: <Widget>[
                 for (final PlacePrecision p in PlacePrecision.values)
-                  ChoiceChip(
+                  MmChoiceChip(
                     key: ValueKey<String>('place-precision-${p.decimals}'),
                     label: Text(switch (p) {
                       PlacePrecision.exact => l.placePrecisionExact,

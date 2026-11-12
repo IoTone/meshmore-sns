@@ -74,7 +74,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
                 spacing: skin.space.step(2),
                 children: <Widget>[
                   for (final int m in CheckinScreen.intervals)
-                    ChoiceChip(
+                    MmChoiceChip(
                       key: ValueKey<String>('checkin-interval-$m'),
                       label: Text(l.checkinInMinutes(m)),
                       selected: _minutes == m,

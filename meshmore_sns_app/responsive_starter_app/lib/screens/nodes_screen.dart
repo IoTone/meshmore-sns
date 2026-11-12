@@ -155,12 +155,12 @@ class _NodesScreenState extends State<NodesScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: <Widget>[
-                      FilterChip(
+                      MmFilterChip(
                         label: Text(l.nodesFilterStarred),
                         selected: _starredOnly,
                         onSelected: (bool v) => both(() => _starredOnly = v),
                       ),
-                      FilterChip(
+                      MmFilterChip(
                         label: Text(l.nodesFilterInRange),
                         selected: _inRangeOnly,
                         onSelected: (bool v) => both(() => _inRangeOnly = v),
@@ -178,7 +178,7 @@ class _NodesScreenState extends State<NodesScreen> {
                         (const Duration(hours: 24), l.nodesAge24h),
                         (const Duration(days: 7), l.nodesAge7d),
                       ])
-                        ChoiceChip(
+                        MmChoiceChip(
                           label: Text(opt.$2),
                           selected: _maxAge == opt.$1,
                           onSelected: (_) => both(() => _maxAge = opt.$1),
@@ -197,7 +197,7 @@ class _NodesScreenState extends State<NodesScreen> {
                         (5000, l.nodesDist5km),
                         (25000, l.nodesDist25km),
                       ])
-                        ChoiceChip(
+                        MmChoiceChip(
                           label: Text(opt.$2),
                           selected: _maxDistanceMeters == opt.$1,
                           onSelected: (_) =>
@@ -212,7 +212,7 @@ class _NodesScreenState extends State<NodesScreen> {
                       runSpacing: 8,
                       children: <Widget>[
                         for (final String t in mc.allTags)
-                          FilterChip(
+                          MmFilterChip(
                             label: Text(t),
                             selected: _selectedTags.contains(t),
                             onSelected: (bool v) => both(() {
@@ -431,6 +431,10 @@ class _NodesScreenState extends State<NodesScreen> {
                           },
                         ),
                   hintText: l.nodesSearchHint,
+                  // The hint is an example of what you can type, so it is a
+                  // sentence rather than a label: two lines at 200 % text
+                  // instead of "Search by name, shor…".
+                  hintMaxLines: 2,
                   border: const OutlineInputBorder(),
                 ),
               ),
@@ -570,12 +574,20 @@ class _NodesScreenState extends State<NodesScreen> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Text(<String>[
-                              n.typeLabel,
-                              if (distance != null) distance,
-                            ].join(' · '),
-                                style: TextStyle(
-                                    color: cs.onSurfaceVariant)),
+                            // Two facts, so they break between themselves
+                            // rather than wherever the width runs out: at
+                            // 200 % text the old single string wrapped after
+                            // "Repeater ·" and left the distance alone on a
+                            // second line, which reads as a second row.
+                            MmValueFields(
+                              fields: <String>[
+                                n.typeLabel,
+                                if (distance != null) distance,
+                              ],
+                              separator: '  ·  ',
+                              mono: false,
+                              color: cs.onSurfaceVariant,
+                            ),
                             if (n.signalLabel.isNotEmpty)
                               Text(n.signalLabel,
                                   style: TextStyle(

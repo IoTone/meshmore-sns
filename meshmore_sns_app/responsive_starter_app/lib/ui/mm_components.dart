@@ -71,40 +71,56 @@ class MmSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
-    final Widget labelWidget = Text(
-      skin.type.upperHeadings ? label.toUpperCase() : label,
-      style: mmSectionLabelStyle(skin),
-    );
-    // The label is the one unbounded child: at 200 % text a heading like
-    // "PERMISSIONS AND WHY" is wider than a 320 dp phone, and a bare Row
-    // overflowed by 370 px instead of wrapping.
+    final String shown =
+        skin.type.upperHeadings ? label.toUpperCase() : label;
+    final Widget labelWidget = Text(shown, style: mmSectionLabelStyle(skin));
+    // The label is the content and the ornament is not, so the label takes
+    // every pixel the ornament and the controls leave. Two earlier shapes got
+    // this wrong and both were measured:
     //
-    // The stripes are ornament and the label is the content, so the stripes
-    // yield first. As an `Expanded` they claimed every pixel the label did not
-    // take, and beside two 48 dp controls on a 320 dp phone that left the
-    // heading so narrow it broke mid-word — measured as "LINK" on two lines and
-    // "EVENTS" on two at 2.0 text. Bounded and loose, they take what they need
-    // and hand the rest back.
-    return Row(
-      children: <Widget>[
-        Flexible(child: labelWidget),
-        if (skin.ornament.warningStripes) ...<Widget>[
-          const SizedBox(width: 8),
-          Flexible(
-            fit: FlexFit.loose,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 64),
-              child: CustomPaint(
-                painter: _HazardStripes(skin.color.accent, skin.color.line),
-                child: const SizedBox(height: 8, width: double.infinity),
+    // - As two `Flexible`s the row split the free space evenly, so the stripes
+    //   *reserved* half of it and used 64 dp of their share: on a 320 dp phone
+    //   at 2.0 text the heading got 96 dp and "LINK" — which needs 100 — broke
+    //   into two lines while 32 dp sat unused beside it.
+    // - With `Spacer()` in the non-striped branch the label and the spacer were
+    //   both flexible, so every calm skin gave its heading half the row.
+    //
+    // The label is `Expanded` now and the stripes are a fixed 64 dp that only
+    // appears while the heading and a control both still fit.
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints c) {
+        final TextPainter p = TextPainter(
+          text: TextSpan(text: shown, style: mmSectionLabelStyle(skin)),
+          textDirection: Directionality.of(context),
+          maxLines: 1,
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        final double need = p.width;
+        p.dispose();
+        // Two ladder steps of stripes and their two 8 dp gaps, plus 48 dp for
+        // whatever control sits in the trailing slot. Below that the ornament is
+        // what goes, because the heading is the reason the row exists.
+        final double stripeWidth = skin.space.step(9) * 2;
+        final bool ornament = skin.ornament.warningStripes &&
+            c.maxWidth >= need + stripeWidth + 16 + 48;
+        return Row(
+          children: <Widget>[
+            Expanded(child: labelWidget),
+            if (ornament) ...<Widget>[
+              const SizedBox(width: 8),
+              SizedBox(
+                width: stripeWidth,
+                child: CustomPaint(
+                  painter: _HazardStripes(skin.color.accent, skin.color.line),
+                  child: const SizedBox(height: 8),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ] else
-          const Spacer(),
-        if (trailing != null) trailing!,
-      ],
+              const SizedBox(width: 8),
+            ],
+            if (trailing != null) trailing!,
+          ],
+        );
+      },
     );
   }
 }
@@ -423,34 +439,200 @@ class MmPickerTile extends StatelessWidget {
     // you cannot open still says what it is.
     final Color textColor = on ? skin.color.fg : skin.color.fgDisabled;
     final Color subColor = on ? skin.color.fgMuted : skin.color.fgDisabled;
-    return ListTile(
-      enabled: on,
-      leading: leading,
-      title: Text(title, style: TextStyle(color: textColor)),
-      subtitle:
-          hint == null ? null : Text(hint!, style: TextStyle(color: subColor)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 160),
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  color: valueColor,
-                  fontSize: skin.type.sizeBody,
-                  fontWeight: FontWeight.w600),
+    // The styles are named rather than left to the tile, so the measurement
+    // below and the paint above cannot disagree: the trailing value used to be
+    // capped at a flat 160 dp and ellipsised past it, which is the cap that
+    // turned "Every 15 min" into "Every 15…" at 200 % text.
+    final TextStyle titleStyle =
+        (Theme.of(context).textTheme.titleMedium ?? const TextStyle())
+            .merge(TextStyle(color: textColor));
+    final TextStyle valueStyle = TextStyle(
+        color: valueColor,
+        fontSize: skin.type.sizeBody,
+        fontWeight: FontWeight.w600);
+    final Widget chevron = Icon(Icons.chevron_right, size: 18, color: valueColor);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints c) {
+        // What the tile has for text: its own 16 dp inset on each side, the
+        // leading icon and the gap after it, and the chevron with its gap.
+        final double room = c.maxWidth -
+            32 -
+            (leading == null ? 0 : 40) -
+            (18 + 4);
+        // One line while the pair fits on it; the value on its own line below
+        // the title when it does not. Measured at the real style and the real
+        // text scale, so the switch is where the value would otherwise have
+        // been cut, not at a guess.
+        final bool inline = mmPairFitsOneLine(
+          context,
+          a: title,
+          aStyle: titleStyle,
+          b: value,
+          bStyle: valueStyle,
+          gap: 16,
+          width: room,
+        );
+        if (inline) {
+          return ListTile(
+            enabled: on,
+            leading: leading,
+            title: Text(title, style: titleStyle),
+            subtitle: hint == null
+                ? null
+                : Text(hint!, style: TextStyle(color: subColor)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Flexible(
+                  child: Text(value,
+                      textAlign: TextAlign.end, style: valueStyle),
+                ),
+                const SizedBox(width: 4),
+                chevron,
+              ],
             ),
+            onTap: on ? onTap : null,
+          );
+        }
+        // Stacked: the value keeps the tile's leading column so it reads as the
+        // row's own answer, and the chevron stays in the trailing slot.
+        return ListTile(
+          enabled: on,
+          leading: leading,
+          title: Text(title, style: titleStyle),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(value, style: valueStyle),
+              if (hint != null)
+                Text(hint!, style: TextStyle(color: subColor)),
+            ],
           ),
-          const SizedBox(width: 4),
-          Icon(Icons.chevron_right, size: 18, color: valueColor),
-        ],
-      ),
-      onTap: on ? onTap : null,
+          trailing: chevron,
+          onTap: on ? onTap : null,
+        );
+      },
     );
   }
+}
+
+/// Whether two runs of text share one line inside [width] at the current text
+/// scale, measured with the real painter.
+///
+/// The rule behind [MmReadout] and [MmPickerTile]: a pair decides its shape by
+/// being measured, not by how many characters it happens to have. The painter
+/// takes the same style objects the widgets paint with, so the switch lands
+/// exactly where the second run would otherwise be cut.
+bool mmPairFitsOneLine(
+  BuildContext context, {
+  required String a,
+  required TextStyle aStyle,
+  required String b,
+  required TextStyle bStyle,
+  required double gap,
+  required double width,
+}) {
+  final TextDirection dir = Directionality.of(context);
+  final TextScaler scaler = MediaQuery.textScalerOf(context);
+  final TextPainter p = TextPainter(
+    text: TextSpan(text: a, style: aStyle),
+    textDirection: dir,
+    maxLines: 1,
+    textScaler: scaler,
+  )..layout();
+  final double aw = p.width;
+  p.text = TextSpan(text: b, style: bStyle);
+  p.layout();
+  final double bw = p.width;
+  p.dispose();
+  return aw + gap + bw <= width;
+}
+
+/// The label ink for a chip, chosen together with its fill.
+///
+/// A chip's fill and its label are two colours that have to be decided as a
+/// pair, and `ChipThemeData` can only state one of them per state: Flutter
+/// merges a single `labelStyle` into every state of a chip, so a chip that
+/// leaves its label colour to the theme paints `onSurfaceVariant` on the
+/// selected fill. On a skin whose accent is pale that is a light label on a
+/// light ground — measured on the device in the places sheet, whose three
+/// ticked chips read as empty boxes with a checkmark floating in them.
+///
+/// So the pair lives here: the selected chip takes the ink that the fill was
+/// defined against (`onPrimary`, the same token the accent pairs with
+/// everywhere else), and the unselected chip takes the ordinary foreground.
+TextStyle mmChipLabelStyle(
+  BuildContext context, {
+  required bool selected,
+  bool enabled = true,
+}) {
+  final ColorScheme cs = Theme.of(context).colorScheme;
+  if (!enabled) return TextStyle(color: cs.onSurfaceVariant);
+  return TextStyle(
+    color: selected ? cs.onPrimary : cs.onSurface,
+    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+  );
+}
+
+/// A filter chip that states its label ink with its fill.
+///
+/// The wrapper exists so the pair cannot be split again: every chip in the app
+/// is built through [MmFilterChip] or [MmChoiceChip], and neither accepts a
+/// `labelStyle` that could disagree with the fill.
+class MmFilterChip extends StatelessWidget {
+  const MmFilterChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final Widget label;
+  final bool selected;
+
+  /// Null disables the chip: an option that cannot be chosen here.
+  final ValueChanged<bool>? onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return FilterChip(
+      label: label,
+      selected: selected,
+      onSelected: onSelected,
+      labelStyle: mmChipLabelStyle(context,
+          selected: selected, enabled: onSelected != null),
+      checkmarkColor: cs.onPrimary,
+    );
+  }
+}
+
+/// A one-of-N chip that states its label ink with its fill. See
+/// [mmChipLabelStyle] for why the pair is not left to the theme.
+class MmChoiceChip extends StatelessWidget {
+  const MmChoiceChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+    this.avatar,
+  });
+
+  final Widget label;
+  final bool selected;
+  final ValueChanged<bool>? onSelected;
+  final Widget? avatar;
+
+  @override
+  Widget build(BuildContext context) => ChoiceChip(
+        label: label,
+        selected: selected,
+        onSelected: onSelected,
+        avatar: avatar,
+        labelStyle: mmChipLabelStyle(context,
+            selected: selected, enabled: onSelected != null),
+      );
 }
 
 /// A small status pill (app-bar / header chip) — dot + tracked label,

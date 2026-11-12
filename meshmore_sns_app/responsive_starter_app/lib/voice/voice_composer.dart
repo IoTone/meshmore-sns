@@ -594,7 +594,7 @@ class _VoiceComposerState extends State<VoiceComposer> {
         spacing: skin.space.step(2),
         children: <Widget>[
           for (final (VoiceMode mode, String label) in options)
-            ChoiceChip(
+            MmChoiceChip(
               key: ValueKey<String>('voice-mode-${mode.wireId}'),
               label: Text(label),
               selected: _mode == mode,

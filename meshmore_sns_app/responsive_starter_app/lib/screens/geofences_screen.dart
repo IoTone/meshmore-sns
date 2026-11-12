@@ -76,7 +76,7 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
               spacing: skin.space.step(2),
               children: <Widget>[
                 for (final int r in GeofencesScreen.radii)
-                  ChoiceChip(
+                  MmChoiceChip(
                     key: ValueKey<String>('geofence-radius-$r'),
                     label: Text(l.geofenceRadius(r)),
                     selected: _radius == r,
