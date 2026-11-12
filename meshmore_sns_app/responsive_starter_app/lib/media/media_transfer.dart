@@ -24,7 +24,41 @@ import 'media_sender.dart';
 /// airtime, and a smaller one turns a sign into a smear. It is a target, not a
 /// guarantee — the plan reports an over-budget picture rather than refusing it
 /// after the encode.
-const int kMediaPhotoBudgetBytes = 4096;
+const int kMediaPhotoBudgetBytes = 1600;
+
+/// The three sizes a photo may be sent at, and what each one costs on air.
+///
+/// The owner's report — "one photo said sixteen messages, which is way too much
+/// airtime" — is a byte-budget complaint, not a codec complaint: every chunk is
+/// its own LoRa frame, so the airtime is the chunk count, and the old 4096-byte
+/// budget was 28 chunks in the worst case and 18 for a real photo. On five of the
+/// six region presets a full-budget photo cannot fit inside the 36 s/hour
+/// voluntary budget at all, so the upload stalls until the hour rolls over.
+///
+/// The floor drops with the budget because bytes are pixels: a 1600-byte AVIF at
+/// 256×192 is a legible snapshot of a sign or a page, and a 600-byte one at
+/// 160×120 is a thumbnail that says what the picture is about. The biggest size
+/// stays for someone who needs it.
+enum MediaSendSize {
+  /// One glance: what the picture is of.
+  preview(budgetBytes: 600, maxWidth: 160, maxHeight: 120),
+
+  /// The default. A snapshot you can read.
+  standard(budgetBytes: kMediaPhotoBudgetBytes, maxWidth: 256, maxHeight: 192),
+
+  /// The old behaviour, kept for detail that matters.
+  full(budgetBytes: 4096, maxWidth: 320, maxHeight: 240);
+
+  const MediaSendSize({
+    required this.budgetBytes,
+    required this.maxWidth,
+    required this.maxHeight,
+  });
+
+  final int budgetBytes;
+  final int maxWidth;
+  final int maxHeight;
+}
 
 /// What one transfer costs, stated before anything goes on air.
 ///
@@ -491,13 +525,19 @@ final class MediaTransferService {
   Future<MediaPreparation> prepare(
     MediaPhoto photo, {
     required List<int>? channelPsk,
-    required int byteBudget,
+    int? byteBudget,
+    MediaSendSize size = MediaSendSize.standard,
   }) async {
     final MediaSendRefusal? refusal = MediaSendPolicy(mediaOnPublic: mediaOnPublic)
         .channelRefusalFor(channelPsk: channelPsk);
     if (refusal != null) return MediaRefused(refusal);
 
-    final EncodedPhoto encoded = await codec.encode(photo, byteBudget: byteBudget);
+    final EncodedPhoto encoded = await codec.encode(
+      photo,
+      byteBudget: byteBudget ?? size.budgetBytes,
+      maxWidth: size.maxWidth,
+      maxHeight: size.maxHeight,
+    );
     // Every datagram is its own frame on air: the radio wraps each blob in the
     // datagram header and the packet it sends, so the cost is the sum over
     // chunks of the bytes that datagram puts on air — not one byte per chunk,

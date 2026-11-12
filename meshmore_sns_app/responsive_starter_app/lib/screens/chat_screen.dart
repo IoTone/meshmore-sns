@@ -1171,7 +1171,7 @@ class _ChatScreenState extends State<ChatScreen>
                   source: context.read<MediaPhotoSource?>() ??
                       kNoMediaPhotoSource,
                   channelPsk: m.channelPsk(m.activeChannel),
-                  byteBudget: kMediaPhotoBudgetBytes,
+                  byteBudget: MediaSendSize.standard.budgetBytes,
                   sendBlob: (Uint8List blob) => m.sendChannelData(
                     channelIdx: m.activeChannel,
                     dataType: kChannelDataTypeDev,

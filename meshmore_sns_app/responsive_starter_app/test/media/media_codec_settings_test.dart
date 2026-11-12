@@ -68,13 +68,18 @@ void main() {
     expect(sender.pacing, const Duration(milliseconds: 350));
     expect(MediaChunkCodec.maxDataBytes, 150);
 
+    // The default send size, not the largest one: the budget the app actually
+    // spends is the number this comment is about.
     final int datagrams =
-        kMediaPhotoBudgetBytes ~/ MediaChunkCodec.maxDataBytes;
+        MediaSendSize.standard.budgetBytes ~/ MediaChunkCodec.maxDataBytes;
     final Duration airtime = sender.pacing * datagrams;
-    expect(datagrams, 27);
-    expect(airtime.inSeconds, 9,
-        reason: 'a full-budget photo costs about nine seconds of channel time, '
-            'which is what makes the encoder effort worth spending');
+    expect(datagrams, 10);
+    expect(airtime.inSeconds, 3,
+        reason: 'a default photo is about three seconds of channel time at the '
+            'sender pacing, against nine for the old 4096-byte budget');
+    // And the largest size stays as large as it was, so a reader who needs the
+    // detail can still ask for it.
+    expect(MediaSendSize.full.budgetBytes, 4096);
   });
 }
 

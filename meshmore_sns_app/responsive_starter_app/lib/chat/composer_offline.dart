@@ -41,10 +41,10 @@ class ComposerOffline extends StatelessWidget {
             // One connect screen for the whole app. This used to open the
             // pairing flow, which is a *different* question ("which radio?")
             // from the one a user has when a composer says there is no radio
-            // ("make it work"). Diagnostics & connect is the screen that
-            // answers both, and it is the one the app-bar chip opens too, so
-            // there is a single place to go and it always exists.
-            onPressed: () => context.push('/settings/diagnostics'),
+            // ("make it work"). `/connect` reads the radio's state and offers
+            // the action it needs, so the same words mean the same thing from
+            // every screen that shows them.
+            onPressed: () => context.push('/connect'),
             icon: const Icon(Icons.bluetooth, size: 18),
             label: Text(l.chatConnectRadio),
           );

@@ -417,7 +417,7 @@ Widget _statusSlab(
             tooltip: l.actionConnect,
             icon: Icon(Icons.link, color: statusColor, size: 20),
             onPressed: () =>
-                mc.hasPairedDevice ? mc.connect() : context.push('/pair'),
+                context.push('/connect'),
           )
         else if (mc.state == MeshcoreConnectionState.failed ||
             mc.state == MeshcoreConnectionState.reconnecting ||
@@ -433,7 +433,7 @@ Widget _statusSlab(
             tooltip: l.actionRetry,
             icon: Icon(Icons.refresh, color: statusColor, size: 20),
             onPressed: () =>
-                mc.hasPairedDevice ? mc.connect() : context.push('/pair'),
+                context.push('/connect'),
           ),
         // R41 — Device chip: disconnect, reconnect, forget, or pick another
         // radio, in one place.

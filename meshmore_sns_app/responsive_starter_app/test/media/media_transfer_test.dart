@@ -619,4 +619,36 @@ void main() {
       expect(calls, 0, reason: 'a closed sheet puts nothing on air');
     });
   });
+
+  // The owner's report: one photo reported sixteen messages, and the airtime was
+  // the complaint. Every chunk is its own frame on air, so the send size is the
+  // airtime, and the small sizes have to reach the encoder rather than only the
+  // projection.
+  test('the send size decides the budget and the pixel ceiling', () async {
+    for (final MediaSendSize size in MediaSendSize.values) {
+      final FakeMediaCodec codec = FakeMediaCodec(encodedBytes: 200);
+      final MediaTransferService svc = MediaTransferService(
+        codec: codec,
+        estimator: const AirtimeEstimator(millisPerByte: 4),
+        clock: () => DateTime.utc(2026, 1, 1),
+        mediaOnPublic: true,
+      );
+      final MediaPreparation p =
+          await svc.prepare(photo(320, 240),
+              channelPsk: List<int>.filled(16, 7), size: size);
+      expect(p, isA<MediaPrepared>());
+      expect(codec.budgets.single, size.budgetBytes, reason: size.name);
+      expect(codec.ceilings.single, (size.maxWidth, size.maxHeight),
+          reason: size.name);
+    }
+  });
+
+  test('the default photo is a snapshot, not the old full budget', () {
+    // 1600 bytes is ten 162-byte blobs at the very worst and about six for a
+    // real photo, against 4096's 28 and 18.
+    expect(MediaSendSize.standard.budgetBytes, lessThan(2048));
+    expect(MediaSendSize.standard.maxWidth, lessThan(MediaPhoto.floorWidth));
+    expect(MediaSendSize.preview.budgetBytes, lessThan(
+        MediaSendSize.standard.budgetBytes));
+  });
 }

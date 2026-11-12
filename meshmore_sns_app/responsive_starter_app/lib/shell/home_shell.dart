@@ -714,7 +714,7 @@ class RadioLinkIndicator extends StatelessWidget {
       button: true,
       label: l.linkChipSemantics(v.label),
       child: InkWell(
-        onTap: () => context.push('/settings/diagnostics'),
+        onTap: () => context.push('/connect'),
         borderRadius: mmRadius(context, 20),
         // `DecoratedBox`, not `Container`: the chip's own dot is the first
         // `Container` in this subtree and the colour test finds it that way.

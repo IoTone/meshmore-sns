@@ -352,7 +352,7 @@ class _StatusRow extends StatelessWidget {
           child: MmAction(
             dense: true,
             label: canRetry ? l.actionRetry : l.actionConnect,
-            onPressed: () => mc.connect(),
+            onPressed: () => context.push('/connect'),
           ),
         ),
       IconButton(

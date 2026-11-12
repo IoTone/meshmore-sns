@@ -219,7 +219,11 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                       label: Text(l.deviceMgrReconnect),
                       onPressed: mc.isConnecting
                           ? null
-                          : () => mc.connect(),
+                          : () {
+                              // The sheet's context survives the push; only a
+                              // pop would take it away.
+                              GoRouter.of(context).push('/connect');
+                            },
                     ),
                   ),
                 if (isPaired) const SizedBox(width: 8),
@@ -244,7 +248,7 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                 // gone by the time the push would run.
                 final GoRouter router = GoRouter.of(context);
                 Navigator.of(context).pop();
-                router.push('/pair');
+                router.push('/connect');
               },
             ),
             // Probe + manage the radio's actual contact list (diagnose a

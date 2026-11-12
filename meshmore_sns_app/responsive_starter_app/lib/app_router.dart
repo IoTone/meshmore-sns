@@ -15,6 +15,7 @@ import 'screens/device_config_screen.dart';
 import 'screens/networks_screen.dart';
 import 'screens/doc_reader_screen.dart';
 import 'screens/dm_screen.dart';
+import 'screens/connect_screen.dart';
 import 'screens/diagnostics_screen.dart';
 import 'screens/terms_screen.dart';
 import 'screens/location_settings_screen.dart';
@@ -93,6 +94,14 @@ final GoRouter appRouter = GoRouter(
     ),
     // The in-app pairing flow. A route rather than a sheet so the store's
     // declaration video can show one screen going scan → connect → done.
+    // The one screen that answers "connect a radio". Every affordance that
+    // says "connect" goes here, so the words mean one thing: a paired radio is
+    // offered a link, an unpaired one is offered a scan, and Diagnostics is a
+    // quieter step below rather than the first thing a person meets.
+    GoRoute(
+      path: '/connect',
+      builder: (_, __) => const ConnectScreen(),
+    ),
     GoRoute(
       path: '/pair',
       builder: (_, __) => const PairRadioScreen(),

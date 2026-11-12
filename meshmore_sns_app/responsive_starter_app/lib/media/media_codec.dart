@@ -48,7 +48,16 @@ abstract interface class MediaCodec {
   /// lowest quality it is willing to ship, and a picture that still exceeds the
   /// budget at that point is returned with [EncodedPhoto.withinBudget] false so
   /// the caller can say so before spending airtime.
-  Future<EncodedPhoto> encode(MediaPhoto photo, {required int byteBudget});
+  /// [maxWidth]/[maxHeight] are the send size's own ceiling. They default to the
+  /// class floor, and are lower for the smaller send sizes because bytes are
+  /// pixels: a thumbnail that spends a snapshot's pixels is a snapshot's
+  /// airtime.
+  Future<EncodedPhoto> encode(
+    MediaPhoto photo, {
+    required int byteBudget,
+    int? maxWidth,
+    int? maxHeight,
+  });
 
   /// The first frame of an AVIF payload as a picture.
   Future<MediaPhoto> decode(Uint8List bytes);
@@ -145,15 +154,22 @@ final class AvifMediaCodec implements MediaCodec {
       avifNativeCapabilities.canEncode && avifNativeCapabilities.canDecode;
 
   @override
-  Future<EncodedPhoto> encode(MediaPhoto photo,
-      {required int byteBudget}) async {
+  Future<EncodedPhoto> encode(
+    MediaPhoto photo, {
+    required int byteBudget,
+    int? maxWidth,
+    int? maxHeight,
+  }) async {
     if (!avifNativeCapabilities.canEncode) {
       throw const MediaCodecException(
         MediaCodecFailure.unavailable,
         'this build has no AVIF encoder',
       );
     }
-    final MediaPhoto fitted = photo.fittedToFloor();
+    final MediaPhoto fitted = photo.scaledTo(
+      maxWidth: maxWidth ?? MediaPhoto.floorWidth,
+      maxHeight: maxHeight ?? MediaPhoto.floorHeight,
+    );
     EncodedPhoto? smallest;
     for (final (int minQ, int maxQ) in quantiserLadder) {
       final Uint8List bytes;
@@ -267,11 +283,20 @@ final class FakeMediaCodec implements MediaCodec {
   @override
   bool get isAvailable => true;
 
+  /// Every size ceiling a caller asked for, so a test can prove the send size
+  /// reached the encoder rather than only the budget.
+  final List<(int?, int?)> ceilings = <(int?, int?)>[];
+
   @override
-  Future<EncodedPhoto> encode(MediaPhoto photo,
-      {required int byteBudget}) async {
+  Future<EncodedPhoto> encode(
+    MediaPhoto photo, {
+    required int byteBudget,
+    int? maxWidth,
+    int? maxHeight,
+  }) async {
     encodeCalls++;
     budgets.add(byteBudget);
+    ceilings.add((maxWidth, maxHeight));
     return EncodedPhoto(
       bytes: Uint8List.fromList(
           List<int>.generate(encodedBytes, (int i) => i & 0xFF)),
