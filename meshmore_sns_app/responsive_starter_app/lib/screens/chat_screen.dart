@@ -135,6 +135,11 @@ class _ChatScreenState extends State<ChatScreen>
   /// The message count this screen last marked read, so a rebuild does not
   /// write the same mark again and a new message does write a new one.
   int _markedCount = -1;
+
+  /// The channel that mark was written for. The count alone was not enough:
+  /// switching to a channel whose row count happened to equal the previous
+  /// one's left the new thread never marked at all.
+  int? _markedChannel;
   BlockFilter? _fallbackFilter;
 
   /// Vertical slack in pixels — within this we treat the user as
@@ -725,18 +730,29 @@ class _ChatScreenState extends State<ChatScreen>
     // cleared.
     final bool readingThisThread = (widget.isCurrent ?? true) && _atBottom;
     if (readingThisThread) unread.remove(active);
+    // Reading is a state of the *tab*, not of the scroll position: a reader who
+    // has scrolled up is still looking at the thread, and leaving the mark behind
+    // made the badge tick up on the channel they were sitting on. The
+    // jump-to-newest pill already offers the rows they scrolled past.
+    //
+    // The mark is remembered per channel, and it is advanced only after the
+    // write lands. Both matter: a count from one channel that happened to match
+    // another's left the second one permanently unmarked, and advancing before
+    // the write meant a single failed write made the badge stick until the next
+    // message arrived.
     if (reads != null &&
         (widget.isCurrent ?? true) &&
-        _atBottom &&
         msgs.isNotEmpty &&
-        _markedCount != msgs.length) {
-      _markedCount = msgs.length;
+        (_markedChannel != active || _markedCount != msgs.length)) {
       final int channel = active;
+      final int count = msgs.length;
       final ChatMessage newest = msgs.last;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      _markedChannel = channel;
+      _markedCount = count;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
-        unawaited(reads.markRead(channel,
-            at: newest.at.add(const Duration(milliseconds: 1))));
+        await reads.markRead(channel,
+            at: newest.at.add(const Duration(milliseconds: 1)));
       });
     }
 

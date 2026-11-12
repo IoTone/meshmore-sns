@@ -272,6 +272,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         history: mc.messagesFor,
         reads: reads,
         filter: filter,
+        // The thread on screen is being read, so its channel contributes
+        // nothing to the cell. Relying on the read mark alone left the badge
+        // counting a channel the reader was looking at, which is the report:
+        // the number kept rising on the channel the message came in on.
+        ignore: _index == MmView.chat.index
+            ? <int>{mc.activeChannel}
+            : const <int>{},
       ),
     );
     return PopScope(

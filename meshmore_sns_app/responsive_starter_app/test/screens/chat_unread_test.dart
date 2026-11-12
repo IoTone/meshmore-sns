@@ -10,7 +10,10 @@ import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/chat/channel_read_store.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
+import 'package:meshmore_sns_app/chat/unread_counts.dart';
+import 'package:meshmore_sns_app/meshcore/block_filter.dart';
 import 'package:meshmore_sns_app/meshcore/block_store.dart';
+import 'package:meshmore_sns_app/meshcore/chat_message.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/chat_screen.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
@@ -143,6 +146,69 @@ void main() {
 
     expect(find.byKey(const ValueKey<String>('unread-0')), findsNothing,
         reason: 'the thread on screen is being read as it arrives');
+    mc.dispose();
+  });
+
+  // The owner's second report on this badge: the number kept rising on the
+  // channel the message came in on, and did not clear. Two causes, both fixed:
+  // the shell's total counted the thread on screen, and the mark was only
+  // written while the reader was at the bottom of the list.
+  test('the shell total ignores the thread on screen', () {
+    final ChannelReadStore reads = ChannelReadStore(seed: <int, int>{0: 1});
+    final List<ChatMessage> ch0 = <ChatMessage>[
+      ChatMessage(
+          channelIdx: 0,
+          text: 'Ada: one',
+          outgoing: false,
+          at: DateTime.utc(2026, 1, 1, 0, 0, 5)),
+    ];
+    final List<ChatMessage> ch1 = <ChatMessage>[
+      ChatMessage(
+          channelIdx: 1,
+          text: 'Bo: two',
+          outgoing: false,
+          at: DateTime.utc(2026, 1, 1, 0, 0, 5)),
+    ];
+    int total({Set<int> ignore = const <int>{}}) => UnreadCounts.total(
+          channels: const <int>[0, 1],
+          history: (int c) => c == 0 ? ch0 : ch1,
+          reads: reads,
+          filter: BlockFilter(BlockStore()),
+          ignore: ignore,
+        );
+    expect(total(), 2, reason: 'both channels have traffic after the mark');
+    expect(total(ignore: <int>{0}), 1,
+        reason: 'channel 0 is on screen, so it contributes nothing');
+  });
+
+  testWidgets('a scrolled-up reader still marks the thread read',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final ChannelReadStore reads = ChannelReadStore();
+    await t.pumpWidget(host(mc, TtsController(speaker: FakeTtsSpeaker()),
+        BlockStore(), reads));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    // Enough rows to scroll, then scroll away from the bottom: the tab is still
+    // the one on screen, and reading it is what the mark is about.
+    for (int i = 0; i < 40; i++) {
+      fake.emit(channelMsgFrame(idx: 0, text: 'Ada: row $i'));
+    }
+    await t.pumpAndSettle();
+    await t.drag(find.byType(ListView).last, const Offset(0, 400));
+    await t.pumpAndSettle();
+
+    expect(reads.lastReadAtMs(0), greaterThan(0),
+        reason: 'looking at the thread marks it read, scrolled or not');
     mc.dispose();
   });
 }

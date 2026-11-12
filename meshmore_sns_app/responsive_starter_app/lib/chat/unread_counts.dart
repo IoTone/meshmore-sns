@@ -33,20 +33,28 @@ abstract final class UnreadCounts {
   }
 
   /// Unread across every channel: what the shell's chat cell shows.
+  ///
+  /// [ignore] is the channel a reader is looking at right now. Its count is
+  /// removed rather than shown and then cleared: the mark moves on the next
+  /// frame, and a badge that ticks up while the thread it counts is on screen
+  /// reads as the app losing track — the owner's "the number keeps accumulating
+  /// on the channel I am reading".
   static int total({
     required Iterable<int> channels,
     required List<ChatMessage> Function(int channelIdx) history,
     required ChannelReadStore? reads,
     required BlockFilter filter,
+    Set<int> ignore = const <int>{},
   }) {
     int n = 0;
-    for (final int c in perChannel(
+    for (final MapEntry<int, int> e in perChannel(
       channels: channels,
       history: history,
       reads: reads,
       filter: filter,
-    ).values) {
-      n += c;
+    ).entries) {
+      if (ignore.contains(e.key)) continue;
+      n += e.value;
     }
     return n;
   }
