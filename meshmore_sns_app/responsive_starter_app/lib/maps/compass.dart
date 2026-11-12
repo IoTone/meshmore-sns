@@ -176,6 +176,8 @@ class CompassHeading extends ChangeNotifier {
     final double rate =
         -(e.x * up.x + e.y * up.y + e.z * up.z) * 180 / math.pi;
     _set(_wrap(heading + rate * dt));
+    // Sensors are alive, so the direction is one the phone is still facing.
+    _touch();
   }
 
   void _onMag(MagnetometerEvent e) {
@@ -191,7 +193,22 @@ class CompassHeading extends ChangeNotifier {
     // is flat: tilted, the horizontal pair is not the horizontal field.
     if (!_flatNow) return;
     _accumulate(e.x, e.y);
-    final double target = flatHeading(e.x - _offset.x, e.y - _offset.y);
+    // No anchor until the offset is known: a bearing warped by an unmeasured
+    // offset is worse than no absolute bearing at all, because it drags a
+    // correct gyroscope track off course.
+    if (!_offsetTrusted) {
+      _touch();
+      return;
+    }
+    final double hx = e.x - _offset.x;
+    final double hy = e.y - _offset.y;
+    // A horizontal field this small is two large vectors nearly cancelling, and
+    // its angle is noise.
+    if (hx * hx + hy * hy < 64) {
+      _touch();
+      return;
+    }
+    final double target = flatHeading(hx, hy);
     final double dt = last == 0 ? 0 : (ms - last) / 1000.0;
     final double step = (anchorGain * (dt <= 0 ? 0.02 : dt.clamp(0.0, 0.25)))
         .clamp(0.0, 0.5);
@@ -259,8 +276,27 @@ class CompassHeading extends ChangeNotifier {
     _sinceFit = 0;
     final ({double x, double y, double r, double rms})? fit = fitCircle(_fitPoints);
     if (fit == null) return;
+    // Accepted only when it describes the Earth's horizontal field. Measured on
+    // the handset: a phone sitting still gives a "circle" of radius 0.1 µT, and
+    // accepting that subtracts the whole horizontal field and leaves noise —
+    // which is exactly the flapping dial the gate exists to prevent.
+    if (!_trusted(fit)) return;
     _offset = (x: fit.x, y: fit.y);
+    _offsetTrusted = true;
   }
+
+  bool _trusted(({double x, double y, double r, double rms}) fit) =>
+      fit.r >= 10 && fit.r <= 40 && fit.rms <= fit.r * 0.12;
+
+  /// Whether the horizontal offset has been measured from a real turn.
+  ///
+  /// False until the phone has been turned far enough for the field to describe
+  /// a circle of Earth-like radius. While it is false the dial is driven by the
+  /// gyroscope from a first guess: the *rotation* is right and the absolute
+  /// bearing is not yet, which is the honest state of an uncalibrated compass.
+  bool get calibratedCircle => _offsetTrusted;
+
+  bool _offsetTrusted = false;
 
   /// A least-squares circle through the horizontal field samples.
   ///
@@ -328,20 +364,9 @@ class CompassHeading extends ChangeNotifier {
     return (x: a, y: b, r: r, rms: math.sqrt(sq / n));
   }
 
-  /// Whether the horizontal offset has been measured well enough to subtract.
-  ///
-  /// The radius has to be an Earth-like horizontal field and the points have to
-  /// lie on the circle: `rms < 0.15 r` rejects a short arc, whose algebraically
-  /// best circle is huge and whose centre is nowhere near the offset.
-  bool get calibratedCircle {
-    if (_fitPoints.length < _fitMinPoints) return false;
-    final ({double x, double y, double r, double rms})? fit =
-        fitCircle(_fitPoints);
-    if (fit == null) return false;
-    return fit.r >= 5 && fit.r <= 90 && fit.rms <= fit.r * 0.15;
+  void _set(double deg) {
+    _heading = deg;
   }
-
-  void _set(double deg) => _heading = deg;
 
   void _touch() {
     _stale?.cancel();

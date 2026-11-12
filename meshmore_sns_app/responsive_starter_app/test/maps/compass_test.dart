@@ -228,20 +228,64 @@ void main() {
           reason: 'a leaned phone turns the dial by the angle it was turned');
     });
 
-    test('a magnetometer anchor drifts the heading back to the field', () async {
+    /// Turn the phone through [deg] with both sensors agreeing about the turn,
+    /// so the magnetometer sees the circle the fit needs.
+    Future<void> sweep(double deg, {int steps = 80}) async {
+      final double perStep = deg / steps;
+      for (int i = 0; i < steps; i++) {
+        clock = clock.add(const Duration(milliseconds: 20));
+        final double rate = -(perStep / 0.020) * math.pi / 180;
+        gyro.add(GyroscopeEvent(0, 0, rate, clock));
+        final ({double x, double y, double z}) f =
+            biasedFieldAt((i + 1) * perStep);
+        mag.add(MagnetometerEvent(f.x, f.y, f.z, clock));
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    test('a turn through a full circle calibrates the offset', () async {
       mag.add(MagnetometerEvent(0, 30, -154, clock));
       await Future<void>.delayed(Duration.zero);
-      await turn(30);
-      // Now the field says the phone is back at 0 while the gyroscope believes
-      // 30: the anchor pulls towards the field rather than ignoring it.
-      for (int i = 0; i < 10; i++) {
+      expect(compass.calibratedCircle, isFalse,
+          reason: 'a phone that has not turned cannot be calibrated');
+      await sweep(360);
+      expect(compass.calibratedCircle, isTrue,
+          reason: 'the field has described a circle of Earth-like radius');
+    });
+
+    test('with a calibrated offset the field wins again', () async {
+      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      await Future<void>.delayed(Duration.zero);
+      await sweep(360);
+      expect(compass.calibratedCircle, isTrue);
+      // Now stand still facing north with the offset present: the anchor should
+      // pull the bearing to the *corrected* one, which is north.
+      for (int i = 0; i < 40; i++) {
         clock = clock.add(const Duration(milliseconds: 100));
         final ({double x, double y, double z}) f = biasedFieldAt(0);
         mag.add(MagnetometerEvent(f.x, f.y, f.z, clock));
         await Future<void>.delayed(Duration.zero);
       }
-      expect(apart(compass.heading!, 0), lessThan(20),
+      expect(apart(compass.heading!, 0), lessThan(12),
           reason: 'the absolute bearing wins once the phone is flat again');
+    });
+
+    test('an uncalibrated offset never anchors the heading', () async {
+      // A phone that has only been nudged: the field does not describe a circle,
+      // so nothing may be subtracted and nothing may drag the gyroscope track.
+      mag.add(MagnetometerEvent(0, 30, -154, clock));
+      await Future<void>.delayed(Duration.zero);
+      await turn(20);
+      final double afterTurn = compass.heading!;
+      // A wildly different horizontal reading, which an uncalibrated bearing
+      // would chase.
+      for (int i = 0; i < 20; i++) {
+        clock = clock.add(const Duration(milliseconds: 100));
+        mag.add(MagnetometerEvent(-24, 6, -154, clock));
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(apart(compass.heading!, afterTurn), lessThan(3),
+          reason: 'no calibration, no anchor: the turn is what is trusted');
     });
 
   });
