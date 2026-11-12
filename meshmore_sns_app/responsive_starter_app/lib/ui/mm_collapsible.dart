@@ -190,12 +190,11 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
                   padding: EdgeInsets.symmetric(horizontal: skin.space.step(6)),
                   child: Row(
                     children: <Widget>[
-                      Icon(
-                        _open ? Icons.expand_more : Icons.chevron_right,
-                        size: 18,
-                        color: skin.color.fgMuted,
-                      ),
-                      const SizedBox(width: 8),
+                      // The label comes first and the disclosure mark last, so
+                      // a group's title starts on the same left edge as the
+                      // text under it. With the chevron leading, every header
+                      // sat 26 dp to the right of its own body, which reads as
+                      // two columns that do not line up.
                       Expanded(
                         child: Text(
                           skin.type.upperHeadings
@@ -203,6 +202,12 @@ class _MmCollapsibleSectionState extends State<MmCollapsibleSection> {
                               : widget.title,
                           style: mmSectionLabelStyle(skin),
                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        _open ? Icons.expand_more : Icons.chevron_right,
+                        size: 18,
+                        color: skin.color.fgMuted,
                       ),
                     ],
                   ),

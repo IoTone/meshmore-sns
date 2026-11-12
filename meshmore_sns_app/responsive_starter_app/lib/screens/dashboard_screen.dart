@@ -118,7 +118,10 @@ class DashboardScreen extends StatelessWidget {
         // and an accidental mute inside a status display reads as a change
         // to the link.
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          // Centred, not top-aligned: an `IconButton` beside a taller panel
+          // reads as floating above it, which is what the owner saw as "the
+          // speaker is not properly spaced in the middle".
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Expanded(child: _statusSlab(context, mc, l, cs, st, statusColor)),
             Padding(

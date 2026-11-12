@@ -43,11 +43,13 @@ class MmAudioToggle extends StatelessWidget {
     return IconButton(
       tooltip: audible ? l.dashboardAudioMute : l.dashboardAudioUnmute,
       padding: dense ? EdgeInsets.zero : null,
-      constraints: dense
-          ? const BoxConstraints(
-              minWidth: kMinInteractiveDimension,
-              minHeight: kMinInteractiveDimension)
-          : null,
+      // The same 48 dp box in both modes. Left to its own defaults this
+      // `IconButton` is smaller than the buttons beside it, so its glyph sits
+      // above their centres — the owner's "the speaker is too high next to the
+      // block". A control's tap target is not a style choice either.
+      constraints: const BoxConstraints(
+          minWidth: kMinInteractiveDimension,
+          minHeight: kMinInteractiveDimension),
       icon: Icon(
         audible ? Icons.volume_up : Icons.volume_off,
         size: size,
