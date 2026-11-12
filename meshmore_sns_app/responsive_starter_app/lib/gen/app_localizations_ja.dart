@@ -2055,16 +2055,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get meshTreeEmpty => 'コンタクト同期を待機中 — ツリーは各コンタクトの outPath から構築されます。';
 
   @override
-  String meshTreeFilteredEmpty(int n, int count) {
+  String meshTreeFilteredEmptyFor(String stop, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
       other:
-          '$n ホップ以内に経路が分かっている相手はいません。経路不明の相手が $count 台います。「Flood / All」で表示されます。',
-      one: '$n ホップ以内に経路が分かっている相手はいません。経路不明の相手が 1 台います。「Flood / All」で表示されます。',
+          '$stop に経路が分かっている相手はいません。経路不明の相手が $count 台います。「Flood / All」で表示されます。',
+      one: '$stop に経路が分かっている相手はいません。経路不明の相手が 1 台います。「Flood / All」で表示されます。',
     );
     return '$_temp0';
   }
+
+  @override
+  String get meshTreeNoRoutes =>
+      'この無線機はまだ経路を学習していないため、すべての相手を表示しています。学習すると停止位置が使えるようになります。';
 
   @override
   String get meshTreeHopsDirect => '直接';

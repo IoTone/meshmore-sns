@@ -3644,11 +3644,17 @@ abstract class AppLocalizations {
   /// **'Waiting for contact sync — the tree is built from each contact\'s outPath.'**
   String get meshTreeEmpty;
 
-  /// Shown instead of the no-peers notice when a hop limit is what emptied the tree.
+  /// Shown instead of the no-peers notice when the hop stop is what emptied the tree. The stop is named by its own label (Direct, <=3 hops, ...) rather than as a number, so it reads the same as the slider above it.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{None of your peers has a learned route within {n} hops. 1 is heard without one — Flood / All shows it.} other{None of your peers has a learned route within {n} hops. {count} are heard without one — Flood / All shows them.}}'**
-  String meshTreeFilteredEmpty(int n, int count);
+  /// **'{count, plural, =1{None of your peers has a learned route at {stop}. 1 is heard without one — Flood / All shows it.} other{None of your peers has a learned route at {stop}. {count} are heard without one — Flood / All shows them.}}'**
+  String meshTreeFilteredEmptyFor(String stop, int count);
+
+  /// No description provided for @meshTreeNoRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'This radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.'**
+  String get meshTreeNoRoutes;
 
   /// No description provided for @meshTreeHopsDirect.
   ///

@@ -59,6 +59,22 @@ class MeshTreeView extends StatefulWidget {
         : '$base · ${l.meshTreeHopsRouted(routed)}';
   }
 
+  /// The stop the tree opens on.
+  ///
+  /// The smallest stop that just covers every learned route, so the tree opens
+  /// on a *number* that is populated and complete rather than on All. All is
+  /// still one drag away, and stays the only honest answer when the radio has
+  /// learned no routes at all — a limit cannot be applied to a depth nobody
+  /// measured, so at that point the control has nothing to do and says so.
+  @visibleForTesting
+  static int defaultHops(int deepestRouted, {int routed = 1}) {
+    if (routed <= 0 || deepestRouted <= 0) return allHops;
+    for (final int stop in hopStops) {
+      if (stop >= deepestRouted) return stop;
+    }
+    return allHops;
+  }
+
   /// The slider position for a depth.
   @visibleForTesting
   static int hopIndex(int hops) {
@@ -107,6 +123,11 @@ class _MeshTreeViewState extends State<MeshTreeView>
   /// shows only the handful of direct/repeater peers (the "3 nodes"
   /// surprise). Start wide; the user dials *down* to declutter.
   int _maxHops = MeshTreeView.allHops;
+
+  /// Whether the opening stop has been chosen from the graph that arrived. One
+  /// shot each: after that the slider is the user's and a rebuild must not move
+  /// it under their finger.
+  bool _stopChosen = false;
 
   /// When true the view continuously scales/pans to frame the whole
   /// graph (so a few-hundred-node cloud is always visible). Disabled
@@ -305,6 +326,18 @@ class _MeshTreeViewState extends State<MeshTreeView>
       filteredNodes: widget.filteredNodes,
       maxHops: _maxHops,
     );
+    if (!_stopChosen && graph.peers > 0) {
+      _stopChosen = true;
+      final int opening =
+          MeshTreeView.defaultHops(graph.deepestRouted, routed: graph.routed);
+      if (opening != _maxHops) {
+        // A frame later: choosing it here would change the graph this build is
+        // already holding.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _maxHops = opening);
+        });
+      }
+    }
 
     return LayoutBuilder(
       builder: (BuildContext _, BoxConstraints c) {
@@ -379,9 +412,15 @@ class _MeshTreeViewState extends State<MeshTreeView>
               Positioned.fill(
                 child: GridNotice(
                   message: graph.hidden > 0
-                      // `hidden > 0` only happens below Flood / All, so the
-                      // stop's own value is the one to name.
-                      ? l.meshTreeFilteredEmpty(graph.hidden, _maxHops)
+                      // Named by the stop's own label, and with the two counts
+                      // in the order the message declares them: `n` is the stop
+                      // and `count` is how many peers it hid. They were swapped,
+                      // which is how a stop of three hops came to read "within
+                      // 201 hops" — 201 being the peers it had hidden.
+                      ? l.meshTreeFilteredEmptyFor(
+                          MeshTreeView.hopLabelFor(_maxHops, l,
+                              routed: graph.routed),
+                          graph.hidden)
                       : l.meshTreeEmpty,
                   icon: Icons.account_tree,
                 ),
@@ -417,18 +456,39 @@ class _MeshTreeViewState extends State<MeshTreeView>
               left: 12,
               right: 12,
               bottom: 12,
-              child: _HopSlider(
-                index: MeshTreeView.hopIndex(_maxHops),
-                stops: MeshTreeView.hopStops.length,
-                label: MeshTreeView.hopLabelFor(_maxHops, l,
-                    routed: graph.routed),
-                cs: cs,
-                onChanged: (int i) {
-                  final int hops = MeshTreeView.hopStops[
-                      i.clamp(0, MeshTreeView.hopStops.length - 1)];
-                  if (hops != _maxHops) setState(() => _maxHops = hops);
-                },
-              ),
+              // No learned routes means no depth to limit: every peer is an
+              // unknown, and a stop cannot be applied to a depth nobody
+              // measured. Offering the slider anyway is what made the ladder
+              // read as broken — every stop below All drew the same empty tree,
+              // and the notice blamed a hop count the reader could not act on.
+              child: graph.routed == 0
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: cs.surface,
+                        borderRadius: mmRadius(context, 8),
+                        border: Border.all(color: cs.outline),
+                      ),
+                      child: Text(
+                        l.meshTreeNoRoutes,
+                        style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            fontSize: context.skin.type.sizeSm),
+                      ),
+                    )
+                  : _HopSlider(
+                      index: MeshTreeView.hopIndex(_maxHops),
+                      stops: MeshTreeView.hopStops.length,
+                      label: MeshTreeView.hopLabelFor(_maxHops, l,
+                          routed: graph.routed),
+                      cs: cs,
+                      onChanged: (int i) {
+                        final int hops = MeshTreeView.hopStops[
+                            i.clamp(0, MeshTreeView.hopStops.length - 1)];
+                        if (hops != _maxHops) setState(() => _maxHops = hops);
+                      },
+                    ),
             ),
           ],
         );

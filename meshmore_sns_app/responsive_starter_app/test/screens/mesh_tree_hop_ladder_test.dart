@@ -78,9 +78,27 @@ void main() {
     // peers are present and the filter is what removed them.
     final AppLocalizationsEn l = AppLocalizationsEn();
     expect(l.meshTreeEmpty, contains('Waiting for contact sync'));
-    expect(l.meshTreeFilteredEmpty(12, 3), contains('learned route'));
-    expect(l.meshTreeFilteredEmpty(12, 3), contains('Flood / All'));
-    expect(l.meshTreeFilteredEmpty(1, 1), contains('1 is heard'),
+    expect(l.meshTreeFilteredEmptyFor('\u22643 hops', 12), contains('learned route'));
+    expect(l.meshTreeFilteredEmptyFor('\u22643 hops', 12), contains('Flood / All'));
+    expect(l.meshTreeFilteredEmptyFor('\u22643 hops', 12), contains('12 are'),
+        reason: 'the count is the peers hidden, not the stop');
+    expect(l.meshTreeFilteredEmptyFor('\u22643 hops', 12), contains('\u22643 hops'),
+        reason: 'the stop reads as its own label, not as a number of hops');
+    expect(l.meshTreeFilteredEmptyFor('Direct', 1), contains('1 is heard'),
         reason: 'one hidden peer reads as one, not "1 are"');
+  });
+
+  test('the opening stop covers every learned route', () {
+    // The tree opens on a number that is populated and complete rather than on
+    // All: the smallest stop at or past the deepest learned route.
+    expect(MeshTreeView.defaultHops(1, routed: 3), 1);
+    expect(MeshTreeView.defaultHops(3, routed: 3), 3);
+    expect(MeshTreeView.defaultHops(4, routed: 30), 4);
+    expect(MeshTreeView.defaultHops(7, routed: 2), 10);
+    expect(MeshTreeView.defaultHops(10, routed: 2), 10);
+    expect(MeshTreeView.defaultHops(14, routed: 2), MeshTreeView.allHops);
+    // No learned route at all: no limit can be applied, so All it is.
+    expect(MeshTreeView.defaultHops(0, routed: 0), MeshTreeView.allHops);
+    expect(MeshTreeView.defaultHops(5, routed: 0), MeshTreeView.allHops);
   });
 }

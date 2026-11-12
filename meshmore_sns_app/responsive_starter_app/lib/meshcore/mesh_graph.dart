@@ -53,6 +53,7 @@ class MeshGraph {
     required this.edges,
     this.peers = 0,
     this.routed = 0,
+    this.deepestRouted = 0,
     this.hidden = 0,
   });
 
@@ -69,6 +70,14 @@ class MeshGraph {
   /// Peers shown whose *learned* route is known — the only ones a depth limit
   /// can actually talk about.
   final int routed;
+
+  /// The deepest learned route among the peers, in hops. Zero when the radio has
+  /// learned none.
+  ///
+  /// The tree asks this to choose the stop it opens on: a limit that just covers
+  /// every learned route shows the whole routed tree at a *number* rather than
+  /// opening on All, which is the state a reader is least able to reason about.
+  final int deepestRouted;
 
   /// Peers left out because the limit could not include them.
   final int hidden;
@@ -163,6 +172,7 @@ class MeshGraph {
     int considered = 0;
     int routed = 0;
     int hidden = 0;
+    int deepest = 0;
     for (final DiscoveredNode peer in peers) {
       if (peer.pubKeyHex == ownHex) continue; // don't double the root
       considered++;
@@ -183,6 +193,7 @@ class MeshGraph {
         continue;
       } else {
         routed++;
+        if (hops > deepest) deepest = hops;
       }
 
       addNode(peer);
@@ -216,6 +227,7 @@ class MeshGraph {
       edges: edges,
       peers: considered,
       routed: routed,
+      deepestRouted: deepest,
       hidden: hidden,
     );
   }

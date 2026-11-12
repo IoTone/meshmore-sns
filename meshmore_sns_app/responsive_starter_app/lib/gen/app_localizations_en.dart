@@ -2151,17 +2151,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Waiting for contact sync — the tree is built from each contact\'s outPath.';
 
   @override
-  String meshTreeFilteredEmpty(int n, int count) {
+  String meshTreeFilteredEmptyFor(String stop, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
       other:
-          'None of your peers has a learned route within $n hops. $count are heard without one — Flood / All shows them.',
+          'None of your peers has a learned route at $stop. $count are heard without one — Flood / All shows them.',
       one:
-          'None of your peers has a learned route within $n hops. 1 is heard without one — Flood / All shows it.',
+          'None of your peers has a learned route at $stop. 1 is heard without one — Flood / All shows it.',
     );
     return '$_temp0';
   }
+
+  @override
+  String get meshTreeNoRoutes =>
+      'This radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.';
 
   @override
   String get meshTreeHopsDirect => 'Direct';

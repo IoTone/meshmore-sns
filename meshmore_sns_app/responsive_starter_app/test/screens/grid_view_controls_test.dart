@@ -114,7 +114,11 @@ void main() {
       await t.pumpWidget(host(const MeshTreeView(), mc, scale));
       await mc.connect();
       fake.emit(selfInfoFrame());
-      fake.emit(advertFrame(name: 'A', firstPubByte: 0x81));
+      // A contact with a learned two-hop route, so the ladder has a depth to
+      // limit and the slider is offered: with no learned routes the stop cannot
+      // be applied to anything and the strip says so instead.
+      fake.emit(contactFrame(
+          name: 'A', firstPubByte: 0x81, outPathLen: 2, path: <int>[3, 7]));
       await t.pump();
       await t.pump(const Duration(milliseconds: 200));
 
@@ -152,8 +156,10 @@ void main() {
     await t.pumpWidget(host(const MeshTreeView(), mc, 1.3));
     await mc.connect();
     fake.emit(selfInfoFrame());
-    fake.emit(advertFrame(name: 'A', firstPubByte: 0x81));
-    fake.emit(advertFrame(name: 'B', firstPubByte: 0x82));
+    fake.emit(contactFrame(
+        name: 'A', firstPubByte: 0x81, outPathLen: 2, path: <int>[3, 7]));
+    fake.emit(contactFrame(
+        name: 'B', firstPubByte: 0x82, outPathLen: 1, path: <int>[5]));
     await t.pump();
     await t.pump(const Duration(milliseconds: 200));
 
