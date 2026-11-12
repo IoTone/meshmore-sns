@@ -110,6 +110,20 @@ Future<(MapsController, MeshcoreController)> _pump(
   return (maps, mc);
 }
 
+/// Open the layers sheet through the control the map offers.
+///
+/// The control was a `PopupMenuButton` and this file used to read its
+/// `itemBuilder`. It is a sheet of switches now, so the test reads the sheet:
+/// the same rows a thumb sees, and the same control Settings manages a layer
+/// with.
+Future<void> _openLayers(WidgetTester t) async {
+  final IconButton button =
+      t.widget<IconButton>(find.byKey(_layersKey));
+  button.onPressed!();
+  await t.pump();
+  await t.pump(const Duration(milliseconds: 400));
+}
+
 Future<void> _drain(
     WidgetTester t, MeshcoreController mc, MapsController m) async {
   mc.dispose();
@@ -166,17 +180,14 @@ void main() {
     expect(find.byWidgetPredicate((Widget w) => w is PolygonLayer), findsWidgets);
     expect(find.byWidgetPredicate((Widget w) => w is PolylineLayer), findsWidgets);
 
-    // The menu lists it, checked.
-    final PopupMenuButton<String> menu =
-        t.widget<PopupMenuButton<String>>(find.byKey(_layersKey));
-    final List<PopupMenuEntry<String>> items =
-        menu.itemBuilder(t.element(find.byKey(_layersKey)));
-    final CheckedPopupMenuItem<String> row =
-        items.whereType<CheckedPopupMenuItem<String>>().single;
-    expect(row.checked, isTrue);
+    // The sheet lists it, switched on.
+    await _openLayers(t);
+    final SwitchListTile row =
+        t.widget<SwitchListTile>(find.byKey(ValueKey<String>('map-layer-${layer.id}')));
+    expect(row.value, isTrue);
 
     // Toggle it off through the control the map actually offers.
-    menu.onSelected!(layer.id);
+    row.onChanged!(false);
     await t.pump();
     expect(layer.visible, isFalse);
     expect(hasEventMarker(), isFalse);
@@ -214,16 +225,13 @@ void main() {
     await _drain(t, mc, m);
   });
 
-  testWidgets('with no layers the menu says so and points at Settings',
+  testWidgets('with no layers the sheet says so and points at Settings',
       (WidgetTester t) async {
     final (MapsController m, MeshcoreController mc) = await _pump(t, _Net());
-    final PopupMenuButton<String> menu =
-        t.widget<PopupMenuButton<String>>(find.byKey(_layersKey));
-    final List<PopupMenuEntry<String>> items =
-        menu.itemBuilder(t.element(find.byKey(_layersKey)));
-    final PopupMenuItem<String> disabled =
-        items.whereType<PopupMenuItem<String>>().first;
-    expect(disabled.enabled, isFalse);
+    await _openLayers(t);
+    expect(find.text('No event maps added'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('map-layers-manage')),
+        findsOneWidget);
     expect(find.byType(FlutterMap), findsOneWidget);
     await _drain(t, mc, m);
   });

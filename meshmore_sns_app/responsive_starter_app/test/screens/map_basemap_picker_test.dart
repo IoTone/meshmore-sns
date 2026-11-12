@@ -86,11 +86,30 @@ Future<void> _pump(WidgetTester t, MmThemePreset preset) async {
   await t.pump();
 }
 
-List<PopupMenuEntry<String>> _items(WidgetTester t) {
-  final PopupMenuButton<String> picker = t.widget<PopupMenuButton<String>>(
+/// Open the picker sheet through the control the map actually offers.
+///
+/// The control was a `PopupMenuButton` and this file used to read its
+/// `itemBuilder`. It is the app's one pick-one-of-N sheet now, so a test drives
+/// the sheet: the same path a thumb takes, and the same rows a reader sees.
+Future<void> _open(WidgetTester t) async {
+  final IconButton button = t.widget<IconButton>(
       find.byKey(const ValueKey<String>('map-basemap-picker')));
-  return picker.itemBuilder(t.element(
-      find.byKey(const ValueKey<String>('map-basemap-picker'))));
+  button.onPressed!();
+  await t.pump();
+  await t.pump(const Duration(milliseconds: 400));
+}
+
+/// The names the picker offers, in order, read off the open sheet.
+Future<List<String>> _names(WidgetTester t) async {
+  await _open(t);
+  final List<String> out = <String>[];
+  for (final Text w in t.widgetList<Text>(find.byType(Text))) {
+    final String? data = w.data;
+    if (data == null) continue;
+    final String first = data.split('\n').first;
+    if (kBuiltInSources.any((MapSource s) => s.name == first)) out.add(first);
+  }
+  return out;
 }
 
 /// Let the map's debounced warm-up timer fire and the tree go away, or the
@@ -100,10 +119,12 @@ Future<void> _settle(WidgetTester t) async {
   await t.pump(const Duration(seconds: 30));
 }
 
-void _select(WidgetTester t, String id) {
-  final PopupMenuButton<String> picker = t.widget<PopupMenuButton<String>>(
-      find.byKey(const ValueKey<String>('map-basemap-picker')));
-  picker.onSelected!(id);
+/// Choose a source by its name, through the sheet's own row.
+Future<void> _select(WidgetTester t, MapSource source) async {
+  await _open(t);
+  await t.tap(find.textContaining(source.name).last);
+  await t.pump();
+  await t.pump(const Duration(milliseconds: 500));
 }
 
 void main() {
@@ -116,16 +137,12 @@ void main() {
     expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
 
     // The vector basemap must be an offered choice, not an implicit one.
-    final List<PopupMenuEntry<String>> items = _items(t);
-    expect(items.map((PopupMenuEntry<String> e) => (e as PopupMenuItem<String>).value),
-        contains(kOsmVector.id));
-    expect(items.length, kBuiltInSources.length,
+    final List<String> names = await _names(t);
+    expect(names, contains(kOsmVector.name));
+    expect(names.length, kBuiltInSources.length,
         reason: 'every built-in source, vector included');
 
-    // Drive the picker's own callback: the menu's pop animation and hit
-    // testing are Flutter's, the choice is ours.
-    _select(t, kUsgsImagery.id);
-    await t.pump(const Duration(milliseconds: 500));
+    await _select(t, kUsgsImagery);
     expect(find.byType(VectorBasemapLayer), findsNothing,
         reason: 'a raster pick must actually draw raster');
     expect(find.text(kUsgsImagery.attribution), findsOneWidget,
@@ -136,12 +153,10 @@ void main() {
   testWidgets('picking the vector entry returns to the vector basemap',
       (WidgetTester t) async {
     await _pump(t, MmThemePreset.studio);
-    _select(t, kUsgsTopo.id);
-    await t.pump(const Duration(milliseconds: 500));
+    await _select(t, kUsgsTopo);
     expect(find.byType(VectorBasemapLayer), findsNothing);
 
-    _select(t, kOsmVector.id);
-    await t.pump(const Duration(milliseconds: 500));
+    await _select(t, kOsmVector);
     expect(find.byType(VectorBasemapLayer), findsOneWidget);
     expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
     await _settle(t);
@@ -154,9 +169,7 @@ void main() {
     // picker's first entry a dead control on six presets.
     await _pump(t, MmThemePreset.seele);
     expect(find.byType(VectorBasemapLayer), findsOneWidget);
-    expect(
-        _items(t).map((PopupMenuEntry<String> e) => (e as PopupMenuItem<String>).value),
-        contains(kOsmVector.id));
+    expect(await _names(t), contains(kOsmVector.name));
     await _settle(t);
   });
 

@@ -810,8 +810,13 @@ class _GridScreenState extends State<GridScreen>
                   IconButton(
                     tooltip:
                         _legendVisible ? l.gridHideLegend : l.gridShowLegend,
-                    icon:
-                        Icon(_legendVisible ? Icons.info : Icons.info_outline),
+                    // A legend glyph, not an info one. `info` is this app's
+                    // "about this screen" mark everywhere else (About, SOS's
+                    // notes, the mesh tree's explainer), so a legend toggle
+                    // wearing it read as a link to documentation.
+                    icon: Icon(_legendVisible
+                        ? Icons.legend_toggle
+                        : Icons.legend_toggle_outlined),
                     onPressed: () =>
                         setState(() => _legendVisible = !_legendVisible),
                   ),
@@ -1125,8 +1130,12 @@ class _NotConnectedStrip extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      // Solid, not 85 % of the surface: this strip sits over the radar's own
+      // ring labels, and at 0.85 the "3.3 km" under it showed through the
+      // banner on the device. A state banner has to be readable before the
+      // canvas behind it is.
       decoration: BoxDecoration(
-        color: cs.surface.withValues(alpha: .85),
+        color: cs.surface,
         borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.error.withValues(alpha: .6)),
       ),

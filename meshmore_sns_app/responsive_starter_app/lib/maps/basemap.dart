@@ -190,7 +190,9 @@ class MapAttribution extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.all(4),
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-        color: cs.surface.withValues(alpha: .75),
+        // Solid: the credit line sits on the basemap, and at 75 % the street
+        // names underneath ran through the letters.
+        color: cs.surface,
         child: Text(text,
             style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
       ),

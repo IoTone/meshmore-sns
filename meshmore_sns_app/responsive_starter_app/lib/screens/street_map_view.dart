@@ -504,6 +504,130 @@ class _StreetMapViewState extends State<StreetMapView> {
     });
   }
 
+  /// The basemap picker: the app's one pick-one-of-N sheet, with each source's
+  /// own attribution under it so the choice and the credit are read together.
+  Future<void> _pickBasemap(
+    BuildContext context,
+    AppLocalizations l,
+    List<MapSource> sources, {
+    required String current,
+  }) async {
+    final String? id = await showMmPicker<String>(
+      context: context,
+      title: l.mapsSourcePick,
+      current: current,
+      items: <MmPickerItem<String>>[
+        for (final MapSource s in sources)
+          MmPickerItem<String>.option(
+            s.id,
+            s.attribution.isEmpty ? s.name : '${s.name}\n${s.attribution}',
+          ),
+      ],
+    );
+    if (id == null || !mounted) return;
+    setState(() {
+      if (id == kOsmVector.id) {
+        _rasterOverride = null;
+      } else {
+        _sourceId = id;
+        // Vector is the default, so any raster pick is an override of it.
+        _rasterOverride = id;
+      }
+    });
+    BasemapPrefs.save(_rasterOverride);
+  }
+
+  /// The event-layer switches. A sheet rather than a menu because there is one
+  /// switch per layer and turning three on is three taps, not three openings;
+  /// and because a `Switch` here is the same control the layers are managed
+  /// with in Settings, in the skin's own colours.
+  Future<void> _showLayers(
+    BuildContext context,
+    AppLocalizations l,
+    MapsController? maps,
+    List<EventLayer> layers,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (BuildContext c) {
+        final MmSkin skin = c.skin;
+        return SafeArea(
+          top: false,
+          child: ListView(
+            key: const ValueKey<String>('map-layers-sheet'),
+            shrinkWrap: true,
+            padding: const EdgeInsets.only(bottom: 12),
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.fromLTRB(skin.space.step(7),
+                    skin.space.step(2), skin.space.step(7), skin.space.step(3)),
+                child: Text(l.mapsLayers,
+                    style: TextStyle(
+                        color: skin.color.fgMuted,
+                        fontSize: skin.type.sizeSm,
+                        letterSpacing: 1.4,
+                        fontWeight: FontWeight.w600)),
+              ),
+              if (layers.isEmpty)
+                Padding(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: skin.space.step(7)),
+                  child: Text(l.mapsNoLayersShort,
+                      style: TextStyle(
+                          color: skin.color.fgMuted,
+                          fontSize: skin.type.sizeBody)),
+                )
+              else
+                for (final EventLayer e in layers)
+                  SwitchListTile(
+                    key: ValueKey<String>('map-layer-${e.id}'),
+                    value: e.visible,
+                    onChanged: (bool v) => maps?.setLayerVisible(e, v),
+                    secondary: Icon(
+                      // A layer that is on but has nothing to draw says so,
+                      // instead of looking like an empty map.
+                      e.visible && !(maps?.isLayerLoaded(e) ?? false)
+                          ? Icons.error_outline
+                          : Icons.layers_outlined,
+                      color: e.visible && !(maps?.isLayerLoaded(e) ?? false)
+                          ? skin.color.alert
+                          : skin.color.fgMuted,
+                    ),
+                    title: Text(e.name,
+                        style: TextStyle(
+                            color: skin.color.fg,
+                            fontSize: skin.type.sizeBodyLg)),
+                    subtitle: Text(
+                        e.visible && !(maps?.isLayerLoaded(e) ?? false)
+                            ? l.mapsLayerNotLoaded
+                            : Uri.parse(e.url).host,
+                        style: TextStyle(
+                            color: skin.color.fgMuted,
+                            fontSize: skin.type.sizeSm)),
+                  ),
+              const Divider(height: 1),
+              ListTile(
+                key: const ValueKey<String>('map-layers-manage'),
+                leading: Icon(Icons.tune, color: skin.color.fgMuted),
+                title: Text(l.mapsManageLayers,
+                    style: TextStyle(
+                        color: skin.color.fg,
+                        fontSize: skin.type.sizeBodyLg)),
+                trailing: Icon(Icons.chevron_right, color: skin.color.fgMuted),
+                onTap: () {
+                  Navigator.pop(c);
+                  context.push('/settings/maps');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   /// Drops a pin where the long-press landed and reports it on the active
   /// channel. The budget, the label check and the identity check all answer
   /// inside the sheet, so a refusal is explained where the user typed.
@@ -1015,10 +1139,12 @@ class _StreetMapViewState extends State<StreetMapView> {
                                     vertical: context.skin.space.insideText /
                                         2),
                                 decoration: BoxDecoration(
-                                  color: cs.surface.withValues(alpha: .82),
+                                  // Solid: a count sits over pins and route
+                                  // strokes, and a wash let them show through
+                                  // the digit.
+                                  color: cs.surface,
                                   borderRadius: BorderRadius.circular(kRadiusXs),
-                                  border: Border.all(
-                                      color: cs.outline.withValues(alpha: .5)),
+                                  border: Border.all(color: cs.outline),
                                 ),
                                 child: Text(
                                   '${c.count}',
@@ -1061,11 +1187,14 @@ class _StreetMapViewState extends State<StreetMapView> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Material(
-                    color: cs.surface.withValues(alpha: .92),
+                    // Solid, and the edge is the control-border tier: the
+                    // label sits on a map, and at 92 % the streets ran through
+                    // the word "place".
+                    color: cs.surface,
                     elevation: 1,
                     shape: RoundedRectangleBorder(
                       borderRadius: mmRadius(context, 6),
-                      side: BorderSide(color: cs.outline.withValues(alpha: .4)),
+                      side: BorderSide(color: cs.outline),
                     ),
                     child: InkWell(
                       key: const ValueKey<String>('map-report-place'),
@@ -1202,9 +1331,9 @@ class _StreetMapViewState extends State<StreetMapView> {
                 key: const ValueKey<String>('map-density-size'),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: cs.surface.withValues(alpha: .85),
+                  color: cs.surface,
                   borderRadius: BorderRadius.circular(kRadiusSm),
-                  border: Border.all(color: cs.outline.withValues(alpha: .4)),
+                  border: Border.all(color: cs.outline),
                 ),
                 child: Text(
                   l.mapDensityCellSize(densityCellLabel(densityCellMetres)),
@@ -1221,11 +1350,14 @@ class _StreetMapViewState extends State<StreetMapView> {
           top: StreetMapView.controlsInset,
           child: Material(
             key: const ValueKey<String>('map-controls'),
-            color: cs.surface.withValues(alpha: .9),
+            // The control column carries icon-only buttons over the tiles:
+            // 90 % of the surface let a bright label cross a glyph, so it is
+            // the surface itself and the control-border tier, not a wash.
+            color: cs.surface,
             elevation: 1,
             shape: RoundedRectangleBorder(
               borderRadius: mmRadius(context, 6),
-              side: BorderSide(color: cs.outline.withValues(alpha: .4)),
+              side: BorderSide(color: cs.outline),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1293,7 +1425,16 @@ class _StreetMapViewState extends State<StreetMapView> {
                   },
                 ),
                 // R25+3 / R61 — basemap picker.
-                PopupMenuButton<String>(
+                //
+                // A `PopupMenuButton`, until the owner read it on the device:
+                // a bare list floating over the map with no title, no tick and
+                // the skin's type and shape nowhere in it, which is the one
+                // shape R104 removed from the grid's pickers. It is the app's
+                // own picker now — a sheet with the source named, the current
+                // one ticked and an attribution line, because a picker that
+                // names a source without its credit is a licensing gap as well
+                // as a plain-looking menu.
+                IconButton(
                   key: const ValueKey<String>('map-basemap-picker'),
                   tooltip: l.mapsSourcePick,
                   iconSize: 18,
@@ -1301,27 +1442,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                       minWidth: StreetMapView.controlCell,
                       minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.map),
-                  initialValue: vectorDrawn ? kOsmVector.id : shownSource.id,
-                  onSelected: (String id) {
-                    setState(() {
-                      if (id == kOsmVector.id) {
-                        _rasterOverride = null;
-                      } else {
-                        _sourceId = id;
-                        // Vector is the default, so any raster pick is an
-                        // override of it.
-                        _rasterOverride = id;
-                      }
-                    });
-                    BasemapPrefs.save(_rasterOverride);
-                  },
-                  itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
-                    for (final MapSource s in sources)
-                      PopupMenuItem<String>(
-                        value: s.id,
-                        child: Text(s.name),
-                      ),
-                  ],
+                  onPressed: () => _pickBasemap(context, l, sources,
+                      current: vectorDrawn ? kOsmVector.id : shownSource.id),
                 ),
                 // R90 — event maps belong on the map. They used to be a
                 // switch buried in Settings > Offline maps, which is where
@@ -1335,7 +1457,13 @@ class _StreetMapViewState extends State<StreetMapView> {
                         maps?.layers ?? const <EventLayer>[];
                     final bool anyShown =
                         layers.any((EventLayer e) => e.visible);
-                    return PopupMenuButton<String>(
+                    // Visibility is a set of switches, not a menu of
+                    // commands: the same reason the basemap picker above is a
+                    // sheet. `CheckedPopupMenuItem` drew a framework checkbox
+                    // in the framework's ink, closed on every tap so two layers
+                    // were two openings, and its tick was the only place the
+                    // skin's colour did not reach.
+                    return IconButton(
                       key: const ValueKey<String>('map-layers-menu'),
                       tooltip: l.mapsLayers,
                       iconSize: 18,
@@ -1344,63 +1472,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                           minHeight: StreetMapView.controlCell),
                       icon:
                           Icon(anyShown ? Icons.layers : Icons.layers_outlined),
-                      itemBuilder: (BuildContext _) {
-                        if (layers.isEmpty) {
-                          return <PopupMenuEntry<String>>[
-                            PopupMenuItem<String>(
-                              enabled: false,
-                              child: Text(l.mapsNoLayersShort),
-                            ),
-                            const PopupMenuDivider(),
-                            PopupMenuItem<String>(
-                              value: '__manage',
-                              child: Text(l.mapsManageLayers),
-                            ),
-                          ];
-                        }
-                        return <PopupMenuEntry<String>>[
-                          for (final EventLayer e in layers)
-                            CheckedPopupMenuItem<String>(
-                              value: e.id,
-                              checked: e.visible,
-                              child: Row(
-                                children: <Widget>[
-                                  Flexible(
-                                    child: Text(e.name,
-                                        overflow: TextOverflow.ellipsis),
-                                  ),
-                                  // A layer that is on but has nothing to
-                                  // draw says so, instead of looking like an
-                                  // empty map.
-                                  if (e.visible &&
-                                      !(maps?.isLayerLoaded(e) ?? false))
-                                    const Padding(
-                                      padding: EdgeInsets.only(left: 6),
-                                      child:
-                                          Icon(Icons.error_outline, size: 14),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          const PopupMenuDivider(),
-                          PopupMenuItem<String>(
-                            value: '__manage',
-                            child: Text(l.mapsManageLayers),
-                          ),
-                        ];
-                      },
-                      onSelected: (String id) {
-                        if (id == '__manage') {
-                          ctx.push('/settings/maps');
-                          return;
-                        }
-                        for (final EventLayer e in layers) {
-                          if (e.id == id) {
-                            maps?.setLayerVisible(e, !e.visible);
-                            break;
-                          }
-                        }
-                      },
+                      onPressed: () => _showLayers(ctx, l, maps, layers),
                     );
                   },
                 ),
@@ -1424,7 +1496,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: cs.surface.withValues(alpha: .85),
+                  color: cs.surface,
                   borderRadius: mmRadius(context, 4),
                 ),
                 child: Text(

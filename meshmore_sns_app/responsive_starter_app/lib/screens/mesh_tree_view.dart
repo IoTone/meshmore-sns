@@ -463,9 +463,11 @@ class _HopSlider extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: cs.surface.withValues(alpha: .88),
+        // Solid: the slider is a control over the tree's own strokes, and the
+        // label above it has to be read before the canvas is.
+        color: cs.surface,
         borderRadius: mmRadius(context, 8),
-        border: Border.all(color: cs.outline.withValues(alpha: .55)),
+        border: Border.all(color: cs.outline),
       ),
       // The label sits above the slider, not beside it.
       //
