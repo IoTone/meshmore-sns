@@ -54,16 +54,8 @@ class _NodesScreenState extends State<NodesScreen> {
   /// The compact age the row carries. The boundaries are
   /// `util/relative_time.dart`'s; the em dash is this screen's own "never
   /// heard", which is not an age.
-  String _ago(int unix) {
-    if (unix <= 0) return '—';
-    final Duration age = ageSinceUnix(unix);
-    // A stamp in the future is the phone and the radio disagreeing about the
-    // clock, not a hearing that has not happened yet. `readAge` folds a
-    // negative age into "0s", which reads as "heard just now" on every row of a
-    // table synced from a radio whose clock runs ahead.
-    if (age < const Duration(seconds: -60)) return '—';
-    return compactAgo(age);
-  }
+  String _ago(AppLocalizations l, int unix) =>
+      nodeHeardAgo(l, unix, compact: true);
 
   bool _passesFilters(
       DiscoveredNode n, MeshcoreController mc, Set<String> favs) {
@@ -668,7 +660,7 @@ class _NodesScreenState extends State<NodesScreen> {
                         children: <Widget>[
                           Padding(
                             padding: const EdgeInsets.only(top: 2),
-                            child: Text(_ago(n.lastHeardUnix),
+                            child: Text(_ago(l, n.lastHeardUnix),
                                 style: TextStyle(
                                     color: cs.onSurfaceVariant)),
                           ),

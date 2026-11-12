@@ -113,8 +113,15 @@ class DiscoveredNode {
   /// km away heard 30 s ago is still "recent"). For the UX-facing
   /// "in range" badge, use `MeshcoreController.proximityFor(node)`,
   /// which factors in actual distance when we have GPS on both ends.
-  bool get recentlyHeard =>
-      DateTime.now().millisecondsSinceEpoch ~/ 1000 - lastHeardUnix < 300;
+  ///
+  /// A stamp in the future is the phone and the radio disagreeing about the
+  /// clock, not a hearing. It used to pass this test because a negative
+  /// difference is less than five minutes, which put a node nobody had heard
+  /// into the "recent" tier of the proximity badge.
+  bool get recentlyHeard {
+    final int age = DateTime.now().millisecondsSinceEpoch ~/ 1000 - lastHeardUnix;
+    return age >= 0 && age < 300;
+  }
 
   /// Deprecated alias kept temporarily for any external callers; same
   /// semantics as [recentlyHeard]. Internal call sites must use

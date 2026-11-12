@@ -283,7 +283,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
   }
 
   String _ago(int unixSec, AppLocalizations l) =>
-      nodeAgo(l, ageSinceUnix(unixSec));
+      nodeHeardAgo(l, unixSec);
 
   @override
   Widget build(BuildContext context) {
@@ -331,11 +331,12 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               SizedBox(
-                width: kKvLabelWidth,
+                width: kvLabelWidth(context),
                 child: Text(k,
                     style: TextStyle(
                         color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody)),
               ),
+              const SizedBox(width: _kKvGap),
               Expanded(
                 child: Text(v,
                     style: TextStyle(
@@ -860,12 +861,13 @@ class _FindRouteLineState extends State<_FindRouteLine> {
         child: Row(
           children: <Widget>[
             SizedBox(
-              width: kKvLabelWidth,
+              width: kvLabelWidth(context),
               child: Text(l.nodeFindRoute,
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
                       fontSize: context.skin.type.sizeSm)),
             ),
+            const SizedBox(width: _kKvGap),
             Expanded(
               child: Text(value,
                   style: TextStyle(
@@ -932,12 +934,13 @@ class _ShareContactLineState extends State<_ShareContactLine> {
         child: Row(
           children: <Widget>[
             SizedBox(
-              width: kKvLabelWidth,
+              width: kvLabelWidth(context),
               child: Text(l.nodeShareContact,
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
                       fontSize: context.skin.type.sizeSm)),
             ),
+            const SizedBox(width: _kKvGap),
             Expanded(
               child: Text(l.nodeShareContactHint,
                   style: TextStyle(
@@ -1088,7 +1091,18 @@ class _RepeaterSessionBlockState extends State<_RepeaterSessionBlock> {
 /// Width of the key column in the sheet's key/value rows, so every row's value
 /// starts at the same offset. One place, because the advert-path row has to
 /// line up with the rows the sheet builds itself.
-const double kKvLabelWidth = 84;
+///
+/// It grows with the text scale, because the column is aligned by *measuring*
+/// the keys: at 1.3 text a fixed 84 dp put "Find the route" hard against the
+/// sentence after it, and the row read "Find the routeAsks the mesh; costs
+/// airtime."
+double kvLabelWidth(BuildContext context) =>
+    84 * MediaQuery.textScalerOf(context).scale(1);
+
+/// The gap between the key column and the value. The key column is aligned by
+/// design, so a key that fills it has nothing left to separate it from its own
+/// value.
+const double _kKvGap = 8;
 
 /// The route the contact's last advert arrived by, read on demand.
 ///
@@ -1166,12 +1180,13 @@ class _AdvertPathLineState extends State<_AdvertPathLine> {
         child: Row(
           children: <Widget>[
             SizedBox(
-              width: kKvLabelWidth,
+              width: kvLabelWidth(context),
               child: Text(l.nodeAdvertPath,
                   style: TextStyle(
                       color: cs.onSurfaceVariant,
                       fontSize: context.skin.type.sizeSm)),
             ),
+            const SizedBox(width: _kKvGap),
             Expanded(
               child: Text(value,
                   style: TextStyle(

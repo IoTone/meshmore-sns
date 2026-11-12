@@ -13,6 +13,8 @@ import 'package:meshmore_sns_app/util/relative_time.dart';
 /// was not localized at all. These cases pin the boundaries as facts rather
 /// than as whatever the copy in front of you happens to do, and pin that each
 /// family still speaks in its own words.
+AppLocalizations _en() => lookupAppLocalizations(const Locale('en'));
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -108,5 +110,26 @@ void main() {
     expect(ageSinceUnix(0, now: now), Duration.zero);
     expect(ageSinceUnix(-5, now: now), Duration.zero);
     expect(ageSinceUnix(1000000 - 3600, now: now), const Duration(hours: 1));
+  });
+
+  group('nodeHeardAgo', () {
+    // Said `0s ago` for a node nobody had heard, on both the list and the
+    // sheet, because the firmware's zero means "never" and not "now".
+    test('a stamp of zero is unknown, not a moment ago', () {
+      expect(nodeHeardAgo(_en(), 0), '—');
+      expect(nodeHeardAgo(_en(), -1), '—');
+    });
+
+    test('a stamp in the future is a clock disagreement, not a hearing', () {
+      final int future =
+          DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600;
+      expect(nodeHeardAgo(_en(), future), '—');
+    });
+
+    test('a real stamp reads as its age', () {
+      final int minuteAgo =
+          DateTime.now().millisecondsSinceEpoch ~/ 1000 - 60;
+      expect(nodeHeardAgo(_en(), minuteAgo), contains('1'));
+    });
   });
 }

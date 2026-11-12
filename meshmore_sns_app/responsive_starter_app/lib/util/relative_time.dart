@@ -98,6 +98,28 @@ String deviceAgo(AppLocalizations l, Duration age) {
 }
 
 /// The node-sheet family, which spells out its seconds.
+/// The age of a node's last-heard stamp, as the list and the detail sheet both
+/// state it.
+///
+/// Two stamps cannot be read as an age and both are reported as unknown. A
+/// stamp of zero is the firmware's "never": an unknown advert time must not be
+/// written up as a hearing, and it used to be, which made every contact-synced
+/// node read "0s ago". A stamp in the future is the phone and the radio
+/// disagreeing about the clock, and `readAge` folds a negative age into "0s",
+/// which claims a precision nobody has.
+///
+/// One function, because the two surfaces did disagree: the list said "—" and
+/// the sheet said "0s ago" about the same node in the same session.
+/// [compact] is the list's form ("12h"): a column of ages is scanned, not read,
+/// and the sheet is where the sentence belongs.
+String nodeHeardAgo(AppLocalizations l, int unixSeconds,
+    {bool compact = false}) {
+  if (unixSeconds <= 0) return '—';
+  final Duration age = ageSinceUnix(unixSeconds);
+  if (age < const Duration(seconds: -60)) return '—';
+  return compact ? compactAgo(age) : nodeAgo(l, age);
+}
+
 String nodeAgo(AppLocalizations l, Duration age) {
   final AgeReading a = readAge(age);
   return switch (a.band) {
