@@ -284,7 +284,10 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     fgMuted: Color(0xFFBCB6A8),
     accent: Color(0xFFEDE6D6),
     alert: Color(0xFFC8102E),
-    ok: Color(0xFFBCB6A8),
+    // Was a warm grey at 13 % saturation, which on this monolith reads as a
+    // disabled control rather than as "good". A pale sage keeps the skin quiet
+    // and says the word.
+    ok: Color(0xFF8FB57F),
     // D11.5 — a control's outline, not a rule: `line` was 1.46:1 on the
     // page, so an outlined control here was outlined in a colour nobody
     // could see. Smallest blend of this preset's own line toward its own
@@ -307,6 +310,9 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     line: Color(0xFF243049),
     fg: Color(0xFFE6ECF5),
     fgMuted: Color(0xFFA6B2C8),
+    // A yellow warning: the default amber sat nine degrees from the orange
+    // accent below, and on a HUD those two read as one colour.
+    warn: Color(0xFFFFD24A),
     accent: Color(0xFFFF7A00),
     // Was #E6005C: 4.14:1 against this skin's near-black `onAlert`, under the
     // 4.5 every label is held to. One step brighter keeps the NERV magenta.
@@ -336,7 +342,8 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     fgMuted: Color(0xFF9AACC0),
     accent: Color(0xFF22D3EE),
     alert: Color(0xFFFF2D78),
-    ok: Color(0xFF22D3EE),
+    // Was the accent's own cyan: "good" and "press me" were the same colour.
+    ok: Color(0xFFA3E635),
     // D11.5 — a control's outline, not a rule: `line` was 1.38:1 on the
     // page, so an outlined control here was outlined in a colour nobody
     // could see. Smallest blend of this preset's own line toward its own
@@ -409,11 +416,19 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     line: Color(0xFF6E4E00),
     fg: Color(0xFFFFB000),
     fgMuted: Color(0xFFC79433),
+    // The default amber warning was the accent's own hue; an ochre says
+    // "warn" by weight instead, which this skin can do without a new hue.
+    warn: Color(0xFF9A7420),
     accent: Color(0xFFFFB000),
     // Was #B8302C: 3.50:1 on black, the worst of the set. Lifted along its own
     // ramp so the pair clears 4.5 without turning into a different red.
     alert: Color(0xFFD24540),
-    ok: Color(0xFFFFB000),
+    // Was the accent's own amber: a healthy link and the one action on screen
+    // were the same colour. Phosphor green keeps the night-terminal language.
+    // A deeper green than the link default (#3DDC84): on this black ground the
+    // two greens sat a hair apart, so a status word and a link state read the
+    // same. Weight separates them.
+    ok: Color(0xFF3F9E62),
     // D11.5 — a control's outline, not a rule: `line` was 2.75:1 on the
     // page, so an outlined control here was outlined in a colour nobody
     // could see. Smallest blend of this preset's own line toward its own
@@ -515,7 +530,8 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     // red-11 (#CE2C31) is 4.43:1 on the darkened panel above, under the label
     // floor; one step darker in the same red.
     alert: Color(0xFFC92A2F),
-    ok: Color(0xFF17703A),
+    // Was the link green: a status word and a link state are two things.
+    ok: Color(0xFF0F6E64),
     raised: Color(0xFFE8ECF1),
     selected: Color(0xFFCDCED6),
     onAccent: Color(0xFFFFFFFF),
@@ -545,7 +561,8 @@ const Map<MmThemePreset, MmTokens> kMmPresets = <MmThemePreset, MmTokens>{
     accent: Color(0xFFBE2C11),
     // Same correction for danger: red-11 is 4.46:1 on the raised fill.
     alert: Color(0xFFC4272C),
-    ok: Color(0xFF17703A),
+    // Was the link green: a status word and a link state are two things.
+    ok: Color(0xFF0F6E64),
     raised: Color(0xFFE8EBE7),
     selected: Color(0xFFD7DAD7),
     onAccent: Color(0xFFFFFFFF),
