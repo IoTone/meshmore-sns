@@ -96,6 +96,36 @@ void main() {
     mc.dispose();
   });
 
+  testWidgets('the public channel hides media and says where it lives',
+      (t) async {
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(_host(mc, TtsController(speaker: FakeTtsSpeaker())));
+    await mc.connect();
+    fake.emit(selfInfoFrame()); // → ready, on the well-known Public slot
+    await t.pumpAndSettle();
+
+    // Every repeater in range re-transmits a picture, so the public channel is
+    // the one place it does not belong. The controls are absent, and one line
+    // says where they went.
+    expect(find.byKey(const ValueKey<String>('chat-attach')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('chat-voice')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('chat-media-private-only')),
+        findsOneWidget);
+    // Text still belongs on Public: the send control is there.
+    expect(find.byIcon(Icons.send), findsOneWidget);
+
+    mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
   testWidgets('the attach control opens the media composer', (t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -110,6 +140,10 @@ void main() {
     await t.pumpWidget(_host(mc, tts));
     await mc.connect();
     fake.emit(selfInfoFrame()); // → ready
+    await t.pumpAndSettle();
+    // A private channel, because the public one hides the media controls: a
+    // chunked picture is a dozen datagrams every repeater in range repeats.
+    await mc.setChannel(idx: 0, name: 'Team', psk: List<int>.filled(16, 7));
     await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey<String>('chat-attach')));
     await t.pumpAndSettle();
@@ -210,6 +244,9 @@ void main() {
     await t.pumpWidget(_host(mc, tts));
     await mc.connect();
     fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+    await t.pumpAndSettle();
+    await mc.setChannel(idx: 0, name: 'Team', psk: List<int>.filled(16, 7));
     await t.pump();
     // A channel line with a sender prefix: the name is the address the
     // protocol gives us, and `@[Name] ` is the form MeshCore clients read as

@@ -5673,12 +5673,15 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get chatMediaPrivateOnly => '写真と音声はダイレクトメッセージとプライベートチャンネルのみです。';
+
+  @override
   String mediaReachScope(String scope) {
-    return '無線機の地域スコープ「$scope」で送信されます。その地域で電波が届く全員が受信します。';
+    return '地域スコープ $scope。';
   }
 
   @override
-  String get mediaReachNoScope => '無線機に地域スコープが設定されていないため、電波が届く全員が受信します。';
+  String get mediaReachNoScope => '地域スコープ未設定: 届く全員に送られます。';
 
   @override
   String get mediaReachUnknown => '到達範囲は無線機のスコープ次第で、まだ報告されていません。写真は受信確認されません。';

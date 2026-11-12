@@ -4069,8 +4069,9 @@
       }
     }
   },
-  "mediaReachScope": "Goes out under the radio's region scope {scope}: everyone in that region who can hear your radio.",
-  "mediaReachNoScope": "No region scope is set on the radio, so everyone who can hear it receives this.",
+  "chatMediaPrivateOnly": "Photos and voice: direct messages and private channels only.",
+  "mediaReachScope": "Region scope {scope}.",
+  "mediaReachNoScope": "No region scope set: everyone in range receives this.",
   "mediaReachUnknown": "Reach is the radio's own scope, which it has not reported yet. A photo is not acknowledged.",
   "@mediaReachScope": {
     "placeholders": {

@@ -97,6 +97,12 @@ void main() {
     ));
     await mc.connect();
     fake.emit(selfInfoFrame());
+
+    // Media and voice belong on a private channel: the public one hides them,
+    // because every repeater in range re-transmits the chunks. This test runs on
+    // slot 0 with a private key, which is the same thing to the composer.
+    await t.pumpAndSettle();
+    await mc.setChannel(idx: 0, name: 'Team', psk: List<int>.filled(16, 7));
     await t.pumpAndSettle();
     return (mc, inbox, completed);
   }

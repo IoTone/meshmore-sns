@@ -9856,16 +9856,22 @@ abstract class AppLocalizations {
   /// **'{unfinished} of {total} stores did not finish. What is left is listed here; the radio and your settings are untouched.'**
   String storageClearAllPartly(int unfinished, int total);
 
+  /// No description provided for @chatMediaPrivateOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos and voice: direct messages and private channels only.'**
+  String get chatMediaPrivateOnly;
+
   /// No description provided for @mediaReachScope.
   ///
   /// In en, this message translates to:
-  /// **'Goes out under the radio\'s region scope {scope}: everyone in that region who can hear your radio.'**
+  /// **'Region scope {scope}.'**
   String mediaReachScope(String scope);
 
   /// No description provided for @mediaReachNoScope.
   ///
   /// In en, this message translates to:
-  /// **'No region scope is set on the radio, so everyone who can hear it receives this.'**
+  /// **'No region scope set: everyone in range receives this.'**
   String get mediaReachNoScope;
 
   /// No description provided for @mediaReachUnknown.

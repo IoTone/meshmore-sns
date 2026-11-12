@@ -5909,13 +5909,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get chatMediaPrivateOnly =>
+      'Photos and voice: direct messages and private channels only.';
+
+  @override
   String mediaReachScope(String scope) {
-    return 'Goes out under the radio\'s region scope $scope: everyone in that region who can hear your radio.';
+    return 'Region scope $scope.';
   }
 
   @override
   String get mediaReachNoScope =>
-      'No region scope is set on the radio, so everyone who can hear it receives this.';
+      'No region scope set: everyone in range receives this.';
 
   @override
   String get mediaReachUnknown =>

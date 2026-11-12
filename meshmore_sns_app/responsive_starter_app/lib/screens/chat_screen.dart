@@ -956,6 +956,19 @@ class _ChatScreenState extends State<ChatScreen>
               ],
             ),
           ),
+          // A hidden control has to say where it went, once and briefly. Only
+          // on a channel where media is not offered.
+          if (!_mediaAllowed(mc))
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+              child: Text(
+                l.chatMediaPrivateOnly,
+                key: const ValueKey<String>('chat-media-private-only'),
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: context.skin.type.sizeSm),
+              ),
+            ),
           const Divider(height: 1),
           // The sealed history could not be opened on this device: say so and
           // offer the one recovery path, rather than showing an empty thread
@@ -1094,20 +1107,44 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   /// The three composer actions, in order, as they appear on their row.
+  /// Whether a photo or a voice note belongs on this channel.
+  ///
+  /// The mesh's own etiquette, and now the app's: a chunked picture is a dozen
+  /// or so datagrams every repeater in range re-transmits, so it belongs on a
+  /// direct message or a private channel. The public channel is the one
+  /// everybody shares, which makes it exactly the wrong place. Measured against
+  /// what other MeshCore clients document, this is their rule too.
+  bool _mediaAllowed(MeshcoreController mc) {
+    if (!mc.isReady) return false;
+    final List<int>? psk = mc.channelPsk(mc.activeChannel);
+    if (psk == null) return false;
+    final bool isPublic = mc.activeChannel == 0 &&
+        psk.length == kPublicChannelPsk.length &&
+        <int>[for (int i = 0; i < psk.length; i++) i]
+            .every((int i) => psk[i] == kPublicChannelPsk[i]);
+    return !isPublic;
+  }
+
   List<Widget> _composerActions(
       BuildContext context, MeshcoreController mc, AppLocalizations l) {
     final MeshcoreController m = mc;
     final bool ready = m.isReady;
+    // Hidden, not disabled: a button that cannot work is a promise the app
+    // cannot keep, and the strip above the composer already says where media
+    // goes.
+    final bool media = _mediaAllowed(m);
     return <Widget>[
-      IconButton(
-        key: const ValueKey<String>('chat-voice'),
-        tooltip: l.voiceTitle,
-        onPressed: ready ? () => _openVoice(m) : null,
-        icon: const Icon(Icons.mic_none_outlined),
-      ),
-      IconButton(
-        key: const ValueKey<String>('chat-attach'),
-        tooltip: l.mediaComposerTitle,
+      if (media)
+        IconButton(
+          key: const ValueKey<String>('chat-voice'),
+          tooltip: l.voiceTitle,
+          onPressed: ready ? () => _openVoice(m) : null,
+          icon: const Icon(Icons.mic_none_outlined),
+        ),
+      if (media)
+        IconButton(
+          key: const ValueKey<String>('chat-attach'),
+          tooltip: l.mediaComposerTitle,
         onPressed: ready
             ? () => MediaComposer.show(
                   context,
