@@ -3369,8 +3369,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapsTitle => 'オフライン地図';
 
   @override
-  String get mapsOffline =>
-      'ネットワークがありません。新しい地図の設定はオンライン時のみ可能です。ダウンロードは自動で再開します。';
+  String get mapsOffline => 'ネットワークがありません。ダウンロードは自動で再開します。';
 
   @override
   String get mapsStorage => 'ストレージ';
@@ -3401,15 +3400,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapsAddPack => '地域をダウンロード';
 
   @override
-  String get mapsNoPacks =>
-      'まだ地域がありません。オフライン利用を許可するサーバー(米国内の USGS、または追加したタイルサーバー)から取得します。';
+  String get mapsNoPacks => '地域はまだありません。';
 
   @override
   String get mapsArchives => '地域ファイル';
 
   @override
-  String get mapsNoArchives =>
-      '地域ファイルがありません。地域ファイルは、信頼できる配信元の .pmtiles ファイルで、一つの地域をまとめてダウンロードします。リンクを追加してください。';
+  String get mapsNoArchives => '地域ファイルはまだありません。';
 
   @override
   String get mapsAddArchive => '地域ファイルを追加';
@@ -3457,7 +3454,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapsPacksPublished => 'ダウンロード可能なパック';
 
   @override
-  String get mapsPacksEmpty => '公開されているオフライン地図はまだありません。リンクから追加できます。';
+  String get mapsPacksEmpty => '公開パックはありません。リンクから追加できます。';
 
   @override
   String mapsPacksFrom(String source) {
@@ -3468,7 +3465,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapsPacksBundle => '同梱リスト';
 
   @override
-  String get mapsPacksUnreadable => '公開リストを読めなかったため、同梱リストを表示しています。';
+  String get mapsPacksUnreadable => '公開リストを読めませんでした。内蔵リストを表示しています。';
 
   @override
   String get mapsPackInstall => 'ダウンロード';
@@ -3494,14 +3491,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapsNoLayersShort => 'イベントマップ未登録';
 
   @override
-  String get mapsManageLayers => 'イベントマップを管理…';
-
-  @override
   String get mapsAddLayer => 'イベント地図を追加';
 
   @override
-  String get mapsNoLayers =>
-      'イベント地図はありません。GeoJSON の URL(祭りの街区図、レースのコース、キャンプ配置など)を追加してください。';
+  String get mapsNoLayers => 'イベントマップはまだありません。';
 
   @override
   String get mapsSources => '地図ソース';
@@ -5356,7 +5349,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridCompassDisturbed =>
-      '方位が取れません — ここは磁場が強すぎます。磁石から離れて、端末を 8 の字に回してください。';
+      '方位が取れません — ここは磁場が強すぎます。磁石から離し、平らに置いて一度ぐるりと回してください。';
 
   @override
   String get gridPurposeRadial => '各ノードまでの距離と、最後に聞こえた時刻。';

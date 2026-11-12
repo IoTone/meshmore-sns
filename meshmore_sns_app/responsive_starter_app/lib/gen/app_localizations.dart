@@ -5957,7 +5957,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsOffline.
   ///
   /// In en, this message translates to:
-  /// **'No network. New maps can be set up only while online; downloads resume on their own.'**
+  /// **'No network. Downloads resume on their own.'**
   String get mapsOffline;
 
   /// No description provided for @mapsStorage.
@@ -6011,7 +6011,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsNoPacks.
   ///
   /// In en, this message translates to:
-  /// **'No regions yet. Regions come from servers that allow offline use: USGS inside the US, or a tile server you add.'**
+  /// **'No regions yet.'**
   String get mapsNoPacks;
 
   /// No description provided for @mapsArchives.
@@ -6023,7 +6023,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsNoArchives.
   ///
   /// In en, this message translates to:
-  /// **'No region files. A region file is one download for a whole area: a .pmtiles file from a host you trust. Add its link.'**
+  /// **'No region files yet.'**
   String get mapsNoArchives;
 
   /// No description provided for @mapsAddArchive.
@@ -6119,7 +6119,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsPacksEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No offline maps published yet. You can still install one from a link.'**
+  /// **'No packs published. Install one from a link.'**
   String get mapsPacksEmpty;
 
   /// No description provided for @mapsPacksFrom.
@@ -6137,7 +6137,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsPacksUnreadable.
   ///
   /// In en, this message translates to:
-  /// **'The published list could not be read. Showing the built-in one.'**
+  /// **'Couldn\'t read the published list; showing the built-in one.'**
   String get mapsPacksUnreadable;
 
   /// No description provided for @mapsPackInstall.
@@ -6182,12 +6182,6 @@ abstract class AppLocalizations {
   /// **'No event maps added'**
   String get mapsNoLayersShort;
 
-  /// No description provided for @mapsManageLayers.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage event maps…'**
-  String get mapsManageLayers;
-
   /// No description provided for @mapsAddLayer.
   ///
   /// In en, this message translates to:
@@ -6197,7 +6191,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsNoLayers.
   ///
   /// In en, this message translates to:
-  /// **'No event maps. Add a GeoJSON URL: a festival\'s street plan, a race course, a camp layout.'**
+  /// **'No event maps yet.'**
   String get mapsNoLayers;
 
   /// No description provided for @mapsSources.
@@ -9337,7 +9331,7 @@ abstract class AppLocalizations {
   /// No description provided for @gridCompassDisturbed.
   ///
   /// In en, this message translates to:
-  /// **'No heading — the magnetic field here is too strong. Turn the phone in a figure 8, away from magnets.'**
+  /// **'No heading — the magnetic field here is too strong. Lay the phone flat, away from magnets, and turn it right round once.'**
   String get gridCompassDisturbed;
 
   /// No description provided for @gridPurposeRadial.

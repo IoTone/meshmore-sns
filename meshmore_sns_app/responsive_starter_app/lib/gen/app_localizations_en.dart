@@ -3513,8 +3513,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapsTitle => 'Offline maps';
 
   @override
-  String get mapsOffline =>
-      'No network. New maps can be set up only while online; downloads resume on their own.';
+  String get mapsOffline => 'No network. Downloads resume on their own.';
 
   @override
   String get mapsStorage => 'Storage';
@@ -3545,15 +3544,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapsAddPack => 'Download a region';
 
   @override
-  String get mapsNoPacks =>
-      'No regions yet. Regions come from servers that allow offline use: USGS inside the US, or a tile server you add.';
+  String get mapsNoPacks => 'No regions yet.';
 
   @override
   String get mapsArchives => 'Region files';
 
   @override
-  String get mapsNoArchives =>
-      'No region files. A region file is one download for a whole area: a .pmtiles file from a host you trust. Add its link.';
+  String get mapsNoArchives => 'No region files yet.';
 
   @override
   String get mapsAddArchive => 'Add region file';
@@ -3604,8 +3601,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapsPacksPublished => 'Available packs';
 
   @override
-  String get mapsPacksEmpty =>
-      'No offline maps published yet. You can still install one from a link.';
+  String get mapsPacksEmpty => 'No packs published. Install one from a link.';
 
   @override
   String mapsPacksFrom(String source) {
@@ -3617,7 +3613,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapsPacksUnreadable =>
-      'The published list could not be read. Showing the built-in one.';
+      'Couldn\'t read the published list; showing the built-in one.';
 
   @override
   String get mapsPackInstall => 'Download';
@@ -3644,14 +3640,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapsNoLayersShort => 'No event maps added';
 
   @override
-  String get mapsManageLayers => 'Manage event maps…';
-
-  @override
   String get mapsAddLayer => 'Add event map';
 
   @override
-  String get mapsNoLayers =>
-      'No event maps. Add a GeoJSON URL: a festival\'s street plan, a race course, a camp layout.';
+  String get mapsNoLayers => 'No event maps yet.';
 
   @override
   String get mapsSources => 'Map sources';
@@ -5582,7 +5574,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridCompassDisturbed =>
-      'No heading — the magnetic field here is too strong. Turn the phone in a figure 8, away from magnets.';
+      'No heading — the magnetic field here is too strong. Lay the phone flat, away from magnets, and turn it right round once.';
 
   @override
   String get gridPurposeRadial =>

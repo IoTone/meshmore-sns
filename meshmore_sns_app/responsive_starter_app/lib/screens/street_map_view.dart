@@ -636,20 +636,11 @@ class _StreetMapViewState extends State<StreetMapView> {
                             color: skin.color.fgMuted,
                             fontSize: skin.type.sizeSm)),
                   ),
-              const Divider(height: 1),
-              ListTile(
-                key: const ValueKey<String>('map-layers-manage'),
-                leading: Icon(Icons.tune, color: skin.color.fgMuted),
-                title: Text(l.mapsManageLayers,
-                    style: TextStyle(
-                        color: skin.color.fg,
-                        fontSize: skin.type.sizeBodyLg)),
-                trailing: Icon(Icons.chevron_right, color: skin.color.fgMuted),
-                onTap: () {
-                  Navigator.pop(c);
-                  context.push('/settings/maps');
-                },
-              ),
+              // No "manage" row: the column has its own offline-maps control
+              // now, so this sheet is about which layers are on, and nothing
+              // else. Two routes to the same screen, one of them labelled with
+              // the wrong name, was the confusion.
+
             ],
           ),
         );
@@ -1514,6 +1505,25 @@ class _StreetMapViewState extends State<StreetMapView> {
                       icon:
                           Icon(anyShown ? Icons.layers : Icons.layers_outlined),
                       onPressed: () => _showLayers(ctx, l, maps, layers),
+                    );
+                  },
+                ),
+                // Offline maps, one tap. It used to be two: the layers sheet
+                // ended in "Manage event maps…", which named event maps and
+                // landed on the offline map settings — the owner's report was
+                // that the label did not say where it went. The control says
+                // what it is and goes there.
+                Builder(
+                  builder: (BuildContext ctx) {
+                    return IconButton(
+                      key: const ValueKey<String>('map-offline-maps-button'),
+                      tooltip: l.mapsTitle,
+                      iconSize: 18,
+                      constraints: const BoxConstraints(
+                          minWidth: StreetMapView.controlCell,
+                          minHeight: StreetMapView.controlCell),
+                      icon: const Icon(Icons.download_for_offline_outlined),
+                      onPressed: () => ctx.push('/settings/maps'),
                     );
                   },
                 ),

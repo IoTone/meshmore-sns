@@ -584,11 +584,11 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
           reason: '${preset.name}: Map is reachable from the grid');
       expect(find.byType(MapScreen), findsOneWidget);
-      // The offline-maps shortcut left the map's own control column: it
-      // navigated to a Settings row from a column where every other control
-      // changes what the map shows. Settings still reaches it.
-      expect(find.byTooltip('Offline maps'), findsNothing,
-          reason: 'the map column holds map layers, not a settings shortcut');
+      // The offline-maps control is in the map's own column, and deliberately:
+      // reaching it used to mean a row called "Manage event maps", which named
+      // the wrong screen entirely.
+      expect(find.byTooltip('Offline maps'), findsOneWidget,
+          reason: 'offline maps has its own control in the map column');
       expect(t.takeException(), isNull);
     }
   });

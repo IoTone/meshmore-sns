@@ -132,11 +132,12 @@ void main() {
     // recentre, basemap, layers, then the host's tools.
     final double layersY = t.getTopLeft(find.byKey(_layersKey)).dy;
     expect(t.getTopLeft(find.byKey(_placesKey)).dy, greaterThan(layersY));
-    // The offline-maps button is gone: it navigated to a Settings row rather
-    // than changing what the map shows, and every other button in this column
-    // changes the map.
+    // The offline-maps button is back, and deliberately: the owner's report was
+    // that reaching the offline map settings meant a row called "Manage event
+    // maps", which named the wrong thing. A control that says "Offline maps"
+    // and goes there is worth one cell in the column.
     expect(find.byKey(const ValueKey<String>('map-offline-maps-button')),
-        findsNothing);
+        findsOneWidget);
     await _drain(t, mc, m);
   });
 

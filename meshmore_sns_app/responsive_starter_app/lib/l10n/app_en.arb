@@ -2264,7 +2264,7 @@
   "deviceAdvertPropagatesHint": "Takes effect the next time the radio announces itself.",
   "settingsHubMaps": "Offline maps",
   "mapsTitle": "Offline maps",
-  "mapsOffline": "No network. New maps can be set up only while online; downloads resume on their own.",
+  "mapsOffline": "No network. Downloads resume on their own.",
   "mapsStorage": "Storage",
   "mapsUsed": "{used} of {budget} used",
   "@mapsUsed": {
@@ -2296,9 +2296,9 @@
   "mapsClearView": "Clear viewed tiles",
   "mapsPacks": "Region downloads",
   "mapsAddPack": "Download a region",
-  "mapsNoPacks": "No regions yet. Regions come from servers that allow offline use: USGS inside the US, or a tile server you add.",
+  "mapsNoPacks": "No regions yet.",
   "mapsArchives": "Region files",
-  "mapsNoArchives": "No region files. A region file is one download for a whole area: a .pmtiles file from a host you trust. Add its link.",
+  "mapsNoArchives": "No region files yet.",
   "mapsAddArchive": "Add region file",
   "archiveUrl": "Link (https)",
   "archiveSize": "Size in MB (optional)",
@@ -2314,7 +2314,7 @@
   "archiveStateWaitingWifi": "Waiting for Wi-Fi",
   "archiveRefusalNoSpace": "Not enough free space. Free up some and try again.",
   "mapsPacksPublished": "Available packs",
-  "mapsPacksEmpty": "No offline maps published yet. You can still install one from a link.",
+  "mapsPacksEmpty": "No packs published. Install one from a link.",
   "mapsPacksFrom": "List from {source}",
   "@mapsPacksFrom": {
     "placeholders": {
@@ -2324,7 +2324,7 @@
     }
   },
   "mapsPacksBundle": "Built-in list",
-  "mapsPacksUnreadable": "The published list could not be read. Showing the built-in one.",
+  "mapsPacksUnreadable": "Couldn't read the published list; showing the built-in one.",
   "mapsPackInstall": "Download",
   "mapsPackLicence": "{licence} · {attribution}",
   "@mapsPackLicence": {
@@ -2342,9 +2342,8 @@
   "mapsOutsidePacks": "Outside your offline maps, the map needs a connection.",
   "mapsLayers": "Event maps",
   "mapsNoLayersShort": "No event maps added",
-  "mapsManageLayers": "Manage event maps…",
   "mapsAddLayer": "Add event map",
-  "mapsNoLayers": "No event maps. Add a GeoJSON URL: a festival's street plan, a race course, a camp layout.",
+  "mapsNoLayers": "No event maps yet.",
   "mapsSources": "Map sources",
   "mapsAddSource": "Add tile server",
   "mapsSourcePacks": "Offline download allowed",
@@ -3815,7 +3814,7 @@
   "fujiUnknownShort": "Striped · no altitude",
   "chatSpeechOffAction": "Speech is off in App settings",
   "nodeDetailAltitudeNotReported": "not reported",
-  "gridCompassDisturbed": "No heading — the magnetic field here is too strong. Turn the phone in a figure 8, away from magnets.",
+  "gridCompassDisturbed": "No heading — the magnetic field here is too strong. Lay the phone flat, away from magnets, and turn it right round once.",
   "gridPurposeRadial": "How far each node is, and how long ago it was heard.",
   "gridPurposeWeather": "Temperature, humidity and pressure, from nodes that report them.",
   "gridPurposeTree": "How nodes reach each other, from the routes they advertise.",

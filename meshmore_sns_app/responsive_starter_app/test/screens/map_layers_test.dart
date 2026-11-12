@@ -225,13 +225,13 @@ void main() {
     await _drain(t, mc, m);
   });
 
-  testWidgets('with no layers the sheet says so and points at Settings',
-      (WidgetTester t) async {
+  testWidgets('with no layers the sheet says so', (WidgetTester t) async {
     final (MapsController m, MeshcoreController mc) = await _pump(t, _Net());
     await _openLayers(t);
     expect(find.text('No event maps added'), findsOneWidget);
-    expect(find.byKey(const ValueKey<String>('map-layers-manage')),
-        findsOneWidget);
+    // And nothing else: the route to the offline map settings is its own
+    // control in the map column, not a row in this sheet.
+    expect(find.byKey(const ValueKey<String>('map-layers-manage')), findsNothing);
     expect(find.byType(FlutterMap), findsOneWidget);
     await _drain(t, mc, m);
   });
