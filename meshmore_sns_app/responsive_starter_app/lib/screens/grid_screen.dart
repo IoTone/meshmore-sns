@@ -82,6 +82,15 @@ extension on _GridViewMode {
         _GridViewMode.weather =>
           false,
       };
+
+  /// Whether this view keeps a horizontal drag for itself, even if it does not
+  /// pan.
+  ///
+  /// The altitude profile is a diagram: a drag across it does nothing, and
+  /// paging the app sideways while the reader is tracing a summit is the worst
+  /// of both. Claiming the drag makes the gesture inert instead of changing the
+  /// view under their finger.
+  bool get holdsDrags => this == _GridViewMode.elevation;
 }
 
 /// What a radar marker can honestly be drawn from.
@@ -326,7 +335,7 @@ class _GridScreenState extends State<GridScreen>
 
   /// Tells the shell whether this tab owns horizontal drags right now.
   void _publishDragClaim() {
-    if (_mapOwnsDrags) {
+    if (_mapOwnsDrags || _viewMode.holdsDrags) {
       shellDragClaim.hold(GridScreen.dragHolder);
     } else {
       shellDragClaim.release(GridScreen.dragHolder);

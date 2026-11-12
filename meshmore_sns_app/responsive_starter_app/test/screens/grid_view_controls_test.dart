@@ -12,7 +12,9 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/elevation_profile_view.dart';
+import 'package:meshmore_sns_app/screens/grid_screen.dart';
 import 'package:meshmore_sns_app/screens/mesh_tree_view.dart';
+import 'package:meshmore_sns_app/shell/horizontal_drag_claim.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import '../meshcore/fake_transport.dart';
@@ -142,6 +144,53 @@ void main() {
       await t.pump(const Duration(seconds: 2));
     });
   }
+
+  testWidgets('the altitude profile keeps a sideways drag, so it cannot page',
+      (WidgetTester t) async {
+    // A diagram: paging the app sideways while the reader traces a summit is
+    // the worst of both. The view claims the drag, so the gesture is inert
+    // instead of changing the view under their finger.
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await t.binding.setSurfaceSize(const Size(400, 800));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(host(const GridScreen(), mc, 1.3));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    for (int i = 0; i < 10; i++) {
+      await t.pump(const Duration(milliseconds: 100));
+    }
+    // The radar does not claim: a drag on a dial means nothing, so paging is
+    // harmless there.
+    expect(shellDragClaim.isClaimed, isFalse);
+
+    await t.tap(find.byTooltip('View'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.text('Altitude').last);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    expect(shellDragClaim.isClaimed, isTrue,
+        reason: 'the altitude profile must not page under a sideways drag');
+
+    // Back to a view that does not claim, so the shell pages again.
+    await t.tap(find.byTooltip('View'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.text('Radar').last);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
+    expect(shellDragClaim.isClaimed, isFalse);
+
+    mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
 
   testWidgets('the mesh tree keeps Recenter clear of the hop slider',
       (WidgetTester t) async {
