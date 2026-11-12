@@ -121,8 +121,10 @@ void main() {
         child: _host(mc, tts, theme),
       ));
       await t.pumpAndSettle();
-      await t.tap(find.byKey(const ValueKey<String>('chat-overflow')));
-      await t.pumpAndSettle();
+      // Straight to the report. Opening the strip's overflow menu first left
+      // its barrier over the button, so the second tap dismissed the menu and
+      // the sheet never opened — the test passed only while the overflow
+      // control happened to be scrolled off the 320 dp viewport.
       await t.tap(
           find.byKey(const ValueKey<String>('chat-activity-visible')));
       await t.pumpAndSettle();

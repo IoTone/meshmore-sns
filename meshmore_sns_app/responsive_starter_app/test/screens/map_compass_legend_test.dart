@@ -44,15 +44,24 @@ void main() {
     await t.binding.setSurfaceSize(const Size(400, 800));
     addTearDown(() => t.binding.setSurfaceSize(null));
 
-    // The platform's own compass, which is what the app reads: a heading with
-    // the OS's accuracy figure, exactly as `CompassStreamHandler` reports it.
+    // The platform's own compass, which is what the app reads: the fused
+    // rotation vector, the display rotation and the OS's accuracy figure,
+    // exactly as `CompassStreamHandler` reports them. This quaternion is a
+    // level phone facing east, so the heading it implies is 90 degrees.
     final TestDefaultBinaryMessenger messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockStreamHandler(
       const EventChannel('meshmore/compass'),
       MockStreamHandler.inline(
         onListen: (Object? arguments, MockStreamHandlerEventSink sink) =>
-            sink.success(<String, Object?>{'heading': 90.0, 'accuracy': 15}),
+            sink.success(<String, Object?>{
+              'qx': 0.0,
+              'qy': 0.0,
+              'qz': -0.7071067811865476,
+              'qw': 0.7071067811865476,
+              'rotation': 0,
+              'accuracy': 15,
+            }),
       ),
     );
 

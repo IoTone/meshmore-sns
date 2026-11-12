@@ -617,6 +617,7 @@ class MmChoiceChip extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     this.avatar,
+    this.showCheckmark = true,
   });
 
   final Widget label;
@@ -624,12 +625,21 @@ class MmChoiceChip extends StatelessWidget {
   final ValueChanged<bool>? onSelected;
   final Widget? avatar;
 
+  /// Whether a selected chip carries Material's checkmark.
+  ///
+  /// False where the fill and the label weight already say "selected" and the
+  /// chip has something else to draw: a tick beside a channel name is a second
+  /// mark for a fact the fill already states, and beside an unread count it made
+  /// one chip carry three decorations.
+  final bool showCheckmark;
+
   @override
   Widget build(BuildContext context) => ChoiceChip(
         label: label,
         selected: selected,
         onSelected: onSelected,
         avatar: avatar,
+        showCheckmark: showCheckmark && avatar == null,
         labelStyle: mmChipLabelStyle(context,
             selected: selected, enabled: onSelected != null),
       );

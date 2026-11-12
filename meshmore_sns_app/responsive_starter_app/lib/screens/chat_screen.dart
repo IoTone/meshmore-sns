@@ -706,14 +706,25 @@ class _ChatScreenState extends State<ChatScreen>
         return n;
       },
     );
-    final Map<int, int> unread = allMessages == 0
-        ? const <int, int>{}
-        : UnreadCounts.perChannel(
-            channels: channels.map((MapEntry<int, String> e) => e.key),
-            history: mc.messagesFor,
-            reads: reads,
-            filter: filter,
-          );
+    final Map<int, int> unread = <int, int>{
+      ...(allMessages == 0
+          ? const <int, int>{}
+          : UnreadCounts.perChannel(
+              channels: channels.map((MapEntry<int, String> e) => e.key),
+              history: mc.messagesFor,
+              reads: reads,
+              filter: filter,
+            )),
+    };
+    // The thread on screen, scrolled to its newest row, is being read as it
+    // arrives. The mark moves a frame later than the count is computed, so the
+    // chip for the channel the reader is looking at used to blink a badge on
+    // for that frame — the owner's "a notification lands and the tag I am
+    // sitting on goes dark with a number". A channel you are reading has no
+    // unread traffic, so it is removed from the map rather than drawn and then
+    // cleared.
+    final bool readingThisThread = (widget.isCurrent ?? true) && _atBottom;
+    if (readingThisThread) unread.remove(active);
     if (reads != null &&
         (widget.isCurrent ?? true) &&
         _atBottom &&
@@ -757,14 +768,20 @@ class _ChatScreenState extends State<ChatScreen>
                       // how the places sheet ended up with a light label on a
                       // light fill.
                       child: MmChoiceChip(
-                        label: Text(ch.value),
+                        // The count rides in the label, not in the chip's
+                        // `avatar`. Material draws an avatar inside a circle at
+                        // the chip's leading edge, so a count there read as a
+                        // dark disc with a second glyph in it. A small number
+                        // after the name is the whole fact.
+                        label: _ChannelChipLabel(
+                          name: ch.value,
+                          unread: unread[ch.key] ?? 0,
+                          badgeKey: ValueKey<String>('unread-${ch.key}'),
+                        ),
                         selected: ch.key == active,
-                        avatar: (unread[ch.key] ?? 0) > 0
-                            ? _UnreadBadge(
-                                key: ValueKey<String>('unread-${ch.key}'),
-                                count: unread[ch.key]!,
-                              )
-                            : null,
+                        // The chip's fill states the selection; a tick as well
+                        // is one mark too many beside a channel name.
+                        showCheckmark: false,
                         onSelected: (_) => mc.setActiveChannel(ch.key),
                       ),
                     ),
@@ -1788,6 +1805,38 @@ class _JumpToNewestPill extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A channel's name, with its unread count after it.
+///
+/// Inline rather than as the chip's `avatar`: Material renders an avatar inside
+/// a circle at the chip's leading edge, where a count reads as a dark disc with
+/// a second glyph in it. The count is the only decoration a channel tag needs,
+/// and it goes away when the thread is read.
+class _ChannelChipLabel extends StatelessWidget {
+  const _ChannelChipLabel({
+    required this.name,
+    required this.unread,
+    required this.badgeKey,
+  });
+
+  final String name;
+  final int unread;
+  final Key badgeKey;
+
+  @override
+  Widget build(BuildContext context) {
+    if (unread <= 0) return Text(name);
+    final MmSkin skin = context.skin;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Text(name),
+        SizedBox(width: skin.space.step(1)),
+        _UnreadBadge(key: badgeKey, count: unread),
+      ],
     );
   }
 }

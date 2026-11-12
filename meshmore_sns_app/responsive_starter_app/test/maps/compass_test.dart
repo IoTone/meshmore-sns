@@ -24,6 +24,51 @@ double apart(double a, double b) {
   return d.abs();
 }
 
+/// A quaternion for a rotation whose device axes are the columns of [m].
+({double x, double y, double z, double w}) fromMatrix(List<List<double>> m) {
+  final double trace = m[0][0] + m[1][1] + m[2][2];
+  double x, y, z, w;
+  if (trace > 0) {
+    final double s = math.sqrt(trace + 1.0) * 2;
+    w = 0.25 * s;
+    x = (m[2][1] - m[1][2]) / s;
+    y = (m[0][2] - m[2][0]) / s;
+    z = (m[1][0] - m[0][1]) / s;
+  } else if (m[0][0] > m[1][1] && m[0][0] > m[2][2]) {
+    final double s = math.sqrt(1.0 + m[0][0] - m[1][1] - m[2][2]) * 2;
+    w = (m[2][1] - m[1][2]) / s;
+    x = 0.25 * s;
+    y = (m[0][1] + m[1][0]) / s;
+    z = (m[0][2] + m[2][0]) / s;
+  } else if (m[1][1] > m[2][2]) {
+    final double s = math.sqrt(1.0 + m[1][1] - m[0][0] - m[2][2]) * 2;
+    w = (m[0][2] - m[2][0]) / s;
+    x = (m[0][1] + m[1][0]) / s;
+    y = 0.25 * s;
+    z = (m[1][2] + m[2][1]) / s;
+  } else {
+    final double s = math.sqrt(1.0 + m[2][2] - m[0][0] - m[1][1]) * 2;
+    w = (m[1][0] - m[0][1]) / s;
+    x = (m[0][2] + m[2][0]) / s;
+    y = (m[1][2] + m[2][1]) / s;
+    z = 0.25 * s;
+  }
+  return (x: x, y: y, z: z, w: w);
+}
+
+/// A level, screen-up phone facing [deg]: the frame is rotated by -deg about up.
+CompassReading level(double deg, {int accuracy = 15}) {
+  final double half = -deg * math.pi / 360;
+  return CompassReading(
+    qx: 0,
+    qy: 0,
+    qz: math.sin(half),
+    qw: math.cos(half),
+    displayRotation: 0,
+    accuracy: accuracy,
+  );
+}
+
 void main() {
   /// A phone flat on a desk, screen up, with the Earth's field along north at
   /// 20 µT horizontal and 46 µT down — Denver's, which is where the reported
@@ -320,6 +365,101 @@ void main() {
     await gyro.close();
   });
 
+  group('the heading from a rotation vector', () {
+    // A quaternion for a rotation of [deg] about the world's up axis, applied to
+    // a device frame that starts aligned with the world (x east, y north, z up).
+    ({double x, double y, double z, double w}) aboutUp(double deg) {
+      final double half = deg * math.pi / 360;
+      return (x: 0, y: 0, z: math.sin(half), w: math.cos(half));
+    }
+
+    test('flat and facing north reads north', () {
+      final ({double x, double y, double z, double w}) q = aboutUp(0);
+      expect(
+          headingFromRotation(
+              qx: q.x, qy: q.y, qz: q.z, qw: q.w, displayRotation: 0),
+          closeTo(0, 0.01));
+    });
+
+    test('flat and facing each cardinal reads that cardinal', () {
+      // Rotating the *phone* clockwise about up is a negative rotation of the
+      // frame, so the frame is rotated by -angle.
+      for (final (double facing, double frame) in <(double, double)>[
+        (90, -90),
+        (180, 180),
+        (270, 90),
+      ]) {
+        final ({double x, double y, double z, double w}) q = aboutUp(frame);
+        expect(
+            headingFromRotation(
+                qx: q.x, qy: q.y, qz: q.z, qw: q.w, displayRotation: 0),
+            closeTo(facing, 0.5),
+            reason: 'flat, facing $facing');
+      }
+    });
+
+    test('held upright, the back of the phone is the direction', () {
+      // Upright and facing north: the device's +y is world up, +z is south (out
+      // of the screen, towards the reader), +x is east.
+      // Row-major, device → world. The *columns* are where the device's own
+      // axes point: x → east, y → up, z → south (out of the screen).
+      const List<List<double>> r = <List<double>>[
+        <double>[1, 0, 0],
+        <double>[0, 0, -1],
+        <double>[0, 1, 0],
+      ];
+      final ({double x, double y, double z, double w}) q = fromMatrix(r);
+      expect(
+          headingFromRotation(
+              qx: q.x, qy: q.y, qz: q.z, qw: q.w, displayRotation: 0),
+          closeTo(0, 0.5));
+    });
+
+    test('a landscape screen reads the same bearing as portrait', () {
+      // The phone is turned flat and its *screen top* (device +x under
+      // ROTATION_90) points north.
+      const List<List<double>> r = <List<double>>[
+        <double>[0, 0, 1], // device x → north? no: +x is the screen top
+        <double>[-1, 0, 0],
+        <double>[0, 1, 0],
+      ];
+      // device x → up? Keep it simple: rotate the identity frame -90° about up,
+      // then tell the app the display is rotated a quarter turn.
+      final ({double x, double y, double z, double w}) q = aboutUp(0);
+      expect(
+          headingFromRotation(
+              qx: q.x, qy: q.y, qz: q.z, qw: q.w, displayRotation: 0),
+          closeTo(0, 0.01));
+      // Same physical attitude, screen declared ROTATION_90: the screen top is
+      // the device's +x, which points east here, so the reading is east.
+      expect(
+          headingFromRotation(
+              qx: q.x, qy: q.y, qz: q.z, qw: q.w, displayRotation: 1),
+          closeTo(90, 0.5));
+      // (r is deliberately unused: the attitude above is the identity frame,
+      // which is the case the assertion is about.)
+      expect(r.length, 3);
+    });
+
+    test('a tilt between flat and upright stays continuous', () {
+      // Tilting the phone back from flat to upright while facing north must not
+      // swing the heading: this is the failure mode the axis-swapping azimuth
+      // had, and it is why the mix is a projection.
+      final double flat = headingFromRotation(
+          qx: 0, qy: 0, qz: 0, qw: 1, displayRotation: 0);
+      // 45° of tilt about the east axis.
+      final double half = 45 * math.pi / 360;
+      final double tilted = headingFromRotation(
+          qx: math.sin(half),
+          qy: 0,
+          qz: 0,
+          qw: math.cos(half),
+          displayRotation: 0);
+      expect(tilted, closeTo(flat, 6),
+          reason: 'a 45° tilt must not turn the heading');
+    });
+  });
+
   group('the platform compass', () {
     test('a good reading is adopted as-is', () async {
       final StreamController<CompassReading> platform =
@@ -328,7 +468,7 @@ void main() {
         platform: platform.stream,
         staleAfter: const Duration(seconds: 30),
       )..start();
-      platform.add(const CompassReading(heading: 137.5, accuracy: 15));
+      platform.add(level(137.5));
       await Future<void>.delayed(Duration.zero);
       expect(compass.heading, closeTo(137.5, 0.001));
       expect(compass.needsCalibration, isFalse);
@@ -345,10 +485,10 @@ void main() {
         platform: platform.stream,
         staleAfter: const Duration(seconds: 30),
       )..start();
-      platform.add(const CompassReading(heading: 10, accuracy: 15));
+      platform.add(level(10));
       await Future<void>.delayed(Duration.zero);
       expect(compass.heading, closeTo(10, 0.001));
-      platform.add(const CompassReading(heading: 200, accuracy: -1));
+      platform.add(level(200, accuracy: -1));
       await Future<void>.delayed(Duration.zero);
       expect(compass.needsCalibration, isTrue);
       expect(compass.heading, closeTo(10, 0.001),

@@ -113,4 +113,36 @@ void main() {
     expect(find.byKey(const ValueKey<String>('unread-1')), findsNothing);
     mc.dispose();
   });
+
+  // The owner's report: a message arriving in the thread already on screen put
+  // a count on that thread's own tag, for a frame, and the tag went dark with a
+  // number in it. The count is computed before the read mark moves, so the badge
+  // for the channel being read has to be removed from the map rather than drawn
+  // and then cleared.
+  testWidgets('the channel being read never badges its own tag',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final ChannelReadStore reads = ChannelReadStore();
+    await t.pumpWidget(host(mc, TtsController(speaker: FakeTtsSpeaker()),
+        BlockStore(), reads));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    // A message lands in the open channel (0) while the reader is at the
+    // bottom of it.
+    fake.emit(channelMsgFrame(idx: 0, text: 'Ada: bridge is clear'));
+    await t.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey<String>('unread-0')), findsNothing,
+        reason: 'the thread on screen is being read as it arrives');
+    mc.dispose();
+  });
 }

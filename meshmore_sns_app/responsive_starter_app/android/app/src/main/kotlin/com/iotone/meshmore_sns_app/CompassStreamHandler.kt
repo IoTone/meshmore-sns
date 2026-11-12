@@ -12,31 +12,24 @@ import android.view.Surface
 import io.flutter.plugin.common.EventChannel
 
 /**
- * The phone's heading, from the OS's own sensor fusion.
+ * The phone's orientation, from the OS's own sensor fusion.
  *
- * `Sensor.TYPE_ROTATION_VECTOR` is the platform's fused orientation: the OS has
- * already combined the gyroscope, the accelerometer and the magnetometer, and
- * has already applied the factory magnetometer calibration. Everything the app
- * used to do by hand — tilt compensation, hard-iron removal, gyroscope
- * integration — is what this sensor exists to replace, and the hand-rolled
- * version was measurably wrong on a handset whose magnetometer reads 157 µT
- * where the Earth's field is about 50.
+ * `Sensor.TYPE_ROTATION_VECTOR` is the platform's fused attitude: the gyroscope,
+ * the accelerometer and the magnetometer already combined, with the factory
+ * magnetometer calibration already applied. Getting *that* is the hard part and
+ * it is what this channel is for.
  *
- * Two things it reports and a raw sensor cannot:
+ * What it deliberately does **not** do is turn it into a heading. Android's
+ * `getOrientation` azimuth is the rotation about one chosen axis, and which axis
+ * is right depends on how the phone is held: with the screen flat it is the
+ * phone's own top, held up like a camera it is the direction you face, and in
+ * between the two the sample code's pitch-based axis swaps make the reading
+ * jump. Doing that on the Dart side means it can be unit-tested against known
+ * attitudes, which is how the previous three attempts at this were found to be
+ * wrong rather than merely unlucky.
  *
- *  * **heading**, in degrees clockwise from magnetic north, for the direction
- *    the *screen* faces. The rotation matrix is remapped for the display's own
- *    rotation first, so a landscape-locked app and a portrait one agree.
- *  * **accuracy**, from `onAccuracyChanged`. That is the OS telling us the
- *    magnetometer is uncalibrated, which is the state a reader has to be told
- *    about rather than shown a confident wrong arrow. It is sent on every
- *    reading so the Dart side can hold or drop the heading.
- *
- * The pitch/roll remaps below are Android's own sample code: with the screen
- * parallel to the ground the "forward" axis of a compass is the device's +y,
- * held up like a camera it is −z, and face down it is reversed. Without them the
- * azimuth is the angle of the wrong axis and the dial swings further than the
- * phone is turned or turns the wrong way — the reported fault.
+ * So the payload is the raw quaternion plus the two things only the platform
+ * knows: the display's rotation and the sensor's accuracy.
  */
 class CompassStreamHandler(private val context: Context) :
     EventChannel.StreamHandler, SensorEventListener {
@@ -48,22 +41,22 @@ class CompassStreamHandler(private val context: Context) :
 
     private var events: EventChannel.EventSink? = null
     private var accuracy = SensorManager.SENSOR_STATUS_UNRELIABLE
-
-    private val rotationMatrix = FloatArray(9)
-    private val adjusted = FloatArray(9)
-    private val orientation = FloatArray(3)
     private var lastEmit = 0L
 
-    /** Between readings: a dial redrawn 60 times a second from a noisy sensor
-     *  shivers. 50 Hz keeps a turn smooth and costs nothing. */
+    /// A dial redrawn 60 times a second from a noisy sensor shivers; 50 Hz keeps
+    /// a turn smooth and costs nothing.
     private val minIntervalMs = 20L
+
+    /// `getRotationMatrixFromVector` throws on some Samsungs when the vector is
+    /// longer than four values, and the fourth is all this needs.
+    private val quaternion = FloatArray(4)
 
     override fun onListen(arguments: Any?, sink: EventChannel.EventSink) {
         events = sink
         val sensor = rotationSensor
         if (sensor == null) {
-            // No fused sensor: say so once and stay quiet. The Dart side falls
-            // back to its own arithmetic and draws north-up until it can.
+            // No fused sensor: say so once. The Dart side falls back to its own
+            // arithmetic and draws north-up until it can do better.
             sink.error("no_sensor", "no rotation vector sensor", null)
             return
         }
@@ -81,113 +74,22 @@ class CompassStreamHandler(private val context: Context) :
 
     override fun onSensorChanged(event: SensorEvent) {
         val sink = events ?: return
-        if (event.values.size < 3) return
+        if (event.values.isEmpty()) return
         val now = SystemClock.elapsedRealtime()
         if (now - lastEmit < minIntervalMs) return
         lastEmit = now
 
-        SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-        val displayRotation = displayRotation()
+        val n = minOf(4, event.values.size)
+        for (i in 0 until n) quaternion[i] = event.values[i]
+        if (n < 4) quaternion[3] = 1f
 
-        // First remap: the axes as if the screen were parallel to the ground.
-        var worldX: Int
-        var worldY: Int
-        when (displayRotation) {
-            Surface.ROTATION_90 -> {
-                worldX = SensorManager.AXIS_Y
-                worldY = SensorManager.AXIS_MINUS_X
-            }
-            Surface.ROTATION_180 -> {
-                worldX = SensorManager.AXIS_MINUS_X
-                worldY = SensorManager.AXIS_MINUS_Y
-            }
-            Surface.ROTATION_270 -> {
-                worldX = SensorManager.AXIS_MINUS_Y
-                worldY = SensorManager.AXIS_X
-            }
-            else -> {
-                worldX = SensorManager.AXIS_X
-                worldY = SensorManager.AXIS_Y
-            }
-        }
-        SensorManager.remapCoordinateSystem(
-            rotationMatrix, worldX, worldY, adjusted
-        )
-        SensorManager.getOrientation(adjusted, orientation)
-
-        if (orientation[1] < -Math.PI / 4) {
-            // Screen parallel to the ground: the dial is read flat, so "the way
-            // the phone points" is its own +y axis.
-            when (displayRotation) {
-                Surface.ROTATION_90 -> {
-                    worldX = SensorManager.AXIS_Z
-                    worldY = SensorManager.AXIS_MINUS_X
-                }
-                Surface.ROTATION_180 -> {
-                    worldX = SensorManager.AXIS_MINUS_X
-                    worldY = SensorManager.AXIS_MINUS_Z
-                }
-                Surface.ROTATION_270 -> {
-                    worldX = SensorManager.AXIS_MINUS_Z
-                    worldY = SensorManager.AXIS_X
-                }
-                else -> {
-                    worldX = SensorManager.AXIS_X
-                    worldY = SensorManager.AXIS_Z
-                }
-            }
-        } else if (orientation[1] > Math.PI / 4) {
-            // Upside down and facing away.
-            when (displayRotation) {
-                Surface.ROTATION_90 -> {
-                    worldX = SensorManager.AXIS_MINUS_Z
-                    worldY = SensorManager.AXIS_MINUS_X
-                }
-                Surface.ROTATION_180 -> {
-                    worldX = SensorManager.AXIS_MINUS_X
-                    worldY = SensorManager.AXIS_Z
-                }
-                Surface.ROTATION_270 -> {
-                    worldX = SensorManager.AXIS_Z
-                    worldY = SensorManager.AXIS_X
-                }
-                else -> {
-                    worldX = SensorManager.AXIS_X
-                    worldY = SensorManager.AXIS_MINUS_Z
-                }
-            }
-        } else if (Math.abs(orientation[2]) > Math.PI / 2) {
-            // Face down: the screen's forward axis is reversed.
-            when (displayRotation) {
-                Surface.ROTATION_90 -> {
-                    worldX = SensorManager.AXIS_MINUS_Y
-                    worldY = SensorManager.AXIS_MINUS_X
-                }
-                Surface.ROTATION_180 -> {
-                    worldX = SensorManager.AXIS_MINUS_X
-                    worldY = SensorManager.AXIS_Y
-                }
-                Surface.ROTATION_270 -> {
-                    worldX = SensorManager.AXIS_Y
-                    worldY = SensorManager.AXIS_X
-                }
-                else -> {
-                    worldX = SensorManager.AXIS_X
-                    worldY = SensorManager.AXIS_MINUS_Y
-                }
-            }
-        }
-
-        SensorManager.remapCoordinateSystem(
-            rotationMatrix, worldX, worldY, adjusted
-        )
-        SensorManager.getOrientation(adjusted, orientation)
-
-        var heading = Math.toDegrees(orientation[0].toDouble())
-        if (heading < 0) heading += 360.0
         sink.success(
             mapOf(
-                "heading" to heading,
+                "qx" to quaternion[0].toDouble(),
+                "qy" to quaternion[1].toDouble(),
+                "qz" to quaternion[2].toDouble(),
+                "qw" to quaternion[3].toDouble(),
+                "rotation" to displayRotation(),
                 "accuracy" to accuracyDegrees(accuracy),
             )
         )

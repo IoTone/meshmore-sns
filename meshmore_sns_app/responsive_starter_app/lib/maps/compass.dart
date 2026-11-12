@@ -10,13 +10,106 @@ import 'package:provider/provider.dart';
 import 'package:flutter/painting.dart' show Canvas, Color, Offset, Paint, PaintingStyle, Path;
 import 'package:sensors_plus/sensors_plus.dart';
 
+/// The heading implied by a fused rotation vector, for the direction the
+/// *screen* faces.
+///
+/// [qx]..[qw] is Android's `TYPE_ROTATION_VECTOR` quaternion and [displayRotation]
+/// is `Surface.ROTATION_0/90/180/270`. Both are raw platform facts; the heading is
+/// computed here rather than by `SensorManager.getOrientation` because the
+/// azimuth that function returns is the rotation about *one chosen axis*, and
+/// which axis is right depends on how the phone is held. Android's sample swaps
+/// that axis at ±45° of pitch, and on a phone that is neither flat nor upright —
+/// the way a phone is actually held — the reading jumps between two frames.
+///
+/// This is a projection instead, so it is continuous in the tilt:
+///
+///  * the rotation matrix says where the screen's own axes point in the world
+///    (east, north, up),
+///  * flat, the direction a reader means is the screen's **up** axis; upright, it
+///    is the screen's **-out** axis (where the back of the phone points, i.e.
+///    where you are facing),
+///  * the two are mixed by how flat the phone is, and the bearing of the result
+///    is the answer.
+///
+/// Both vectors are well-conditioned in their own regime, the mix is continuous,
+/// and every case is asserted in `test/maps/compass_test.dart` against a known
+/// attitude rather than against a plausible-looking number.
+double headingFromRotation({
+  required double qx,
+  required double qy,
+  required double qz,
+  required double qw,
+  required int displayRotation,
+}) {
+  // Rotation matrix, device → world (east, north, up), row-major.
+  final double x2 = qx + qx, y2 = qy + qy, z2 = qz + qz;
+  final double xx = qx * x2, xy = qx * y2, xz = qx * z2;
+  final double yy = qy * y2, yz = qy * z2, zz = qz * z2;
+  final double wx = qw * x2, wy = qw * y2, wz = qw * z2;
+  final List<double> r = <double>[
+    1 - (yy + zz), xy - wz, xz + wy, //
+    xy + wz, 1 - (xx + zz), yz - wx, //
+    xz - wy, yz + wx, 1 - (xx + yy), //
+  ];
+  // Apply R to a device axis: the world components are R * v.
+  (double e, double n, double u) apply(double vx, double vy, double vz) => (
+        r[0] * vx + r[1] * vy + r[2] * vz,
+        r[3] * vx + r[4] * vy + r[5] * vz,
+        r[6] * vx + r[7] * vy + r[8] * vz,
+      );
+
+  // The screen's own axes, in device coordinates. The screen's out axis is the
+  // device's +z whatever the rotation; its up axis follows the display.
+  final (double ux, double uy) screenUp = switch (displayRotation) {
+    1 => (1, 0), // ROTATION_90: the screen's top is the device's +x
+    2 => (0, -1), // ROTATION_180
+    3 => (-1, 0), // ROTATION_270
+    _ => (0, 1), // ROTATION_0
+  };
+  final (double e1, double n1, double u1) = apply(screenUp.$1, screenUp.$2, 0);
+  final (double e2, double n2, double u2) = apply(0, 0, 1);
+
+  // 1 flat screen-up, 0 upright.
+  final double flat = u2.abs().clamp(0.0, 1.0);
+  // Screen up when flat, and the opposite of "out of the screen" when upright.
+  final double fe = e1 * flat + (-e2) * (1 - flat);
+  final double fn = n1 * flat + (-n2) * (1 - flat);
+  if (fe == 0 && fn == 0) {
+    // Screen vertical and edge-on: nothing to project. Keep the last heading by
+    // reporting north, which every caller treats as "no better answer".
+    return 0;
+  }
+  double deg = math.atan2(fe, fn) * 180 / math.pi;
+  if (deg < 0) deg += 360;
+  return deg;
+}
+
 /// One reading from the platform's fused orientation sensor.
 @immutable
 class CompassReading {
-  const CompassReading({required this.heading, required this.accuracy});
+  const CompassReading({
+    required this.qx,
+    required this.qy,
+    required this.qz,
+    required this.qw,
+    required this.displayRotation,
+    required this.accuracy,
+  });
 
-  /// Degrees clockwise from magnetic north, for the direction the screen faces.
-  final double heading;
+  final double qx;
+  final double qy;
+  final double qz;
+  final double qw;
+  final int displayRotation;
+
+  /// The direction the screen faces, in degrees clockwise from magnetic north.
+  double get heading => headingFromRotation(
+        qx: qx,
+        qy: qy,
+        qz: qz,
+        qw: qw,
+        displayRotation: displayRotation,
+      );
 
   /// The OS's own accuracy figure in degrees, or −1 when it will not say
   /// (which is what an uncalibrated magnetometer reports).
@@ -186,7 +279,11 @@ class CompassHeading extends ChangeNotifier {
           platformChannel.receiveBroadcastStream().map((Object? event) {
             final Map<Object?, Object?> m = event! as Map<Object?, Object?>;
             return CompassReading(
-              heading: (m['heading']! as num).toDouble(),
+              qx: (m['qx']! as num).toDouble(),
+              qy: (m['qy']! as num).toDouble(),
+              qz: (m['qz']! as num).toDouble(),
+              qw: (m['qw']! as num).toDouble(),
+              displayRotation: (m['rotation']! as num).toInt(),
               accuracy: (m['accuracy']! as num).toInt(),
             );
           });
