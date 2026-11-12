@@ -1106,9 +1106,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locPublishNowSub => '現在地を一度だけ送ります。';
 
   @override
-  String locLastPublished(String lat, String lon, String time, String trigger) {
-    return '最終: $lat, $lon  ·  $time  ·  $trigger';
-  }
+  String get locLastPublishedLabel => '最終送信';
 
   @override
   String get locBeacon => '定期位置ビーコン';
@@ -3596,6 +3594,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get mapsLayerNotLoaded => '未ダウンロード';
+
+  @override
   String get mapsLayerName => '名前';
 
   @override
@@ -4237,6 +4238,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeDirectionsCopied => '座標をコピーしました';
 
   @override
+  String get placeShareAddress => '住所を共有';
+
+  @override
+  String get placeShareSubject => 'メッシュ上の地点';
+
+  @override
+  String get placeShareFailed => '住所を引き受けるアプリがありません。';
+
+  @override
   String get placeHistoryTitle => '場所';
 
   @override
@@ -4262,20 +4272,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get placeKeyedOnly => '鍵のある場所のみ';
-
-  @override
-  String get placeExportLedger => '場所を書き出す';
-
-  @override
-  String get placeExportShared => '場所の一覧を共有できます。';
-
-  @override
-  String placeExportDone(String path) {
-    return '場所を $path に保存しました';
-  }
-
-  @override
-  String get placeExportFailed => '一覧を保存できませんでした。';
 
   @override
   String get placeCoordinatesRefused => 'この座標は送信できません。';

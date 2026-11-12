@@ -44,7 +44,10 @@ void main() {
     'lib/ui/mm_confirm.dart': 1,
     'lib/media/media_composer.dart': 1,
     'lib/places/place_create_sheet.dart': 1,
-    'lib/places/place_detail_sheet.dart': 2,
+    // The two that take a pin out of the app — Directions, which hands the
+    // coordinate pair to a map app, and Share, which hands the address to
+    // anything that takes text — plus the photo line's own action.
+    'lib/places/place_detail_sheet.dart': 3,
     'lib/screens/app_settings_screen.dart': 1,
     'lib/screens/battery_screen.dart': 0,
     'lib/screens/blocked_keys_screen.dart': 1,

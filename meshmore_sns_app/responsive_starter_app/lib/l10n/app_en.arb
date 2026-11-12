@@ -623,23 +623,7 @@
   },
   "locPublishNow": "Publish now",
   "locPublishNowSub": "Send your position once, now.",
-  "locLastPublished": "Last: {lat}, {lon}  ·  {time}  ·  {trigger}",
-  "@locLastPublished": {
-    "placeholders": {
-      "lat": {
-        "type": "String"
-      },
-      "lon": {
-        "type": "String"
-      },
-      "time": {
-        "type": "String"
-      },
-      "trigger": {
-        "type": "String"
-      }
-    }
-  },
+  "locLastPublishedLabel": "Last published",
   "locBeacon": "Periodic position beacon",
   "locBeaconSub": "Every 60 s, announce your position to every node in range. Uses airtime and battery.",
   "locBatteryHint": "Streaming GPS reacts faster and uses more battery.",
@@ -2437,6 +2421,7 @@
     }
   },
   "mapsLayerFeatures": "{n} features",
+  "mapsLayerNotLoaded": "Not downloaded yet",
   "@mapsLayerFeatures": {
     "placeholders": {
       "n": {
@@ -2925,6 +2910,9 @@
   "placeHiddenByRefutation": "Hidden here after a refutation from a known key",
   "placeDirections": "Directions",
   "placeDirectionsCopied": "Coordinates copied",
+  "placeShareAddress": "Share the address",
+  "placeShareSubject": "A place on the mesh",
+  "placeShareFailed": "No app took the address.",
   "placeHistoryTitle": "Places",
   "placeHistoryEmpty": "No places yet. Long-press the map to tag one.",
   "placeStateLive": "live",
@@ -2934,20 +2922,6 @@
   "placeWithinHour": "Expires within 1 h",
   "placeWithinDay": "Expires within 24 h",
   "placeKeyedOnly": "Keyed places only",
-  "placeExportLedger": "Export places",
-  "placeExportShared": "Places ready to share.",
-  "@placeExportShared": {
-    "description": "Snackbar after the ledger was handed to the share sheet."
-  },
-  "placeExportDone": "Places saved to {path}",
-  "@placeExportDone": {
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
-  "placeExportFailed": "Could not save the list.",
   "placeCoordinatesRefused": "Those coordinates cannot be sent.",
   "placeEchoLine": "{label} · {type} · {expiry}",
   "@placeEchoLine": {

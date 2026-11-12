@@ -185,7 +185,7 @@ it needs an exact rule or it is a slogan:
 | Filter | By type and by "expires within"; a filter is per session |
 | Search | Label and reporter name; **blocked keys never appear** |
 | Photo | Shown only when the bytes are present; a reference without bytes shows "photo not fetched" |
-| Ledger export | After-action record: what was reported, by whom, when, confirmed or not |
+| Share a place | From the pin: the label, the coordinate pair and a map link, as text. The list's CSV of the whole ledger was removed — it answers a different question, and a pin is an address |
 | Block interaction | A blocked key's places are hidden and discarded, and stored rows for that key are deleted |
 
 The "colour-coded until tapped" rule matters: an unread place is a *report you have not seen*, and after

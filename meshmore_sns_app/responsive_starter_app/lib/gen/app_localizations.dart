@@ -2096,11 +2096,11 @@ abstract class AppLocalizations {
   /// **'Send your position once, now.'**
   String get locPublishNowSub;
 
-  /// No description provided for @locLastPublished.
+  /// No description provided for @locLastPublishedLabel.
   ///
   /// In en, this message translates to:
-  /// **'Last: {lat}, {lon}  ·  {time}  ·  {trigger}'**
-  String locLastPublished(String lat, String lon, String time, String trigger);
+  /// **'Last published'**
+  String get locLastPublishedLabel;
 
   /// No description provided for @locBeacon.
   ///
@@ -6350,6 +6350,12 @@ abstract class AppLocalizations {
   /// **'{n} features'**
   String mapsLayerFeatures(int n);
 
+  /// No description provided for @mapsLayerNotLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not downloaded yet'**
+  String get mapsLayerNotLoaded;
+
   /// No description provided for @mapsLayerName.
   ///
   /// In en, this message translates to:
@@ -7480,6 +7486,24 @@ abstract class AppLocalizations {
   /// **'Coordinates copied'**
   String get placeDirectionsCopied;
 
+  /// No description provided for @placeShareAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the address'**
+  String get placeShareAddress;
+
+  /// No description provided for @placeShareSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'A place on the mesh'**
+  String get placeShareSubject;
+
+  /// No description provided for @placeShareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'No app took the address.'**
+  String get placeShareFailed;
+
   /// No description provided for @placeHistoryTitle.
   ///
   /// In en, this message translates to:
@@ -7533,30 +7557,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keyed places only'**
   String get placeKeyedOnly;
-
-  /// No description provided for @placeExportLedger.
-  ///
-  /// In en, this message translates to:
-  /// **'Export places'**
-  String get placeExportLedger;
-
-  /// Snackbar after the ledger was handed to the share sheet.
-  ///
-  /// In en, this message translates to:
-  /// **'Places ready to share.'**
-  String get placeExportShared;
-
-  /// No description provided for @placeExportDone.
-  ///
-  /// In en, this message translates to:
-  /// **'Places saved to {path}'**
-  String placeExportDone(String path);
-
-  /// No description provided for @placeExportFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not save the list.'**
-  String get placeExportFailed;
 
   /// No description provided for @placeCoordinatesRefused.
   ///

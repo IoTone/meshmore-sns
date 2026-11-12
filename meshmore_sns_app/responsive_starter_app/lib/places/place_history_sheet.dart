@@ -1,18 +1,14 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'dart:io';
-
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-
-import '../util/share.dart';
 
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
+import '../ui/mm_components.dart';
 import 'place.dart';
 import 'place_detail_sheet.dart';
 import 'place_sender.dart';
@@ -62,32 +58,6 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
     super.dispose();
   }
 
-  Future<void> _export() async {
-    final AppLocalizations l = AppLocalizations.of(context);
-    try {
-      // App-support, not documents: the FileProvider roots in
-      // `res/xml/file_paths.xml` are `files-path` and `cache-path`, and the
-      // documents directory resolves under `app_flutter`, which is neither, so
-      // a file written there cannot be turned into a shareable URI at all.
-      final Directory dir = await getApplicationSupportDirectory();
-      final File file = File('${dir.path}/places-ledger.csv');
-      await file.writeAsString(widget.store.exportLedgerCsv());
-      // App-private either way, so a path alone is not an export: the file
-      // goes to the share sheet, and the path is the fallback only when there
-      // is nothing to share with.
-      final bool shared = await Share.file(file.path,
-          mime: 'text/csv', subject: l.placeExportLedger);
-      if (!mounted) return;
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-          content: Text(
-              shared ? l.placeExportShared : l.placeExportDone(file.path))));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.maybeOf(context)
-          ?.showSnackBar(SnackBar(content: Text(l.placeExportFailed)));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
@@ -106,25 +76,18 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    l.placeHistoryTitle,
-                    style: TextStyle(
-                      color: skin.color.fg,
-                      fontSize: skin.type.sizeLg,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  key: const ValueKey<String>('place-export'),
-                  tooltip: l.placeExportLedger,
-                  onPressed: _export,
-                  icon: const Icon(Icons.ios_share),
-                ),
-              ],
+            // One title and nothing beside it. The share control that used
+            // to sit here exported the whole ledger as a CSV, which is a
+            // different question from the one a place answers: a pin is an
+            // address, so sharing belongs on the pin, and it shares the
+            // address (see the place detail sheet).
+            Text(
+              l.placeHistoryTitle,
+              style: TextStyle(
+                color: skin.color.fg,
+                fontSize: skin.type.sizeLg,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             TextField(
               key: const ValueKey<String>('place-search'),
@@ -139,7 +102,7 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
               spacing: skin.space.step(2),
               runSpacing: skin.space.step(2),
               children: <Widget>[
-                FilterChip(
+                MmFilterChip(
                   key: const ValueKey<String>('place-filter-live'),
                   label: Text(l.placeStateLive),
                   selected: _liveOnly,
@@ -150,14 +113,14 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
                 _withinChip(null, l.placeWithinAny),
                 _withinChip(const Duration(hours: 1), l.placeWithinHour),
                 _withinChip(const Duration(hours: 24), l.placeWithinDay),
-                FilterChip(
+                MmFilterChip(
                   key: const ValueKey<String>('place-filter-keyed'),
                   label: Text(l.placeKeyedOnly),
                   selected: _keyedOnly,
                   onSelected: (bool v) => setState(() => _keyedOnly = v),
                 ),
                 for (final PlaceType t in PlaceType.values)
-                  FilterChip(
+                  MmFilterChip(
                     key: ValueKey<String>('place-filter-type-${t.token}'),
                     label: Text(placeTypeLabel(l, t)),
                     selected: _types.contains(t),
@@ -192,7 +155,7 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
   }
 
   Widget _withinChip(Duration? window, String label) {
-    return FilterChip(
+    return MmFilterChip(
       key: ValueKey<String>('place-filter-within-'
           '${window == null ? 'any' : '${window.inHours}h'}'),
       label: Text(label),

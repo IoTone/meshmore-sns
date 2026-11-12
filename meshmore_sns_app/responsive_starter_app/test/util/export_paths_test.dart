@@ -57,7 +57,11 @@ void main() {
   // declared here, which is the point: the declaration is where a reviewer
   // sees which directory it lives in.
   const Map<String, List<String>> exports = <String, List<String>>{
-    'lib/places/place_history_sheet.dart': <String>[],
+    // The places ledger CSV that used to be shared from the places sheet is
+    // gone: a place is an address, so the share is a text intent from the pin
+    // (`Share.text` in `lib/places/place_detail_sheet.dart`), and no file is
+    // written at all. A text share is deliberately not a file export and is
+    // not declared here.
     // The chat history export and the report bundle both left the screen for
     // their own files when the chat strip was reorganised, so the declaration
     // names where the share now lives rather than the screen that opens it.

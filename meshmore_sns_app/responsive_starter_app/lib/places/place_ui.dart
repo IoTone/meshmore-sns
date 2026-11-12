@@ -74,3 +74,19 @@ String placeSourceText(AppLocalizations l, PlaceProvenance provenance) =>
       PlaceProvenance.received => l.placeSourceReceived,
       PlaceProvenance.inferred => l.placeSourceInferred,
     };
+
+/// What "share this place" hands to another app: the label, the coordinates,
+/// and a link that opens them on a map.
+///
+/// A place is one fact — where something is — so sharing it is sharing an
+/// address, not a file. The list used to offer a CSV of the whole ledger, which
+/// is a different question (what did the mesh say today) and the wrong answer to
+/// this one. The link is OSM's `mlat/mlon` form because it opens in a browser
+/// and in every map app that claims http, where `geo:` is claimed by none.
+String placeShareText(Place p) {
+  final String lat = p.latitude.toStringAsFixed(5);
+  final String lon = p.longitude.toStringAsFixed(5);
+  return '${p.label}\n$lat, $lon\n'
+      'https://www.openstreetmap.org/?mlat=$lat&mlon=$lon'
+      '#map=17/$lat/$lon';
+}

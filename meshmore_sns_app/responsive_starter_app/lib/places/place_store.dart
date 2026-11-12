@@ -309,55 +309,6 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
     ];
   }
 
-  /// The after-action ledger: one row per place with its final state
-  /// (`meshmore-places-spec.md` §10). CSV because it opens everywhere and is
-  /// the shape a spreadsheet or a report wants.
-  String exportLedgerCsv({DateTime? now}) {
-    final DateTime at = now ?? this.now;
-    final StringBuffer out = StringBuffer()
-      ..writeln('id,state,type,label,latitude,longitude,precision_m,'
-          'reporter,keyed,provenance,reports,sent_at,expires_at,'
-          'confirmations,claimed_confirmations,refutations,hidden');
-    for (final Place p in history()) {
-      final PlaceConfirmationSummary c = confirmationsFor(p.id);
-      out
-        ..write(p.id)
-        ..write(',')
-        ..write(p.isLiveAt(at) ? 'live' : 'expired')
-        ..write(',')
-        ..write(p.typeToken)
-        ..write(',')
-        ..write(_csv(p.label))
-        ..write(',')
-        ..write(p.latitude.toStringAsFixed(p.decimals))
-        ..write(',')
-        ..write(p.longitude.toStringAsFixed(p.decimals))
-        ..write(',')
-        ..write(p.accuracyMeters ?? 0)
-        ..write(',')
-        ..write(_csv(p.reporterName))
-        ..write(',')
-        ..write(p.isUnkeyed ? 'name' : 'key')
-        ..write(',')
-        ..write(p.provenance.name)
-        ..write(',')
-        ..write(p.lastSeen.toUtc().toIso8601String())
-        ..write(',')
-        ..write(p.sentAt.toUtc().toIso8601String())
-        ..write(',')
-        ..write(p.expiresAt.toUtc().toIso8601String())
-        ..write(',')
-        ..write(c.confirming)
-        ..write(',')
-        ..write(c.claimedConfirming)
-        ..write(',')
-        ..write(c.refuting + c.claimedRefuting)
-        ..write(',')
-        ..writeln(c.hidden ? 'yes' : 'no');
-    }
-    return out.toString();
-  }
-
   /// The latest wall time this store has seen, in a preference.
   ///
   /// A phone's clock can be wrong, set back by hand, or jump when the network
@@ -647,13 +598,6 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
     // text that opens with the tag is not a prefixed line.
     if (name.contains('[')) return (sender: null, body: m.text);
     return (sender: name, body: m.text.substring(i + 2));
-  }
-
-  static String _csv(String value) {
-    if (!value.contains(',') && !value.contains('"') && !value.contains('\n')) {
-      return value;
-    }
-    return '"${value.replaceAll('"', '""')}"';
   }
 
   static String _hexOf(List<int> bytes) {

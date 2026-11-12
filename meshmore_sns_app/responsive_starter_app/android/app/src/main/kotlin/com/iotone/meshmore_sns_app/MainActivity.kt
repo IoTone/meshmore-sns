@@ -168,6 +168,29 @@ class MainActivity : FlutterActivity() {
                     result.success(staged?.absolutePath)
                     return@setMethodCallHandler
                 }
+                // A sentence is shareable too: a place is an address, and the
+                // receiving app opens it rather than reading a file. Same
+                // channel, so the intent-building stays in one place.
+                if (call.method == "shareText") {
+                    val text = call.argument<String>("text")
+                    val subject = call.argument<String>("subject")
+                    if (text.isNullOrBlank()) {
+                        result.error("bad_args", "text is required", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        val send = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, text)
+                            if (subject != null) putExtra(Intent.EXTRA_SUBJECT, subject)
+                        }
+                        startActivity(Intent.createChooser(send, subject))
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("share", e.message ?: e.javaClass.simpleName, null)
+                    }
+                    return@setMethodCallHandler
+                }
                 if (call.method != "shareFile") {
                     result.notImplemented()
                     return@setMethodCallHandler

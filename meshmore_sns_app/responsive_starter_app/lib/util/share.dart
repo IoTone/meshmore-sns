@@ -39,4 +39,25 @@ abstract final class Share {
       return false;
     }
   }
+
+  /// True when a share sheet was opened for [text].
+  ///
+  /// The text counterpart of [file], for a thing that is a sentence rather than
+  /// a document: a place is an address, so sharing it shares the address and a
+  /// link, not a CSV of everything the mesh once said. Same channel, so there
+  /// is still one place that knows what a share intent looks like.
+  static Future<bool> text(String text, {String? subject}) async {
+    try {
+      final bool? opened =
+          await channel.invokeMethod<bool>('shareText', <String, Object?>{
+        'text': text,
+        'subject': subject,
+      });
+      return opened ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
 }

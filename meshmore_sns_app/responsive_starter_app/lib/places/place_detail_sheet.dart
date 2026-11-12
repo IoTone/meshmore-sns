@@ -8,6 +8,7 @@ import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
 import 'place.dart';
 import 'place_confirmation.dart';
+import '../util/share.dart';
 import 'place_directions.dart';
 import 'place_sender.dart';
 import 'place_store.dart';
@@ -223,6 +224,16 @@ class PlaceDetailSheet extends StatelessWidget {
                   label: Text(l.placeDirections),
                   onPressed: () => _directions(context),
                 ),
+                // The share belongs on the pin, and what it shares is the
+                // address: a label, a coordinate pair and a link that opens
+                // them somewhere else. The list used to offer a CSV of the
+                // whole ledger instead, which answered a different question.
+                TextButton.icon(
+                  key: const ValueKey<String>('place-share'),
+                  icon: const Icon(Icons.ios_share, size: 18),
+                  label: Text(l.placeShareAddress),
+                  onPressed: () => _share(context),
+                ),
               ],
             ),
           ],
@@ -279,6 +290,17 @@ class PlaceDetailSheet extends StatelessWidget {
     Navigator.of(context).pop();
     ScaffoldMessenger.maybeOf(context)
         ?.showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  Future<void> _share(BuildContext context) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final bool shared = await Share.text(placeShareText(place),
+        subject: l.placeShareSubject);
+    if (!context.mounted || shared) return;
+    // Nothing on the device claimed a plain-text share. Saying so is better
+    // than a tap with no answer.
+    ScaffoldMessenger.maybeOf(context)
+        ?.showSnackBar(SnackBar(content: Text(l.placeShareFailed)));
   }
 
   Future<void> _directions(BuildContext context) async {

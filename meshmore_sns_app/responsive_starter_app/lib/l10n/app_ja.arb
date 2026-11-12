@@ -584,23 +584,7 @@
   },
   "locPublishNow": "今すぐ公開",
   "locPublishNowSub": "現在地を一度だけ送ります。",
-  "locLastPublished": "最終: {lat}, {lon}  ·  {time}  ·  {trigger}",
-  "@locLastPublished": {
-    "placeholders": {
-      "lat": {
-        "type": "String"
-      },
-      "lon": {
-        "type": "String"
-      },
-      "time": {
-        "type": "String"
-      },
-      "trigger": {
-        "type": "String"
-      }
-    }
-  },
+  "locLastPublishedLabel": "最終送信",
   "locBeacon": "定期位置ビーコン",
   "locBeaconSub": "60秒ごとに現在地を範囲内のすべてのノードに知らせます。通信時間と電池を使います。",
   "locBatteryHint": "GPS を流し続けると反応は速くなりますが、電池を多く使います。",
@@ -1952,6 +1936,7 @@
   "mapsKeepNever": "しない",
   "mapsKeepDays": "{days} 日",
   "mapsLayerFeatures": "{n} 件",
+  "mapsLayerNotLoaded": "未ダウンロード",
   "mapsLayerName": "名前",
   "mapsLayerUrl": "GeoJSON の URL(https)",
   "mapsLayerTerms": "データの利用条件は提供元に従います。",
@@ -2140,6 +2125,9 @@
   "placeHiddenByRefutation": "既知の鍵からの否定によりここでは非表示",
   "placeDirections": "経路",
   "placeDirectionsCopied": "座標をコピーしました",
+  "placeShareAddress": "住所を共有",
+  "placeShareSubject": "メッシュ上の地点",
+  "placeShareFailed": "住所を引き受けるアプリがありません。",
   "placeHistoryTitle": "場所",
   "placeHistoryEmpty": "まだ場所はありません。地図を長押しするとタグ付けできます。",
   "placeStateLive": "有効",
@@ -2149,10 +2137,6 @@
   "placeWithinHour": "1時間以内に期限",
   "placeWithinDay": "24時間以内に期限",
   "placeKeyedOnly": "鍵のある場所のみ",
-  "placeExportLedger": "場所を書き出す",
-  "placeExportShared": "場所の一覧を共有できます。",
-  "placeExportDone": "場所を {path} に保存しました",
-  "placeExportFailed": "一覧を保存できませんでした。",
   "placeCoordinatesRefused": "この座標は送信できません。",
   "placeEchoLine": "{label} · {type} · {expiry}",
   "placeTypeHazard": "危険",

@@ -1,6 +1,5 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -227,15 +226,6 @@ void main() {
           hasLength(3));
     });
 
-    test('the ledger has one row per place and carries its final state', () {
-      now = now.add(const Duration(days: 3));
-      final List<String> lines = const LineSplitter().convert(store.exportLedgerCsv());
-      expect(lines.first, startsWith('id,state,type,label'));
-      expect(lines, hasLength(3));
-      expect(lines.where((String l) => l.startsWith('aaaa0001')).single,
-          contains(',expired,'));
-      expect(lines.join('\n'), contains('Bridge out'));
-    });
   });
 
   group('persistence', () {

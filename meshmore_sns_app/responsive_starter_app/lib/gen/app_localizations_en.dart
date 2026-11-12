@@ -1167,9 +1167,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locPublishNowSub => 'Send your position once, now.';
 
   @override
-  String locLastPublished(String lat, String lon, String time, String trigger) {
-    return 'Last: $lat, $lon  ·  $time  ·  $trigger';
-  }
+  String get locLastPublishedLabel => 'Last published';
 
   @override
   String get locBeacon => 'Periodic position beacon';
@@ -3745,6 +3743,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mapsLayerNotLoaded => 'Not downloaded yet';
+
+  @override
   String get mapsLayerName => 'Name';
 
   @override
@@ -4407,6 +4408,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeDirectionsCopied => 'Coordinates copied';
 
   @override
+  String get placeShareAddress => 'Share the address';
+
+  @override
+  String get placeShareSubject => 'A place on the mesh';
+
+  @override
+  String get placeShareFailed => 'No app took the address.';
+
+  @override
   String get placeHistoryTitle => 'Places';
 
   @override
@@ -4433,20 +4443,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeKeyedOnly => 'Keyed places only';
-
-  @override
-  String get placeExportLedger => 'Export places';
-
-  @override
-  String get placeExportShared => 'Places ready to share.';
-
-  @override
-  String placeExportDone(String path) {
-    return 'Places saved to $path';
-  }
-
-  @override
-  String get placeExportFailed => 'Could not save the list.';
 
   @override
   String get placeCoordinatesRefused => 'Those coordinates cannot be sent.';
