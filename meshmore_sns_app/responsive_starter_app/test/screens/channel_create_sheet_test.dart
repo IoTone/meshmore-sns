@@ -172,6 +172,33 @@ void main() {
     mc.dispose();
   });
 
+  testWidgets('closing the sheet puts the keyboard away with it',
+      (WidgetTester t) async {
+    // The name field is autofocused, so the keyboard is up over the thread the
+    // reader is dropped into. The handset showed half a screen of keyboard with
+    // nothing focused behind it after this sheet closed.
+    await t.binding.setSurfaceSize(const Size(420, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await _ready(fake);
+    await t.pumpWidget(_host(mc));
+    fake.emit(channelInfoFrame(idx: 0, name: 'Public'));
+    await t.pumpAndSettle();
+    await _open(t, mc);
+    await t.enterText(
+        find.byKey(const ValueKey<String>('channel-create-name')), 'basecamp');
+    await t.pump();
+    await t.tap(find.byKey(const ValueKey<String>('channel-create-save')));
+    await t.pumpAndSettle();
+    // No field left behind, so nothing can hold the keyboard open: the sheet is
+    // gone, and its name field was the only text field on screen.
+    expect(find.byKey(const ValueKey<String>('channel-create-sheet')),
+        findsNothing);
+    expect(find.byType(EditableText), findsNothing,
+        reason: 'a field nobody is looking at still holds the keyboard open');
+    mc.dispose();
+  });
+
   testWidgets('the sheet holds a 320 dp phone at 200 % text',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(320, 640));

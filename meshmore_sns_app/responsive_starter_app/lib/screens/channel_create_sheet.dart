@@ -113,6 +113,10 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
       setState(() => _error = l.channelsErrorName);
       return;
     }
+    // The name field is autofocused, so the keyboard is up over the thread the
+    // reader is about to be dropped into. Half a screen of keyboard with nothing
+    // focused behind it is the state the handset showed after this sheet closed.
+    FocusScope.of(context).unfocus();
     setState(() => _busy = true);
     await widget.controller.setChannel(idx: slot, name: name, psk: psk);
     // Made active as well as made: a reader who just created a channel is about
@@ -210,7 +214,10 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
                 MmAction(
                   key: const ValueKey<String>('channel-create-cancel'),
                   label: l.actionCancel,
-                  onPressed: () => Navigator.pop(context, false),
+                  onPressed: () {
+                    FocusScope.of(context).unfocus();
+                    Navigator.pop(context, false);
+                  },
                 ),
                 SizedBox(width: skin.space.step(2)),
                 MmAction(
