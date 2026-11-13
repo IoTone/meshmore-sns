@@ -185,7 +185,9 @@ void main() {
       'Which way the phone points',
       'Estimated reach of a peer',
       'Nodes per square',
-      'Reception, from adverts you heard',
+      // The coverage quilt is no longer drawn on the map, so the key must not
+      // promise it. What it recorded was our own trail plus the peers' own
+      // positions, and the survey record now lives only at /settings/coverage.
       'A fence you set',
       'Your own track',
       'A node that just sent a message',

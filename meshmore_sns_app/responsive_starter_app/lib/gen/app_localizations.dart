@@ -10822,12 +10822,6 @@ abstract class AppLocalizations {
   /// **'Auto'**
   String get gridRangeAuto;
 
-  /// No description provided for @mapCoverageShow.
-  ///
-  /// In en, this message translates to:
-  /// **'Coverage shading'**
-  String get mapCoverageShow;
-
   /// No description provided for @heatEmpty.
   ///
   /// In en, this message translates to:
@@ -10893,12 +10887,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nodes per square'**
   String get mapKeyDensity;
-
-  /// No description provided for @mapKeyCoverage.
-  ///
-  /// In en, this message translates to:
-  /// **'Reception, from adverts you heard'**
-  String get mapKeyCoverage;
 
   /// No description provided for @mapKeyGeofence.
   ///

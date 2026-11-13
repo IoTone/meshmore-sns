@@ -6211,9 +6211,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridRangeAuto => '自動';
 
   @override
-  String get mapCoverageShow => 'カバレッジ表示';
-
-  @override
   String get heatEmpty => 'この1時間、この範囲で交信は聞こえていません。';
 
   @override
@@ -6245,9 +6242,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mapKeyDensity => '区画あたりのノード数';
-
-  @override
-  String get mapKeyCoverage => '受信できたアドバートからの受信状況';
 
   @override
   String get mapKeyGeofence => '設定したフェンス';

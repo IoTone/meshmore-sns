@@ -6470,9 +6470,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridRangeAuto => 'Auto';
 
   @override
-  String get mapCoverageShow => 'Coverage shading';
-
-  @override
   String get heatEmpty => 'No chatter overheard here in the last hour.';
 
   @override
@@ -6505,9 +6502,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapKeyDensity => 'Nodes per square';
-
-  @override
-  String get mapKeyCoverage => 'Reception, from adverts you heard';
 
   @override
   String get mapKeyGeofence => 'A fence you set';

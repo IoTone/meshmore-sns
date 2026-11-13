@@ -20,7 +20,6 @@ import '../geofence/geofence_create_sheet.dart';
 import '../maps/geofence_render.dart';
 import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
-import '../maps/coverage_quilt.dart';
 import '../maps/density_overlay.dart';
 import '../maps/hex_field.dart';
 import '../maps/message_bubble.dart';
@@ -214,7 +213,14 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// left, and a layer nobody can see on the tab that replaced it would make
   /// that removal a loss. The toggle exists because it is an overlay on a map
   /// whose labels matter underneath it.
-  bool _showCoverage = true;
+  // The coverage quilt used to live here, on by default. It is gone from the
+  // map: what it recorded was our own position trail plus every peer's
+  // advertised position, which is a breadcrumb route and a duplicate of the
+  // pins, not where reception happened. Shading a map with that reads as a
+  // survey it never made, and it was the loudest thing on the map at every
+  // zoom. The record itself is untouched and still has its own screen at
+  // `/settings/coverage`, which is where a survey belongs: a page that states
+  // what it counted.
 
   /// The equal-area density overlay, off by default: it is a reading about the
   /// mesh, not a record of it, so it is something to ask for rather than
@@ -949,15 +955,6 @@ class _StreetMapViewState extends State<StreetMapView> {
               row(
                   Container(
                     width: 20,
-                    height: 12,
-                    decoration: BoxDecoration(
-                        color: cs.secondary.withValues(alpha: 0.35),
-                        border: Border.all(color: cs.secondary)),
-                  ),
-                  l.mapKeyCoverage),
-              row(
-                  Container(
-                    width: 20,
                     height: 20,
                     decoration: BoxDecoration(
                         shape: BoxShape.circle,
@@ -982,7 +979,6 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// control can say so at a glance.
   bool _anyOverlayShown(MapsController? maps) =>
       _showDensity ||
-      _showCoverage ||
       (maps?.layers.any((EventLayer e) => e.visible) ?? false);
 
   /// Everything the map shows, in one sheet.
@@ -1038,17 +1034,6 @@ class _StreetMapViewState extends State<StreetMapView> {
                       : null,
                   onChanged: (bool v) {
                     setSheet(() => _showDensity = v);
-                    setState(() {});
-                  },
-                ),
-                SwitchListTile(
-                  key: const ValueKey<String>('map-coverage-toggle'),
-                  value: _showCoverage,
-                  title: Text(l.mapCoverageShow,
-                      style: TextStyle(
-                          color: skin.color.fg, fontSize: skin.type.sizeBody)),
-                  onChanged: (bool v) {
-                    setSheet(() => _showCoverage = v);
                     setState(() {});
                   },
                 ),
@@ -1380,11 +1365,6 @@ class _StreetMapViewState extends State<StreetMapView> {
     // with no position is left out rather than pinned to our own fix: a bubble
     // at the wrong place is a worse answer than no bubble.
     final DateTime now = DateTime.now();
-    // One copy of the coverage record for the whole build. The getter returns an
-    // unmodifiable copy, so reading it twice per build copies a mesh-sized map
-    // twice.
-    final Map<String, int> coverage = mc.coverageCells;
-
     final List<MessageBubbleMark> bubbles = <MessageBubbleMark>[
       for (final MapEntry<String, DateTime> e in mc.recentSpeakers.entries)
         if (now.difference(e.value) <= MeshcoreController.recentSpeakerWindow)
@@ -1482,14 +1462,6 @@ class _StreetMapViewState extends State<StreetMapView> {
               // unmodifiable map on every call, and this read it twice per
               // rebuild — on a mesh that has heard a few thousand adverts that is
               // two full map copies for one layer.
-              if (coverage.isNotEmpty && _showCoverage)
-                PolygonLayer(
-                  polygons: coveragePolygons(
-                    cells: coverage,
-                    nowUnix: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-                    color: cs.secondary,
-                  ),
-                ),
               // The equal-area density grid: node counts in kilometre
               // squares, so the map can answer "how many per square km" the
               // way the radar cannot. Under the pins and the reach circles,

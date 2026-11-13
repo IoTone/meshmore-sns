@@ -105,8 +105,11 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('map-density-toggle')),
         findsOneWidget);
+    // No coverage switch: the quilt is off the map for good. What it shaded was
+    // our own trail plus the peers' own positions, and the record keeps its own
+    // screen at /settings/coverage.
     expect(find.byKey(const ValueKey<String>('map-coverage-toggle')),
-        findsOneWidget);
+        findsNothing);
 
     // The sheet is already open (above); switching the layer on is one tap, and
     // the sheet is dismissed afterwards so the map itself can be tapped.
