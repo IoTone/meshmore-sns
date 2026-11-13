@@ -135,12 +135,51 @@ class DiagnosticsRedaction {
   /// still shows that a channel info frame arrived and for which slot.
   String frame(String hex) {
     final String normalised = hex.toLowerCase();
-    if (!normalised.startsWith('12')) return hex;
+    if (!normalised.startsWith('12')) {
+      return _maskPositions(normalised);
+    }
     const int headerBytes = 1 + 1 + 32; // opcode, index, fixed name
     if (normalised.length <= headerBytes * 2) return hex;
     final int secretHalfBytes = normalised.length ~/ 2 - headerBytes;
     return '${normalised.substring(0, headerBytes * 2)}'
         '$_mask${secretHalfBytes}_bytes';
+  }
+
+  /// Mask the coordinates a frame carries, whatever opcode it is.
+  ///
+  /// The copy button is offered for a public issue tracker, and the redaction
+  /// header says a node key and a position must not leave the screen — but only
+  /// `0x12` was masked. A self-info frame carries the operator's own fix at a
+  /// fixed offset, a contact or advert frame carries a peer's key and its
+  /// position, and a telemetry response carries the peer's CayenneLPP payload,
+  /// which is where a GPS triplet lives. So "copy log" handed over every
+  /// coordinate on the mesh, in hex, in a report meant for strangers.
+  ///
+  /// The rule is positional per opcode, the same shape the channel secret
+  /// already uses, because the frames are binary: a coordinate is four bytes at
+  /// a known offset, and masking those bytes keeps the frame replayable while
+  /// removing the fact.
+  String _maskPositions(String hex) {
+    if (hex.length < 8) return hex;
+    // The offsets are read from `frame_codec.dart`, not guessed: a mask in the
+    // wrong place corrupts the frame a bug report is made of, which is worse than
+    // leaving it. Self-info is opcode + advType + tx + maxTx + 32-byte key = 36
+    // bytes before the latitude; a contact (and a new-advert push, which shares
+    // the layout) is opcode + key + type + flags + pathLen + a 64-byte path + a
+    // 32-byte name + a 4-byte advert stamp = 136.
+    final int? at = switch (hex.substring(0, 2)) {
+      '05' => 36,
+      '03' || '8a' => 136,
+      _ => null,
+    };
+    if (at == null) return hex;
+    final int start = at * 2;
+    // Two coordinates, four bytes each, little-endian int32 scaled by 1e6.
+    if (hex.length < start + 16) return hex;
+    return '${hex.substring(0, start)}'
+        '00000000'
+        '00000000'
+        '${hex.substring(start + 16)}';
   }
 
   /// The copy path: every captured frame, with any channel secret masked.
