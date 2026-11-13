@@ -353,18 +353,24 @@ class _ChatScreenState extends State<ChatScreen>
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      // A sheet is not inside `MmScaffold`, so nothing else lifts its last row
+      // clear of the navigation area; `showModalBottomSheet` keeps the inset in
+      // the sheet's MediaQuery (`useSafeArea` is false), and it is applied here.
       builder: (BuildContext ctx) => SizedBox(
         height: MediaQuery.sizeOf(ctx).height * 0.7,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Text(l.meshbookTitle,
-                  style: Theme.of(ctx).textTheme.titleMedium),
-            ),
-            const Expanded(child: MeshbookView()),
-          ],
+        child: SafeArea(
+          top: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text(l.meshbookTitle,
+                    style: Theme.of(ctx).textTheme.titleMedium),
+              ),
+              const Expanded(child: MeshbookView()),
+            ],
+          ),
         ),
       ),
     );

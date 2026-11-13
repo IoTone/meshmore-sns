@@ -301,7 +301,11 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
         maxChildSize: 0.95,
         builder: (BuildContext ctx, ScrollController ctl) => ListView(
           controller: ctl,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          // The sheet is not inside `MmScaffold`, so the navigation area is
+          // added here: the last region in the list was sitting under the
+          // gesture handle.
+          padding: EdgeInsets.fromLTRB(
+              16, 12, 16, 24 + MediaQuery.paddingOf(ctx).bottom),
           children: <Widget>[
             Text(l.deviceRegionBand, style: mmSectionLabelStyle(skin)),
             const SizedBox(height: 4),

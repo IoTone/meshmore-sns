@@ -314,11 +314,13 @@ class _BootSurface extends StatelessWidget {
                   },
                 ),
               ),
-              // Status text below centre.
+              // Status text below centre, above the navigation area: the
+              // overlay is full-bleed and is not inside `MmScaffold`, so its
+              // literals are clearance from the glass, not from the bar.
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: 96,
+                bottom: 96 + MediaQuery.paddingOf(context).bottom,
                 child: Center(
                   child: Text(
                     status,
@@ -334,7 +336,7 @@ class _BootSurface extends StatelessWidget {
               // Skip in bottom-right.
               Positioned(
                 right: 16,
-                bottom: 16,
+                bottom: 16 + MediaQuery.paddingOf(context).bottom,
                 child: TextButton(
                   onPressed: onSkip,
                   child: Text(skipLabel,

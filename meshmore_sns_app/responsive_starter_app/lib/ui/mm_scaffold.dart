@@ -5,16 +5,37 @@ import 'package:provider/provider.dart';
 
 import '../theme/mm_skin.dart';
 import '../theme/theme_controller.dart';
+import 'mm_scroll_edge.dart';
 
 /// Per-screen chrome wrapper. Paints the skin's base ground and overlays
 /// its retro-futuristic ornament (CRT scanlines + corner brackets) once,
 /// so every screen built on it inherits the look. Ornament is suppressed
 /// under **reduce-motion** (UX-brief R13 parity rule).
+///
+/// It also owns the page's bottom edge ([MmScrollEdge]): one line at the
+/// bottom of the body says whether the page continues and how far down the
+/// reader is. A screen opts out with [bottomEdge] false when its own bottom
+/// edge is a control — a composer, a docked action bar, a canvas whose
+/// controls reach the edge — because a rule over a control is a rule over the
+/// thing the reader came to press.
 class MmScaffold extends StatelessWidget {
-  const MmScaffold({super.key, required this.child, this.padding});
+  const MmScaffold({
+    super.key,
+    required this.child,
+    this.padding,
+    this.bottomEdge = true,
+    this.closingRule = true,
+  });
 
   final Widget child;
   final EdgeInsetsGeometry? padding;
+
+  /// Whether the bottom edge line is drawn at all.
+  final bool bottomEdge;
+
+  /// Whether a body with no scrollable gets the solid closing rule instead of
+  /// nothing. See [MmScrollEdge.closing].
+  final bool closingRule;
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +46,34 @@ class MmScaffold extends StatelessWidget {
     } on ProviderNotFoundException {
       // No ThemeController above us (isolated test) — assume motion ok.
     }
-    final Widget body = padding == null
+    final Widget inner = padding == null
         ? child
         : Padding(padding: padding!, child: child);
     final bool ornament = skin.ornament.any && !reduceMotion;
+    final Widget framed = bottomEdge
+        ? MmScrollEdge(closing: closingRule, child: inner)
+        : inner;
+    // The app draws edge to edge, because Android 15 and later enforce it for a
+    // targetSdk of 35 and above, and this app targets 36. So the body's own
+    // bottom edge is the device's navigation area, and the Scaffold does not
+    // lift the body clear of it: its `minInsets.bottom` is the keyboard, not the
+    // system bar, so a Scaffold with no bottomNavigationBar places the body at
+    // the physical bottom. The bar's own height is 24 dp on a gesture phone and
+    // 48 dp on a three-button one, so the number is read and never written.
+    //
+    // The inset is applied here and then consumed, so a SafeArea below us adds
+    // nothing and the composer screens do not end up 24 dp short twice. The
+    // ColoredBox stays outside the padding, so the skin's ground still fills the
+    // whole screen and the strip below the body reads as ground, not as a gap.
+    final double bottomInset = MediaQuery.paddingOf(context).bottom;
+    final Widget body = Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: MediaQuery.removePadding(
+        context: context,
+        removeBottom: true,
+        child: framed,
+      ),
+    );
     return ColoredBox(
       color: skin.color.base,
       // The ground is painted by ColoredBox, not by a Material. Any

@@ -63,7 +63,11 @@ void main() {
         }
       }
     }
-    expect(paintersWithText, greaterThanOrEqualTo(5),
+    // Four, not five: the radar's north letter was removed (it collided with
+    // the arrow at most headings), and with it the last text the hyperlocal
+    // dashboard's painter drew. A painter that draws no text has nothing to
+    // scale, so it no longer counts.
+    expect(paintersWithText, greaterThanOrEqualTo(4),
         reason: 'the scan must find the painters that draw text, or it is '
             'asserting nothing');
     expect(offenders, isEmpty,

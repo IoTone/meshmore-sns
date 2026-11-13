@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../gen/app_localizations.dart';
@@ -136,7 +138,13 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
         left: skin.space.step(5),
         right: skin.space.step(5),
         top: skin.space.step(4),
-        bottom: MediaQuery.viewInsetsOf(context).bottom + skin.space.step(5),
+        // `viewInsets` is the keyboard; `padding` is the navigation area. The
+        // sheet handled the keyboard and called it done, so with the keyboard
+        // closed its last row sat 12 dp from the glass — inside the handle. The
+        // taller of the two is what has to be cleared.
+        bottom: math.max(MediaQuery.viewInsetsOf(context).bottom,
+                MediaQuery.paddingOf(context).bottom) +
+            skin.space.step(5),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

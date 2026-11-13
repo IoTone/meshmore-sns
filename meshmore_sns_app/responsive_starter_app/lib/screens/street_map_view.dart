@@ -1658,10 +1658,15 @@ class _StreetMapViewState extends State<StreetMapView> {
         // R70 — the credit line shares this bottom column with the banner
         // so the banner can never cover it (it did: R69 stacked the
         // banner over the bottom-left attribution).
+        // The inset is read here, not written: the map is the one screen that
+        // does not sit inside `MmScaffold` (it is full-bleed and wants no
+        // ground colour), so nothing else lifts its bottom column clear of the
+        // navigation area. The attribution is a licence obligation and it was
+        // being cut in half by the gesture handle.
         Positioned(
           left: 0,
           right: 0,
-          bottom: 0,
+          bottom: MediaQuery.paddingOf(context).bottom,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1773,7 +1778,10 @@ class _StreetMapViewState extends State<StreetMapView> {
         if (hexes.isNotEmpty)
           Positioned(
             left: StreetMapView.controlsInset,
-            bottom: 92,
+            // 92 dp above the navigation area, not above the glass: the chip
+            // floats over the map, which is full-bleed, so the inset is added
+            // rather than inherited.
+            bottom: 92 + MediaQuery.paddingOf(context).bottom,
             child: IgnorePointer(
               child: Container(
                 key: const ValueKey<String>('map-density-size'),
