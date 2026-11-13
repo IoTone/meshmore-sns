@@ -850,7 +850,16 @@ class _GridScreenState extends State<GridScreen>
                       (_viewMode == _GridViewMode.radial ||
                           _viewMode == _GridViewMode.tree)
                   ? l.gridCompassDisturbed
-                  : _purposeFor(_viewMode, l),
+                  // A dial that points but has never been turned is right about
+                  // which way it moved and not yet about which way is north.
+                  // The model has always known this (`calibratedCircle`, and the
+                  // platform's own accuracy verdict); nothing said it, so an
+                  // uncalibrated dial looked exactly like a calibrated one.
+                  : _compass.hasHeading && !_compass.calibratedCircle
+                      ? l.gridCompassCalibrating
+                      : _compass.hasHeading && _compass.needsCalibration
+                          ? l.gridCompassLowAccuracy
+                          : _purposeFor(_viewMode, l),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

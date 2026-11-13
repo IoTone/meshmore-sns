@@ -98,12 +98,18 @@ class FirmwareScreen extends StatelessWidget {
             SizedBox(height: skin.space.sectionGap),
             Text(l.firmwareNoInstallWhy,
                 style: TextStyle(color: cs.onSurfaceVariant, height: 1.5)),
-            SizedBox(height: skin.space.rowGap),
-            Text(_refusalLine(l, refusal),
-                style: TextStyle(
-                    color: cs.onSurfaceVariant,
-                    fontSize: skin.type.sizeSm,
-                    fontStyle: FontStyle.italic)),
+            // The gate's own answer, and only when it says something the
+            // paragraph above has not already said. Its default answer *is*
+            // that paragraph, so the page used to print the same words twice,
+            // one of them italic, which reads as two facts rather than one.
+            if (_refusalLine(l, refusal) != l.firmwareNoInstallWhy) ...<Widget>[
+              SizedBox(height: skin.space.rowGap),
+              Text(_refusalLine(l, refusal),
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: skin.type.sizeSm,
+                      height: 1.5)),
+            ],
           ],
         ),
       ),

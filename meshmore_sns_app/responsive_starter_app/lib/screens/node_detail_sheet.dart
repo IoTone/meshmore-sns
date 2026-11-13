@@ -1023,8 +1023,12 @@ class _BlockLineState extends State<_BlockLine> {
             ),
             const SizedBox(width: _kKvGap),
             Expanded(
+              // The value column carries the state, not the reasoning. It used
+              // to hold a whole sentence about what a block does and does not
+              // stop, which is the dialog's job: a reader scanning for a fact
+              // read documentation instead, in a column that exists for values.
               child: Text(
-                  blocked ? l.blockedKeysUnblock : l.blockedKeysCannotStop,
+                  blocked ? l.blockedKeysUnblock : l.blockedKeysCannotStopShort,
                   style: TextStyle(
                       color: cs.onSurface,
                       fontSize: context.skin.type.sizeBody)),
