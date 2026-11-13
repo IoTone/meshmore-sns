@@ -1344,7 +1344,10 @@ class _StreetMapViewState extends State<StreetMapView> {
       _hexPolygons = <Polygon<HexCell>>[
         for (final HexCell c in _hexCache)
           Polygon<HexCell>(
-            points: hexCorners(c.centre, _hexRadiusMetres),
+            // The cell's own corners, drawn with the longitude scale the
+            // lattice laid it out with. Recomputing them per latitude made a
+            // wide view separate its columns by up to forty percent.
+            points: c.corners,
             hitValue: c,
             // The fill carries the count and the ink; the *edge* is what makes
             // it a field. An accent-coloured lattice over a satellite photograph

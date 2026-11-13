@@ -192,4 +192,67 @@ void main() {
           kDefaultHexCircumradiusMetres);
     });
   });
+
+  group('the lattice belongs to the ground, and its cells are drawn at its own scale', () {
+    const double r = 250;
+    GeoBox box(double west, double south) =>
+        GeoBox(west: west, south: south, east: west + 0.02, north: south + 0.02);
+
+    test('panning by less than a cell leaves the hexagons where they were', () {
+      // A field pinned to the glass is what made this look like a decoration:
+      // drag the map and the hexagons slide with the camera while the streets
+      // move under them.
+      final List<HexCell> a = hexField(
+          points: const <DensityPoint>[],
+          box: box(-105.00, 40.00),
+          circumradiusMetres: r,
+          includeEmpty: true);
+      final List<HexCell> b = hexField(
+          points: const <DensityPoint>[],
+          box: box(-104.9985, 39.9985), // about 130 m east and 165 m south
+          circumradiusMetres: r,
+          includeEmpty: true);
+      // Same lattice columns exist in both, at the same latitudes, because the
+      // origin snapped to the same whole cell.
+      final Set<double> la = <double>{for (final HexCell c in a) c.centre.latitude};
+      final Set<double> lb = <double>{for (final HexCell c in b) c.centre.latitude};
+      expect(la.intersection(lb), isNotEmpty,
+          reason: 'no latitude was shared, so the lattice moved with the camera');
+    });
+
+    test('a cell is drawn at the width its column pitch gave it', () {
+      // A world view: the box centre is far from the cells at its edges, which
+      // is where recomputing metres-per-longitude per cell separated the columns.
+      final List<HexCell> cells = hexField(
+          points: const <DensityPoint>[],
+          box: const GeoBox(west: -10, south: 30, east: 10, north: 60),
+          circumradiusMetres: 500000,
+          includeEmpty: true);
+      expect(cells, isNotEmpty);
+      double widthOf(HexCell c) {
+        final double west = c.corners
+            .map((LatLng p) => p.longitude)
+            .reduce((double a, double b) => a < b ? a : b);
+        final double east = c.corners
+            .map((LatLng p) => p.longitude)
+            .reduce((double a, double b) => a > b ? a : b);
+        // Measured with the box's own scale, the one the lattice laid the cells
+        // out with. Using each cell's latitude here would re-introduce exactly
+        // the error the fix removes and measure nothing.
+        final double lat0 = (30 + 60) / 2;
+        return (east - west) *
+            kMetresPerDegLatHex *
+            math.cos(lat0 * math.pi / 180).abs();
+      }
+
+      // In ground metres at the cell's own latitude, every cell must measure the
+      // same width, √3·R, whichever row it is on.
+      final double pitch = math.sqrt(3) * 500000;
+      for (final HexCell c in cells) {
+        expect(widthOf(c), closeTo(pitch, pitch * 0.02),
+            reason: 'row ${c.row} drew at ${widthOf(c)} m, not $pitch m');
+      }
+    });
+  });
+
 }

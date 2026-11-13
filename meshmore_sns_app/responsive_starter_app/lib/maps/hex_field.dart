@@ -36,6 +36,7 @@ class HexCell {
     required this.row,
     required this.centre,
     required this.points,
+    required this.corners,
   });
 
   /// Lattice coordinates. Column steps east, row steps south.
@@ -46,6 +47,17 @@ class HexCell {
 
   /// Node keys inside this hexagon, in the order they were given.
   final List<String> points;
+
+  /// The six corners, drawn with the same longitude scale the lattice laid the
+  /// cells out with.
+  ///
+  /// [hexCorners] recomputes metres-per-degree-longitude at the *cell's own*
+  /// latitude. A cell away from the box centre then measures a different width
+  /// from the pitch that placed it, so at a world view columns separate by up to
+  /// forty percent (cos 50 / cos 40 is 0.84, cos 60 / cos 30 is 0.58). The error
+  /// is under 0.02 % at street zoom, which is why it survived this long. The
+  /// lattice had one scale, so it must draw with one scale.
+  final List<LatLng> corners;
 
   int get count => points.length;
 
@@ -84,8 +96,21 @@ List<HexCell> hexField({
   // width — the same lattice, and this way the row index is cheap).
   final double width = math.sqrt(3) * circumradiusMetres;
   final double pitchY = 1.5 * circumradiusMetres;
-  final double originLat = box.north;
-  final double originLon = box.west;
+  // The lattice is anchored to the ground, not to the camera.
+  //
+  // It used to start at the box's own north-west corner, so every pan moved the
+  // origin, every cell moved with it, and the hexagons therefore held their
+  // screen position while the ground slid underneath — a field pinned to the
+  // glass. Snapping the origin to a whole number of cells in a global metre
+  // frame makes the lattice a property of the ground: pan by less than one cell
+  // and the hexagons stay put.
+  final double anchorX =
+      ((box.west * metresPerLon) / width).floorToDouble() * width;
+  final double anchorY =
+      (((90 - box.north) * kMetresPerDegLatHex) / pitchY).floorToDouble() *
+          pitchY;
+  final double originLat = 90 - anchorY / kMetresPerDegLatHex;
+  final double originLon = anchorX / metresPerLon;
 
   ({double x, double y}) toMetres(double lat, double lon) => (
         x: (lon - originLon) * metresPerLon,
@@ -154,8 +179,28 @@ List<HexCell> hexField({
         row: k.$2,
         centre: toLatLng(k.$1, k.$2),
         points: List<String>.unmodifiable(buckets[k]!),
+        corners: _cornersAt(toLatLng(k.$1, k.$2), circumradiusMetres,
+            metresPerLon),
       ),
   ];
+}
+
+/// The six corners, with an explicit longitude scale.
+///
+/// The scale is a parameter here because the lattice owns it: a cell must be
+/// drawn at the width its own column pitch assumed, not at the width its
+/// latitude would give (see [HexCell.corners]).
+List<LatLng> _cornersAt(
+    LatLng centre, double circumradiusMetres, double metresPerLon) {
+  final List<LatLng> out = <LatLng>[];
+  for (int i = 0; i < 6; i++) {
+    final double a = 60 * i * math.pi / 180;
+    final double north = math.cos(a) * circumradiusMetres;
+    final double east = math.sin(a) * circumradiusMetres;
+    out.add(LatLng(centre.latitude + north / kMetresPerDegLatHex,
+        centre.longitude + east / (metresPerLon < 1 ? 1 : metresPerLon)));
+  }
+  return out;
 }
 
 /// The six corners of a hexagon centred on [centre], in draw order.
