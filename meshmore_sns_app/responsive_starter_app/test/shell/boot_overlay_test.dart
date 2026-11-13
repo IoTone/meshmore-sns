@@ -164,8 +164,7 @@ void main() {
     return colors;
   }
 
-  testWidgets('Studio boots in its own greys, not the NERV palette',
-      (WidgetTester t) async {
+  testWidgets('Studio boots in its own greys', (WidgetTester t) async {
     final MmTokens st = kMmPresets[MmThemePreset.studio]!;
     expect(await bootGradient(t, MmThemePreset.studio),
         <Color>[st.surface, st.base]);
@@ -181,10 +180,62 @@ void main() {
     expect(await bootGradient(t, null), <Color>[def.surface, def.base]);
   });
 
-  testWidgets('every other preset keeps the NERV boot palette',
-      (WidgetTester t) async {
-    const List<Color> nerv = <Color>[Color(0xFF0A0E1A), Color(0xFF000000)];
-    expect(await bootGradient(t, MmThemePreset.recon), nerv);
-    expect(await bootGradient(t, MmThemePreset.seele), nerv);
+  testWidgets('every preset boots in its own surfaces', (WidgetTester t) async {
+    // The launch screen is the most-seen screen in the app, and it used to be
+    // the one screen drawn in a palette the reader had not chosen: NERV orange
+    // on near-black whatever the preset, with Studio exempt. A reader on
+    // Daybreak got a dark console and then a white page.
+    for (final MmThemePreset p in MmThemePreset.values) {
+      final MmTokens tok = kMmPresets[p]!;
+      expect(await bootGradient(t, p), <Color>[tok.surface, tok.base],
+          reason: '$p booted in a palette that is not its own');
+    }
   });
+
+  testWidgets('the launch screen holds a 320 dp phone at 200 % text',
+      (WidgetTester t) async {
+    // The overlay is not a route, so `a11y_floors_test` cannot reach it, and it
+    // is the first thing every launch draws: a clipped name here is the first
+    // thing a reader ever sees.
+    await t.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    t.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+
+    final MeshcoreController mc = MeshcoreController();
+    await t.pumpWidget(
+      MultiProvider(
+        providers: <ChangeNotifierProvider<ChangeNotifier>>[
+          ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: LocaleController.supported,
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: BootOverlay(child: _Probe(<String>[])),
+        ),
+      ),
+    );
+    await t.pump();
+    final AppLocalizations l =
+        AppLocalizations.of(t.element(find.byType(BootOverlay)));
+    // Both halves of the name are present and neither is ellipsised: the header
+    // wraps above the subtitle rather than truncating the app's own name.
+    expect(find.text(l.bootHeader), findsOneWidget);
+    expect(find.text(l.bootSubtitle), findsOneWidget);
+    for (final Text w in t.widgetList<Text>(find.byType(Text))) {
+      expect(w.overflow, anyOf(isNull, TextOverflow.visible, TextOverflow.clip));
+    }
+    expect(t.takeException(), isNull,
+        reason: 'the launch screen overflowed at the a11y floor');
+    mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
 }

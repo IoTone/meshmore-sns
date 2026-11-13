@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
-import '../theme/mm_tokens.dart';
 import '../ui/mm_components.dart';
 import 'package:meshcore/meshcore.dart';
 
@@ -25,9 +24,22 @@ import 'package:meshcore/meshcore.dart';
 ///   slab, not the overlay.
 /// - Stops its own animations during the fade so widget-test
 ///   `pumpAndSettle` actually settles.
-/// - Uses the NERV palette regardless of the user's chosen preset (a
-///   brand moment) -- except **Studio** (R68), whose owner asked for no
-///   hue anywhere: it boots in Studio's own greys.
+/// - Is drawn in the reader's own theme.
+///
+/// **The palette decision, revised.** This screen used to boot in the NERV
+/// orange-and-lime palette whatever preset the reader had chosen, on the theory
+/// that a launch is a brand moment, with Studio exempted because its owner asked
+/// for no hue anywhere. That made the most-seen screen in the app the one screen
+/// that did not belong to the theme it was starting: a reader on Daybreak saw a
+/// black-and-orange console and then a white page, and the two had nothing in
+/// common. Every preset boots in its own colours now, and what makes a launch
+/// recognisable is the geometry, which is the same in all eleven: four corner
+/// brackets, one hexagonal dial, the name at the top left, the status above the
+/// navigation area, SKIP at the bottom right.
+///
+/// The consequence worth stating: the overlay's ground is the skin's own `base`,
+/// the same colour the screen behind it paints, so the fade into the dashboard is
+/// a change of content rather than a change of theme.
 /// - Honours `Skip` so anyone in an offline session isn't blocked.
 class BootOverlay extends StatefulWidget {
   const BootOverlay({super.key, required this.child});
@@ -41,12 +53,6 @@ class BootOverlay extends StatefulWidget {
 
 class _BootOverlayState extends State<BootOverlay>
     with TickerProviderStateMixin {
-  static const Color _bg = Color(0xFF0A0E1A);
-  static const Color _bgDeep = Color(0xFF000000);
-  static const Color _accent = Color(0xFFFF7A00); // NERV orange
-  static const Color _alt = Color(0xFF9CFF00); // NERV ok-green
-  static const Color _fg = Color(0xFFE6ECF5);
-
   /// Live AnimationController, repeats while overlay is visible.
   late final AnimationController _spin = AnimationController(
     vsync: this,
@@ -161,10 +167,11 @@ class _BootOverlayState extends State<BootOverlay>
           : l.bootOffline,
     };
 
-    // R68: Studio is monochrome, so its boot surface must not flash the
-    // NERV orange/lime. Every other preset keeps the brand palette.
+    // Every colour comes from the skin, so the launch is the reader's own theme
+    // from the first Flutter frame. Text is the ink tiers, which the theme tests
+    // already hold to 4.5:1 on `base`; the accent is spent on the graphics
+    // (brackets, dial, pulse), where the bar is 3:1 and not a reading task.
     final MmSkin skin = context.skin;
-    final bool studio = skin.preset == MmThemePreset.studio;
     return Stack(
       children: <Widget>[
         widget.child,
@@ -177,11 +184,12 @@ class _BootOverlayState extends State<BootOverlay>
             ),
             child: _BootSurface(
               spin: _spin,
-              accent: studio ? skin.color.accent : _accent,
-              alt: studio ? skin.color.fgMuted : _alt,
-              fg: studio ? skin.color.fg : _fg,
-              bg: studio ? skin.color.surface : _bg,
-              bgDeep: studio ? skin.color.base : _bgDeep,
+              accent: skin.color.accent,
+              alt: skin.color.ok,
+              fg: skin.color.fg,
+              muted: skin.color.fgMuted,
+              bg: skin.color.surface,
+              bgDeep: skin.color.base,
               header: l.bootHeader,
               subtitle: l.bootSubtitle,
               status: status,
@@ -201,6 +209,7 @@ class _BootSurface extends StatelessWidget {
     required this.accent,
     required this.alt,
     required this.fg,
+    required this.muted,
     required this.bg,
     required this.bgDeep,
     required this.header,
@@ -214,6 +223,10 @@ class _BootSurface extends StatelessWidget {
   final Color accent;
   final Color alt;
   final Color fg;
+
+  /// The second ink tier, for the name's companion and the status when it is not
+  /// the thing being waited on. Still a reading colour, so never the accent.
+  final Color muted;
   final Color bg;
   final Color bgDeep;
   final String header;
@@ -259,15 +272,16 @@ class _BootSurface extends StatelessWidget {
                 right: 24,
                 child: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints c) {
+                    final MmType type = context.skin.type;
                     final TextStyle headStyle = TextStyle(
-                        color: accent,
-                        fontFamily: context.skin.type.wordsMono,
-                        fontSize: 11,
+                        color: fg,
+                        fontFamily: type.wordsMono,
+                        fontSize: type.sizeSm,
                         letterSpacing: 4);
                     final TextStyle subStyle = TextStyle(
-                        color: alt,
-                        fontFamily: context.skin.type.wordsMono,
-                        fontSize: 11,
+                        color: muted,
+                        fontFamily: type.wordsMono,
+                        fontSize: type.sizeSm,
                         letterSpacing: 4);
                     final bool oneLine = mmPairFitsOneLine(
                       context,
@@ -327,7 +341,7 @@ class _BootSurface extends StatelessWidget {
                     style: TextStyle(
                         color: fg,
                         fontFamily: context.skin.type.wordsMono,
-                        fontSize: 14,
+                        fontSize: context.skin.type.sizeBodyLg,
                         letterSpacing: 3),
                     textAlign: TextAlign.center,
                   ),
@@ -337,14 +351,14 @@ class _BootSurface extends StatelessWidget {
               Positioned(
                 right: 16,
                 bottom: 16 + MediaQuery.paddingOf(context).bottom,
-                child: TextButton(
+                // A control, not a caption: it is the only way out of a launch
+                // that has not settled, so it wears an action's ink rather than
+                // the accent that means "this is going well".
+                child: MmAction(
+                  key: const ValueKey<String>('boot-skip'),
+                  label: skipLabel,
+                  dense: true,
                   onPressed: onSkip,
-                  child: Text(skipLabel,
-                      style: TextStyle(
-                          color: alt,
-                          fontFamily: context.skin.type.wordsMono,
-                          fontSize: 12,
-                          letterSpacing: 3)),
                 ),
               ),
             ],
