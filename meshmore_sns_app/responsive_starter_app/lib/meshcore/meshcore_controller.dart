@@ -2297,7 +2297,40 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// than here. Draining is what keeps those rows from waiting forever.
   void _resolveSwept() => _resolveExpired(_ledger.drainSwept());
 
+  /// How many commands in a row have run out of time without an answer.
+  int _consecutiveSilentCommands = 0;
+
+  /// Silence from a radio that is still connected is a fault, not congestion.
+  ///
+  /// The link can stay up while the firmware stops answering: a wedged companion
+  /// loop, or another central accepted and starved. Nothing used to notice — the
+  /// app read LINKED, every send became `unknown` after its watchdog, and no path
+  /// led to a reconnect. Three unanswered commands in a row is the threshold here:
+  /// a busy radio occasionally drops one, and three is what a report of "it says
+  /// connected and does nothing" looks like.
+  static const int silentCommandLimit = 3;
+
+  @visibleForTesting
+  void noteCommandAnswered() => _consecutiveSilentCommands = 0;
+
+  void _noteCommandsExpired(int count) {
+    if (count <= 0) return;
+    _consecutiveSilentCommands += count;
+    if (_consecutiveSilentCommands < silentCommandLimit) return;
+    if (_state != MeshcoreConnectionState.ready) return;
+    _consecutiveSilentCommands = 0;
+    // Report it before tearing the link down, so Diagnostics has the reason.
+    _error = 'the radio stopped answering; reconnecting';
+    // A silent radio gets the existing ladder, not a new one: disconnect marks
+    // the stop manual, so the reconnect is re-armed explicitly here.
+    unawaited(disconnect().then((_) async {
+      _manualDisconnect = false;
+      autoConnectIfPaired();
+    }));
+  }
+
   void _resolveExpired(List<String> ids) {
+    _noteCommandsExpired(ids.length);
     for (final String id in ids) {
       if (id == _toolSendMarker ||
           id == _advertSendMarker ||
@@ -2460,7 +2493,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// The wire carries no correlation tag, so order is the only evidence
   /// there is. A reply for the other kind is therefore *not* skipped past
   /// the head: the ledger counts it as unclaimed and the caller gets null.
-  CommandEntry? _takePending(CommandAnswer answer) => _ledger.claim(answer);
+  CommandEntry? _takePending(CommandAnswer answer) {
+    final CommandEntry? entry = _ledger.claim(answer);
+    // Any answer at all — even one with nothing at the head to take — proves the
+    // radio is alive, which is what the silence counter is measuring.
+    noteCommandAnswered();
+    return entry;
+  }
 
   void _trackDelivery(MeshcoreInbound f) {
     _trackDeliveryInner(f);
