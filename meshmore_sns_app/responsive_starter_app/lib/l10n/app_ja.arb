@@ -2803,6 +2803,7 @@
   "heatEmpty": "この1時間、この範囲で交信は聞こえていません。",
   "elevationEmpty": "まだ誰も高度を報告していません。センサーを持つ相手に問い合わせるか、広告を待ってください。",
   "mapOverlaysTitle": "マップに表示するもの",
+  "connectTitle": "無線機に接続",
   "mapKeyTitle": "地図の凡例",
   "mapKeyRepeater": "中継機",
   "mapKeyClient": "クライアント無線機",

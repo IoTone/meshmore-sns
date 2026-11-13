@@ -10708,6 +10708,12 @@ abstract class AppLocalizations {
   /// **'What the map shows'**
   String get mapOverlaysTitle;
 
+  /// No description provided for @connectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a radio'**
+  String get connectTitle;
+
   /// No description provided for @mapKeyTitle.
   ///
   /// In en, this message translates to:

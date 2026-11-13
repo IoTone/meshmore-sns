@@ -46,7 +46,11 @@ class ConnectScreen extends StatelessWidget {
                 ? (radio.isEmpty ? l.chatNoRadio : radio)
                 : l.chatNoRadio;
 
-    return MmScaffold(
+    // A pushed screen needs a bar: without one there is no title and no back
+    // control, and the heading is drawn under the status bar clock.
+    return Scaffold(
+      appBar: AppBar(title: Text(l.connectTitle)),
+      body: MmScaffold(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: <Widget>[
@@ -114,6 +118,7 @@ class ConnectScreen extends StatelessWidget {
             onPressed: () => context.push('/settings/diagnostics'),
           ),
         ],
+      ),
       ),
     );
   }

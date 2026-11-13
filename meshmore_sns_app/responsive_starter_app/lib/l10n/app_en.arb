@@ -4338,6 +4338,7 @@
   "heatEmpty": "No chatter overheard here in the last hour.",
   "elevationEmpty": "Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.",
   "mapOverlaysTitle": "What the map shows",
+  "connectTitle": "Connect a radio",
   "mapKeyTitle": "Map key",
   "mapKeyRepeater": "Repeater",
   "mapKeyClient": "Client radio",

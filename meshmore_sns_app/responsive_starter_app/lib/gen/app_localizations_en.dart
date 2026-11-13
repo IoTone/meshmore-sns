@@ -6414,6 +6414,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapOverlaysTitle => 'What the map shows';
 
   @override
+  String get connectTitle => 'Connect a radio';
+
+  @override
   String get mapKeyTitle => 'Map key';
 
   @override

@@ -6155,6 +6155,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapOverlaysTitle => 'マップに表示するもの';
 
   @override
+  String get connectTitle => '無線機に接続';
+
+  @override
   String get mapKeyTitle => '地図の凡例';
 
   @override
