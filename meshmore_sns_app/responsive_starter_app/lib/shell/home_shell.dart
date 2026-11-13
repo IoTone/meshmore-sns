@@ -323,6 +323,17 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   onPressed: () => context.push('/sos'),
                 );
               }),
+              // Check-in, beside it. It was three taps inside Settings → Tools,
+              // under a page named for radio measurements — a safety action a
+              // reader in the field will not find. Same rule as SOS: the control
+              // opens the screen, and the commitment still takes a deliberate
+              // action there.
+              IconButton(
+                key: const ValueKey<String>('checkin-entry'),
+                tooltip: l.checkinTitle,
+                icon: const Icon(Icons.where_to_vote_outlined),
+                onPressed: () => context.push('/checkin'),
+              ),
               const DemoChip(),
               const RadioLinkIndicator(),
             ],
