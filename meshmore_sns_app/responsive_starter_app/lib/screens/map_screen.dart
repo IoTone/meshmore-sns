@@ -63,20 +63,32 @@ class MapScreen extends StatelessWidget {
               // the built-in controls: it used to sit on the left edge, where a
               // right thumb never found it.
               controlExtras: <Widget>[
-                IconButton(
-                  key: const ValueKey<String>('map-places-button'),
-                  tooltip: l.placeHistoryTitle,
-                  iconSize: 18,
-                  constraints: const BoxConstraints(
-                      minWidth: StreetMapView.controlCell,
-                      minHeight: StreetMapView.controlCell),
-                  icon: const Icon(Icons.push_pin_outlined),
-                  onPressed: () => PlaceHistorySheet.show(
-                    context,
-                    store: context.read<PlaceStore>(),
-                    composer: placeComposerOf(context),
-                  ),
-                ),
+                // A place is a thing the app keeps, and this column was the only
+                // way to see the list — an icon with no count reads as a verb, so
+                // a reader with twelve saved places had no way to know they
+                // existed. The badge is the count.
+                Builder(builder: (BuildContext ctx) {
+                  final int count = ctx.watch<PlaceStore?>()?.all.length ?? 0;
+                  final Widget button = IconButton(
+                    key: const ValueKey<String>('map-places-button'),
+                    tooltip: l.placeHistoryTitle,
+                    iconSize: 18,
+                    constraints: const BoxConstraints(
+                        minWidth: StreetMapView.controlCell,
+                        minHeight: StreetMapView.controlCell),
+                    icon: const Icon(Icons.push_pin_outlined),
+                    onPressed: () => PlaceHistorySheet.show(
+                      ctx,
+                      store: ctx.read<PlaceStore>(),
+                      composer: placeComposerOf(ctx),
+                    ),
+                  );
+                  if (count == 0) return button;
+                  return Badge(
+                    label: Text('$count'),
+                    child: button,
+                  );
+                }),
               ],
             ),
         ),

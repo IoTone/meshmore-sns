@@ -133,6 +133,12 @@ void main() {
     // recentre, basemap, layers, then the host's tools.
     final double layersY = t.getTopLeft(find.byKey(_overlaysKey)).dy;
     expect(t.getTopLeft(find.byKey(_placesKey)).dy, greaterThan(layersY));
+    // Places carries its count once there are any: an icon with no number reads
+    // as a verb, and a reader with twelve saved places had no way to know.
+    expect(
+        find.descendant(
+            of: controls, matching: find.byKey(const ValueKey<String>('map-places-button'))),
+        findsOneWidget);
     // The offline-maps button is back, and deliberately: the owner's report was
     // that reaching the offline map settings meant a row called "Manage event
     // maps", which named the wrong thing. A control that says "Offline maps"
