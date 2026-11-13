@@ -31,6 +31,7 @@ import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
 import '../maps/event_layer.dart';
 import '../maps/map_source.dart';
+import '../maps/map_view_state.dart';
 import '../maps/maps_controller.dart';
 import '../maps/tile_math.dart';
 import '../maps/vector_basemap.dart';
@@ -241,6 +242,10 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// ladder, which is the "centred on them" that matters most in practice.
   SavedMapView? _saved;
 
+  /// The short-term memory: where the camera was a moment ago, so a tab switch
+  /// comes back to it. Null in a harness that does not provide one.
+  MapViewState? _viewState;
+
   /// True once the user pans or zooms the map. A position that arrives after
   /// that must not move the camera out from under their finger.
   bool _userMoved = false;
@@ -275,6 +280,9 @@ class _StreetMapViewState extends State<StreetMapView> {
     _saveView = Timer(const Duration(milliseconds: 700), () {
       if (!mounted) return;
       final MapCamera cam = _map.camera;
+      // Two memories, two lifetimes: the holder answers a tab switch, the
+      // preference answers a cold start. See `MapViewState`.
+      _viewState?.remember(centre: cam.center, zoom: cam.zoom);
       unawaited(MapViewPrefs.save(SavedMapView(
         latitude: cam.center.latitude,
         longitude: cam.center.longitude,
@@ -453,10 +461,20 @@ class _StreetMapViewState extends State<StreetMapView> {
   @override
   void initState() {
     super.initState();
+    // The session's own memory, read before the disk preference so a basemap
+    // picked a moment ago is not overwritten by the one from last week.
+    _viewState = context.read<MapViewState?>();
+    final String? sessionSource = _viewState?.sourceId;
+    if (sessionSource != null) {
+      _sourceId = sessionSource;
+      _rasterOverride = sessionSource;
+    }
     // R90 — the basemap is remembered across launches. It was session-only,
     // which meant every restart quietly reverted a deliberate choice.
     BasemapPrefs.load().then((String? id) {
       if (!mounted || id == null) return;
+      // A basemap chosen this session wins over the one on disk.
+      if (_viewState?.sourceId != null) return;
       setState(() {
         _sourceId = id;
         _rasterOverride = id;
@@ -748,6 +766,7 @@ class _StreetMapViewState extends State<StreetMapView> {
         _rasterOverride = id;
       }
     });
+    _viewState?.rememberSource(_rasterOverride ?? kOsmVector.id);
     BasemapPrefs.save(_rasterOverride);
   }
 
@@ -1117,6 +1136,7 @@ class _StreetMapViewState extends State<StreetMapView> {
       phone: mc.phoneLocationFix,
       radio: mc.selfInfo,
       last: _saved,
+      fresh: _viewState?.freshView,
     );
     final bool hasPersonalPosition = start.source == MapCentreSource.phone ||
         start.source == MapCentreSource.radio;

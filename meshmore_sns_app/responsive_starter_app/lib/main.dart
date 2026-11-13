@@ -73,6 +73,7 @@ import 'package:meshmore_sns_app/splash/branded_splash_screen.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
+import 'package:meshmore_sns_app/maps/map_view_state.dart';
 import 'package:meshmore_sns_app/util/mm_format.dart';
 import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
 
@@ -264,6 +265,10 @@ Future<void> startApp() async {
         ChangeNotifierProvider<PeerProfiles>(create: (_) => PeerProfiles()),
         // Units and clock: one store, read by the formatter every surface uses,
         // so "km" cannot survive in one screen after the reader chose miles.
+        // The map's short-term memory: where the camera was a moment ago, so a
+        // tab switch comes back to it, and nothing at all once the app has been
+        // away for a minute. The disk preference is the long-term one.
+        ChangeNotifierProvider<MapViewState>(create: (_) => MapViewState()),
         ChangeNotifierProvider<FormatPrefs>(
           create: (_) => FormatPrefs()..load(),
         ),

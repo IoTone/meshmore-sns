@@ -122,7 +122,21 @@ class MapCentre {
     OwnLocation? phone,
     SelfInfo? radio,
     SavedMapView? last,
+    SavedMapView? fresh,
   }) {
+    // A view the reader was looking at a moment ago outranks a live fix. This is
+    // the whole reason the parameter exists: with the fix first, switching to
+    // another tab and back re-centred on the reader and threw away where they
+    // had panned, which is the bug the owner reported. `fresh` is only ever
+    // supplied while it is under `MapViewState.freshFor`, so a reader who has
+    // walked away still gets the fix.
+    if (fresh != null) {
+      return MapCentre(
+        centre: fresh.centre,
+        zoom: fresh.zoom,
+        source: MapCentreSource.lastView,
+      );
+    }
     if (phone != null && _usable(phone.latitude, phone.longitude)) {
       return MapCentre(
         centre: LatLng(phone.latitude, phone.longitude),
