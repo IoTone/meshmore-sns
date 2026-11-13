@@ -1222,10 +1222,28 @@ class _StreetMapViewState extends State<StreetMapView> {
       });
     }
 
+    // Peers inside the viewport, with a margin. flutter_map culls a marker's
+    // child when it is off screen, but it is handed the whole list: on a mesh
+    // with hundreds of located nodes that is a Marker object, a reach-ring
+    // estimate (a haversine and a link-budget calculation) and a hit area for
+    // every node in the fabric, every time the map builds. The margin is a fifth
+    // of the view, so a pan brings the next cells in before they are needed.
+    final GeoBox? cull = _visibleBox();
+    // Always cull when there is a box: the box is read from the camera on this
+    // build, so it describes the view even mid-gesture.
+    final bool cullable = cull != null;
+    final double padLat = cull == null ? 0 : (cull.north - cull.south) * 0.2;
+    final double padLon = cull == null ? 0 : (cull.east - cull.west) * 0.2;
     final List<DiscoveredNode> source = widget.filteredNodes ?? mc.nodes;
     final List<DiscoveredNode> withLoc = <DiscoveredNode>[
       for (final DiscoveredNode n in source)
-        if (n.hasLocation) n
+        if (n.hasLocation)
+          if (!cullable ||
+              (n.latitude! >= cull.south - padLat &&
+                  n.latitude! <= cull.north + padLat &&
+                  n.longitude! >= cull.west - padLon &&
+                  n.longitude! <= cull.east + padLon))
+            n
     ];
 
     final SelfInfo? si = mc.selfInfo;
