@@ -17,6 +17,7 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/maps/hex_field.dart';
 import 'package:meshmore_sns_app/maps/map_fetch.dart';
 import 'package:meshmore_sns_app/maps/maps_controller.dart';
+import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/meshcore/own_location.dart';
 import 'package:meshmore_sns_app/places/place_report_budget.dart';
@@ -92,8 +93,11 @@ void main() {
         dir.deleteSync(recursive: true);
       } catch (_) {}
     });
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController mc = MeshcoreController(
-      transportFactory: () async => FakeMeshcoreTransport(connected: true),
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
     );
     final GeofenceController fences =
         GeofenceController(mc: mc, autoTick: false);
@@ -119,6 +123,24 @@ void main() {
       ),
     ));
     await t.pump();
+    // The field is a reading of the nodes, so there have to be some, with
+    // positions, or the layer is not built at all.
+    await mc.connect();
+    fake.emit(selfInfoFrameAt(lat: 39.0, lon: -105.0));
+    fake.emit(advertFrameAt(lat: 39.0001, lon: -104.9999, name: 'N1'));
+    fake.emit(advertFrameAt(
+        lat: 39.0002, lon: -104.9998, name: 'N2', firstPubByte: 40));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 300));
+    // The density field is off until it is asked for, and it is the layer whose
+    // cost this file is about.
+    await t.tap(find.byKey(const ValueKey<String>('map-overlays-button')));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey<String>('map-density-toggle')));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 300));
+    await t.tapAt(const Offset(20, 20));
+    await t.pumpAndSettle();
     return (maps, mc, fences);
   }
 
@@ -126,8 +148,10 @@ void main() {
       (WidgetTester t) async {
     final (MapsController maps, MeshcoreController mc, GeofenceController fences) =
         await pump(t);
-    await fences.addFence(
-        label: 'Camp', latitude: 40.0, longitude: -105.0, radiusMeters: 200);
+    // The store writes a sealed document, which is real file I/O: it has to run
+    // outside the fake-async zone or the await never completes.
+    await t.runAsync(() => fences.addFence(
+        label: 'Camp', latitude: 40.0, longitude: -105.0, radiusMeters: 200));
     await t.pump();
 
     // Walk in: the inside-state flips, so the map must redraw the fence.
@@ -144,7 +168,13 @@ void main() {
 
     mc.dispose();
     maps.dispose();
+    fences.dispose();
     await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+    // The vector renderer cancels its in-flight tile jobs when the layer goes
+    // away, and reports the cancellation through the image resource service.
+    // That is teardown noise, not a failure of the thing under test.
+    t.takeException();
   });
 
   testWidgets('a rebuild that changes nothing reuses the field',
@@ -164,5 +194,7 @@ void main() {
     maps.dispose();
     fences.dispose();
     await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+    t.takeException();
   });
 }

@@ -321,7 +321,7 @@ class PlaceDetailSheet extends StatelessWidget {
         longitude: place.longitude,
       ),
     );
-    if (made == null) return;
+    if (made == null || !context.mounted) return;
     final AppLocalizations l = AppLocalizations.of(context);
     await fences.addFence(
       // A fence named after the place it was made from, so the two line up in
