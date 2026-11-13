@@ -146,7 +146,7 @@
     }
   },
   "actionConnect": "Connect",
-  "actionBlock": "Block this key",
+  "actionBlock": "Block this person",
   "blockConfirmTitle": "Block this key?",
   "blockConfirmBody": "This hides what it sends on this device: messages, notifications and places. The radio still receives and relays the packet, and nothing on the mesh learns about the block.",
   "blockConfirmGo": "Block",
@@ -230,7 +230,6 @@
   "pairScanning": "Scanning…",
   "pairStopScan": "Stop",
   "pairScanAgain": "Scan again",
-  "pairNothingFound": "No radio answered. Check that it is switched on, in range, and not already connected to another phone, then scan again.",
   "pairRssi": "RSSI {rssi}",
   "@pairRssi": {
     "placeholders": {
@@ -962,9 +961,9 @@
   "actionDeleteConfirmBody": "This removes the row from your local history. MeshCore has no recall — the recipient still has it.",
   "actionCancel": "Cancel",
   "actionDelete": "Delete",
-  "nodeDetailSelf": "This is your own node — no Message / Favourite.",
+  "nodeDetailSelf": "Your own node.",
   "nodeDetailShareTelemetryTitle": "Share my telemetry with this contact",
-  "nodeDetailShareTelemetryHelp": "Only applies when your telemetry mode is Contacts and Base is on.",
+  "nodeDetailShareTelemetryHelp": "Needs telemetry mode Contacts + Base.",
   "nodeDetailRecentDms": "RECENT DMS",
   "nodeDetailMessage": "Message",
   "nodeIdentityTitle": "Contact key changed",
@@ -1003,9 +1002,9 @@
   "nodeIdentityLinkSearchHint": "Filter by name, or paste a public key",
   "nodeIdentityLinkNoMatch": "No nodes match — clear the search, or paste the full key to link directly.",
   "nodeIdentityLinkUseKey": "Link to this key",
-  "nodeDetailNotDeviceContact": "Not in your radio's contact list, so DMs may not route. Channels still work.",
+  "nodeDetailNotDeviceContact": "Not in the radio's contacts, so DMs may not route.",
   "nodeDetailAddDeviceContact": "Add to device contacts",
-  "nodeDetailAddDeviceContactDone": "Added. DMs will route now. If they don't, your contact list may be full.",
+  "nodeDetailAddDeviceContactDone": "Added. DMs will route.",
   "nodeDetailAddDeviceContactFailed": "Couldn't add the contact — check the link and try again.",
   "nodeDetailRemoveDeviceContact": "Remove from device contacts",
   "nodeDetailRemoveDeviceContactConfirm": "Remove “{name}” from the radio's contacts? You can add them again later.",
@@ -1041,7 +1040,7 @@
     }
   },
   "deviceContactsFullHelp": "Contact list is full. Remove entries below to add new ones.",
-  "deviceContactsChannelsNote": "You only need a contact to send a direct message. Channel messages work without contacts — you'll still see everyone on channels.",
+  "deviceContactsChannelsNote": "Contacts are only for direct messages.",
   "deviceContactsScrub": "Scrub contacts",
   "deviceContactsRemoveOutOfRange": "Remove out of range",
   "deviceContactsOutOfRangeIntro": "Removes contacts far away, and those that do not share a position. Favourites and known contacts are kept.",
@@ -1375,8 +1374,8 @@
   "meshTreeLegendArrow": "Arrows point away from us, toward the destination peer.",
   "meshTreeLegendInteract": "Tap a node for details, or Recenter to reset the view.",
   "nodeDetailHopsKv": "hops",
-  "nodeDetailHopsDirect": "direct (0 hops)",
-  "nodeDetailHopsViaRepeaters": "{n} via repeater(s)",
+  "nodeDetailHopsDirect": "direct",
+  "nodeDetailHopsViaRepeaters": "{n}",
   "@nodeDetailHopsViaRepeaters": {
     "placeholders": {
       "n": {
@@ -3430,6 +3429,21 @@
   "geofenceNoMatches": "No fence has that name.",
   "geofenceShowAll": "Show all on the map",
   "geofenceFocused": "Opened from the map",
+  "geofenceCorners": "{n} corners",
+  "@geofenceCorners": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "geofencePolygonNote": "A drawn fence keeps the shape you drew. You can rename it here; reshaping it is not offered yet.",
+  "geofenceDrawTitle": "Draw a fence",
+  "geofenceDrawHint": "Tap the map to add a corner. Drag a corner to move it.",
+  "geofenceDrawDone": "Done",
+  "geofenceDrawCancel": "Cancel",
+  "geofenceDrawNeedThree": "A fence needs at least three corners.",
+  "geofenceDrawStarted": "Drawing a fence. Tap the map to add corners.",
   "geofenceTitle": "Geofences",
   "geofenceExplainer": "A fence is a circle you watch. It tells you once when you enter it and once when you leave, so walking along its edge does not produce a stream of alerts.",
   "geofenceAddSection": "Add a fence",
@@ -4158,7 +4172,7 @@
   "nodeAdvertPathReading": "Reading the route…",
   "retryPathReset": "Route cleared, so this retry goes out over flood.",
   "nodeFindRoute": "Find the route",
-  "nodeFindRouteHint": "Asks the mesh; costs airtime.",
+  "nodeFindRouteHint": "Costs airtime.",
   "nodeFindRouteNone": "No route came back.",
   "nodeFindRouteDirect": "Direct — a neighbour in range.",
   "nodeFindRouteTwoWay": "Back by {back}",
@@ -4166,7 +4180,7 @@
   "eventRadioRefused": "the radio refused that command",
   "failureCommandDisabled": "This radio has that command switched off, so it refused. Nothing is wrong with the link.",
   "nodeShareContact": "Share this contact",
-  "nodeShareContactHint": "A link the other side can import.",
+  "nodeShareContactHint": "Copies a link.",
   "nodeShareContactFailed": "The radio did not hand over the contact.",
   "shareLinkSheetTitle": "Contact link",
   "shareLinkCopied": "Copied.",

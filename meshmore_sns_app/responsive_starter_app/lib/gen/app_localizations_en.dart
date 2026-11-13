@@ -287,7 +287,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionConnect => 'Connect';
 
   @override
-  String get actionBlock => 'Block this key';
+  String get actionBlock => 'Block this person';
 
   @override
   String get blockConfirmTitle => 'Block this key?';
@@ -439,10 +439,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pairScanAgain => 'Scan again';
-
-  @override
-  String get pairNothingFound =>
-      'No radio answered. Check that it is switched on, in range, and not already connected to another phone, then scan again.';
 
   @override
   String pairRssi(int rssi) {
@@ -1640,8 +1636,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionDelete => 'Delete';
 
   @override
-  String get nodeDetailSelf =>
-      'This is your own node — no Message / Favourite.';
+  String get nodeDetailSelf => 'Your own node.';
 
   @override
   String get nodeDetailShareTelemetryTitle =>
@@ -1649,7 +1644,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeDetailShareTelemetryHelp =>
-      'Only applies when your telemetry mode is Contacts and Base is on.';
+      'Needs telemetry mode Contacts + Base.';
 
   @override
   String get nodeDetailRecentDms => 'RECENT DMS';
@@ -1705,14 +1700,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeDetailNotDeviceContact =>
-      'Not in your radio\'s contact list, so DMs may not route. Channels still work.';
+      'Not in the radio\'s contacts, so DMs may not route.';
 
   @override
   String get nodeDetailAddDeviceContact => 'Add to device contacts';
 
   @override
-  String get nodeDetailAddDeviceContactDone =>
-      'Added. DMs will route now. If they don\'t, your contact list may be full.';
+  String get nodeDetailAddDeviceContactDone => 'Added. DMs will route.';
 
   @override
   String get nodeDetailAddDeviceContactFailed =>
@@ -1758,7 +1752,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceContactsChannelsNote =>
-      'You only need a contact to send a direct message. Channel messages work without contacts — you\'ll still see everyone on channels.';
+      'Contacts are only for direct messages.';
 
   @override
   String get deviceContactsScrub => 'Scrub contacts';
@@ -2271,11 +2265,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodeDetailHopsKv => 'hops';
 
   @override
-  String get nodeDetailHopsDirect => 'direct (0 hops)';
+  String get nodeDetailHopsDirect => 'direct';
 
   @override
   String nodeDetailHopsViaRepeaters(int n) {
-    return '$n via repeater(s)';
+    return '$n';
   }
 
   @override
@@ -5141,6 +5135,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get geofenceFocused => 'Opened from the map';
 
   @override
+  String geofenceCorners(int n) {
+    return '$n corners';
+  }
+
+  @override
+  String get geofencePolygonNote =>
+      'A drawn fence keeps the shape you drew. You can rename it here; reshaping it is not offered yet.';
+
+  @override
+  String get geofenceDrawTitle => 'Draw a fence';
+
+  @override
+  String get geofenceDrawHint =>
+      'Tap the map to add a corner. Drag a corner to move it.';
+
+  @override
+  String get geofenceDrawDone => 'Done';
+
+  @override
+  String get geofenceDrawCancel => 'Cancel';
+
+  @override
+  String get geofenceDrawNeedThree => 'A fence needs at least three corners.';
+
+  @override
+  String get geofenceDrawStarted =>
+      'Drawing a fence. Tap the map to add corners.';
+
+  @override
   String get geofenceTitle => 'Geofences';
 
   @override
@@ -6159,7 +6182,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodeFindRoute => 'Find the route';
 
   @override
-  String get nodeFindRouteHint => 'Asks the mesh; costs airtime.';
+  String get nodeFindRouteHint => 'Costs airtime.';
 
   @override
   String get nodeFindRouteNone => 'No route came back.';
@@ -6188,7 +6211,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodeShareContact => 'Share this contact';
 
   @override
-  String get nodeShareContactHint => 'A link the other side can import.';
+  String get nodeShareContactHint => 'Copies a link.';
 
   @override
   String get nodeShareContactFailed =>

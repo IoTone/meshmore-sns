@@ -138,7 +138,7 @@
   "linkChipConnect": "無線機に接続",
   "linkChipSemantics": "ラジオ: {state}",
   "actionConnect": "接続する",
-  "actionBlock": "このキーをブロック",
+  "actionBlock": "この相手をブロック",
   "blockConfirmTitle": "このキーをブロックしますか？",
   "blockConfirmBody": "この端末で、そのキーからのメッセージ・通知・地点を表示しなくなります。無線機は今も受信・中継しており、メッシュ上の誰もブロックを知りません。",
   "blockConfirmGo": "ブロック",
@@ -222,7 +222,6 @@
   "pairScanning": "スキャン中…",
   "pairStopScan": "停止",
   "pairScanAgain": "再スキャン",
-  "pairNothingFound": "応答したラジオがありません。電源・距離・他のスマートフォンへの接続を確認して、もう一度スキャンしてください。",
   "pairRssi": "RSSI {rssi}",
   "@pairRssi": {
     "placeholders": {
@@ -882,9 +881,9 @@
   "actionDeleteConfirmBody": "ローカル履歴からこの行を削除します。MeshCore に取り消しはなく、受信者側には残ります。",
   "actionCancel": "キャンセル",
   "actionDelete": "削除",
-  "nodeDetailSelf": "これはあなた自身のノードです — メッセージ / お気に入りは利用不可。",
+  "nodeDetailSelf": "自分のノードです。",
   "nodeDetailShareTelemetryTitle": "この連絡先と自分のテレメトリを共有",
-  "nodeDetailShareTelemetryHelp": "テレメトリモードが「連絡先」で、基本がオンのときのみ有効です。",
+  "nodeDetailShareTelemetryHelp": "テレメトリーが「連絡先」かつ Base がオンのときのみ。",
   "nodeDetailRecentDms": "最近の DM",
   "nodeDetailMessage": "メッセージ",
   "nodeIdentityTitle": "連絡先のキーが変更されました",
@@ -923,9 +922,9 @@
   "nodeIdentityLinkSearchHint": "名前で絞り込み、または公開鍵を貼り付け",
   "nodeIdentityLinkNoMatch": "一致するノードがありません — 検索をクリアするか、完全なキーを貼り付けて直接リンクしてください。",
   "nodeIdentityLinkUseKey": "このキーにリンク",
-  "nodeDetailNotDeviceContact": "無線機の連絡先にないため、DM が届かない場合があります。チャンネルは利用できます。",
+  "nodeDetailNotDeviceContact": "無線機の連絡先にないため、DM が届かない場合があります。",
   "nodeDetailAddDeviceContact": "デバイスの連絡先に追加",
-  "nodeDetailAddDeviceContactDone": "追加しました。DM が届くようになります。届かない場合、連絡先がいっぱいかもしれません。",
+  "nodeDetailAddDeviceContactDone": "追加しました。DM が届くようになります。",
   "nodeDetailAddDeviceContactFailed": "連絡先を追加できませんでした — リンクを確認して再試行してください。",
   "nodeDetailRemoveDeviceContact": "デバイスの連絡先から削除",
   "nodeDetailRemoveDeviceContactConfirm": "「{name}」をラジオの連絡先から削除しますか？後から追加し直せます。",
@@ -961,7 +960,7 @@
     }
   },
   "deviceContactsFullHelp": "連絡先がいっぱいです。下で削除すると追加できます。",
-  "deviceContactsChannelsNote": "連絡先が必要なのはダイレクトメッセージを送るときだけです。チャンネルのメッセージは連絡先がなくても機能し、全員がチャンネルに表示されます。",
+  "deviceContactsChannelsNote": "連絡先はダイレクトメッセージ用です。",
   "deviceContactsScrub": "連絡先を整理",
   "deviceContactsRemoveOutOfRange": "圏外を削除",
   "deviceContactsOutOfRangeIntro": "遠い連絡先と、位置を共有していない連絡先を削除します。お気に入りと既知の連絡先は残ります。",
@@ -1293,8 +1292,8 @@
   "meshTreeLegendArrow": "矢印は自分から目的ピアへ向かう。",
   "meshTreeLegendInteract": "ノードをタップで詳細、「中央に戻す」で表示を戻します。",
   "nodeDetailHopsKv": "ホップ数",
-  "nodeDetailHopsDirect": "直接 (0 ホップ)",
-  "nodeDetailHopsViaRepeaters": "{n} 経由リピーター",
+  "nodeDetailHopsDirect": "直接",
+  "nodeDetailHopsViaRepeaters": "{n}",
   "@nodeDetailHopsViaRepeaters": {
     "placeholders": {
       "n": {
@@ -2356,6 +2355,21 @@
   "geofenceNoMatches": "その名前のフェンスはありません。",
   "geofenceShowAll": "すべて地図で表示",
   "geofenceFocused": "地図から開きました",
+  "geofenceCorners": "{n} 角",
+  "@geofenceCorners": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "geofencePolygonNote": "描いた形のまま保存されます。ここでは名前を変えられますが、形の変更はまだできません。",
+  "geofenceDrawTitle": "フェンスを描く",
+  "geofenceDrawHint": "地図をタップして角を追加します。角はドラッグで移動できます。",
+  "geofenceDrawDone": "完了",
+  "geofenceDrawCancel": "キャンセル",
+  "geofenceDrawNeedThree": "フェンスには3つ以上の角が必要です。",
+  "geofenceDrawStarted": "フェンスを描いています。地図をタップして角を追加します。",
   "geofenceTitle": "ジオフェンス",
   "geofenceExplainer": "フェンスは見張る円です。入ったときと出たときに一度ずつ知らせるので、境界を歩いても通知が連続しません。",
   "geofenceAddSection": "フェンスを追加",
@@ -2656,7 +2670,7 @@
   "nodeAdvertPathReading": "経路を読み取り中…",
   "retryPathReset": "経路をクリアしたため、この再送はフラッドで送信されます。",
   "nodeFindRoute": "経路を探す",
-  "nodeFindRouteHint": "メッシュに問い合わせます（エアタイムを使います）。",
+  "nodeFindRouteHint": "通信時間を使います。",
   "nodeFindRouteNone": "経路は返ってきませんでした。",
   "nodeFindRouteDirect": "直接 — 範囲内の隣接ノードです。",
   "nodeFindRouteTwoWay": "復路: {back}",
@@ -2664,7 +2678,7 @@
   "eventRadioRefused": "無線機がそのコマンドを拒否しました",
   "failureCommandDisabled": "この無線機ではそのコマンドが無効になっているため拒否されました。通信自体に問題はありません。",
   "nodeShareContact": "この連絡先を共有",
-  "nodeShareContactHint": "相手が取り込めるリンクです。",
+  "nodeShareContactHint": "リンクをコピーします。",
   "nodeShareContactFailed": "無線機が連絡先を返しませんでした。",
   "shareLinkSheetTitle": "連絡先リンク",
   "shareLinkCopied": "コピーしました。",

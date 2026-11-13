@@ -23,10 +23,24 @@ import 'place_ui.dart';
 /// the label and the reporter; a blocked reporter is absent from every list,
 /// the map and search at once because the filter lives in the store.
 class PlaceHistorySheet extends StatefulWidget {
-  const PlaceHistorySheet({super.key, required this.store, this.composer});
+  const PlaceHistorySheet({
+    super.key,
+    required this.store,
+    this.composer,
+    this.asScreen = false,
+  });
 
   final PlaceStore store;
   final PlaceComposer? composer;
+
+  /// Drawn as a page rather than a sheet.
+  ///
+  /// The list was only ever a modal, which meant it had no route: it could not be
+  /// linked, could not be restored by the router, and could not be reached except
+  /// through the map's pin control. The filters and the rows are the same widget
+  /// in both cases so the two cannot drift, and the difference is only what owns
+  /// the height — a sheet sizes to its content, a page fills the screen.
+  final bool asScreen;
 
   static Future<void> show(
     BuildContext context, {
@@ -69,26 +83,26 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
       query: _search.text,
       keyedOnly: _keyedOnly,
     );
-    return SafeArea(
-      child: Padding(
-        padding: skin.space.pad(6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+    // One list of header widgets, used two ways: inside a Column when this is a
+    // sheet (the sheet sizes to its content), and inside a ListView when it is a
+    // page. A page that kept the filters outside the scrollable overflowed by 314
+    // pixels on a 320 dp phone at 200 % text, because the chips alone were taller
+    // than what the list had left.
+    final List<Widget> header = <Widget>[
             // One title and nothing beside it. The share control that used
             // to sit here exported the whole ledger as a CSV, which is a
             // different question from the one a place answers: a pin is an
             // address, so sharing belongs on the pin, and it shares the
             // address (see the place detail sheet).
-            Text(
-              l.placeHistoryTitle,
-              style: TextStyle(
-                color: skin.color.fg,
-                fontSize: skin.type.sizeLg,
-                fontWeight: FontWeight.w700,
+            if (!widget.asScreen)
+              Text(
+                l.placeHistoryTitle,
+                style: TextStyle(
+                  color: skin.color.fg,
+                  fontSize: skin.type.sizeLg,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
             TextField(
               key: const ValueKey<String>('place-search'),
               controller: _search,
@@ -135,23 +149,54 @@ class _PlaceHistorySheetState extends State<PlaceHistorySheet> {
               ],
             ),
             SizedBox(height: skin.space.step(2)),
-            Flexible(
-              child: rows.isEmpty
-                  ? Text(l.placeHistoryEmpty,
-                      style: TextStyle(
-                          color: skin.color.fgMuted,
-                          fontSize: skin.type.sizeBody))
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: rows.length,
-                      itemBuilder: (BuildContext c, int i) =>
-                          _row(context, l, skin, rows[i]),
-                    ),
-            ),
+    ];
+
+    if (widget.asScreen) {
+      return SafeArea(
+        child: ListView(
+          padding: skin.space.pad(6),
+          children: <Widget>[
+            ...header,
+            if (rows.isEmpty)
+              Text(l.placeHistoryEmpty,
+                  style: TextStyle(
+                      color: skin.color.fgMuted,
+                      fontSize: skin.type.sizeBody))
+            else
+              for (final Place p in rows) _row(context, l, skin, p),
+          ],
+        ),
+      );
+    }
+    return SafeArea(
+      child: Padding(
+        padding: skin.space.pad(6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            ...header,
+            Flexible(child: _list(context, l, skin, rows)),
           ],
         ),
       ),
     );
+  }
+
+  /// The rows, or the sentence that says there are none.
+  Widget _list(
+      BuildContext context, AppLocalizations l, MmSkin skin, List<Place> rows) {
+    return rows.isEmpty
+              ? Text(l.placeHistoryEmpty,
+                  style: TextStyle(
+                      color: skin.color.fgMuted,
+                      fontSize: skin.type.sizeBody))
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: rows.length,
+                  itemBuilder: (BuildContext c, int i) =>
+                      _row(context, l, skin, rows[i]),
+                );
   }
 
   Widget _withinChip(Duration? window, String label) {

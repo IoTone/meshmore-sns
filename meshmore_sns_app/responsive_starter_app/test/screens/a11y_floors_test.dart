@@ -281,6 +281,7 @@ void main() {
     '/settings/voice',
     '/settings/location',
     '/settings/geofences',
+    '/settings/places',
     '/settings/coverage',
     // The docs reader renders long prose; it is the one route where a
     // heading and a paragraph share a row.

@@ -365,7 +365,10 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
         ),
       if (!_scanning && sorted.isEmpty) ...<Widget>[
         SizedBox(height: skin.space.rowInset),
-        _Body(text: l.pairNothingFound, skin: skin),
+        // One sentence for one cause, shared with the failure text: the screen
+        // and the diagnostics line were describing the same scan in two
+        // different wordings.
+        _Body(text: l.failureNoRadioFound, skin: skin),
       ],
       SizedBox(height: skin.space.rowGap),
       for (final PairHit h in sorted)

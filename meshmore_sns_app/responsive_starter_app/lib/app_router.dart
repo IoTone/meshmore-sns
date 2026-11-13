@@ -3,6 +3,7 @@
 import 'package:go_router/go_router.dart';
 
 import 'screens/app_settings_screen.dart';
+import 'screens/places_screen.dart';
 import 'screens/about_screen.dart';
 import 'screens/docs_hub_screen.dart';
 import 'screens/battery_screen.dart';
@@ -66,6 +67,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/profile',
       builder: (_, __) => const PersonalizationScreen(),
+    ),
+    GoRoute(
+      path: '/settings/places',
+      builder: (_, __) => const PlacesScreen(),
     ),
     GoRoute(
       path: '/settings/channels',

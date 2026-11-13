@@ -581,7 +581,7 @@ abstract class AppLocalizations {
   /// No description provided for @actionBlock.
   ///
   /// In en, this message translates to:
-  /// **'Block this key'**
+  /// **'Block this person'**
   String get actionBlock;
 
   /// No description provided for @blockConfirmTitle.
@@ -853,12 +853,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scan again'**
   String get pairScanAgain;
-
-  /// No description provided for @pairNothingFound.
-  ///
-  /// In en, this message translates to:
-  /// **'No radio answered. Check that it is switched on, in range, and not already connected to another phone, then scan again.'**
-  String get pairNothingFound;
 
   /// No description provided for @pairRssi.
   ///
@@ -2825,7 +2819,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailSelf.
   ///
   /// In en, this message translates to:
-  /// **'This is your own node — no Message / Favourite.'**
+  /// **'Your own node.'**
   String get nodeDetailSelf;
 
   /// No description provided for @nodeDetailShareTelemetryTitle.
@@ -2837,7 +2831,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailShareTelemetryHelp.
   ///
   /// In en, this message translates to:
-  /// **'Only applies when your telemetry mode is Contacts and Base is on.'**
+  /// **'Needs telemetry mode Contacts + Base.'**
   String get nodeDetailShareTelemetryHelp;
 
   /// No description provided for @nodeDetailRecentDms.
@@ -2927,7 +2921,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailNotDeviceContact.
   ///
   /// In en, this message translates to:
-  /// **'Not in your radio\'s contact list, so DMs may not route. Channels still work.'**
+  /// **'Not in the radio\'s contacts, so DMs may not route.'**
   String get nodeDetailNotDeviceContact;
 
   /// No description provided for @nodeDetailAddDeviceContact.
@@ -2939,7 +2933,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailAddDeviceContactDone.
   ///
   /// In en, this message translates to:
-  /// **'Added. DMs will route now. If they don\'t, your contact list may be full.'**
+  /// **'Added. DMs will route.'**
   String get nodeDetailAddDeviceContactDone;
 
   /// No description provided for @nodeDetailAddDeviceContactFailed.
@@ -3011,7 +3005,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsChannelsNote.
   ///
   /// In en, this message translates to:
-  /// **'You only need a contact to send a direct message. Channel messages work without contacts — you\'ll still see everyone on channels.'**
+  /// **'Contacts are only for direct messages.'**
   String get deviceContactsChannelsNote;
 
   /// No description provided for @deviceContactsScrub.
@@ -3839,13 +3833,13 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailHopsDirect.
   ///
   /// In en, this message translates to:
-  /// **'direct (0 hops)'**
+  /// **'direct'**
   String get nodeDetailHopsDirect;
 
   /// No description provided for @nodeDetailHopsViaRepeaters.
   ///
   /// In en, this message translates to:
-  /// **'{n} via repeater(s)'**
+  /// **'{n}'**
   String nodeDetailHopsViaRepeaters(int n);
 
   /// No description provided for @nodeDetailHopsUnknown.
@@ -8674,6 +8668,54 @@ abstract class AppLocalizations {
   /// **'Opened from the map'**
   String get geofenceFocused;
 
+  /// No description provided for @geofenceCorners.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} corners'**
+  String geofenceCorners(int n);
+
+  /// No description provided for @geofencePolygonNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A drawn fence keeps the shape you drew. You can rename it here; reshaping it is not offered yet.'**
+  String get geofencePolygonNote;
+
+  /// No description provided for @geofenceDrawTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw a fence'**
+  String get geofenceDrawTitle;
+
+  /// No description provided for @geofenceDrawHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the map to add a corner. Drag a corner to move it.'**
+  String get geofenceDrawHint;
+
+  /// No description provided for @geofenceDrawDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get geofenceDrawDone;
+
+  /// No description provided for @geofenceDrawCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get geofenceDrawCancel;
+
+  /// No description provided for @geofenceDrawNeedThree.
+  ///
+  /// In en, this message translates to:
+  /// **'A fence needs at least three corners.'**
+  String get geofenceDrawNeedThree;
+
+  /// No description provided for @geofenceDrawStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Drawing a fence. Tap the map to add corners.'**
+  String get geofenceDrawStarted;
+
   /// No description provided for @geofenceTitle.
   ///
   /// In en, this message translates to:
@@ -10309,7 +10351,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeFindRouteHint.
   ///
   /// In en, this message translates to:
-  /// **'Asks the mesh; costs airtime.'**
+  /// **'Costs airtime.'**
   String get nodeFindRouteHint;
 
   /// No description provided for @nodeFindRouteNone.
@@ -10357,7 +10399,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeShareContactHint.
   ///
   /// In en, this message translates to:
-  /// **'A link the other side can import.'**
+  /// **'Copies a link.'**
   String get nodeShareContactHint;
 
   /// No description provided for @nodeShareContactFailed.

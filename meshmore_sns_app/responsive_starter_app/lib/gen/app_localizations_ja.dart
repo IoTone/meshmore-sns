@@ -266,7 +266,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionConnect => '接続する';
 
   @override
-  String get actionBlock => 'このキーをブロック';
+  String get actionBlock => 'この相手をブロック';
 
   @override
   String get blockConfirmTitle => 'このキーをブロックしますか？';
@@ -418,10 +418,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get pairScanAgain => '再スキャン';
-
-  @override
-  String get pairNothingFound =>
-      '応答したラジオがありません。電源・距離・他のスマートフォンへの接続を確認して、もう一度スキャンしてください。';
 
   @override
   String pairRssi(int rssi) {
@@ -1558,13 +1554,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionDelete => '削除';
 
   @override
-  String get nodeDetailSelf => 'これはあなた自身のノードです — メッセージ / お気に入りは利用不可。';
+  String get nodeDetailSelf => '自分のノードです。';
 
   @override
   String get nodeDetailShareTelemetryTitle => 'この連絡先と自分のテレメトリを共有';
 
   @override
-  String get nodeDetailShareTelemetryHelp => 'テレメトリモードが「連絡先」で、基本がオンのときのみ有効です。';
+  String get nodeDetailShareTelemetryHelp => 'テレメトリーが「連絡先」かつ Base がオンのときのみ。';
 
   @override
   String get nodeDetailRecentDms => '最近の DM';
@@ -1618,15 +1614,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeIdentityLinkUseKey => 'このキーにリンク';
 
   @override
-  String get nodeDetailNotDeviceContact =>
-      '無線機の連絡先にないため、DM が届かない場合があります。チャンネルは利用できます。';
+  String get nodeDetailNotDeviceContact => '無線機の連絡先にないため、DM が届かない場合があります。';
 
   @override
   String get nodeDetailAddDeviceContact => 'デバイスの連絡先に追加';
 
   @override
-  String get nodeDetailAddDeviceContactDone =>
-      '追加しました。DM が届くようになります。届かない場合、連絡先がいっぱいかもしれません。';
+  String get nodeDetailAddDeviceContactDone => '追加しました。DM が届くようになります。';
 
   @override
   String get nodeDetailAddDeviceContactFailed =>
@@ -1669,8 +1663,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceContactsFullHelp => '連絡先がいっぱいです。下で削除すると追加できます。';
 
   @override
-  String get deviceContactsChannelsNote =>
-      '連絡先が必要なのはダイレクトメッセージを送るときだけです。チャンネルのメッセージは連絡先がなくても機能し、全員がチャンネルに表示されます。';
+  String get deviceContactsChannelsNote => '連絡先はダイレクトメッセージ用です。';
 
   @override
   String get deviceContactsScrub => '連絡先を整理';
@@ -2168,11 +2161,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailHopsKv => 'ホップ数';
 
   @override
-  String get nodeDetailHopsDirect => '直接 (0 ホップ)';
+  String get nodeDetailHopsDirect => '直接';
 
   @override
   String nodeDetailHopsViaRepeaters(int n) {
-    return '$n 経由リピーター';
+    return '$n';
   }
 
   @override
@@ -4934,6 +4927,33 @@ class AppLocalizationsJa extends AppLocalizations {
   String get geofenceFocused => '地図から開きました';
 
   @override
+  String geofenceCorners(int n) {
+    return '$n 角';
+  }
+
+  @override
+  String get geofencePolygonNote =>
+      '描いた形のまま保存されます。ここでは名前を変えられますが、形の変更はまだできません。';
+
+  @override
+  String get geofenceDrawTitle => 'フェンスを描く';
+
+  @override
+  String get geofenceDrawHint => '地図をタップして角を追加します。角はドラッグで移動できます。';
+
+  @override
+  String get geofenceDrawDone => '完了';
+
+  @override
+  String get geofenceDrawCancel => 'キャンセル';
+
+  @override
+  String get geofenceDrawNeedThree => 'フェンスには3つ以上の角が必要です。';
+
+  @override
+  String get geofenceDrawStarted => 'フェンスを描いています。地図をタップして角を追加します。';
+
+  @override
   String get geofenceTitle => 'ジオフェンス';
 
   @override
@@ -5907,7 +5927,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeFindRoute => '経路を探す';
 
   @override
-  String get nodeFindRouteHint => 'メッシュに問い合わせます（エアタイムを使います）。';
+  String get nodeFindRouteHint => '通信時間を使います。';
 
   @override
   String get nodeFindRouteNone => '経路は返ってきませんでした。';
@@ -5936,7 +5956,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeShareContact => 'この連絡先を共有';
 
   @override
-  String get nodeShareContactHint => '相手が取り込めるリンクです。';
+  String get nodeShareContactHint => 'リンクをコピーします。';
 
   @override
   String get nodeShareContactFailed => '無線機が連絡先を返しませんでした。';
