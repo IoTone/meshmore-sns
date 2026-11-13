@@ -219,23 +219,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         // would be wrong (a reconnect may still deliver), so they keep
         // their own watchdogs and the queue is cleared so the *next* OK is
         // not credited to a command that may never be answered.
-        for (final String id in _ledger.reset()) {
-          // A marker dropped by the link is not an answer. A chat row waiting
-          // on it reads unknown rather than being left in `sending` forever.
-          if (id == _channelDataMarker) {
-            _completeChannelData(const DecodeFailure(
-              MeshcoreDecodeError(DecodeErrorKind.empty, 'link lost'),
-            ));
-          } else if (id == _configMarker) {
-            _completeRadioConfig(const RadioAnswer.silent());
-          } else if (id == _rawSendMarker) {
-            abandonRawSend();
-          } else if (id == _toolSendMarker || id == _advertSendMarker) {
-            _dropPending(id);
-          } else {
-            _uncertainOutgoing(id, 'link lost before the radio answered');
-          }
-        }
+        _voidPendingCommands('link lost before the radio answered');
         // A radio-config write in flight on that link will never be answered
         // now. Report it as silent rather than let the caller wait out the
         // timeout for an answer that cannot come.
@@ -6031,7 +6015,45 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     await _transport?.close();
     _transport = null;
     _state = MeshcoreConnectionState.disconnected;
+    // A disconnect the app starts is as final as one the radio reports, and only
+    // the reported one used to void the ledger. `BleMeshcoreTransport.close`
+    // cancels its own connection subscription before disconnecting, so the `false`
+    // never reached the connection: after a local disconnect the ledger, the
+    // contact-sync flags and `selfInfo` all still described the closed link, and a
+    // reconnect inside the watchdog window credited the first answer on the new
+    // link to a command sent over the old one.
+    _voidPendingCommands('disconnected before the radio answered');
+    _contactIdleTimer?.cancel();
+    _contactIdleTimer = null;
+    _probing = false;
+    _contactsSyncRequested = false;
+    _floodScopeAsked = false;
     notifyListeners();
+  }
+
+  /// Every queued command loses its answer when the link goes.
+  ///
+  /// Extracted so the two paths that end a link — the radio reporting it and the
+  /// app closing it — cannot drift apart, which is exactly how the local one came
+  /// to keep a ledger alive.
+  void _voidPendingCommands(String why) {
+    for (final String id in _ledger.reset()) {
+      // A marker dropped by the link is not an answer. A chat row waiting on it
+      // reads unknown rather than being left in `sending` forever.
+      if (id == _channelDataMarker) {
+        _completeChannelData(const DecodeFailure(
+          MeshcoreDecodeError(DecodeErrorKind.empty, 'link lost'),
+        ));
+      } else if (id == _configMarker) {
+        _completeRadioConfig(const RadioAnswer.silent());
+      } else if (id == _rawSendMarker) {
+        abandonRawSend();
+      } else if (id == _toolSendMarker || id == _advertSendMarker) {
+        _dropPending(id);
+      } else {
+        _uncertainOutgoing(id, why);
+      }
+    }
   }
 
   /// Label of the saved paired device (loaded lazily for the UI).
