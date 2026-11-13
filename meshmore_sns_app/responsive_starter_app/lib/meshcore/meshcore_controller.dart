@@ -845,6 +845,44 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
+  StreamSubscription<PhoneFix>? _ownFixSub;
+
+  /// Keep our own position live while the app is open.
+  ///
+  /// The map, the radar and every distance in the app read [ownLocation], and
+  /// the only thing that ever refreshed it was an on-demand fix ("Find me") or
+  /// the auto-publish controller, which is off unless the user turned it on. So
+  /// a phone that walked two kilometres with the map open kept drawing its own
+  /// marker where it started — the owner's "the location is not updating live,
+  /// it still shows a different part of the city".
+  ///
+  /// The stream is cheap by construction: medium accuracy with a distance
+  /// filter, so it reports when the phone has moved rather than on a clock, and
+  /// it never prompts — a permission that was never granted leaves the stream
+  /// silent rather than raising a dialog from a background path.
+  void startOwnLocationStream({int distanceFilterMeters = 20}) {
+    if (_ownFixSub != null) return;
+    try {
+      _ownFixSub = _location
+          .positionStream(distanceFilterMeters: distanceFilterMeters)
+          .listen(cachePhoneFix, onError: (Object _) {});
+    } catch (_) {
+      // A platform that cannot open the stream (no permission recorded yet, no
+      // location hardware) is a state, not an error: the app falls back to the
+      // on-demand fix and the banner that asks for one.
+      _ownFixSub = null;
+    }
+  }
+
+  /// Stop the live position stream. Called from `dispose`.
+  Future<void> stopOwnLocationStream() async {
+    await _ownFixSub?.cancel();
+    _ownFixSub = null;
+  }
+
+  /// Whether the live position stream is running.
+  bool get ownLocationStreamRunning => _ownFixSub != null;
+
   /// Cache an externally-acquired [PhoneFix] as our phone-side
   /// own-location. Used by `AutoPublishController` (R36) which
   /// already calls `_location.currentFix()` periodically — pumping
@@ -6286,6 +6324,8 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   @override
   void dispose() {
     _manualDisconnect = true;
+    // The live position stream outlives a radio, not the app.
+    unawaited(stopOwnLocationStream());
     _reconnectGen++; // invalidate any pending scheduled retry
     _scanTimer?.cancel();
     _battTimer?.cancel();

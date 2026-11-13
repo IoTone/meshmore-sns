@@ -138,6 +138,12 @@ Future<void> startApp() async {
   RadioLease.attach(controller);
   // One read, before anything reaches for a companion.
   await RadioLease.refresh();
+  // Our own position is the map's anchor and every distance in the app, so it
+  // stays live from launch: on-demand fixes left a phone that walked with the
+  // map open still drawn where it started. The stream never prompts and only
+  // reports movement, so an app with no permission simply keeps the on-demand
+  // path and the banner that asks for one.
+  controller.startOwnLocationStream();
   if (!demo.enabled) controller.autoConnectIfPaired();
   // D8.20 — one notifier, one focus record, one service. Created before the
   // tree so the notification permission is asked at first launch, not on
