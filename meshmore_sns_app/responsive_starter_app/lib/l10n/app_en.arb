@@ -407,7 +407,7 @@
   "nodesZeroHopAdvertBody": "Direct neighbours only — not rebroadcast. Quieter on a busy mesh.",
   "nodesFloodAdvertSent": "Flood advert sent — propagates across the whole mesh (neighbours + repeaters). The other node must Advertise too before it appears here.",
   "nodesZeroHopAdvertSent": "Sent to radios in direct range only.",
-  "nodesSearchHint": "Search by name, shortId, or pubkey…",
+  "nodesSearchHint": "name, short ID, or pub key…",
   "nodesFilterStarred": "Starred",
   "nodesFilterInRange": "In range",
   "nodesFilterClear": "Clear",

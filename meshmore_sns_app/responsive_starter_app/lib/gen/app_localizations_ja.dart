@@ -767,7 +767,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesZeroHopAdvertSent => '直接届く範囲のラジオにだけ送りました。';
 
   @override
-  String get nodesSearchHint => '名前 / shortId / 公開鍵で検索…';
+  String get nodesSearchHint => '名前 / short ID / 公開鍵…';
 
   @override
   String get nodesFilterStarred => 'お気に入り';

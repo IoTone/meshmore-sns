@@ -378,7 +378,7 @@
   "nodesZeroHopAdvertBody": "隣接のみ — 再ブロードキャストなし。混雑したメッシュ向け。",
   "nodesFloodAdvertSent": "フラッドアドバートを送信 — メッシュ全体に伝播 (隣接 + リピーター)。相手側でも Advertise を実行するまで表示されません。",
   "nodesZeroHopAdvertSent": "直接届く範囲のラジオにだけ送りました。",
-  "nodesSearchHint": "名前 / shortId / 公開鍵で検索…",
+  "nodesSearchHint": "名前 / short ID / 公開鍵…",
   "nodesFilterStarred": "お気に入り",
   "nodesFilterInRange": "範囲内",
   "nodesFilterClear": "クリア",

@@ -431,9 +431,10 @@ class _NodesScreenState extends State<NodesScreen> {
                           },
                         ),
                   hintText: l.nodesSearchHint,
-                  // The hint is an example of what you can type, so it is a
-                  // sentence rather than a label: two lines at 200 % text
-                  // instead of "Search by name, shor…".
+                  // **The hint names the fields, not the action.** The search icon in the box
+                  // already says what the field is for, so "Search by" was a word spent on
+                  // something the reader can see; what they cannot see is what may be typed.
+                  // Two lines still, because at 200 % text the three field names wrap.
                   hintMaxLines: 2,
                   border: const OutlineInputBorder(),
                 ),

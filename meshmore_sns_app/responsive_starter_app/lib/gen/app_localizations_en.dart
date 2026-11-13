@@ -805,7 +805,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesZeroHopAdvertSent => 'Sent to radios in direct range only.';
 
   @override
-  String get nodesSearchHint => 'Search by name, shortId, or pubkey…';
+  String get nodesSearchHint => 'name, short ID, or pub key…';
 
   @override
   String get nodesFilterStarred => 'Starred';

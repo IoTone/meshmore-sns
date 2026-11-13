@@ -104,4 +104,31 @@ void main() {
     expect(second.fences.single.label, 'Trailhead');
     expect(second.fences.single.radiusMeters, 500);
   });
+
+  test('a crossing is announced to the caller, not only recorded', () async {
+    // The fence screen was the only reader of `alerts`, which meant a crossing
+    // fired exactly when nobody was looking at it. onRaised is what lets the app
+    // make a crossing heard.
+    final List<List<GeofenceAlert>> heard = <List<GeofenceAlert>>[];
+    final GeofenceController g = GeofenceController(
+      mc: MeshcoreController(),
+      clock: () => t0,
+      autoTick: false,
+      onRaised: heard.add,
+    );
+    await g.load();
+    await g.addFence(
+        label: 'Camp', latitude: 0, longitude: 0, radiusMeters: 100);
+
+    g.sample(_at(94 / 111320.0, 0));
+    expect(heard, hasLength(1));
+    expect(heard.single.single.isEntry, isTrue);
+    // Standing still inside raises nothing further.
+    expect(g.sample(_at(95 / 111320.0, 0)), isEmpty);
+    expect(heard, hasLength(1));
+    // Leaving is a second announcement.
+    g.sample(_at(106 / 111320.0, 0));
+    expect(heard, hasLength(2));
+    expect(heard.last.single.isEntry, isFalse);
+  });
 }

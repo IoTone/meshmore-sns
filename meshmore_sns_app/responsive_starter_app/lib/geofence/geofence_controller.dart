@@ -36,6 +36,7 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
     required MeshcoreController mc,
     DateTime Function()? clock,
     this.autoTick = true,
+    this.onRaised,
   })  : _mc = mc,
         _clock = clock ?? DateTime.now;
 
@@ -44,6 +45,15 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
 
   /// False in tests that sample by hand; a real timer would race assertions.
   final bool autoTick;
+
+  /// Told about the crossings this sample raised, so something outside this
+  /// class can make them heard.
+  ///
+  /// Until this existed a fence crossing was recorded and nothing else: the
+  /// only reader of `alerts` was the fence screen itself, which meant a fence
+  /// fired exactly when nobody was looking at it and stayed silent. A fence is
+  /// an alert, and an alert that waits for the screen is not one.
+  final void Function(List<GeofenceAlert> raised)? onRaised;
 
   Timer? _ticker;
 
@@ -111,6 +121,9 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
       _alerts.removeRange(0, _alerts.length - alertCapacity);
     }
     notifyListeners();
+    // After the listeners, so the screen is already showing the new line by the
+    // time the cue plays for it.
+    onRaised?.call(raised);
     return raised;
   }
 

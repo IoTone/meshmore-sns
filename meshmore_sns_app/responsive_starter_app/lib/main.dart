@@ -321,7 +321,13 @@ Future<void> startApp() async {
         // crossed while the screen is off still happened.
         ChangeNotifierProvider<GeofenceController>(
           create: (BuildContext ctx) =>
-              GeofenceController(mc: ctx.read<MeshcoreController>())
+              GeofenceController(
+                  mc: ctx.read<MeshcoreController>(),
+                  // A crossing is an alert, so it is heard: the fence screen is
+                  // the one place a reader is guaranteed not to be when they
+                  // walk through a fence.
+                  onRaised: (List<GeofenceAlert> raised) =>
+                      ctx.read<CueService>().play(CueKind.alert))
                 ..load()
                 ..start(),
         ),
