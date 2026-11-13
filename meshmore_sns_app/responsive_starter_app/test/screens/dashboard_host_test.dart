@@ -11,6 +11,7 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
+import 'package:meshmore_sns_app/screens/dashboards/air_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/nerv_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/studio_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/my_pubkey_line.dart';
@@ -115,15 +116,21 @@ void main() {
     expect(find.byTooltip('Device'), findsOneWidget);
 
     // A preset with no layout of its own inherits the default one, and the
-    // host's key holds either way. Air is the light ground with no bundle of
-    // its own, so it is the case that proves the fallback still works after
-    // the Studio Light preset (which had one) was removed.
-    await tc.setPreset(MmThemePreset.air);
+    // host's key holds either way. Forest is one of the three LDMUX looks that
+    // has not earned a layout yet, so it is the case that proves the fallback
+    // still works now that Air has one of its own.
+    await tc.setPreset(MmThemePreset.forest);
     await t.pumpAndSettle();
     expect(find.byKey(dashboardKey), findsOneWidget);
     expect(find.byType(DashboardScreen), findsOneWidget,
         reason: 'a preset without a layout inherits the monolith');
     expect(find.byType(StudioDashboard), findsNothing);
+
+    // Air has its own layout now: a white page cannot carry an instrument.
+    await tc.setPreset(MmThemePreset.air);
+    await t.pumpAndSettle();
+    expect(find.byType(AirDashboard), findsOneWidget);
+    expect(find.byType(DashboardScreen), findsNothing);
 
     // Back to SEELE -> the monolith, still under the host's key.
     await tc.setPreset(MmThemePreset.seele);

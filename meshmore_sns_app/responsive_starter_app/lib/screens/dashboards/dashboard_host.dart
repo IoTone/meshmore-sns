@@ -6,6 +6,7 @@ import '../../theme/mm_skin.dart';
 import '../../theme/mm_tokens.dart';
 import '../dashboard_screen.dart';
 import 'aghud_dashboard.dart';
+import 'air_dashboard.dart';
 import 'dashboard_degraded_banner.dart';
 import 'drpop_dashboard.dart';
 import 'hyperlocal_dashboard.dart';
@@ -68,7 +69,9 @@ class DashboardHost extends StatelessWidget {
       MmThemePreset.drPop => const DrPopDashboard(),
       MmThemePreset.recon => const ReconDashboard(),
       MmThemePreset.studio => const StudioDashboard(),
-      // The four LDMUX presets (forest, air, daybreak, umber) land here on
+      // Air has a layout of its own: a white page cannot carry an instrument.
+      MmThemePreset.air => const AirDashboard(),
+      // The remaining three LDMUX presets (forest, daybreak, umber) land here on
       // purpose: a layout is a screen's own design, and inheriting the SEELE
       // monolith is the honest default until one of them earns a layout of its
       // own. This is not a forgotten case — the arm is reached only by presets

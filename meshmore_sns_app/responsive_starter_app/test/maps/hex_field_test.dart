@@ -169,7 +169,7 @@ void main() {
     test('the cell count is the same at every scale', () {
       // By construction: the radius is a pixel count. A viewport of the same
       // pixel size always holds the same number of cells.
-      final double? first = <double>[
+      final double first = <double>[
         for (final double mpp in <double>[0.2, 1, 8, 60, 500, 5000, 60000])
           420 * mpp * 900 * mpp / (3 * math.sqrt(3) / 2 * math.pow(hexRadiusForZoom(metresPerPixel: mpp), 2)),
       ].reduce((double a, double b) {
