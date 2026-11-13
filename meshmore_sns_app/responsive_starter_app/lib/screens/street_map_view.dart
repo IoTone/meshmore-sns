@@ -1821,9 +1821,11 @@ class _StreetMapViewState extends State<StreetMapView> {
                   constraints: const BoxConstraints(
                       minWidth: StreetMapView.controlCell,
                       minHeight: StreetMapView.controlCell),
+                  // Layers, not a sparkle: this control is the map's layer
+                  // panel, and the icon every map app uses for one is a stack.
                   icon: Icon(_anyOverlayShown(maps)
-                      ? Icons.auto_awesome
-                      : Icons.auto_awesome_outlined),
+                      ? Icons.layers
+                      : Icons.layers_outlined),
                   onPressed: () => _showOverlays(context, l, maps, sources),
                 ),
                 IconButton(
