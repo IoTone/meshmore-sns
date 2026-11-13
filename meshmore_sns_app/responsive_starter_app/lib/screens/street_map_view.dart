@@ -533,10 +533,65 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// build runs on the first frame — before that. Reading it unguarded is a
   /// crash on every cold open, which is exactly what the basemap picker test
   /// caught.
+  /// The box the field covers: the viewport, unless no node is in it.
+  ///
+  /// A map whose fix has drifted can show a viewport with nothing in it, and then
+  /// the honest field is the one around the nodes the layer is a reading of —
+  /// otherwise the switch turns on and appears to do nothing at all. The check is
+  /// a plain containment test, so it costs one comparison per node.
+  GeoBox _fieldBox(List<DensityPoint> points) {
+    final GeoBox? visible = _visibleBox();
+    if (visible == null) return _nodeBox(points);
+    final bool any = points.any((DensityPoint p) =>
+        p.lat >= visible.south &&
+        p.lat <= visible.north &&
+        p.lon >= visible.west &&
+        p.lon <= visible.east);
+    return any ? visible : _nodeBox(points);
+  }
+
+  /// A box around the nodes themselves, for the first frame — before the map has
+  /// been laid out there is no viewport yet, and a fixed box around a centre that
+  /// may be the world's origin put the field in the wrong hemisphere.
+  GeoBox _nodeBox(List<DensityPoint> points) {
+    double south = 90, west = 180, north = -90, east = -180;
+    for (final DensityPoint p in points) {
+      if (p.lat < south) south = p.lat;
+      if (p.lat > north) north = p.lat;
+      if (p.lon < west) west = p.lon;
+      if (p.lon > east) east = p.lon;
+    }
+    if (south > north) {
+      return const GeoBox(south: -0.01, west: -0.01, north: 0.01, east: 0.01);
+    }
+    const double pad = 0.004;
+    return GeoBox(
+        south: south - pad, west: west - pad, north: north + pad, east: east + pad);
+  }
+
+  /// The part of the ground this map is showing, as a box.
+  ///
+  /// Computed from the camera's centre, the laid-out size and the zoom's metres
+  /// per pixel rather than read from `visibleBounds`: that getter is only valid
+  /// once the map has painted, and this build runs first — and when it did answer
+  /// it described a rectangle the hexagon lattice only half covered.
   GeoBox? _visibleBox() {
     try {
-      final LatLngBounds b = _map.camera.visibleBounds;
-      return GeoBox(south: b.south, west: b.west, north: b.north, east: b.east);
+      final MapCamera cam = _map.camera;
+      final math.Point<double> size = cam.nonRotatedSize;
+      if (size.x <= 0 || size.y <= 0) return null;
+      final double mpp = StreetMapView.metersPerPixel(
+          cam.zoom, cam.center.latitude);
+      final double halfLat = size.y / 2 * mpp / kMetresPerDegLatHex;
+      final double cosLat =
+          math.cos(cam.center.latitude * math.pi / 180).abs().clamp(0.05, 1.0);
+      final double halfLon = size.x / 2 * mpp / (kMetresPerDegLatHex * cosLat);
+      return GeoBox(
+        south: cam.center.latitude - halfLat,
+        north: cam.center.latitude + halfLat,
+        west: cam.center.longitude - halfLon,
+        east: cam.center.longitude + halfLon,
+      );
     } catch (_) {
       return null;
     }
@@ -1075,7 +1130,10 @@ class _StreetMapViewState extends State<StreetMapView> {
       metresPerPixel: StreetMapView.metersPerPixel(
           _zoom, hasFix ? start.centre.latitude : 39),
     );
-    _densityCellMetresShown = densityCellMetres;
+    // The chip states the cell it is actually drawing. The hexagon's width is
+    // √3·R across the flats, which is the distance a reader can compare with the
+    // blocks under it.
+    _densityCellMetresShown = math.sqrt(3) * _hexRadiusMetres;
     // Fill and number appear and disappear together, or a filled square with no
     // number reads as a large node pin. Hysteresis: appear at the readable size,
     // leave only once comfortably below it, so a pinch on the boundary does not
@@ -1096,7 +1154,11 @@ class _StreetMapViewState extends State<StreetMapView> {
     final double pxPerMetre = 1 /
         StreetMapView.metersPerPixel(
             _zoom, hasFix ? start.centre.latitude : 39);
-    _hexRadiusMetres = hexRadiusForZoom(pxPerMetre);
+    _hexRadiusMetres = hexRadiusForViewport(
+      metresPerPixel: 1 / pxPerMetre,
+      viewportWidthPx: MediaQuery.sizeOf(context).width,
+      viewportHeightPx: MediaQuery.sizeOf(context).height * 0.6,
+    );
     final List<DensityPoint> densityPoints = _showDensity
         ? <DensityPoint>[
             for (final DiscoveredNode n in mc.nodes)
@@ -1110,20 +1172,18 @@ class _StreetMapViewState extends State<StreetMapView> {
     // north-west corner, so panning moves the field with the ground instead of
     // re-anchoring it on the operator's fix (which made the old squares step as
     // they walked).
+    // ignore: avoid_print
+
     final List<HexCell> hexes = densityPoints.isEmpty
         ? const <HexCell>[]
         : hexField(
             points: densityPoints,
-            box: _visibleBox() ??
-                GeoBox(
-                  south: start.centre.latitude - 0.01,
-                  west: start.centre.longitude - 0.01,
-                  north: start.centre.latitude + 0.01,
-                  east: start.centre.longitude + 0.01,
-                ),
+            box: _fieldBox(densityPoints),
             circumradiusMetres: _hexRadiusMetres,
             includeEmpty: true,
-            maxCells: 260,
+            // A 48 px hexagon tiles a phone screen into about four hundred, so
+            // the bound is the viewport rather than a budget for a scatter.
+            maxCells: 800,
           );
     // The tap handler reads this, and it is the same list the layer draws, so
     // the cell that opens is the cell that was tapped.

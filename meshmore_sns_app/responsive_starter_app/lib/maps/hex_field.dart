@@ -140,9 +140,13 @@ List<HexCell> hexField({
     (buckets[(col, row)] ??= <String>[]).add(p.pubKey);
   }
   if (buckets.isEmpty) return const <HexCell>[];
-  // Densest first, so a cap keeps the cells that carry the message.
+  // A field is read as a whole, so it is emitted row by row rather than sorted:
+  // sorting by count and then capping gave an arbitrary scatter of hexagons near
+  // the top of the screen. Only the occupied-only mode wants "the busiest ones".
   final List<(int, int)> keys = buckets.keys.toList()
-    ..sort((a, b) => buckets[b]!.length.compareTo(buckets[a]!.length));
+    ..sort(includeEmpty
+        ? ((a, b) => a.$2 == b.$2 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2))
+        : ((a, b) => buckets[b]!.length.compareTo(buckets[a]!.length)));
   return <HexCell>[
     for (final (int, int) k in keys.take(maxCells))
       HexCell(
@@ -213,17 +217,48 @@ bool hexContains(LatLng centre, double circumradiusMetres, LatLng point) {
   return inside;
 }
 
-/// The hexagon radius for a zoom, in bands.
+/// The hexagon radius for a viewport, in bands.
 ///
-/// Stepwise rather than continuous because a cell that changes size with every
-/// pinch is not a field: within a band the ground area is constant, and the band
-/// changes only when the cells would otherwise be unreadable. The aim is a
-/// hexagon about 34 logical pixels across, which is enough to hold a count.
-double hexRadiusForZoom(double pixelsPerMetre) {
-  const List<double> radii = <double>[50, 100, 250, 500, 1000, 2500, 5000];
-  for (final double r in radii) {
-    // Width is sqrt(3)·R, so this is the on-screen width of the cell.
-    if (math.sqrt(3) * r * pixelsPerMetre <= 52) return r;
+/// Two things have to be true at once. The cell must be a *distance on the
+/// ground*, so the field means the same thing at every zoom and a cell covers the
+/// same area wherever you pan — that is the owner's "a continuous field at a
+/// uniform distance". And the field must be a bounded number of shapes, because
+/// a lattice drawn at street-cell size over a world view is hundreds of thousands
+/// of polygons.
+///
+/// So the radius is solved for a target cell count over the viewport and then
+/// rounded up to a ladder, which keeps it constant inside a zoom band instead of
+/// creeping with every pinch. Nine hundred and eighty cells is a phone-sized
+/// field: enough that the mesh reads as a surface, few enough to draw.
+double hexRadiusForViewport({
+  required double metresPerPixel,
+  required double viewportWidthPx,
+  required double viewportHeightPx,
+  int targetCells = 160,
+}) {
+  if (metresPerPixel <= 0 ||
+      viewportWidthPx <= 0 ||
+      viewportHeightPx <= 0 ||
+      targetCells <= 0) {
+    return kDefaultHexCircumradiusMetres;
   }
-  return radii.last;
+  final double widthM = viewportWidthPx * metresPerPixel;
+  final double heightM = viewportHeightPx * metresPerPixel;
+  // A regular hexagon covers 3·√3/2·R². Solve for the radius that puts
+  // `targetCells` of them on this screen, then round up the ladder.
+  final double ideal =
+      math.sqrt(widthM * heightM / (targetCells * 3 * math.sqrt(3) / 2));
+  // Round up to 1, 2 or 5 per decade: the same ladder the radar's ring labels
+  // use, and it goes as high as a world view needs instead of stopping at a
+  // hundred kilometres and asking the caller to draw fifty thousand cells.
+  const List<double> mantissas = <double>[1, 2, 5];
+  double decade = 10;
+  for (int d = 0; d < 9; d++) {
+    for (final double m in mantissas) {
+      final double candidate = m * decade;
+      if (candidate >= ideal) return candidate;
+    }
+    decade *= 10;
+  }
+  return decade;
 }

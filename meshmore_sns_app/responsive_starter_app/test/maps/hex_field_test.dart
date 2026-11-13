@@ -144,4 +144,44 @@ void main() {
     expect(cells.length, 1);
     expect(cells.single.count, 9);
   });
+
+  // The field has to be uniform on the ground and bounded on the screen. Those
+  // pull against each other, and the radius is the compromise: solved for a
+  // target cell count over the viewport, then rounded to a ladder so it does not
+  // creep with every pinch.
+  group('the field size', () {
+    test('a street view gets a street-sized cell', () {
+      // 0.6 m per pixel at 400x800 logical pixels is about 240 m x 480 m.
+      final double r =
+          hexRadiusForViewport(metresPerPixel: 0.6, viewportWidthPx: 400, viewportHeightPx: 800);
+      expect(r, lessThanOrEqualTo(50),
+          reason: 'a 25 m or 50 m cell is what that view can show');
+    });
+
+    test('a world view gets a cell the size of a country', () {
+      final double r = hexRadiusForViewport(
+          metresPerPixel: 40000, viewportWidthPx: 400, viewportHeightPx: 800);
+      expect(r, greaterThanOrEqualTo(10000));
+    });
+
+    test('the cell count stays bounded at every scale', () {
+      for (final double mpp in <double>[0.2, 1, 8, 60, 500, 5000, 60000]) {
+        final double r = hexRadiusForViewport(
+            metresPerPixel: mpp, viewportWidthPx: 420, viewportHeightPx: 900);
+        final double widthM = 420 * mpp;
+        final double heightM = 900 * mpp;
+        final double area = 3 * math.sqrt(3) / 2 * r * r;
+        final double cells = widthM * heightM / area;
+        expect(cells, lessThan(1400),
+            reason: 'at $mpp m/px the field would be $cells cells');
+      }
+    });
+
+    test('a nonsense viewport falls back instead of dividing by zero', () {
+      expect(hexRadiusForViewport(metresPerPixel: 0, viewportWidthPx: 400, viewportHeightPx: 800),
+          kDefaultHexCircumradiusMetres);
+      expect(hexRadiusForViewport(metresPerPixel: 1, viewportWidthPx: 0, viewportHeightPx: 800),
+          kDefaultHexCircumradiusMetres);
+    });
+  });
 }
