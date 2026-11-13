@@ -4449,7 +4449,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeShareFailed => 'No app took the address.';
 
   @override
-  String get placeHistoryTitle => 'Places';
+  String get placeHistoryTitle => 'Places you saved';
 
   @override
   String get placeHistoryEmpty =>
@@ -5465,7 +5465,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mapReportPlace => 'Tag a place';
+  String get mapReportPlace => 'Save a place here';
 
   @override
   String get settingsAppGroupRadio => 'Connection & background';

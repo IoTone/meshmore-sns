@@ -2140,7 +2140,7 @@
   "placeShareAddress": "住所を共有",
   "placeShareSubject": "メッシュ上の地点",
   "placeShareFailed": "住所を引き受けるアプリがありません。",
-  "placeHistoryTitle": "場所",
+  "placeHistoryTitle": "保存した場所",
   "placeHistoryEmpty": "まだ場所はありません。地図を長押しするとタグ付けできます。",
   "placeStateLive": "有効",
   "placeStateExpired": "期限切れ",
@@ -2426,7 +2426,7 @@
   "placeTtlMinutes": "{count}分",
   "placeTtlHours": "{count}時間",
   "placeTtlDays": "{count}日",
-  "mapReportPlace": "場所をタグ付け",
+  "mapReportPlace": "ここに場所を保存",
   "@sosDestinationContactsLimit": {
     "placeholders": {
       "count": {

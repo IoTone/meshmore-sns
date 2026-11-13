@@ -4279,7 +4279,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeShareFailed => '住所を引き受けるアプリがありません。';
 
   @override
-  String get placeHistoryTitle => '場所';
+  String get placeHistoryTitle => '保存した場所';
 
   @override
   String get placeHistoryEmpty => 'まだ場所はありません。地図を長押しするとタグ付けできます。';
@@ -5243,7 +5243,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get mapReportPlace => '場所をタグ付け';
+  String get mapReportPlace => 'ここに場所を保存';
 
   @override
   String get settingsAppGroupRadio => '接続とバックグラウンド';

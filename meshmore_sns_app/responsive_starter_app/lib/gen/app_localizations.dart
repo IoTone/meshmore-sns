@@ -1481,7 +1481,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesSearchHint.
   ///
   /// In en, this message translates to:
-  /// **'Search by name, shortId, or pubkey…'**
+  /// **'name, short ID, or pub key…'**
   String get nodesSearchHint;
 
   /// No description provided for @nodesFilterStarred.
@@ -7579,7 +7579,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeHistoryTitle.
   ///
   /// In en, this message translates to:
-  /// **'Places'**
+  /// **'Places you saved'**
   String get placeHistoryTitle;
 
   /// No description provided for @placeHistoryEmpty.
@@ -9139,7 +9139,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapReportPlace.
   ///
   /// In en, this message translates to:
-  /// **'Tag a place'**
+  /// **'Save a place here'**
   String get mapReportPlace;
 
   /// No description provided for @settingsAppGroupRadio.

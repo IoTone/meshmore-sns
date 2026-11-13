@@ -2925,7 +2925,7 @@
   "placeShareAddress": "Share the address",
   "placeShareSubject": "A place on the mesh",
   "placeShareFailed": "No app took the address.",
-  "placeHistoryTitle": "Places",
+  "placeHistoryTitle": "Places you saved",
   "placeHistoryEmpty": "No places yet. Long-press the map to tag one.",
   "placeStateLive": "live",
   "placeStateExpired": "expired",
@@ -3719,7 +3719,7 @@
   "placeTtlMinutes": "{count} min",
   "placeTtlHours": "{count} h",
   "placeTtlDays": "{count} d",
-  "mapReportPlace": "Tag a place",
+  "mapReportPlace": "Save a place here",
   "@sosDestinationContactsLimit": {
     "placeholders": {
       "count": {
