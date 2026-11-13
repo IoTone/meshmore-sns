@@ -3992,6 +3992,72 @@ abstract class AppLocalizations {
   /// **'Connect a radio (Diagnostics) to edit channels.'**
   String get channelsOfflineHint;
 
+  /// No description provided for @channelCreateCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel created.'**
+  String get channelCreateCreated;
+
+  /// No description provided for @channelCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New channel'**
+  String get channelCreateTitle;
+
+  /// No description provided for @channelCreateIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Name it, then say who should be able to read it.'**
+  String get channelCreateIntro;
+
+  /// No description provided for @channelCreateNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. basecamp'**
+  String get channelCreateNameHint;
+
+  /// No description provided for @channelCreateNameKeyedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone who knows the name'**
+  String get channelCreateNameKeyedTitle;
+
+  /// No description provided for @channelCreateNameKeyedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The key comes from the name, so every radio that types the same name joins. Nothing else can read it.'**
+  String get channelCreateNameKeyedBody;
+
+  /// No description provided for @channelCreatePublicTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The public channel'**
+  String get channelCreatePublicTitle;
+
+  /// No description provided for @channelCreatePublicBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone within radio range on the public channel can read it. Use this only for a channel meant to be open.'**
+  String get channelCreatePublicBody;
+
+  /// No description provided for @channelCreateSlotNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Goes in slot {slot}, the first one nothing is using.'**
+  String channelCreateSlotNote(Object slot);
+
+  /// No description provided for @channelCreateNoSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Every channel slot on this radio is in use. Free one on the channels screen first.'**
+  String get channelCreateNoSlot;
+
+  /// No description provided for @channelCreateAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get channelCreateAction;
+
   /// No description provided for @channelsEmpty.
   ///
   /// In en, this message translates to:

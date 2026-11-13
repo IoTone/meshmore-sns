@@ -2372,6 +2372,45 @@ class AppLocalizationsEn extends AppLocalizations {
       'Connect a radio (Diagnostics) to edit channels.';
 
   @override
+  String get channelCreateCreated => 'Channel created.';
+
+  @override
+  String get channelCreateTitle => 'New channel';
+
+  @override
+  String get channelCreateIntro =>
+      'Name it, then say who should be able to read it.';
+
+  @override
+  String get channelCreateNameHint => 'e.g. basecamp';
+
+  @override
+  String get channelCreateNameKeyedTitle => 'Anyone who knows the name';
+
+  @override
+  String get channelCreateNameKeyedBody =>
+      'The key comes from the name, so every radio that types the same name joins. Nothing else can read it.';
+
+  @override
+  String get channelCreatePublicTitle => 'The public channel';
+
+  @override
+  String get channelCreatePublicBody =>
+      'Everyone within radio range on the public channel can read it. Use this only for a channel meant to be open.';
+
+  @override
+  String channelCreateSlotNote(Object slot) {
+    return 'Goes in slot $slot, the first one nothing is using.';
+  }
+
+  @override
+  String get channelCreateNoSlot =>
+      'Every channel slot on this radio is in use. Free one on the channels screen first.';
+
+  @override
+  String get channelCreateAction => 'Create';
+
+  @override
   String get channelsEmpty => '— empty —';
 
   @override

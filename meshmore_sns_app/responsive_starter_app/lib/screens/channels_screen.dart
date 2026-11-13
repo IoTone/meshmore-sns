@@ -21,6 +21,7 @@ import '../ui/mm_components.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_shape.dart';
 import '../ui/mm_confirm.dart';
+import 'channel_create_sheet.dart';
 
 /// Channel management (R6): list the device's channel slots, set the
 /// active one, and create/overwrite a slot's name + PSK. A channel is
@@ -113,6 +114,26 @@ class ChannelsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(l.channelsTitle),
         actions: <Widget>[
+          // A verb for what the screen is for. Every other door here is a slot
+          // row with "Set" on it, which asks a reader to first understand what a
+          // slot is; this one asks for a name.
+          IconButton(
+            key: const ValueKey<String>('channels-new'),
+            tooltip: l.channelCreateTitle,
+            icon: const Icon(Icons.add),
+            onPressed: ready
+                ? () async {
+                    final bool? made = await ChannelCreateSheet.show(context,
+                        controller: mc);
+                    if (made == true && context.mounted) {
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(
+                            SnackBar(content: Text(l.channelCreateCreated)));
+                    }
+                  }
+                : null,
+          ),
           IconButton(
             key: const ValueKey<String>('channels-info'),
             tooltip: l.channelsInfoTooltip,
@@ -325,16 +346,20 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
             .join()
         : '',
   );
-  // Default the key-source segmented button by inspecting the
-  // current PSK: Public if it matches the well-known key (or no
-  // slot data), Hex otherwise. We can't distinguish hashtag-derived
-  // from random-hex keys after the fact (both are opaque bytes), so
-  // any non-Public slot reads as Hex on re-open. The user can
-  // switch modes manually if they prefer to re-derive from a tag.
-  late _PskSource _src =
-      widget.currentPsk == null || _pskMatchesPublic(widget.currentPsk!)
+  // Default the key-source segmented button by inspecting the current PSK.
+  //
+  // An **empty slot defaults to the name-derived key**, not to Public. It used
+  // to default to Public, which meant naming a slot and pressing save produced a
+  // channel keyed with the well-known public key: everyone in range could read
+  // it, and nothing on the screen said so. A default that can only be wrong by
+  // being too open is the wrong default. A slot that already holds the public
+  // key still reads as Public, and any other opaque key reads as Hex, because a
+  // hashtag-derived key cannot be told from a random one after the fact.
+  late _PskSource _src = widget.currentPsk == null
+      ? (widget.initialName.isEmpty ? _PskSource.hashtag : _PskSource.public)
+      : (_pskMatchesPublic(widget.currentPsk!)
           ? _PskSource.public
-          : _PskSource.hex;
+          : _PskSource.hex);
   String? _error;
 
   /// "Show current key" reveal state. Latched per-dialog session;

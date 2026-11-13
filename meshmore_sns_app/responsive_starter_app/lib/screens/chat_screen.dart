@@ -32,6 +32,7 @@ import '../voice/voice_codec.dart';
 import '../voice/voice_composer.dart';
 import '../voice/voice_inbox.dart';
 import '../voice/voice_notes_sheet.dart';
+import 'channel_create_sheet.dart';
 import '../voice/voice_playback.dart';
 import '../meshcore/airtime.dart';
 import '../meshcore/block_filter.dart';
@@ -465,6 +466,23 @@ class _ChatScreenState extends State<ChatScreen>
     );
   }
 
+  /// Make a channel without leaving the thread.
+  ///
+  /// The only way to make one used to be Settings → Channels, which is four taps
+  /// from the place a reader thinks of channels: here, on the strip that lists
+  /// them. Making one from here also lands them in it, because a channel created
+  /// and not selected is a channel they have to go looking for.
+  Future<void> _createChannel(MeshcoreController mc) async {
+    final bool? made =
+        await ChannelCreateSheet.show(context, controller: mc);
+    if (made == true && mounted) {
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).channelCreateCreated)));
+    }
+  }
+
   Future<void> _openSearch(MeshcoreController mc) async {
     final String? id = await context.push<String>('/chat/search');
     if (id == null || !mounted) return;
@@ -852,6 +870,8 @@ class _ChatScreenState extends State<ChatScreen>
                           _openSearch(mc);
                         case 'export':
                           _exportThread(mc);
+                        case 'new-channel':
+                          _createChannel(mc);
                         case 'manage':
                           context.push('/settings/channels');
                         case 'restore':
@@ -937,6 +957,22 @@ class _ChatScreenState extends State<ChatScreen>
                             Expanded(
                               child: Text(
                                 l.chatRestoreMenu,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        key: const ValueKey<String>('chat-new-channel'),
+                        value: 'new-channel',
+                        child: Row(
+                          children: <Widget>[
+                            const Icon(Icons.add, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                l.channelCreateTitle,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),

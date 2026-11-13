@@ -2267,6 +2267,43 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsOfflineHint => 'チャンネルを編集するにはラジオを接続 (診断)。';
 
   @override
+  String get channelCreateCreated => 'チャンネルを作成しました。';
+
+  @override
+  String get channelCreateTitle => '新しいチャンネル';
+
+  @override
+  String get channelCreateIntro => '名前を決めて、誰が読めるかを選びます。';
+
+  @override
+  String get channelCreateNameHint => '例: basecamp';
+
+  @override
+  String get channelCreateNameKeyedTitle => '名前を知っている人';
+
+  @override
+  String get channelCreateNameKeyedBody =>
+      '名前から鍵を作るので、同じ名前を入力した無線機だけが参加できます。それ以外は読めません。';
+
+  @override
+  String get channelCreatePublicTitle => 'パブリックチャンネル';
+
+  @override
+  String get channelCreatePublicBody =>
+      '電波の届く範囲でパブリックチャンネルを使う全員が読めます。公開前提のときだけ選んでください。';
+
+  @override
+  String channelCreateSlotNote(Object slot) {
+    return 'スロット $slot（空いている最初の枠）に作成します。';
+  }
+
+  @override
+  String get channelCreateNoSlot => 'この無線機のチャンネル枠はすべて使用中です。先にチャンネル画面で空けてください。';
+
+  @override
+  String get channelCreateAction => '作成';
+
+  @override
   String get channelsEmpty => '— 未設定 —';
 
   @override

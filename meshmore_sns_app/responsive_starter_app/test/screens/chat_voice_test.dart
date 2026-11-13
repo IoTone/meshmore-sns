@@ -179,6 +179,36 @@ void main() {
     mc.dispose();
     await done.close();
   });
+
+  testWidgets('a channel can be made from the chat tab, where channels are',
+      (t) async {
+    final (MeshcoreController mc, VoiceInbox _, StreamController<MediaInboxPayload> done) =
+        await pumpChat(t);
+    // The strip answers "which channel" and the overflow answers "everything
+    // else"; making a channel used to live only behind Settings > Channels,
+    // four taps from the place a reader thinks of it.
+    await t.tap(find.byKey(const ValueKey<String>('chat-overflow')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('chat-new-channel')),
+        findsOneWidget);
+    await t.tap(find.byKey(const ValueKey<String>('chat-new-channel')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('channel-create-sheet')),
+        findsOneWidget);
+    await t.enterText(
+        find.byKey(const ValueKey<String>('channel-create-name')), 'basecamp');
+    await t.pump();
+    await t.tap(find.byKey(const ValueKey<String>('channel-create-save')));
+    await t.pumpAndSettle();
+    // Created and selected: the reader is in the channel they just made, not
+    // back on the one they were reading.
+    expect(mc.channels.any((MapEntry<int, String> e) => e.value == '#basecamp'),
+        isTrue);
+    expect(mc.channels.any((MapEntry<int, String> e) => e.key == mc.activeChannel),
+        isTrue);
+    mc.dispose();
+    await done.close();
+  });
 }
 
 final class _FakeCapture implements VoiceCapture {
