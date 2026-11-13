@@ -254,6 +254,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionConnect => '接続する';
 
   @override
+  String get actionBlock => 'このキーをブロック';
+
+  @override
+  String get blockConfirmTitle => 'このキーをブロックしますか？';
+
+  @override
+  String get blockConfirmBody =>
+      'この端末で、そのキーからのメッセージ・通知・地点を表示しなくなります。無線機は今も受信・中継しており、メッシュ上の誰もブロックを知りません。';
+
+  @override
+  String get blockConfirmGo => 'ブロック';
+
+  @override
+  String get blockDone => 'ブロックしました。この端末はそのキーの送信を表示しません。';
+
+  @override
+  String get blockFull => 'ブロック一覧がいっぱいです。先に1件解除してください。';
+
+  @override
   String get actionRetry => '再試行';
 
   @override
@@ -1122,9 +1141,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridEmpty => 'まだ範囲内にノードがありません。\n\nノードが自分を知らせると表示されます。';
-
-  @override
-  String get gridStatusOffline => '未接続 — 設定 → 診断で接続';
 
   @override
   String gridStatusCounts(int visible, int known, int favs) {

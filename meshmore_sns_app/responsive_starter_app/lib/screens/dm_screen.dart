@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../chat/block_actions.dart';
 import '../chat/chat_actions.dart';
 import '../chat/report_flow.dart';
 import '../chat/composer_budget.dart';
@@ -369,6 +370,10 @@ class _DmScreenState extends State<DmScreen> {
             ..showSnackBar(SnackBar(
                 content: Text(AppLocalizations.of(context).retryPathReset)));
         }
+        break;
+      case ChatAction.block:
+        final String? key = m.peerPubKeyHex;
+        if (key != null) await confirmAndBlock(context, pubKeyHex: key);
         break;
       case ChatAction.report:
         if (!mounted) return;

@@ -40,7 +40,16 @@ import 'draft_store.dart';
 /// They are still separate actions because they answer different questions:
 /// "reply to this person" addresses them, "quote this message" puts their
 /// words in the box. A reader who wants one does not always want the other.
-enum ChatAction { replyMention, quote, copy, forward, delete, retry, report }
+enum ChatAction {
+  replyMention,
+  quote,
+  copy,
+  forward,
+  delete,
+  retry,
+  report,
+  block,
+}
 
 /// The channel-reply prefix MeshCore clients read as a reply: `@[Name] `.
 ///
@@ -60,6 +69,13 @@ String? mentionPrefixFor(String? sender) {
 /// confirmation (Delete).
 Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
   final AppLocalizations l = AppLocalizations.of(context);
+  // The key a block would name, when this row proves one: a direct message
+  // carries its sender's key, a channel line carries only a name in prose.
+  final String? blockableKeyHex = m.outgoing
+      ? null
+      : (m.peerPubKeyHex != null && m.peerPubKeyHex!.length == 64
+          ? m.peerPubKeyHex
+          : null);
   // The addressable name, if this row has one: the parsed channel sender, or
   // null for our own messages and for a line whose prefix did not parse.
   final String? sender = m.outgoing ? null : parseChannelSenderName(m.text);
@@ -153,6 +169,22 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
             onTap: () => Navigator.pop(ctx, ChatAction.forward),
             trailing: const Icon(Icons.chevron_right, size: 18),
           ),
+          // Blocking belongs here, on the row the person just read: it is the
+          // moment a reader decides not to hear from someone again, and until
+          // now the app could only *unblock* — `BlockStore.block` had no caller
+          // at all, so the blocked-keys screen explained a feature nobody could
+          // reach.
+          //
+          // It needs a full key, which an inbound direct message carries and a
+          // channel row does not: a channel line names its sender in text and
+          // nothing else, so the offer is made only where the key is provable.
+          if (!m.outgoing && blockableKeyHex != null)
+            ListTile(
+              key: const ValueKey<String>('chat-action-block'),
+              leading: Icon(Icons.block, color: Theme.of(ctx).colorScheme.error),
+              title: Text(l.actionBlock),
+              onTap: () => Navigator.pop(ctx, ChatAction.block),
+            ),
           // A report is not a block and not moderation: it is a bundle the
           // reader sends wherever they choose, so it sits beside Copy rather
           // than beside Delete.

@@ -274,6 +274,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionConnect => 'Connect';
 
   @override
+  String get actionBlock => 'Block this key';
+
+  @override
+  String get blockConfirmTitle => 'Block this key?';
+
+  @override
+  String get blockConfirmBody =>
+      'This hides what it sends on this device: messages, notifications and places. The radio still receives and relays the packet, and nothing on the mesh learns about the block.';
+
+  @override
+  String get blockConfirmGo => 'Block';
+
+  @override
+  String get blockDone => 'Blocked. This device no longer shows what it sends.';
+
+  @override
+  String get blockFull => 'The block list is full. Unblock something first.';
+
+  @override
   String get actionRetry => 'Retry';
 
   @override
@@ -1186,10 +1205,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get gridEmpty =>
       'No nodes in range yet.\n\nA node appears once it announces itself.';
-
-  @override
-  String get gridStatusOffline =>
-      'Not connected — Settings → Diagnostics & connect';
 
   @override
   String gridStatusCounts(int visible, int known, int favs) {

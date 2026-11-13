@@ -61,7 +61,9 @@ void main() {
     'lib/screens/diagnostics_screen.dart': 3,
     'lib/screens/fabric_survey_view.dart': 0,
     // One dialog action row: the full-legend close button.
-    'lib/screens/grid_screen.dart': 1,
+    // Two now: the existing one, and the connect action the "not connected"
+    // strip carries (a state that offers no way out is a dead end).
+    'lib/screens/grid_screen.dart': 2,
     'lib/screens/first_run_intro_screen.dart': 1,
     'lib/screens/maps/maps_screen.dart': 6,
     'lib/screens/meshbook_view.dart': 0,

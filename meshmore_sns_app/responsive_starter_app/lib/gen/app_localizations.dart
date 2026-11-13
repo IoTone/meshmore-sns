@@ -554,6 +554,42 @@ abstract class AppLocalizations {
   /// **'Connect'**
   String get actionConnect;
 
+  /// No description provided for @actionBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Block this key'**
+  String get actionBlock;
+
+  /// No description provided for @blockConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block this key?'**
+  String get blockConfirmTitle;
+
+  /// No description provided for @blockConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This hides what it sends on this device: messages, notifications and places. The radio still receives and relays the packet, and nothing on the mesh learns about the block.'**
+  String get blockConfirmBody;
+
+  /// No description provided for @blockConfirmGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get blockConfirmGo;
+
+  /// No description provided for @blockDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked. This device no longer shows what it sends.'**
+  String get blockDone;
+
+  /// No description provided for @blockFull.
+  ///
+  /// In en, this message translates to:
+  /// **'The block list is full. Unblock something first.'**
+  String get blockFull;
+
   /// No description provided for @actionRetry.
   ///
   /// In en, this message translates to:
@@ -2131,12 +2167,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No nodes in range yet.\n\nA node appears once it announces itself.'**
   String get gridEmpty;
-
-  /// No description provided for @gridStatusOffline.
-  ///
-  /// In en, this message translates to:
-  /// **'Not connected — Settings → Diagnostics & connect'**
-  String get gridStatusOffline;
 
   /// No description provided for @gridStatusCounts.
   ///

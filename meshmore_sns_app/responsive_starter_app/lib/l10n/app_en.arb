@@ -142,6 +142,12 @@
     }
   },
   "actionConnect": "Connect",
+  "actionBlock": "Block this key",
+  "blockConfirmTitle": "Block this key?",
+  "blockConfirmBody": "This hides what it sends on this device: messages, notifications and places. The radio still receives and relays the packet, and nothing on the mesh learns about the block.",
+  "blockConfirmGo": "Block",
+  "blockDone": "Blocked. This device no longer shows what it sends.",
+  "blockFull": "The block list is full. Unblock something first.",
   "actionRetry": "Retry",
   "actionRetrySend": "Retry",
   "dashboardDevice": "Device",
@@ -636,7 +642,6 @@
     }
   },
   "gridEmpty": "No nodes in range yet.\n\nA node appears once it announces itself.",
-  "gridStatusOffline": "Not connected — Settings → Diagnostics & connect",
   "gridStatusCounts": "{visible} shown · {known} known · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
   "@gridStatusCounts": {
     "placeholders": {

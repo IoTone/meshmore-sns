@@ -17,6 +17,8 @@ import '../gen/app_localizations.dart';
 import '../field/relationship.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
+import '../chat/block_actions.dart';
+import '../meshcore/block_store.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../bot/bot_scope.dart';
 import '../bot/bot_section.dart';
@@ -462,6 +464,11 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             if (!widget.isSelf) _AdvertPathLine(node: n),
             if (!widget.isSelf) _FindRouteLine(node: n),
             if (!widget.isSelf) _ShareContactLine(node: n),
+            // Blocking, on the node itself. It is the same decision the message
+            // sheet offers, and this is the screen where a reader knows who they
+            // are looking at.
+            if (!widget.isSelf)
+              _BlockLine(node: n, mc: mc),
             if (!widget.isSelf &&
                 (n.type == kAdvTypeRepeater || n.type == kAdvTypeRoom))
               _RepeaterSessionBlock(node: n),
@@ -955,6 +962,81 @@ class _ShareContactLineState extends State<_ShareContactLine> {
   }
 }
 
+
+/// Block or unblock this node, on the row that names it.
+///
+/// The app could only ever *unblock*: `BlockStore.block` had no caller, so the
+/// blocked-keys screen explained a feature nothing in the app could reach. This
+/// is the second place the offer belongs — the other is the message action sheet,
+/// where a reader decides not to hear from someone again — and the label follows
+/// the state, because a row that says "Block" for an already-blocked key is a row
+/// that does nothing.
+class _BlockLine extends StatefulWidget {
+  const _BlockLine({required this.node, required this.mc});
+  final DiscoveredNode node;
+  final MeshcoreController mc;
+
+  @override
+  State<_BlockLine> createState() => _BlockLineState();
+}
+
+class _BlockLineState extends State<_BlockLine> {
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final BlockStore? store = context.watch<BlockStore?>();
+    final bool blocked = store?.isBlocked(widget.node.pubKeyHex) ?? false;
+    return InkWell(
+      key: const ValueKey<String>('node-block-line'),
+      onTap: _busy
+          ? null
+          : () async {
+              setState(() => _busy = true);
+              try {
+                if (blocked) {
+                  await store?.unblock(widget.node.pubKeyHex);
+                } else {
+                  await confirmAndBlock(context,
+                      pubKeyHex: widget.node.pubKeyHex,
+                      name: widget.node.name.isEmpty
+                          ? null
+                          : widget.node.name);
+                }
+              } finally {
+                if (mounted) setState(() => _busy = false);
+              }
+            },
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+        child: Row(
+          children: <Widget>[
+            SizedBox(
+              width: kvLabelWidth(context),
+              child: Text(l.actionBlock,
+                  style: TextStyle(
+                      color: blocked ? cs.primary : cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeSm)),
+            ),
+            const SizedBox(width: _kKvGap),
+            Expanded(
+              child: Text(
+                  blocked ? l.blockedKeysUnblock : l.blockedKeysCannotStop,
+                  style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: context.skin.type.sizeBody)),
+            ),
+            Icon(blocked ? Icons.lock_open : Icons.block,
+                size: 16,
+                color: blocked ? cs.primary : cs.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 /// A repeater session: sign in with the repeater's own password, see what it
 /// granted, and sign out.

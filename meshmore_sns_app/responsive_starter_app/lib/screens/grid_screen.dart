@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -964,12 +965,16 @@ class _GridScreenState extends State<GridScreen>
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                ready && _plotsNodes
-                    ? l.gridStatusCounts(
-                        visible.length, mc.known.length, mc.favorites.length)
-                    : ready
-                        ? ''
-                        : l.gridStatusOffline,
+                // Offline is the strip's sentence below, with its action on it.
+                // Printing it twice on one screen — once muted here and once in
+                // the strip — was two ways of saying the same thing in the same
+                // column.
+                !ready
+                    ? ''
+                    : _plotsNodes
+                        ? l.gridStatusCounts(
+                            visible.length, mc.known.length, mc.favorites.length)
+                        : '',
                 style: TextStyle(
                     color: cs.onSurfaceVariant,
                     fontSize: context.skin.type.sizeBody),
@@ -979,7 +984,12 @@ class _GridScreenState extends State<GridScreen>
           // The radar says it in its own centre; every other view gets
           // the strip.
           if (!ready && _viewMode != _GridViewMode.radial)
-            _NotConnectedStrip(cs: cs, label: l.gridNotConnected),
+            _NotConnectedStrip(
+              cs: cs,
+              label: l.gridNotConnected,
+              action: l.chatConnectRadio,
+              onAction: () => context.push('/connect'),
+            ),
           // The picker drives mode; the body renders the chosen mode's widget
           // under its Swipe ⇄ Pan state (R109).
           Expanded(
@@ -1278,10 +1288,20 @@ class _GridLegend extends StatelessWidget {
 /// "Not Connected to Mesh" — centred on the empty radar, a strip atop
 /// every other view. Text + icon, never colour alone (R13).
 class _NotConnectedStrip extends StatelessWidget {
-  const _NotConnectedStrip({required this.cs, required this.label});
+  const _NotConnectedStrip({
+    required this.cs,
+    required this.label,
+    this.action,
+    this.onAction,
+  });
 
   final ColorScheme cs;
   final String label;
+
+  /// The way out, on the strip. A state that says "not connected" and offers
+  /// nothing is a dead end in the middle of a screen.
+  final String? action;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -1297,21 +1317,38 @@ class _NotConnectedStrip extends StatelessWidget {
         borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.error.withValues(alpha: .6)),
       ),
-      child: Row(
+      // The action sits on its own line rather than beside the label: at 320 dp
+      // with the text at 200 % the two together overflowed by 214 px, and a
+      // banner that clips its own way out is worse than a taller one.
+      child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(Icons.link_off, size: 18, color: cs.error),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              label,
-              style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: context.skin.type.sizeBodyLg,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1),
-            ),
+          Row(
+            children: <Widget>[
+              Icon(Icons.link_off, size: 18, color: cs.error),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: context.skin.type.sizeBodyLg,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1),
+                ),
+              ),
+            ],
           ),
+          if (action != null && onAction != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                key: const ValueKey<String>('grid-not-connected-connect'),
+                onPressed: onAction,
+                child: Text(action!),
+              ),
+            ),
         ],
       ),
     );

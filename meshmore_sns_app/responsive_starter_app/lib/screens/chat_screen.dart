@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../chat/channel_read_store.dart';
+import '../chat/block_actions.dart';
 import '../chat/chat_actions.dart';
 import '../chat/composer_budget.dart';
 import '../chat/composer_counter.dart';
@@ -599,6 +600,10 @@ class _ChatScreenState extends State<ChatScreen>
             ..showSnackBar(SnackBar(
                 content: Text(AppLocalizations.of(context).retryPathReset)));
         }
+        break;
+      case ChatAction.block:
+        final String? key = m.peerPubKeyHex;
+        if (key != null) await confirmAndBlock(context, pubKeyHex: key);
         break;
       case ChatAction.report:
         if (!mounted) return;
