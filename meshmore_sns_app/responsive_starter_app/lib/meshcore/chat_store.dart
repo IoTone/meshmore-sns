@@ -289,17 +289,38 @@ abstract final class ChatStore {
   static String _encode(List<ChatMessage> messages) =>
       jsonEncode(messages.map((ChatMessage m) => m.toJson()).toList());
 
+  /// Rows this store could not read, and how many, for the next reader to say
+  /// out loud. Reset by every [_decode].
+  static int lastSkippedRows = 0;
+
   static List<ChatMessage> _decode(String raw) {
+    lastSkippedRows = 0;
     if (raw.isEmpty) return <ChatMessage>[];
+    final Object? decoded;
     try {
-      final Object? decoded = jsonDecode(raw);
-      if (decoded is! List) return <ChatMessage>[];
-      return decoded
-          .whereType<Map<String, Object?>>()
-          .map(ChatMessage.fromJson)
-          .toList();
+      decoded = jsonDecode(raw);
     } catch (_) {
       return <ChatMessage>[];
     }
+    if (decoded is! List) return <ChatMessage>[];
+    // Row by row. A single unreadable row used to take the whole history with
+    // it: one bad field type — and a real build wrote one, by putting a failure
+    // cause where the channel index belongs — threw inside the map, the catch
+    // returned the empty list, and the next save rewrote the file with nothing.
+    // A row the app cannot read is a row to skip and count, never a reason to
+    // discard every message the user has.
+    final List<ChatMessage> out = <ChatMessage>[];
+    for (final Object? row in decoded) {
+      if (row is! Map<String, Object?>) {
+        lastSkippedRows++;
+        continue;
+      }
+      try {
+        out.add(ChatMessage.fromJson(row));
+      } catch (_) {
+        lastSkippedRows++;
+      }
+    }
+    return out;
   }
 }

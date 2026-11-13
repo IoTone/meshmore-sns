@@ -1122,6 +1122,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                   east: start.centre.longitude + 0.01,
                 ),
             circumradiusMetres: _hexRadiusMetres,
+            includeEmpty: true,
+            maxCells: 260,
           );
     // The tap handler reads this, and it is the same list the layer draws, so
     // the cell that opens is the cell that was tapped.
@@ -1314,11 +1316,18 @@ class _StreetMapViewState extends State<StreetMapView> {
                       Polygon<HexCell>(
                         points: hexCorners(c.centre, _hexRadiusMetres),
                         hitValue: c,
-                        color: VizPalette.of(context.skin).accent.withValues(
-                            alpha: hexAlpha(c.count)),
-                        borderColor:
-                            VizPalette.of(context.skin).accent.withValues(alpha: 0.45),
-                        borderStrokeWidth: 0.8,
+                        // The fill carries the count and the ink; the *edge* is
+                        // what makes it a field. An accent-coloured lattice over
+                        // a satellite photograph disappeared into the vegetation
+                        // it was measuring, so the line is the skin's foreground
+                        // — the one colour guaranteed to differ from the ground
+                        // it is drawn on — and the fill keeps the accent.
+                        color: VizPalette.of(context.skin)
+                            .accent
+                            .withValues(alpha: hexAlpha(c.count)),
+                        borderColor: cs.onSurface
+                            .withValues(alpha: c.count == 0 ? 0.22 : 0.55),
+                        borderStrokeWidth: c.count == 0 ? 0.7 : 1.1,
                       ),
                   ],
                 ),
@@ -1499,7 +1508,12 @@ class _StreetMapViewState extends State<StreetMapView> {
               if (hexes.isNotEmpty && _densityCellsDrawn)
                 MarkerLayer(
                   markers: <Marker>[
+                    // Only cells that hold something get a number. The field
+                    // is a continuous lattice now, so the empty cells are drawn
+                    // as faint shapes; a "0" badge on each of them was a row of
+                    // chips across the top of the map.
                     for (final HexCell c in hexes)
+                      if (c.count > 0)
                       Marker(
                         point: c.centre,
                         width: 48,

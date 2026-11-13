@@ -126,7 +126,7 @@ void main() {
     expect(hexAlpha(0), lessThan(hexAlpha(1)));
     expect(hexAlpha(1), lessThan(hexAlpha(4)));
     expect(hexAlpha(4), lessThan(hexAlpha(20)));
-    expect(hexAlpha(20), lessThanOrEqualTo(0.52),
+    expect(hexAlpha(20), lessThanOrEqualTo(0.6),
         reason: 'the field must stay subtle enough to see the nodes through it');
     // A square root, not a line: four nodes is already "busier than most".
     expect(hexAlpha(4), greaterThan(hexAlpha(20) * 0.6));

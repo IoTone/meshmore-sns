@@ -115,7 +115,18 @@ class ChatMessage {
         if (delivery != null) 'd': delivery!.index,
         if (expectedAck != null) 'k': expectedAck,
         if (failReason != null) 'r': failReason,
-        if (failCause != null) 'c': failCause!.name,
+        // `x`, not `c`. This was `'c': failCause!.name` in the same map literal
+        // that already writes `'c': channelIdx`, so a row with a typed failure
+        // persisted its cause *over* its channel and no channel at all. On the
+        // next launch `fromJson` read a String where it wanted a number, threw,
+        // and `ChatStore`'s catch turned that into an empty history — one failed
+        // send plus one restart discarded every message the app had kept.
+        //
+        // `fromJson` still reads a legacy `c` that is a String, because a build
+        // in the field has written rows in that shape and they are recoverable:
+        // the channel is 0 in that case, which is where a failed send on the
+        // public channel belongs.
+        if (failCause != null) 'x': failCause!.name,
       };
 
   /// Reads a persisted cause name. An unknown name (a row written by a newer
@@ -147,7 +158,15 @@ class ChatMessage {
     }
     return ChatMessage(
       id: j['i'] as String?,
-      channelIdx: (j['c'] as num?)?.toInt() ?? 0,
+      // A row written by the legacy `'c': failCause` shape has no numeric
+      // channel; public (0) is where a send that failed on the public channel
+      // belongs, and it is the only channel that shape could have truncated to.
+      // Tolerant on purpose: a legacy row put the failure cause (a String) in
+      // this key, and a cast here threw away the whole history on restore.
+      channelIdx: switch (j['c']) {
+        final num n => n.toInt(),
+        _ => 0,
+      },
       text: j['t'] as String? ?? '',
       outgoing: j['o'] as bool? ?? false,
       at: DateTime.fromMillisecondsSinceEpoch(
@@ -158,7 +177,12 @@ class ChatMessage {
       delivery: delivery,
       expectedAck: (j['k'] as num?)?.toInt(),
       failReason: reason,
-      failCause: j['c'] is String ? _causeByName(j['c'] as String) : null,
+      // `x` is the current key; a legacy row has the cause in `c` and no channel
+      // index, which is why the channel above falls back to 0.
+      failCause: switch (j['x'] ?? j['c']) {
+        final String name => _causeByName(name),
+        _ => null,
+      },
     );
   }
 }

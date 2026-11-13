@@ -77,6 +77,9 @@ class _DmScreenState extends State<DmScreen> {
   /// A thread draft is keyed by the radio and the peer, so the same peer on a
   /// second radio is a second conversation with its own unsent text.
   String? _draftKey;
+
+  /// The controller this screen is listening to, so `dispose` can detach.
+  MeshcoreController? _owner;
   Timer? _draftTimer;
 
   /// The message the last send created, so a failure can put the text back.
@@ -125,6 +128,7 @@ class _DmScreenState extends State<DmScreen> {
     _input.addListener(_onComposerChanged);
     unawaited(_recall());
     mc.addListener(_onControllerChanged);
+    _owner = mc;
     // No special live action needed — the controller's _ingestDm
     // already adds inbound DMs to the store and notifies. The
     // stream subscription is here only as a hook for future per-DM
@@ -152,7 +156,20 @@ class _DmScreenState extends State<DmScreen> {
     // a pop that already handed the focus back to the thread underneath.
     if (_focus?.openPeer == widget.peerPubKeyHex) _focus?.openPeer = null;
     _sub?.cancel();
+    // A listener left on a process-lifetime notifier keeps the dead State (and
+    // its disposed controllers) alive and runs on every notification — several
+    // per second during a drain. One per visited thread, forever.
+    _owner?.removeListener(_onControllerChanged);
     _input.removeListener(_onComposerChanged);
+    // Flush before cancelling: a debounce that dies with the screen loses the
+    // last thing typed, so backing out inside 700 ms cut the draft short.
+    if (_draftTimer != null && _draftTimer!.isActive) {
+      final String? key = _draftKey;
+      final String text = _input.text;
+      if (key != null && text.trim().isNotEmpty) {
+        unawaited(DraftStore.save(key, text));
+      }
+    }
     _draftTimer?.cancel();
     _input.dispose();
     _scroll.dispose();

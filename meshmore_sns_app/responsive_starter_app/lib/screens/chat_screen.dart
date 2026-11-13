@@ -130,9 +130,9 @@ class _ChatScreenState extends State<ChatScreen>
   int _revealTries = 0;
   Timer? _highlightTimer;
 
-  /// The message count this screen last marked read, so a rebuild does not
+  /// The id of the newest row this screen last marked read, so a rebuild does not
   /// write the same mark again and a new message does write a new one.
-  int _markedCount = -1;
+  String? _markedNewest;
 
   /// The channel that mark was written for. The count alone was not enough:
   /// switching to a channel whose row count happened to equal the previous
@@ -526,6 +526,15 @@ class _ChatScreenState extends State<ChatScreen>
     if (_listener != null) _owner?.removeListener(_listener!);
     _scroll.removeListener(_onScroll);
     _input.removeListener(_onComposerChanged);
+    // A debounce that is cancelled without a flush loses the last keystrokes:
+    // type, leave the tab inside 700 ms, and the tail of the sentence is gone.
+    if (_draftTimer != null && _draftTimer!.isActive) {
+      final String? key = _draftKey;
+      final String text = _input.text;
+      if (key != null && text.trim().isNotEmpty) {
+        unawaited(DraftStore.save(key, text));
+      }
+    }
     _draftTimer?.cancel();
     _input.dispose();
     _scroll.dispose();
@@ -732,12 +741,16 @@ class _ChatScreenState extends State<ChatScreen>
     if (reads != null &&
         (widget.isCurrent ?? true) &&
         msgs.isNotEmpty &&
-        (_markedChannel != active || _markedCount != msgs.length)) {
+        (_markedChannel != active || _markedNewest != msgs.last.id)) {
       final int channel = active;
-      final int count = msgs.length;
+      // The newest *row*, not the count: history is capped at 250 per channel,
+      // so once a channel is full an arriving message evicts one and the length
+      // never changes again — the mark stopped advancing and the badge on the
+      // thread being read started counting again.
+      final String newestId = msgs.last.id;
       final ChatMessage newest = msgs.last;
       _markedChannel = channel;
-      _markedCount = count;
+      _markedNewest = newestId;
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         await reads.markRead(channel,

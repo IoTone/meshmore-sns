@@ -71,6 +71,7 @@ List<HexCell> hexField({
   double circumradiusMetres = kDefaultHexCircumradiusMetres,
   int margin = 1,
   int maxCells = 400,
+  bool includeEmpty = false,
 }) {
   if (circumradiusMetres <= 0) return const <HexCell>[];
   final double lat0 = (box.south + box.north) / 2;
@@ -108,6 +109,26 @@ List<HexCell> hexField({
   }
 
   final Map<(int, int), List<String>> buckets = <(int, int), List<String>>{};
+
+  // The whole lattice over the box, not only the occupied cells: the owner asked
+  // for a *field* — a continuous mesh at a uniform distance that you read across —
+  // and a handful of floating hexagons is not that. Empty cells are drawn at the
+  // faintest step of the same ramp, so density reads as a shape rather than as a
+  // scatter.
+  if (includeEmpty) {
+    final int cols =
+        ((box.east - box.west).abs() * metresPerLon / width).ceil() + 2;
+    final int rows = ((box.north - box.south).abs() *
+                kMetresPerDegLatHex /
+                pitchY)
+            .ceil() +
+        2;
+    for (int row = -1; row <= rows; row++) {
+      for (int col = -1; col <= cols; col++) {
+        buckets.putIfAbsent((col, row), () => <String>[]);
+      }
+    }
+  }
   for (final DensityPoint p in points) {
     if (p.lat < box.south ||
         p.lat > box.north ||
@@ -161,9 +182,9 @@ List<LatLng> hexCorners(LatLng centre, double circumradiusMetres) {
 /// of it: four nodes in a cell is already "busier than most", and a linear ramp
 /// would keep it almost invisible until twelve.
 double hexAlpha(int count, {int reference = 6}) {
-  if (count <= 0) return 0.05;
+  if (count <= 0) return 0.04;
   final double t = (count / (reference <= 0 ? 6 : reference)).clamp(0.0, 1.0);
-  return 0.10 + 0.42 * math.sqrt(t);
+  return 0.16 + 0.42 * math.sqrt(t);
 }
 
 /// The hexagon size the density layer uses by default, in metres.
