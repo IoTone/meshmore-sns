@@ -2862,6 +2862,11 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
           peerPubKeyHex: toPubKeyHex,
           delivery: m.delivery,
           expectedAck: m.expectedAck,
+          // The explanation travels with the row. Recreating it without these
+          // two left a failed message with no cause after a key link: the row
+          // still said failed and could no longer say why.
+          failReason: m.failReason,
+          failCause: m.failCause,
         );
         msgChanged = true;
       }
@@ -3165,7 +3170,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         changed = true;
       }
     }
-    if (changed) unawaited(KnownStore.save(_known));
+    if (changed) {
+      unawaited(KnownStore.save(_known));
+      // A node that just became known is a fact the fabric, the tree and the map
+      // all draw. Persisting it without telling anyone left the "known" pulse up
+      // to whatever unrelated frame happened to arrive next.
+      notifyListeners();
+    }
   }
 
   void _ingestChat(MeshcoreInbound f) {

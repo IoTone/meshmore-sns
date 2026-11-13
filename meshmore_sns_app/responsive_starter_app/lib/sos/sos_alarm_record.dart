@@ -18,6 +18,10 @@ import 'sos_engine.dart';
 /// and the caller clears the key rather than failing to start.
 const int _recordVersion = 1;
 
+/// Three decimals: about 110 m of latitude, which is a search area rather than a
+/// doorstep.
+double? _coarse(double? v) => v == null ? null : (v * 1000).round() / 1000;
+
 Map<String, Object?>? alarmToJson(SosSnapshot? snapshot) {
   if (snapshot == null) return null;
   final SosRaise r = snapshot.raise;
@@ -33,8 +37,14 @@ Map<String, Object?>? alarmToJson(SosSnapshot? snapshot) {
     'keys': <String>[
       for (final List<int> k in r.targets.contactKeys) base64Encode(k),
     ],
-    'lat': r.lat,
-    'lon': r.lon,
+    // Coarsened to three decimals, about 110 m. The live alarm keeps the exact
+    // fix in memory and sends that; what is *at rest* on the disk is only ever
+    // needed to resume after a process death, and a snapshot carrying a
+    // metre-accurate position beside the operator's own words is the most
+    // sensitive unencrypted record the app holds. A search area survives the
+    // rounding; a pinpoint does not.
+    'lat': _coarse(r.lat),
+    'lon': _coarse(r.lon),
     'fixAt': r.fixAt?.toUtc().toIso8601String(),
     'issued': snapshot.issued.toList(growable: false),
   };
