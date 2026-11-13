@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -452,13 +453,26 @@ class _NodesScreenState extends State<NodesScreen> {
         ),
         Padding(
           padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.labelToControl, context.skin.space.screenEdge, context.skin.space.rowGap),
-          child: Text(
-            ready
-                ? l.nodesStatusReady(
-                    nodes.length, totalFabric, inRange, favs.length)
-                : l.nodesStatusOffline,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
-          ),
+          // A line that says "not connected" and does nothing about it is the
+          // dead end a reader meets most often: this is the first tab they open
+          // and it is useless without a radio. The line is the way out now.
+          child: ready
+              ? Text(
+                  l.nodesStatusReady(
+                      nodes.length, totalFabric, inRange, favs.length),
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeBody),
+                )
+              : Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: const ValueKey<String>('nodes-status-connect'),
+                    onPressed: () => context.push('/connect'),
+                    icon: const Icon(Icons.bluetooth_searching, size: 16),
+                    label: Text(l.nodesStatusOffline),
+                  ),
+                ),
         ),
         const Divider(height: 1),
         Expanded(

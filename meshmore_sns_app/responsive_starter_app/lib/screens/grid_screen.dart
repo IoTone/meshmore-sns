@@ -6,7 +6,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -28,7 +27,6 @@ import 'grid_notice.dart';
 import 'grid_prefs_store.dart';
 import '../maps/compass.dart';
 import '../maps/radar_scale.dart';
-import '../maps/cardinal_click.dart';
 import '../theme/viz_palette.dart';
 import 'weather_view.dart';
 import '../ui/mm_shape.dart';
@@ -396,30 +394,10 @@ class _GridScreenState extends State<GridScreen>
     super.dispose();
   }
 
-  /// A haptic click at each quarter turn, and nothing else.
-  ///
-  /// The dial answers "which way am I facing" for the eyes; a phone held at an
-  /// angle hides its own screen, so the owner asked for the same fact as a tick
-  /// under the thumb. It fires at the marks, not at a wobble — see
-  /// [CardinalClick] for why those are different questions.
-  final CardinalClick _cardinal = CardinalClick();
-
-  void _onHeading() {
-    final double? h = _compass.heading;
-    if (h == null) {
-      _cardinal.reset();
-      return;
-    }
-    // The dial still turns while this tab is off screen (the shared compass is
-    // one instance), but the click is for the person looking at it.
-    if (!(widget.isCurrent ?? true)) {
-      _cardinal.reset();
-      return;
-    }
-    if (_cardinal.update(h)) {
-      unawaited(HapticFeedback.selectionClick());
-    }
-  }
+  /// The compass listener exists for the redraw; the quarter-turn click lives in
+  /// `CompassHeading`, which is the one instance every dial shares, so a phone
+  /// turned on the dashboard or the map clicks there too.
+  void _onHeading() {}
 
   void _refreshSnapshot() {
     if (!mounted) return;

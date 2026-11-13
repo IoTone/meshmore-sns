@@ -867,8 +867,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get nodesStatusOffline =>
-      'Not connected — Settings → Diagnostics & connect';
+  String get nodesStatusOffline => 'Not connected — open Connect a radio';
 
   @override
   String get nodesFarBadge => 'FAR';
@@ -1296,13 +1295,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubApp => 'App settings';
 
   @override
-  String get settingsHubProfile => 'Profile & personalization';
+  String get settingsHubProfile => 'Appearance & accessibility';
 
   @override
   String get settingsHubChannels => 'Channels';
 
   @override
-  String get settingsHubDiagnostics => 'Diagnostics & connect';
+  String get settingsHubDiagnostics => 'Radio connection';
 
   @override
   String get bootHeader => 'MESHMORE  /  SYNCHRONIZING';
@@ -1317,7 +1316,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bootReady => 'MESH ONLINE';
 
   @override
-  String get bootOffline => 'OFFLINE — Settings → Diagnostics & connect';
+  String get bootOffline => 'OFFLINE — open Connect a radio';
 
   @override
   String get bootSkip => 'SKIP';
@@ -2954,7 +2953,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceOpenSettings => 'Open settings';
 
   @override
-  String get diagnosticsTitle => 'Diagnostics & connect';
+  String get diagnosticsTitle => 'Radio diagnostics';
 
   @override
   String get diagnosticsRawFrameLog => 'RAW FRAME LOG (newest first)';
@@ -3151,7 +3150,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get toolsOffline =>
-      'Not connected — the tools need the radio. Settings → Diagnostics & connect';
+      'Not connected — the tools need the radio. Open Connect a radio';
 
   @override
   String get toolsRunning => 'RUNNING';
@@ -3509,7 +3508,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rangeFlood => 'flood';
 
   @override
-  String get settingsHubInfo => 'Information';
+  String get settingsHubInfo => 'About';
 
   @override
   String get settingsNotifDeniedPermanent =>
@@ -5449,7 +5448,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapReportPlace => 'Tag a place';
 
   @override
-  String get settingsAppGroupRadio => 'Radio';
+  String get settingsAppGroupRadio => 'Connection & background';
 
   @override
   String get settingsAppGroupSound => 'Reading and sound';

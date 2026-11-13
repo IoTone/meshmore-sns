@@ -69,7 +69,13 @@ void main() {
     'lib/screens/meshbook_view.dart': 0,
     'lib/screens/network_detail_screen.dart': 2,
     'lib/screens/node_detail_sheet.dart': 4,
-    'lib/screens/nodes_screen.dart': 1,
+    // Two now: the existing one, and the connect action on the offline status
+    // line (a line that says "not connected" and does nothing is the dead end a
+    // reader meets first in the app).
+    'lib/screens/nodes_screen.dart': 2,
+    // The connect action on the tools' offline notice: one notice widget, so one
+    // site, and a tool that says "not connected" now says where to fix it.
+    'lib/screens/tools/tool_widgets.dart': 1,
     'lib/screens/pair_radio_screen.dart': 1,
     'lib/screens/sos_screen.dart': 1,
     'lib/screens/terms_screen.dart': 1,

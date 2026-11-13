@@ -140,7 +140,7 @@ void main() {
     expect(find.byKey(dashboardKey), findsOneWidget);
   });
 
-  testWidgets('R86 Settings lists Docs and Information as peers',
+  testWidgets('R86 Settings lists Docs and About as peers',
       (WidgetTester t) async {
     // appRouter is a global instance: a route left pushed would put every
     // later test on that page instead of the shell.
@@ -152,7 +152,7 @@ void main() {
     expect(find.byTooltip('Docs'), findsNothing);
     expect(find.byTooltip('About'), findsNothing);
     final Finder docsRow = find.text('Docs');
-    final Finder infoRow = find.text('Information');
+    final Finder infoRow = find.text('About');
     // The hub is a lazy list; scroll down to the end where the static rows sit.
     final Finder hub = find
         .descendant(
@@ -164,7 +164,7 @@ void main() {
     expect(t.getTopLeft(docsRow).dx, t.getTopLeft(infoRow).dx,
         reason: 'same level: both are rows of the one hub list');
     expect(t.getTopLeft(docsRow).dy, lessThan(t.getTopLeft(infoRow).dy),
-        reason: 'Docs sits immediately before Information');
+        reason: 'Docs sits immediately before About');
 
     // Docs opens the hub, and Back returns to the Settings hub.
     await t.tap(docsRow);
@@ -175,7 +175,7 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget,
         reason: 'Back returns to the Settings hub');
 
-    // Information opens About, which no longer carries a Docs row.
+    // About's row opens About, which no longer carries a Docs row.
     await t.scrollUntilVisible(infoRow, 100, scrollable: hub);
     await t.tap(infoRow);
     await t.pumpAndSettle();
@@ -256,9 +256,9 @@ void main() {
       'Networks',
       'Firmware',
       'App settings',
-      'Profile & personalization',
+      'Appearance & accessibility',
       'Offline maps',
-      'Diagnostics & connect',
+      'Radio connection',
       'Tools',
     ]) {
       expect(find.text(row), findsOneWidget, reason: '$row is listed once');
@@ -273,7 +273,7 @@ void main() {
     // Settings hub shows the three sub-screen entries.
     expect(find.text('Device configuration'), findsOneWidget);
     expect(find.text('App settings'), findsOneWidget);
-    expect(find.text('Profile & personalization'), findsOneWidget);
+    expect(find.text('Appearance & accessibility'), findsOneWidget);
   });
 
   testWidgets(

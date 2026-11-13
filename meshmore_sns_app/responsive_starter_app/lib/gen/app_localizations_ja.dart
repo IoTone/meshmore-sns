@@ -823,7 +823,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get nodesStatusOffline => '未接続 — 設定 → 診断で接続';
+  String get nodesStatusOffline => '未接続 — 「無線機に接続」を開いてください';
 
   @override
   String get nodesFarBadge => '遠距離';
@@ -1231,13 +1231,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubApp => 'アプリ設定';
 
   @override
-  String get settingsHubProfile => 'プロフィール & パーソナライズ';
+  String get settingsHubProfile => '外観とアクセシビリティ';
 
   @override
   String get settingsHubChannels => 'チャンネル';
 
   @override
-  String get settingsHubDiagnostics => '診断 & 接続';
+  String get settingsHubDiagnostics => '無線機の接続';
 
   @override
   String get bootHeader => 'MESHMORE  /  同期中';
@@ -1252,7 +1252,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bootReady => 'メッシュ オンライン';
 
   @override
-  String get bootOffline => 'オフライン — 設定 → 診断 & 接続';
+  String get bootOffline => 'オフライン — 「無線機に接続」を開いてください';
 
   @override
   String get bootSkip => 'スキップ';
@@ -2830,7 +2830,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceOpenSettings => '設定を開く';
 
   @override
-  String get diagnosticsTitle => '診断 & 接続';
+  String get diagnosticsTitle => '無線機の診断';
 
   @override
   String get diagnosticsRawFrameLog => 'RAW フレームログ (新しい順)';
@@ -3018,7 +3018,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toolsTitle => 'ツール';
 
   @override
-  String get toolsOffline => '未接続 — ツールには無線機が必要です。設定 → 接続と診断';
+  String get toolsOffline => '未接続 — ツールには無線機が必要です。「無線機に接続」を開いてください';
 
   @override
   String get toolsRunning => '実行中';
@@ -3368,7 +3368,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rangeFlood => 'フラッド';
 
   @override
-  String get settingsHubInfo => '情報';
+  String get settingsHubInfo => 'このアプリについて';
 
   @override
   String get settingsNotifDeniedPermanent =>
@@ -5228,7 +5228,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapReportPlace => '場所をタグ付け';
 
   @override
-  String get settingsAppGroupRadio => '無線';
+  String get settingsAppGroupRadio => '接続とバックグラウンド';
 
   @override
   String get settingsAppGroupSound => '表示と音';

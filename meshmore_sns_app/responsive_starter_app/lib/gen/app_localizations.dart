@@ -1589,7 +1589,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesStatusOffline.
   ///
   /// In en, this message translates to:
-  /// **'Not connected — Settings → Diagnostics & connect'**
+  /// **'Not connected — open Connect a radio'**
   String get nodesStatusOffline;
 
   /// No description provided for @nodesFarBadge.
@@ -2309,7 +2309,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubProfile.
   ///
   /// In en, this message translates to:
-  /// **'Profile & personalization'**
+  /// **'Appearance & accessibility'**
   String get settingsHubProfile;
 
   /// No description provided for @settingsHubChannels.
@@ -2321,7 +2321,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubDiagnostics.
   ///
   /// In en, this message translates to:
-  /// **'Diagnostics & connect'**
+  /// **'Radio connection'**
   String get settingsHubDiagnostics;
 
   /// No description provided for @bootHeader.
@@ -2351,7 +2351,7 @@ abstract class AppLocalizations {
   /// No description provided for @bootOffline.
   ///
   /// In en, this message translates to:
-  /// **'OFFLINE — Settings → Diagnostics & connect'**
+  /// **'OFFLINE — open Connect a radio'**
   String get bootOffline;
 
   /// No description provided for @bootSkip.
@@ -5003,7 +5003,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Diagnostics & connect'**
+  /// **'Radio diagnostics'**
   String get diagnosticsTitle;
 
   /// No description provided for @diagnosticsRawFrameLog.
@@ -5345,7 +5345,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolsOffline.
   ///
   /// In en, this message translates to:
-  /// **'Not connected — the tools need the radio. Settings → Diagnostics & connect'**
+  /// **'Not connected — the tools need the radio. Open Connect a radio'**
   String get toolsOffline;
 
   /// No description provided for @toolsRunning.
@@ -5957,7 +5957,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubInfo.
   ///
   /// In en, this message translates to:
-  /// **'Information'**
+  /// **'About'**
   String get settingsHubInfo;
 
   /// No description provided for @settingsNotifDeniedPermanent.
@@ -9109,7 +9109,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAppGroupRadio.
   ///
   /// In en, this message translates to:
-  /// **'Radio'**
+  /// **'Connection & background'**
   String get settingsAppGroupRadio;
 
   /// No description provided for @settingsAppGroupSound.

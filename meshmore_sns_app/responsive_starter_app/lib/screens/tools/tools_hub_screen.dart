@@ -63,7 +63,12 @@ class ToolsHubScreen extends StatelessWidget {
             if (!ready)
               Padding(
                 padding: EdgeInsets.only(bottom: skin.space.rowGap),
-                child: ToolNotice(text: l.toolsOffline, icon: Icons.link_off),
+                child: ToolNotice(
+                  text: l.toolsOffline,
+                  icon: Icons.link_off,
+                  action: l.chatConnectRadio,
+                  onAction: () => context.push('/connect'),
+                ),
               ),
             // Check-in is a field-safety action rather than an engineering
             // tool, and it lives here because the alarm screen carries exactly

@@ -5,10 +5,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart' show BuildContext;
+import 'package:flutter/widgets.dart'
+    show AppLifecycleState, BuildContext, WidgetsBinding;
 import 'package:provider/provider.dart';
 import 'package:flutter/painting.dart' show Canvas, Color, Offset, Paint, PaintingStyle, Path;
 import 'package:sensors_plus/sensors_plus.dart';
+
+import 'cardinal_click.dart';
 
 /// The heading implied by a fused rotation vector, for the direction the
 /// *screen* faces.
@@ -613,6 +616,32 @@ class CompassHeading extends ChangeNotifier {
     _heading = deg;
   }
 
+  /// The quarter-turn click, in the one object every dial already shares.
+  ///
+  /// It was wired into the grid's radar only, behind an `isCurrent` flag, and the
+  /// owner turned the phone on the dashboard and the map and heard nothing — the
+  /// two screens that also draw a bearing. The compass is one instance for the
+  /// whole app, so the click belongs here, where every consumer gets it and no
+  /// screen has to remember to.
+  ///
+  /// It stays quiet in the background: a phone in a pocket must not tick.
+  final CardinalClick _cardinal = CardinalClick();
+
+  /// Whether a quarter turn clicks. On by default; a test (or a future setting)
+  /// can turn it off.
+  bool clickAtQuarterTurns = true;
+
+  void _clickIfCrossed() {
+    final double? h = _heading;
+    if (!clickAtQuarterTurns || h == null) return;
+    // Unknown means the first lifecycle event has not arrived yet, which is a
+    // foreground app. Only an explicit background state suppresses the click.
+    final AppLifecycleState? life = WidgetsBinding.instance.lifecycleState;
+    if (life != null && life != AppLifecycleState.resumed) return;
+    if (!_cardinal.update(h)) return;
+    unawaited(HapticFeedback.selectionClick());
+  }
+
   void _touch() {
     _stale?.cancel();
     _stale = Timer(staleAfter, () {
@@ -621,8 +650,10 @@ class CompassHeading extends ChangeNotifier {
       // rather than drawing one that is merely plausible.
       _heading = null;
       _anchoredAt = 0;
+      _cardinal.reset();
       notifyListeners();
     });
+    _clickIfCrossed();
     notifyListeners();
   }
 

@@ -92,11 +92,19 @@ class ToolNotice extends StatelessWidget {
     required this.text,
     this.icon = Icons.error_outline,
     this.alert = true,
+    this.action,
+    this.onAction,
   });
 
   final String text;
   final IconData icon;
   final bool alert;
+
+  /// The way out of the state the notice describes. A tool that says "not
+  /// connected" and offers nothing makes the reader leave the screen and hunt
+  /// for the connection control, which is one tap away from here.
+  final String? action;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -106,14 +114,33 @@ class ToolNotice extends StatelessWidget {
       padding: EdgeInsets.symmetric(
           horizontal: context.skin.space.rowInset,
           vertical: context.skin.space.rowGap),
-      child: Row(
+      // The action goes under the sentence, not beside it: at 320 dp with the
+      // text at 200 % the two together overflowed by 210 px.
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(icon, size: 18, color: c),
-          SizedBox(width: context.skin.space.rowGap),
-          Expanded(
-            child: Text(text,
-                style: TextStyle(color: skin.color.fg, fontSize: skin.type.sizeBodyLg)),
+          Row(
+            children: <Widget>[
+              Icon(icon, size: 18, color: c),
+              SizedBox(width: context.skin.space.rowGap),
+              Expanded(
+                child: Text(text,
+                    style: TextStyle(
+                        color: skin.color.fg,
+                        fontSize: skin.type.sizeBodyLg)),
+              ),
+            ],
           ),
+          if (action != null && onAction != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                key: const ValueKey<String>('tool-notice-action'),
+                onPressed: onAction,
+                child: Text(action!),
+              ),
+            ),
         ],
       ),
     );
