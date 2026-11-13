@@ -3173,12 +3173,19 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     final ContactMessage cm = f.message;
     final String prefixHex = _hex(cm.pubKeyPrefix);
     if (_seenInbound('d|$prefixHex|${cm.timestamp}|${cm.text}')) return;
+    // A six-byte prefix that matches two nodes is not evidence for either: the
+    // first match used to win, so one peer's message was filed under another's
+    // key, and the thread, its read mark and any block decision followed the
+    // wrong node. Ambiguous keeps the prefix, which is a thread the reader can
+    // still see, and attributes nothing.
     String? peer;
     for (final DiscoveredNode n in _nodes.values) {
-      if (n.pubKeyHex.startsWith(prefixHex)) {
-        peer = n.pubKeyHex;
+      if (!n.pubKeyHex.startsWith(prefixHex)) continue;
+      if (peer != null) {
+        peer = null;
         break;
       }
+      peer = n.pubKeyHex;
     }
     final ChatMessage m = ChatMessage(
       channelIdx: -1,

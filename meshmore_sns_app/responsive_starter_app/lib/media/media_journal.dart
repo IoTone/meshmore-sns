@@ -39,17 +39,32 @@ abstract final class MediaJournal {
         _key, <String>[for (final int id in ids) '$id']);
   }
 
-  /// A transfer is about to start sending.
-  static Future<void> markStarted(int payloadId) async {
-    final Set<int> ids = await _read();
-    if (ids.add(payloadId)) await _write(ids);
+  /// One write at a time.
+  ///
+  /// Every operation here is a read-modify-write of the same record, and a photo
+  /// and a voice note can start or finish in the same frame. Two overlapping
+  /// pairs each read the record, each add their own id and each write — so one of
+  /// them vanished, and a transfer that was interrupted was never reported as
+  /// interrupted after a restart. Chaining the operations makes them a queue.
+  static Future<void> _serial = Future<void>.value();
+
+  static Future<void> _chained(Future<void> Function() op) {
+    final Future<void> next = _serial.then((_) => op()).catchError((Object _) {});
+    _serial = next;
+    return next;
   }
 
+  /// A transfer is about to start sending.
+  static Future<void> markStarted(int payloadId) => _chained(() async {
+        final Set<int> ids = await _read();
+        if (ids.add(payloadId)) await _write(ids);
+      });
+
   /// The transfer reached its end, whatever the end was.
-  static Future<void> markFinished(int payloadId) async {
-    final Set<int> ids = await _read();
-    if (ids.remove(payloadId)) await _write(ids);
-  }
+  static Future<void> markFinished(int payloadId) => _chained(() async {
+        final Set<int> ids = await _read();
+        if (ids.remove(payloadId)) await _write(ids);
+      });
 
   /// Payload ids that were in flight when the last process ended. Reading does
   /// not clear them: the caller decides when it has told the user.
