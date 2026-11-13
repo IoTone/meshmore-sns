@@ -232,3 +232,37 @@ radio**: nothing in the app may assume a particular device name, firmware build 
 - Do not run a second writer in a checkout another child is editing. Use a `git worktree` (`git worktree add -b <name>
   /home/ldeen/Documents/meshmore-sns-<name> HEAD`) and commit there.
 - Do not push. Nothing leaves this machine without an explicit instruction.
+
+### Why a full `flutter test` took six minutes, and what it costs now
+
+Measured 2026-11-12 on this box (12 cores, warm `.dart_tool`):
+
+| run | wall |
+| --- | --- |
+| one trivial test file, alone | 6 s |
+| 36 files (test/ui + test/theme) | 30 s |
+| the same 36 files again, cache warm | 23 s |
+| the whole suite, before | ~360 s |
+| the whole suite, now | **193 s** |
+
+The suite is **334 separate test entry points** and 2731 tests. `flutter test`
+compiles each *file* against the app separately, so the run's cost is roughly one
+second per file — 5-6 minutes of compiling for about ninety seconds of actual
+testing. A one-test file proving nothing costs 6 s the first time and about 1 s
+inside a warm batch; that ratio is the whole story.
+
+What changed:
+
+- `dart_test.yaml` sets `concurrency: 16`. The compiles spend part of their time
+  waiting on the kernel cache and the filesystem, so more of them at once helps
+  even on a 12-core machine (36 files: 30 s → 26 s).
+- `test/screens/a11y_floors_test.dart` swept all eleven presets over every deep
+  route. It now sweeps all eleven over the six primary views (unchanged) and one
+  preset per distinct *layout shape* over the deep routes, because what can
+  overflow a sheet is the skin's geometry, not its colour: that file went from
+  67 s to 38 s.
+
+What would cut it further, in order: merging the **174 test files that hold five
+tests or fewer** (each merge saves about a second of the total), and splitting the
+suite into a touched-directories lane (~20-60 s) and a pre-commit full lane.
+Press `--concurrency=24` for another ~17 % on this machine.

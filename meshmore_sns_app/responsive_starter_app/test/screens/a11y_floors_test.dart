@@ -31,6 +31,7 @@ import 'package:meshmore_sns_app/geofence/geofence_controller.dart';
 import 'package:meshmore_sns_app/telemetry/coverage_session.dart';
 import 'package:meshmore_sns_app/meshcore/pair_scanner.dart';
 import 'package:meshmore_sns_app/sos/sos_controller.dart';
+import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
@@ -315,11 +316,32 @@ void main() {
     '/checkin',
     '/pair',
   ];
+  // The deep routes are checked once per *layout shape* rather than once per
+  // skin. What can overflow a sheet is the skin's geometry — corner style,
+  // control shape, whether headings are upper-cased, the type scale — and eleven
+  // presets share about four of those between them; the other seven differ in
+  // colour, which the contrast tests own. Sweeping all eleven over twenty-odd
+  // routes was most of this file's fifty seconds and found nothing the four
+  // shapes do not.
+  final List<MmThemePreset> shapes = <MmThemePreset>[];
+  final Set<String> seenShapes = <String>{};
+  for (final MmThemePreset preset in MmThemePreset.values) {
+    final MmSkin skin = mmSkinFor(preset);
+    final String signature = <Object>[
+      skin.shape.corner,
+      skin.shape.squareControls,
+      skin.type.upperHeadings,
+      skin.type.sizeBody,
+      skin.type.monoFamily,
+    ].join('|');
+    if (seenShapes.add(signature)) shapes.add(preset);
+  }
+
   for (final String route in deepRoutes) {
-    testWidgets('$route holds the floor on every preset',
+    testWidgets('$route holds the floor on every layout shape',
         (WidgetTester t) async {
       addTearDown(() => appRouter.go('/'));
-      for (final MmThemePreset preset in MmThemePreset.values) {
+      for (final MmThemePreset preset in shapes) {
         await _pumpShell(t);
         final ThemeController tc = Provider.of<ThemeController>(
             t.element(find.byType(MyApp)),

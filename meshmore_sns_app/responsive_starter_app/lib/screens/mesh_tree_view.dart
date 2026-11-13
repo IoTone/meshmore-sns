@@ -519,7 +519,13 @@ class _MeshTreeViewState extends State<MeshTreeView> {
               // measured. Offering the slider anyway is what made the ladder
               // read as broken — every stop below All drew the same empty tree,
               // and the notice blamed a hop count the reader could not act on.
-              child: graph.routed == 0
+              //
+              // And only when there is a tree to explain: with no peers at all
+              // the empty notice is already saying it, and two panels describing
+              // an empty mesh in different words is one too many.
+              child: graph.nodes.length <= 1
+                  ? const SizedBox.shrink()
+                  : graph.routed == 0
                   ? Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
@@ -721,7 +727,10 @@ class _MeshTreePainter extends CustomPainter {
     // "everything learned three hops out", and the outermost ring, labelled
     // with a question mark, is the peers nobody has a route for.
     final RadialLayout? r = radial;
-    if (r != null && r.rings > 0) {
+    // A ring label is the scale of a picture. With nothing circled there is no
+    // scale to state, and the single outer ring drew only its number — a bare
+    // "1" floating at the rim of an empty dial.
+    if (r != null && r.rings > 0 && r.places.length > 1) {
       final Offset c0 = size.center(Offset.zero);
       final double maxR =
           math.max(24, math.min(size.width, size.height) / 2 - 34);
