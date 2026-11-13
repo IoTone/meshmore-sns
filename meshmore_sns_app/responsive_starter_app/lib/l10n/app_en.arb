@@ -262,9 +262,9 @@
   "settingsBackgroundOn": "Messages arrive while the app is closed. After a phone restart, open the app to reconnect.",
   "settingsBackgroundOff": "Messages arrive when you open the app",
   "settingsBackgroundFailed": "Could not keep the app running in the background. Open the app to reconnect.",
-  "settingsTelemetryPoll": "Gather node telemetry",
-  "settingsTelemetryPollOn": "Politely polls contacts for temperature / altitude (a little OTA airtime)",
-  "settingsTelemetryPollOff": "No telemetry requests sent; query a node manually from its detail",
+  "settingsTelemetryPoll": "Fetch temperature and altitude from nodes",
+  "settingsTelemetryPollOn": "Asks contacts for their temperature and altitude. Costs a little airtime.",
+  "settingsTelemetryPollOff": "Nothing is asked automatically. Open a node to ask it once.",
   "settingsLanguage": "LANGUAGE",
   "settingsLanguageSystem": "System default",
   "settingsLanguageEnglish": "English",
@@ -657,7 +657,7 @@
     }
   },
   "gridNotConnected": "Not Connected to Mesh",
-  "voiceSettingsTitle": "Voice (TTS quality)",
+  "voiceSettingsTitle": "Spoken messages",
   "voiceSettingsHint": "Off until you turn on SPEECH in App settings. Rate / pitch / voice take effect on the next utterance.",
   "voiceRate": "Speed",
   "voicePitch": "Pitch",
@@ -3068,7 +3068,7 @@
       }
     }
   },
-  "settingsAirtimeTitle": "Radio time limit",
+  "settingsAirtimeTitle": "Transmit time limit",
   "settingsAirtimeHelp": "Every frame this app sends is counted. At the limit it stops sending until the hour rolls on. The radio keeps its own legal limit either way.",
   "airtimePolicyOnePercent": "1 % duty cycle",
   "airtimePolicyOnePercentSub": "36 seconds of sending per hour. The legal limit in the EU and UK.",
@@ -3647,7 +3647,7 @@
     },
     "description": "Screen-reader label on a channel's unread badge; the badge itself is a count."
   },
-  "blockedKeysTitle": "Blocked keys",
+  "blockedKeysTitle": "Blocked people",
   "blockedKeysSubtitle": "{count, plural, =0{No key is blocked} =1{1 key blocked} other{{count} keys blocked}}",
   "@blockedKeysSubtitle": {
     "placeholders": {

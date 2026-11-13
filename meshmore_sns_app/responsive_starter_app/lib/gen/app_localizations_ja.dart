@@ -463,13 +463,13 @@ class AppLocalizationsJa extends AppLocalizations {
       'バックグラウンドでの接続を維持できませんでした。アプリを開いて再接続してください。';
 
   @override
-  String get settingsTelemetryPoll => 'ノードのテレメトリを収集';
+  String get settingsTelemetryPoll => 'ノードから気温と高度を取得';
 
   @override
-  String get settingsTelemetryPollOn => 'コンタクトに温度・標高を控えめに問い合わせ (少量の電波使用)';
+  String get settingsTelemetryPollOn => '連絡先に気温と高度を問い合わせます。多少の空中時間を使います。';
 
   @override
-  String get settingsTelemetryPollOff => 'テレメトリ要求は送信しません; 各ノードの詳細から手動で取得';
+  String get settingsTelemetryPollOff => '自動では問い合わせません。ノードを開けば1回だけ尋ねられます。';
 
   @override
   String get settingsLanguage => '言語';
@@ -1157,7 +1157,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridNotConnected => 'メッシュに未接続';
 
   @override
-  String get voiceSettingsTitle => '音声 (TTS 品質)';
+  String get voiceSettingsTitle => '読み上げ';
 
   @override
   String get voiceSettingsHint =>
@@ -5102,7 +5102,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get blockedKeysTitle => 'ブロックした鍵';
+  String get blockedKeysTitle => 'ブロックした相手';
 
   @override
   String blockedKeysSubtitle(int count) {

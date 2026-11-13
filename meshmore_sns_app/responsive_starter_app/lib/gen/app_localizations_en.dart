@@ -483,15 +483,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not keep the app running in the background. Open the app to reconnect.';
 
   @override
-  String get settingsTelemetryPoll => 'Gather node telemetry';
+  String get settingsTelemetryPoll =>
+      'Fetch temperature and altitude from nodes';
 
   @override
   String get settingsTelemetryPollOn =>
-      'Politely polls contacts for temperature / altitude (a little OTA airtime)';
+      'Asks contacts for their temperature and altitude. Costs a little airtime.';
 
   @override
   String get settingsTelemetryPollOff =>
-      'No telemetry requests sent; query a node manually from its detail';
+      'Nothing is asked automatically. Open a node to ask it once.';
 
   @override
   String get settingsLanguage => 'LANGUAGE';
@@ -1221,7 +1222,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridNotConnected => 'Not Connected to Mesh';
 
   @override
-  String get voiceSettingsTitle => 'Voice (TTS quality)';
+  String get voiceSettingsTitle => 'Spoken messages';
 
   @override
   String get voiceSettingsHint =>
@@ -4636,7 +4637,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get settingsAirtimeTitle => 'Radio time limit';
+  String get settingsAirtimeTitle => 'Transmit time limit';
 
   @override
   String get settingsAirtimeHelp =>
@@ -5319,7 +5320,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get blockedKeysTitle => 'Blocked keys';
+  String get blockedKeysTitle => 'Blocked people';
 
   @override
   String blockedKeysSubtitle(int count) {

@@ -923,19 +923,19 @@ abstract class AppLocalizations {
   /// No description provided for @settingsTelemetryPoll.
   ///
   /// In en, this message translates to:
-  /// **'Gather node telemetry'**
+  /// **'Fetch temperature and altitude from nodes'**
   String get settingsTelemetryPoll;
 
   /// No description provided for @settingsTelemetryPollOn.
   ///
   /// In en, this message translates to:
-  /// **'Politely polls contacts for temperature / altitude (a little OTA airtime)'**
+  /// **'Asks contacts for their temperature and altitude. Costs a little airtime.'**
   String get settingsTelemetryPollOn;
 
   /// No description provided for @settingsTelemetryPollOff.
   ///
   /// In en, this message translates to:
-  /// **'No telemetry requests sent; query a node manually from its detail'**
+  /// **'Nothing is asked automatically. Open a node to ask it once.'**
   String get settingsTelemetryPollOff;
 
   /// No description provided for @settingsLanguage.
@@ -2183,7 +2183,7 @@ abstract class AppLocalizations {
   /// No description provided for @voiceSettingsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Voice (TTS quality)'**
+  /// **'Spoken messages'**
   String get voiceSettingsTitle;
 
   /// No description provided for @voiceSettingsHint.
@@ -7867,7 +7867,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAirtimeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Radio time limit'**
+  /// **'Transmit time limit'**
   String get settingsAirtimeTitle;
 
   /// No description provided for @settingsAirtimeHelp.
@@ -8917,7 +8917,7 @@ abstract class AppLocalizations {
   /// No description provided for @blockedKeysTitle.
   ///
   /// In en, this message translates to:
-  /// **'Blocked keys'**
+  /// **'Blocked people'**
   String get blockedKeysTitle;
 
   /// No description provided for @blockedKeysSubtitle.
