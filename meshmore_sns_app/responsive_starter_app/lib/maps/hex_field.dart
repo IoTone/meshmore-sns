@@ -217,48 +217,27 @@ bool hexContains(LatLng centre, double circumradiusMetres, LatLng point) {
   return inside;
 }
 
-/// The hexagon radius for a viewport, in bands.
+/// The hexagon radius for a zoom: the same size on the glass at every scale.
 ///
-/// Two things have to be true at once. The cell must be a *distance on the
-/// ground*, so the field means the same thing at every zoom and a cell covers the
-/// same area wherever you pan — that is the owner's "a continuous field at a
-/// uniform distance". And the field must be a bounded number of shapes, because
-/// a lattice drawn at street-cell size over a world view is hundreds of thousands
-/// of polygons.
+/// The field used to solve for a target cell count over the viewport and then
+/// snap the radius to a 1/2/5 ladder. That kept the count bounded and the ground
+/// area constant inside a band. What it did not keep constant was the size the
+/// reader sees: at every ladder boundary the hexagons jumped by up to two and a
+/// half times, so zooming out made the field breathe instead of leaving it
+/// alone. A density field is a grid of bins, and a bin that changes size while
+/// you zoom is describing a different place each time it does.
 ///
-/// So the radius is solved for a target cell count over the viewport and then
-/// rounded up to a ladder, which keeps it constant inside a zoom band instead of
-/// creeping with every pinch. Nine hundred and eighty cells is a phone-sized
-/// field: enough that the mesh reads as a surface, few enough to draw.
-double hexRadiusForViewport({
+/// So the radius is [radiusPx] pixels converted to ground metres at this zoom.
+/// The cell is the same size on the glass at every scale, the count is the same
+/// at every scale by construction, and what changes is how much ground one cell
+/// covers — which the map states in its own cell-size chip, so the field never
+/// silently changes meaning.
+double hexRadiusForZoom({
   required double metresPerPixel,
-  required double viewportWidthPx,
-  required double viewportHeightPx,
-  int targetCells = 160,
+  double radiusPx = 18.0,
 }) {
-  if (metresPerPixel <= 0 ||
-      viewportWidthPx <= 0 ||
-      viewportHeightPx <= 0 ||
-      targetCells <= 0) {
+  if (!metresPerPixel.isFinite || metresPerPixel <= 0 || radiusPx <= 0) {
     return kDefaultHexCircumradiusMetres;
   }
-  final double widthM = viewportWidthPx * metresPerPixel;
-  final double heightM = viewportHeightPx * metresPerPixel;
-  // A regular hexagon covers 3·√3/2·R². Solve for the radius that puts
-  // `targetCells` of them on this screen, then round up the ladder.
-  final double ideal =
-      math.sqrt(widthM * heightM / (targetCells * 3 * math.sqrt(3) / 2));
-  // Round up to 1, 2 or 5 per decade: the same ladder the radar's ring labels
-  // use, and it goes as high as a world view needs instead of stopping at a
-  // hundred kilometres and asking the caller to draw fifty thousand cells.
-  const List<double> mantissas = <double>[1, 2, 5];
-  double decade = 10;
-  for (int d = 0; d < 9; d++) {
-    for (final double m in mantissas) {
-      final double candidate = m * decade;
-      if (candidate >= ideal) return candidate;
-    }
-    decade *= 10;
-  }
-  return decade;
+  return radiusPx * metresPerPixel;
 }

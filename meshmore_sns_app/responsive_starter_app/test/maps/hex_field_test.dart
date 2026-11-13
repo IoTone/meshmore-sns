@@ -145,42 +145,50 @@ void main() {
     expect(cells.single.count, 9);
   });
 
-  // The field has to be uniform on the ground and bounded on the screen. Those
-  // pull against each other, and the radius is the compromise: solved for a
-  // target cell count over the viewport, then rounded to a ladder so it does not
-  // creep with every pinch.
+  // The field is a grid of bins, so a bin has to look the same at every zoom:
+  // when the radius was snapped to a ladder the hexagons jumped by up to two
+  // and a half times at every boundary, and zooming out made the field breathe.
   group('the field size', () {
-    test('a street view gets a street-sized cell', () {
-      // 0.6 m per pixel at 400x800 logical pixels is about 240 m x 480 m.
-      final double r =
-          hexRadiusForViewport(metresPerPixel: 0.6, viewportWidthPx: 400, viewportHeightPx: 800);
-      expect(r, lessThanOrEqualTo(50),
-          reason: 'a 25 m or 50 m cell is what that view can show');
-    });
-
-    test('a world view gets a cell the size of a country', () {
-      final double r = hexRadiusForViewport(
-          metresPerPixel: 40000, viewportWidthPx: 400, viewportHeightPx: 800);
-      expect(r, greaterThanOrEqualTo(10000));
-    });
-
-    test('the cell count stays bounded at every scale', () {
+    test('a cell is the same size on the glass at every zoom', () {
       for (final double mpp in <double>[0.2, 1, 8, 60, 500, 5000, 60000]) {
-        final double r = hexRadiusForViewport(
-            metresPerPixel: mpp, viewportWidthPx: 420, viewportHeightPx: 900);
-        final double widthM = 420 * mpp;
-        final double heightM = 900 * mpp;
-        final double area = 3 * math.sqrt(3) / 2 * r * r;
-        final double cells = widthM * heightM / area;
-        expect(cells, lessThan(1400),
-            reason: 'at $mpp m/px the field would be $cells cells');
+        final double r = hexRadiusForZoom(metresPerPixel: mpp);
+        expect(r / mpp, 18.0,
+            reason: 'at $mpp m/px the cell appeared at ${r / mpp} px');
       }
     });
 
+    test('the ground area is what changes, and it grows as you zoom out', () {
+      final double street = hexRadiusForZoom(metresPerPixel: 0.6);
+      final double world = hexRadiusForZoom(metresPerPixel: 40000);
+      expect(street, lessThanOrEqualTo(50),
+          reason: 'a 25 m or 50 m cell is what a street view can show');
+      expect(world, greaterThanOrEqualTo(10000),
+          reason: 'a world view covers a country per cell');
+    });
+
+    test('the cell count is the same at every scale', () {
+      // By construction: the radius is a pixel count. A viewport of the same
+      // pixel size always holds the same number of cells.
+      final double? first = <double>[
+        for (final double mpp in <double>[0.2, 1, 8, 60, 500, 5000, 60000])
+          420 * mpp * 900 * mpp / (3 * math.sqrt(3) / 2 * math.pow(hexRadiusForZoom(metresPerPixel: mpp), 2)),
+      ].reduce((double a, double b) {
+        // Compared with a tolerance: the area is a product of squares, so the
+        // same count arrives with a few ulps of noise and exact equality is
+        // asserting the floating-point rounding, not the design.
+        expect(b, closeTo(a, 1e-6),
+            reason: 'the field changed its cell count with the zoom');
+        return a;
+      });
+      expect(first, lessThan(1400));
+    });
+
     test('a nonsense viewport falls back instead of dividing by zero', () {
-      expect(hexRadiusForViewport(metresPerPixel: 0, viewportWidthPx: 400, viewportHeightPx: 800),
+      expect(hexRadiusForZoom(metresPerPixel: 0),
           kDefaultHexCircumradiusMetres);
-      expect(hexRadiusForViewport(metresPerPixel: 1, viewportWidthPx: 0, viewportHeightPx: 800),
+      expect(hexRadiusForZoom(metresPerPixel: double.nan),
+          kDefaultHexCircumradiusMetres);
+      expect(hexRadiusForZoom(metresPerPixel: 1, radiusPx: 0),
           kDefaultHexCircumradiusMetres);
     });
   });

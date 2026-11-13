@@ -1136,21 +1136,13 @@ class _StreetMapViewState extends State<StreetMapView> {
     // that does nothing on the tab whose whole point is that it always draws.
     // The cell size follows the zoom, so a reading is legible at every scale
     // rather than only at the one zoom 250 m happened to suit.
-    final double densityCellMetres = densityCellMetresFor(
-      metresPerPixel: StreetMapView.metersPerPixel(
-          _zoom, hasFix ? start.centre.latitude : 39),
-    );
-    // The chip states the cell it is actually drawing. The hexagon's width is
-    // √3·R across the flats, which is the distance a reader can compare with the
-    // blocks under it.
-    _densityCellMetresShown = math.sqrt(3) * _hexRadiusMetres;
+    final double metresPerPixel = StreetMapView.metersPerPixel(
+        _zoom, hasFix ? start.centre.latitude : 39);
     // Fill and number appear and disappear together, or a filled square with no
     // number reads as a large node pin. Hysteresis: appear at the readable size,
     // leave only once comfortably below it, so a pinch on the boundary does not
     // make the whole overlay blink.
-    final double cellPx = densityCellMetres /
-        StreetMapView.metersPerPixel(
-            _zoom, hasFix ? start.centre.latitude : 39);
+    final double cellPx = _densityCellMetresShown / metresPerPixel;
     final bool wantCells = _densityCellsDrawn
         ? cellPx >= kDensityLabelMinPx - 6
         : cellPx >= kDensityLabelMinPx;
@@ -1159,16 +1151,10 @@ class _StreetMapViewState extends State<StreetMapView> {
         if (mounted) setState(() => _densityCellsDrawn = wantCells);
       });
     }
-    // The hexagon radius follows the zoom in bands, so the ground area is a
-    // constant inside each band rather than creeping with every pinch.
-    final double pxPerMetre = 1 /
-        StreetMapView.metersPerPixel(
-            _zoom, hasFix ? start.centre.latitude : 39);
-    _hexRadiusMetres = hexRadiusForViewport(
-      metresPerPixel: 1 / pxPerMetre,
-      viewportWidthPx: MediaQuery.sizeOf(context).width,
-      viewportHeightPx: MediaQuery.sizeOf(context).height * 0.6,
-    );
+    // One size for the hexagons and for the chip that names them: a constant
+    // size on the glass, so the ground area is the only thing a zoom changes.
+    _hexRadiusMetres = hexRadiusForZoom(metresPerPixel: metresPerPixel);
+    _densityCellMetresShown = math.sqrt(3) * _hexRadiusMetres;
     final List<DensityPoint> densityPoints = _showDensity
         ? <DensityPoint>[
             for (final DiscoveredNode n in mc.nodes)
@@ -1792,7 +1778,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                   border: Border.all(color: cs.outline),
                 ),
                 child: Text(
-                  l.mapDensityCellSize(densityCellLabel(densityCellMetres,
+                  l.mapDensityCellSize(densityCellLabel(
+                      _densityCellMetresShown,
                       prefs: context.formatPrefs)),
                   style: TextStyle(
                       color: cs.onSurface,
