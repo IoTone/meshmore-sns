@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:meshmore_sns_app/theme/mm_skin.dart';
+import 'package:meshmore_sns_app/theme/viz_palette.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 
 /// A palette has to *say* something, and two roles that look the same say
@@ -94,6 +95,28 @@ void main() {
             reason: '${preset.name}: $name is '
                 '${(hsl(colour).s * 100).round()} % saturated');
       }
+    });
+  }
+
+  // The radar's sweep is not data: it is the hand of a clock, so it does not have
+  // to belong to the palette and it must never be mistaken for a mark. The colour
+  // is the accent's opposite hue, which only works if it really is distinguishable
+  // from everything else the dial draws, on every skin.
+  for (final MmThemePreset preset in MmThemePreset.values) {
+    final MmSkin skin = mmSkinFor(preset);
+    test('${preset.name}: the sweep is not one of the marks', () {
+      final Color sweep = VizPalette.sweepFor(skin);
+      expect(sweep, isNot(skin.color.accent),
+          reason: 'the hand would dissolve into the ring it sweeps over');
+      expect(sweep, isNot(VizPalette.north),
+          reason: 'north is a fixed red on every skin and must stay unique');
+      expect(sweep, isNot(VizPalette.repeater));
+      expect(sweep, isNot(VizPalette.companion));
+      // And it has to be a hue at all: a grey hand on a dial of grey marks is
+      // the one result this fallback exists to avoid.
+      final HSLColor hsl = HSLColor.fromColor(sweep);
+      expect(hsl.saturation, greaterThan(0.18),
+          reason: 'the sweep is a wash (${(hsl.saturation * 100).round()} %)');
     });
   }
 }

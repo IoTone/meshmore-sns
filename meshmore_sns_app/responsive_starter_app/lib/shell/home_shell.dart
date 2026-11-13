@@ -354,7 +354,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   const DashboardHost(),
                   ChatScreen(isCurrent: _index == MmView.chat.index),
                   const NodesScreen(),
-                  const GridScreen(),
+                  GridScreen(isCurrent: _index == MmView.grid.index),
                   const MapScreen(),
                   const _SettingsView(),
                 ],

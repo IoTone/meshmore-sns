@@ -455,11 +455,26 @@ class MapsController extends ChangeNotifier with SafeNotifier {
   /// [loadTileDetailed], which means it obeys the same gate, backoff,
   /// budget and expiry rules as a visible tile, and it stops the moment a
   /// real request arrives.
+  /// Bumped whenever the view moves. A prefetch loop that started for an older
+  /// view stops at its next tile instead of walking a queue for a place the
+  /// user has already left.
+  int _warmGeneration = 0;
+
+  /// Abandon any warm-up in flight. Called when the camera moves and before a
+  /// new warm-up starts, so exactly one generation of warm work is ever alive.
+  void cancelPrefetch() => _warmGeneration++;
+
+  /// The generation a warm-up should carry so it can tell it has been cancelled.
+  int get warmGeneration => _warmGeneration;
+
   Future<int> prefetch(MapSource src, Iterable<(int, int, int)> coords,
-      {int limit = 24}) async {
+      {int limit = 24, int? generation}) async {
     if (!online || _gated(src.id) || usedBytes >= budgetBytes) return 0;
     int got = 0;
     for (final (int z, int x, int y) in coords) {
+      // A moved camera, a new generation, or a visible tile waiting: the queue
+      // dies here rather than finishing a list nobody is looking at.
+      if (generation != null && generation != _warmGeneration) break;
       if (got >= limit || isDisposed || !viewIdle || !online) break;
       if (hasTile(src, z, x, y) || _absent.contains(TileStore.keyOf(src.id, z, x, y))) {
         continue;
@@ -585,7 +600,7 @@ class MapsController extends ChangeNotifier with SafeNotifier {
   /// ancestors at the first level up, and nothing runs while a real tile is
   /// fetching.
   Future<int> prefetchParents(MapSource src, Iterable<(int, int, int)> tiles,
-      {int maxUp = 2, int limit = 12}) async {
+      {int maxUp = 2, int limit = 12, int? generation}) async {
     if (!online || _gated(src.id) || usedBytes >= budgetBytes) return 0;
     final Set<(int, int, int)> parents = <(int, int, int)>{};
     for (final (int z, int x, int y) in tiles) {
@@ -594,7 +609,33 @@ class MapsController extends ChangeNotifier with SafeNotifier {
         if (a != null) parents.add((a.z, a.x, a.y));
       }
     }
-    return prefetch(src, parents, limit: limit);
+    return prefetch(src, parents, limit: limit, generation: generation);
+  }
+
+  /// The next zoom level *in* for these tiles, so a zoom in draws detail rather
+  /// than a blur of upscaled parents. Bounded to the tiles given, which the
+  /// caller scopes to the middle of the viewport: prefetching every child of a
+  /// full screen of tiles is four times the screen, and it is not what a reader
+  /// is about to look at.
+  Future<int> prefetchChildren(MapSource src, Iterable<(int, int, int)> tiles,
+      {int maxDown = 1, int limit = 16, int? generation}) async {
+    if (!online || _gated(src.id) || usedBytes >= budgetBytes) return 0;
+    final int maxZ = src.maxNativeZoom;
+    final Set<(int, int, int)> kids = <(int, int, int)>{};
+    for (final (int z, int x, int y) in tiles) {
+      if (z >= maxZ) continue;
+      for (int down = 1; down <= maxDown; down++) {
+        final int cz = z + down;
+        if (cz > maxZ) break;
+        final int factor = 1 << down;
+        for (int dx = 0; dx < factor; dx++) {
+          for (int dy = 0; dy < factor; dy++) {
+            kids.add((cz, x * factor + dx, y * factor + dy));
+          }
+        }
+      }
+    }
+    return prefetch(src, kids, limit: limit, generation: generation);
   }
 
   void _scheduleTrim() {

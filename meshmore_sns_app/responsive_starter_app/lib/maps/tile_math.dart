@@ -106,3 +106,34 @@ int tileCount(GeoBox box, int minZoom, int maxZoom) {
   }
   return n;
 }
+
+/// The tiles under the middle of a viewport, where a zoom-in gesture lands.
+///
+/// A zoom-in is a tap-and-spread at the centre of the screen, so the detail that
+/// gesture needs is the centre cell and its eight neighbours — not every child of
+/// a full screenful, which is four times the screen for a fifth of the benefit.
+///
+/// Pure and clamped on purpose: the version this replaces was a private method on
+/// the map's State that paired the *current* zoom's x/y with a hardcoded zoom 0.
+/// The prefetcher then asked the tile server for zoom-1 tiles at street-zoom
+/// indices, which cannot exist, and filed each 404 into the absence cache. A
+/// function that takes its zoom and can be called from a test cannot make that
+/// mistake quietly.
+List<(int, int, int)> centreTiles(TileRange r, {int radius = 1}) {
+  if (radius < 0) return const <(int, int, int)>[];
+  final int n = 1 << r.z;
+  final int cx = (r.minX + r.maxX) ~/ 2;
+  final int cy = (r.minY + r.maxY) ~/ 2;
+  final List<(int, int, int)> out = <(int, int, int)>[];
+  for (int x = cx - radius; x <= cx + radius; x++) {
+    // Wrapped rather than clamped in x: tiles repeat across the antimeridian, so
+    // the tile west of the world's east edge is a real tile.
+    final int wx = ((x % n) + n) % n;
+    for (int y = cy - radius; y <= cy + radius; y++) {
+      // Clamped in y: there is nothing above the north edge of the world.
+      if (y < 0 || y >= n) continue;
+      out.add((r.z, wx, y));
+    }
+  }
+  return out;
+}

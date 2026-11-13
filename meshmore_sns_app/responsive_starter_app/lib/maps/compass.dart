@@ -762,6 +762,32 @@ extension CompassScope on BuildContext {
 /// read as a direction. [markerDegrees] is the bearing the marker belongs at on
 /// a dial whose top is the phone's own facing — see
 /// [CompassHeading.northMarkerDegrees].
+/// The north triangle's three points, for a ring of [radius].
+///
+/// The base sits **on** the ring and the tip points outwards. It used to sit
+/// [size] inside the ring with the tip on it, so the triangle straddled the line
+/// and the marker's own centre landed on the stroke: the one fixed landmark on
+/// every dial was half inside the data it labels. Outside is also where a compass
+/// rose puts it.
+({Offset tip, Offset left, Offset right}) northMarkerTriangle(
+  Offset center,
+  double radius, {
+  required double markerDegrees,
+  double size = 15,
+}) {
+  final double a = markerDegrees * math.pi / 180;
+  Offset at(double r, double off) => Offset(
+        center.dx + r * math.sin(a + off),
+        center.dy - r * math.cos(a + off),
+      );
+  final double halfBase = size * 0.78;
+  return (
+    tip: at(radius + size, 0),
+    left: at(radius, -halfBase / radius),
+    right: at(radius, halfBase / radius),
+  );
+}
+
 void paintNorthMarker(
   Canvas canvas,
   Offset center,
@@ -770,20 +796,16 @@ void paintNorthMarker(
   required Color color,
   double size = 15,
 }) {
-  final double a = markerDegrees * math.pi / 180;
-  // Point on the ring, and the two base corners a little inside it.
-  Offset at(double r, double off) => Offset(
-        center.dx + r * math.sin(a + off),
-        center.dy - r * math.cos(a + off),
-      );
-  final double halfBase = size * 0.78;
-  final Offset tip = at(radius, 0);
-  final Offset left = at(radius - size, -halfBase / radius);
-  final Offset right = at(radius - size, halfBase / radius);
+  final ({Offset tip, Offset left, Offset right}) t = northMarkerTriangle(
+    center,
+    radius,
+    markerDegrees: markerDegrees,
+    size: size,
+  );
   final Path path = Path()
-    ..moveTo(tip.dx, tip.dy)
-    ..lineTo(left.dx, left.dy)
-    ..lineTo(right.dx, right.dy)
+    ..moveTo(t.tip.dx, t.tip.dy)
+    ..lineTo(t.left.dx, t.left.dy)
+    ..lineTo(t.right.dx, t.right.dy)
     ..close();
   canvas.drawPath(path, Paint()..color = color..style = PaintingStyle.fill);
 }

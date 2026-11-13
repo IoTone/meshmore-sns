@@ -596,4 +596,34 @@ void main() {
       expect(h, closeTo(0, 0.5));
     });
   });
+
+  group('the north marker', () {
+    // The owner's report: the triangle straddled the ring, so its centre sat on
+    // the stroke. A compass rose puts the marker outside the circle, with its
+    // base on the line, and that is also the only arrangement where the one
+    // fixed landmark is not overlapping the data it labels.
+    test('the base sits on the ring and the tip points outwards', () {
+      const Offset c = Offset(100, 100);
+      const double radius = 60;
+      final ({Offset tip, Offset left, Offset right}) t = northMarkerTriangle(
+          c, radius, markerDegrees: 0, size: 15);
+      double dist(Offset p) => (p - c).distance;
+      expect(dist(t.left), closeTo(radius, 0.001), reason: 'base on the line');
+      expect(dist(t.right), closeTo(radius, 0.001));
+      expect(dist(t.tip), closeTo(radius + 15, 0.001), reason: 'tip outside');
+      // Every point of the triangle is on or outside the ring.
+      expect(dist(t.left), greaterThanOrEqualTo(radius - 0.001));
+      expect(dist(t.right), greaterThanOrEqualTo(radius - 0.001));
+      expect(t.tip.dy, lessThan(c.dy), reason: 'north points up the canvas');
+    });
+
+    test('it follows the ring as the phone turns', () {
+      const Offset c = Offset(0, 0);
+      const double radius = 50;
+      final ({Offset tip, Offset left, Offset right}) east =
+          northMarkerTriangle(c, radius, markerDegrees: 90, size: 10);
+      expect(east.tip.dx, closeTo(radius + 10, 0.001));
+      expect(east.tip.dy, closeTo(0, 0.001));
+    });
+  });
 }

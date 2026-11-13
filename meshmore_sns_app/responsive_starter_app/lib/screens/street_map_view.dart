@@ -278,38 +278,89 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// touched from a timer or an async callback.
   bool _vectorSkin = false;
 
-  void _scheduleWarm() {
+  void _scheduleWarm({bool moved = false}) {
     _warm?.cancel();
+    // A moving camera kills the warm-up in flight. Without this the queue kept
+    // walking a ring around the place the user had already left — up to 36
+    // sequential requests — while the tiles they were actually looking at
+    // queued behind it. That is the "the tile queue gets bogged and stays
+    // alive" report.
+    if (moved) _warmGenerationOf?.call();
     _warm = Timer(const Duration(milliseconds: 500), _warmAround);
   }
+
+  /// Cancels warm-up work in the controller, when there is a controller.
+  void Function()? _warmGenerationOf;
+
+  /// The most tiles one warm-up may queue. A screenful at street zoom is a
+  /// dozen; at world zoom it is one. The cap is what stops a wide view from
+  /// putting a hundred requests in front of the tile the reader is looking at.
+  static const int kMaxWarmTiles = 18;
+
 
   /// True when the view on screen is outside every finished region pack
   /// while the map has no connection: the one case where "no tiles" is a
   /// fact to say out loud rather than a tile that has not arrived.
   bool _outsidePacks = false;
 
+  /// Warm the tiles the next gesture will need, and only those.
+  ///
+  /// The scopes, in the order a reader meets them:
+  ///
+  ///  * **this zoom, one tile beyond the viewport** — the pan that is about to
+  ///    happen, and never more than a screenful plus a ring;
+  ///  * **the next zoom in, for the middle of the viewport** — a zoom in lands
+  ///    on the centre, and fetching every child of a full screen is four times
+  ///    the screen for a fifth of the benefit;
+  ///  * **the zoom out levels up to two steps** — a zoom out draws from parents
+  ///    immediately instead of showing blank until the finer tiles fail.
+  ///
+  /// Everything here runs on one generation token: [MapsController.cancelPrefetch]
+  /// bumps it, and a loop from an older view stops at its next tile instead of
+  /// finishing a list nobody is looking at.
   Future<void> _warmAround() async {
     if (!mounted || !_vectorSkin) return;
     final MapsController? maps =
         Provider.of<MapsController?>(context, listen: false);
     if (maps == null || !maps.online || !maps.viewIdle) return;
+    _warmGenerationOf = maps.cancelPrefetch;
+    final int generation = maps.warmGeneration;
     final MapCamera cam = _map.camera;
     final int z = cam.zoom.round().clamp(0, kOsmVector.maxNativeZoom);
     final LatLngBounds b = cam.visibleBounds;
-    final TileRange r = tileRange(
-        GeoBox(south: b.south, west: b.west, north: b.north, east: b.east), z);
-    _noteCoverage(maps, GeoBox(
-        south: b.south, west: b.west, north: b.north, east: b.east), z);
+    final GeoBox box =
+        GeoBox(south: b.south, west: b.west, north: b.north, east: b.east);
+    final TileRange r = tileRange(box, z);
+    _noteCoverage(maps, box, z);
+
+    // A ring of one tile around the viewport, capped: a very zoomed-out view can
+    // cover hundreds of tiles, and a hundred queued requests is the bog.
     final List<(int, int, int)> ring = <(int, int, int)>[];
-    for (int x = r.minX - 1; x <= r.maxX + 1 && ring.length < 24; x++) {
-      for (int y = r.minY - 1; y <= r.maxY + 1 && ring.length < 24; y++) {
+    for (int x = r.minX - 1; x <= r.maxX + 1 && ring.length < kMaxWarmTiles; x++) {
+      for (int y = r.minY - 1;
+          y <= r.maxY + 1 && ring.length < kMaxWarmTiles;
+          y++) {
         ring.add((z, x, y));
       }
     }
-    await maps.prefetch(kOsmVector, ring);
-    // R114 — the parents of what is on screen, so a zoom out draws a coarser
-    // picture straight away instead of waiting for the finer tiles to fail.
-    await maps.prefetchParents(kOsmVector, ring);
+    // One budget for the whole warm-up, not one per phase: three phases with
+    // their own limits enqueued more after a settle than the thing they replaced
+    // (46 against 36), which is the "queue gets bogged" report with a fresh coat
+    // of paint.
+    int left = kMaxWarmTiles;
+    final int gotRing =
+        await maps.prefetch(kOsmVector, ring, limit: left, generation: generation);
+    left -= gotRing;
+    if (left > 0) {
+      // R114 — parents, so a zoom out draws a coarser picture straight away.
+      left -= await maps.prefetchParents(kOsmVector, ring,
+          limit: math.min(left, 8), generation: generation);
+    }
+    if (left > 0) {
+      // Children of the middle, so a zoom in has detail rather than a blur.
+      await maps.prefetchChildren(kOsmVector, centreTiles(r),
+          limit: left, generation: generation);
+    }
   }
 
   /// The self marker's bearing comes from the **phone's magnetometer**
@@ -438,6 +489,9 @@ class _StreetMapViewState extends State<StreetMapView> {
 
   @override
   void dispose() {
+    // Leaving the map stops the warm-up: an in-flight loop that keeps walking
+    // its list after the tab is gone is the literal reading of "it stays alive".
+    _warmGenerationOf?.call();
     _bubbleTick?.cancel();
     _warm?.cancel();
     _saveView?.cancel();
@@ -1114,7 +1168,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                   _zoom = cam.zoom;
                   _rememberView();
                 }
-                _scheduleWarm();
+                _scheduleWarm(moved: true);
               },
               // A long-press drops a place where the finger is: the map point
               // is what the user aimed at, so the report travels at exact

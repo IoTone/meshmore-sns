@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -26,6 +27,7 @@ import 'grid_notice.dart';
 import 'grid_prefs_store.dart';
 import '../maps/compass.dart';
 import '../maps/radar_scale.dart';
+import '../maps/cardinal_click.dart';
 import '../theme/viz_palette.dart';
 import 'weather_view.dart';
 import '../ui/mm_shape.dart';
@@ -129,7 +131,15 @@ GridMarkerSource gridMarkerSourceFor({
 /// Lives in the HomeShell as the tab after Nodes (issue #4). The shell
 /// supplies the title; this widget brings its own toolbar.
 class GridScreen extends StatefulWidget {
-  const GridScreen({super.key});
+  const GridScreen({super.key, this.isCurrent});
+
+  /// Whether this tab is the one on screen.
+  ///
+  /// The shell builds the neighbouring pages, so a listener here runs whether or
+  /// not the reader is looking at it. A haptic click from a tab you are not on is
+  /// a buzz with no explanation — the same reason `ChatScreen` takes this flag
+  /// for its read marks.
+  final bool? isCurrent;
 
   /// The selected view, held for the life of the process: it survives
   /// leaving and re-entering the tab (the PageView disposes the state),
@@ -309,6 +319,7 @@ class _GridScreenState extends State<GridScreen>
     final CompassHeading? shared = context.sharedCompass;
     _ownsCompass = shared == null;
     _compass = shared ?? CompassHeading();
+    _compass.addListener(_onHeading);
     _compass.start();
     final MeshcoreController mc = context.read<MeshcoreController>();
     _snapshot = List<DiscoveredNode>.of(mc.nodes); // initial paused frame
@@ -379,8 +390,34 @@ class _GridScreenState extends State<GridScreen>
     _refreshTimer?.cancel();
     _msgSub?.cancel();
     _tick.dispose();
+    _compass.removeListener(_onHeading);
     if (_ownsCompass) _compass.dispose();
     super.dispose();
+  }
+
+  /// A haptic click at each quarter turn, and nothing else.
+  ///
+  /// The dial answers "which way am I facing" for the eyes; a phone held at an
+  /// angle hides its own screen, so the owner asked for the same fact as a tick
+  /// under the thumb. It fires at the marks, not at a wobble — see
+  /// [CardinalClick] for why those are different questions.
+  final CardinalClick _cardinal = CardinalClick();
+
+  void _onHeading() {
+    final double? h = _compass.heading;
+    if (h == null) {
+      _cardinal.reset();
+      return;
+    }
+    // The dial still turns while this tab is off screen (the shared compass is
+    // one instance), but the click is for the person looking at it.
+    if (!(widget.isCurrent ?? true)) {
+      _cardinal.reset();
+      return;
+    }
+    if (_cardinal.update(h)) {
+      unawaited(HapticFeedback.selectionClick());
+    }
   }
 
   void _refreshSnapshot() {
@@ -1037,7 +1074,15 @@ class _GridScreenState extends State<GridScreen>
                                         }
                                       },
                                       child: AnimatedBuilder(
-                                        animation: _tick,
+                                        // Both, not just the ticker: with
+                                        // reduce-motion on, the ticker is
+                                        // stopped and the dial would freeze
+                                        // while the phone turned.
+                                        animation:
+                                            Listenable.merge(<Listenable>[
+                                          _tick,
+                                          _compass,
+                                        ]),
                                         builder: (BuildContext _, Widget? __) =>
                                             CustomPaint(
                                           size: area,
@@ -1056,6 +1101,13 @@ class _GridScreenState extends State<GridScreen>
                                                 : null,
                                             reduceMotion: tc.reduceMotion,
                                             accent: cs.primary,
+                                            // The hand of the clock, in the
+                                            // colour opposite this skin: a
+                                            // burnt red on the forest dials, a
+                                            // cyan on NERV. It must not read as
+                                            // one of the marks it sweeps over.
+                                            sweepColor: VizPalette.sweepFor(
+                                                context.skin),
                                             subtle: cs.onSurface
                                                 .withValues(alpha: .12),
                                             ringStroke: cs.outline
@@ -1279,6 +1331,7 @@ class _GridPainter extends CustomPainter {
     required this.tick,
     required this.sweep,
     required this.reduceMotion,
+    required this.sweepColor,
     required this.accent,
     required this.subtle,
     required this.ringStroke,
@@ -1306,6 +1359,10 @@ class _GridPainter extends CustomPainter {
   /// sweeps the dial is also the thing that says how stale the picture is.
   final double? sweep;
   final bool reduceMotion;
+
+  /// The sweep's own colour: the hue opposite this skin's accent, so the hand of
+  /// the clock is never mistaken for a node.
+  final Color sweepColor;
   final Color accent;
   final Color subtle;
   final Color ringStroke;
@@ -1432,8 +1489,8 @@ class _GridPainter extends CustomPainter {
             startAngle: 0,
             endAngle: trail,
             colors: <Color>[
-              accent.withValues(alpha: 0.0),
-              accent.withValues(alpha: 0.18),
+              sweepColor.withValues(alpha: 0.0),
+              sweepColor.withValues(alpha: 0.18),
             ],
             transform: GradientRotation(a - trail),
           ).createShader(rect),
@@ -1444,7 +1501,7 @@ class _GridPainter extends CustomPainter {
             center.dy + maxR * math.sin(a)),
         Paint()
           ..strokeWidth = 1.4
-          ..color = accent.withValues(alpha: 0.55),
+          ..color = sweepColor.withValues(alpha: 0.55),
       );
     }
 
@@ -1477,7 +1534,7 @@ class _GridPainter extends CustomPainter {
     // triangle is drawn at the bearing north actually sits at, and stays at the
     // top only in the north-up fallback, where it is telling the truth.
     final double northAt = CompassHeading.northMarkerDegrees(headingDegrees);
-    paintNorthMarker(canvas, center, maxR - 2,
+    paintNorthMarker(canvas, center, maxR,
         markerDegrees: northAt, color: northMarker);
     final TextPainter north = TextPainter(
       text: TextSpan(
@@ -1625,6 +1682,7 @@ class _GridPainter extends CustomPainter {
       old.northMarker != northMarker ||
       old.tick != tick ||
       old.reduceMotion != reduceMotion ||
+      old.sweepColor != sweepColor ||
       old.rippleAt != rippleAt ||
       old.scaleKm != scaleKm ||
       old.type != type ||

@@ -82,6 +82,29 @@ class VizPalette {
   static const Color repeater = Color(0xFFF0A030);
   static const Color companion = Color(0xFF40B0FF);
 
+  /// The radar's sweep, in the colour opposite the skin's own.
+  ///
+  /// The sweep is not data — it is the hand of a clock — so it does not have to
+  /// belong to the palette it is drawn on, and it must not be mistaken for one of
+  /// the marks. Turning the accent's hue half a circle gives exactly that: the
+  /// forest skins get a burnt red against their greens, the NERV skin gets a cyan
+  /// against its orange, and the line reads as *the instrument* rather than as
+  /// another node.
+  ///
+  /// Hue only: saturation and lightness are kept, because those are what make it
+  /// legible on this skin's dial. A grey accent has no hue to turn, so it falls
+  /// back to the skin's warning colour, which is always a hue.
+  static Color sweepFor(MmSkin skin) {
+    final Color c = skin.color.accent;
+    final HSLColor hsl = HSLColor.fromColor(c);
+    if (hsl.saturation < 0.12) return skin.color.warn;
+    return hsl
+        .withHue((hsl.hue + 180) % 360)
+        .withSaturation(hsl.saturation.clamp(0.35, 1.0))
+        .withLightness(hsl.lightness.clamp(0.45, 0.72))
+        .toColor();
+  }
+
   factory VizPalette.of(MmSkin skin) => VizPalette(
         hot: skin.color.alert,
         cool: skin.color.fg,

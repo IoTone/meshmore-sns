@@ -156,6 +156,10 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
                                     sweep: reduceMotion ? null : _sweep.value,
                                     grid: VizPalette.of(skin).grid,
                                     accent: skin.color.accent,
+                                    // The hand of the clock, opposite the skin:
+                                    // burnt red on the forest dials, cyan on
+                                    // NERV. Never one of the marks it sweeps.
+                                    sweepColor: VizPalette.sweepFor(skin),
                                     self: skin.color.accent,
                                     fg: skin.color.fg,
                                     fgMuted: skin.color.fgMuted,
@@ -367,6 +371,7 @@ class _RadarPainter extends CustomPainter {
     required this.sweep,
     required this.grid,
     required this.accent,
+    required this.sweepColor,
     required this.self,
     required this.fg,
     required this.fgMuted,
@@ -391,6 +396,9 @@ class _RadarPainter extends CustomPainter {
   final double? sweep;
   final Color grid;
   final Color accent;
+
+  /// The sweep's own colour: the hue opposite this skin's accent.
+  final Color sweepColor;
   final Color self;
   final Color fg;
   final Color fgMuted;
@@ -462,15 +470,15 @@ class _RadarPainter extends CustomPainter {
           startAngle: 0,
           endAngle: trail,
           colors: <Color>[
-            accent.withValues(alpha: 0.0),
-            accent.withValues(alpha: 0.22),
+            sweepColor.withValues(alpha: 0.0),
+            sweepColor.withValues(alpha: 0.22),
           ],
           transform: GradientRotation(a - trail),
         ).createShader(rect);
       canvas.drawArc(rect, a - trail, trail, true, wedge);
       final Paint lead = Paint()
         ..strokeWidth = 1.5
-        ..color = accent.withValues(alpha: 0.65);
+        ..color = sweepColor.withValues(alpha: 0.65);
       canvas.drawLine(
           center,
           Offset(center.dx + maxR * math.cos(a),
@@ -481,7 +489,7 @@ class _RadarPainter extends CustomPainter {
     // North, as a red marker that moves with the dial. A letter fixed at the
     // top would keep saying north after the dial turned.
     final double northAt = CompassHeading.northMarkerDegrees(headingDegrees);
-    paintNorthMarker(canvas, center, maxR - 2,
+    paintNorthMarker(canvas, center, maxR,
         markerDegrees: northAt, color: northMarker);
     final double na = northAt * math.pi / 180;
     _label(
@@ -637,6 +645,11 @@ class _RadarPainter extends CustomPainter {
       // with reduce-motion on — where `sweep` is null and never changes — the
       // whole radar froze at whatever heading it was built with.
       old.headingDegrees != headingDegrees ||
+      // The sweep's colour is derived from the skin, so a theme change has to
+      // repaint it. The grid's painter got this comparison and this one did not,
+      // which is the R166 regression again: under reduce-motion the sweep is
+      // static, so nothing else would have forced the repaint either.
+      old.sweepColor != sweepColor ||
       old.northMarker != northMarker;
 }
 
