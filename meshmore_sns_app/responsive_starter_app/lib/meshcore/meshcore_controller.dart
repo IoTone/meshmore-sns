@@ -33,6 +33,7 @@ import 'radio_config_transaction.dart';
 import 'radio_identity_store.dart';
 import 'chat_store.dart';
 import 'discovered_node.dart';
+import 'topology_hop.dart';
 import 'dm_read_store.dart';
 import 'favorite_store.dart';
 import 'known_store.dart';
@@ -1764,6 +1765,55 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       chain.add(hop);
     }
     return List<DiscoveredNode>.unmodifiable(chain);
+  }
+
+  /// The peer's learned route, one entry per hop, with a placeholder for every
+  /// hop that names nothing.
+  ///
+  /// Null means the radio has learned no route at all (flood or advert-only).
+  /// An empty list means the peer is a direct neighbour. Anything else is the
+  /// real depth, which is the number the tree exists to show.
+  ///
+  /// Grouping is by the route's own hash width, decoded from `out_path_len`:
+  /// iterating the raw path bytes one at a time read a two-byte route as twice
+  /// the hops it has.
+  List<TopologyHop>? topologyHopsFor(String pubKeyHex) {
+    final DiscoveredNode? peer = _nodes[pubKeyHex.toLowerCase()];
+    if (peer == null) return null;
+    final List<int>? bytes = peer.outPathHashes;
+    if (bytes == null) return null;
+    if (bytes.isEmpty) return const <TopologyHop>[];
+    final int width = (peer.outPathHashSize ?? 1).clamp(1, 3);
+    final int chars = width * 2;
+
+    // Repeaters by their truncated key, at this route's width. A prefix two
+    // repeaters share is ambiguous and names neither: picking the first would
+    // draw a route through a node that may not be on it.
+    final Map<String, DiscoveredNode> byPrefix = <String, DiscoveredNode>{};
+    final Set<String> ambiguous = <String>{};
+    for (final DiscoveredNode n in _nodes.values) {
+      if (n.type != kAdvTypeRepeater) continue;
+      if (n.pubKeyHex.length < chars) continue;
+      final String prefix = n.pubKeyHex.substring(0, chars).toLowerCase();
+      if (byPrefix.containsKey(prefix)) {
+        ambiguous.add(prefix);
+      } else {
+        byPrefix[prefix] = n;
+      }
+    }
+
+    final List<TopologyHop> hops = <TopologyHop>[];
+    for (int i = 0; i + width <= bytes.length; i += width) {
+      final String hex = bytes
+          .sublist(i, i + width)
+          .map((int b) => b.toRadixString(16).padLeft(2, '0'))
+          .join();
+      hops.add(TopologyHop(
+        hash: hex,
+        node: ambiguous.contains(hex) ? null : byPrefix[hex],
+      ));
+    }
+    return List<TopologyHop>.unmodifiable(hops);
   }
 
   // --- Recent activity feed (Dashboard) ---
@@ -5096,6 +5146,15 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       outPathHashes: c.outPathLen == kPathLenFlood
           ? null
           : List<int>.unmodifiable(c.activePath),
+      // Decoded here, where `out_path_len` still exists. `PathLen` is the
+      // package's own reader for that packed byte, and the two numbers it
+      // carries are what a depth means: hops, and bytes per hop.
+      outPathHopCount: c.outPathLen == kPathLenFlood
+          ? null
+          : PathLen(c.outPathLen).hopCount,
+      outPathHashSize: c.outPathLen == kPathLenFlood
+          ? null
+          : PathLen(c.outPathLen).hashSize,
       viaFlood: c.outPathLen == kPathLenFlood,
     );
   }

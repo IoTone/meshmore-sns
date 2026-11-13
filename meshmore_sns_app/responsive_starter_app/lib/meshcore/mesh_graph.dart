@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'discovered_node.dart';
+import 'topology_hop.dart';
 import 'meshcore_controller.dart';
 
 /// R50 — node in the topology tree. Either our own node, a known
@@ -198,8 +199,7 @@ class MeshGraph {
 
       addNode(peer);
 
-      final List<DiscoveredNode>? chain =
-          mc.topologyChainFor(peer.pubKeyHex);
+      final List<TopologyHop>? chain = mc.topologyHopsFor(peer.pubKeyHex);
       if (chain == null) {
         if (peer.viaFlood) {
           // Reachable via flood — no fixed path, but it IS a contact
@@ -214,10 +214,23 @@ class MeshGraph {
         continue;
       }
       String prev = selfId;
-      for (final DiscoveredNode hop in chain) {
-        addNode(hop);
-        addEdge(prev, hop.pubKeyHex);
-        prev = hop.pubKeyHex;
+      for (final TopologyHop hop in chain) {
+        // A hop we can name is the repeater itself. A hop we cannot is still a
+        // vertex: the route reported that something sits there, and drawing it
+        // as its own bytes is the difference between "three hops deep" and the
+        // single ring the tree used to collapse to.
+        byId.putIfAbsent(
+          hop.id,
+          () => MeshGraphNode(
+            id: hop.id,
+            label: hop.label,
+            // Unnamed hops are drawn as repeaters, because that is the only
+            // thing a hop in a route can be.
+            type: hop.node?.type ?? 2,
+          ),
+        );
+        addEdge(prev, hop.id);
+        prev = hop.id;
       }
       addEdge(prev, peer.pubKeyHex);
     }
