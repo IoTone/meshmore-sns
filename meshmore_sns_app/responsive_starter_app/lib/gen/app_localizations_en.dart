@@ -651,9 +651,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Includes MeshCore documentation (MIT), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).';
 
   @override
-  String get personalizationHeading => 'Profile & personalization';
-
-  @override
   String get personalizationThemePreset => 'THEME PRESET';
 
   @override

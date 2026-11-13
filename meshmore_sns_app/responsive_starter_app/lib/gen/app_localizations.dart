@@ -1208,12 +1208,6 @@ abstract class AppLocalizations {
   /// **'Includes MeshCore documentation (MIT), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).'**
   String get aboutAttributions;
 
-  /// No description provided for @personalizationHeading.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile & personalization'**
-  String get personalizationHeading;
-
   /// No description provided for @personalizationThemePreset.
   ///
   /// In en, this message translates to:

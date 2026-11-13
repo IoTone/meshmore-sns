@@ -23,7 +23,11 @@ class PersonalizationScreen extends StatelessWidget {
     final ThemeController tc = context.watch<ThemeController>();
     final AppLocalizations l = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l.personalizationHeading)),
+      // The same words the door uses. This page held the theme presets, the
+      // type scale and the accessibility switches — appearance and
+      // accessibility, with no profile anywhere on it — under a title that
+      // named something else.
+      appBar: AppBar(title: Text(l.settingsHubProfile)),
       body: MmScaffold(
         child: ListView(
           children: <Widget>[

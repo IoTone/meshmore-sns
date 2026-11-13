@@ -621,9 +621,6 @@ class AppLocalizationsJa extends AppLocalizations {
       'MeshCore ドキュメント（MIT）、OpenStreetMap 地図データ（ODbL）、Saira・JetBrains Mono フォント（OFL）を含みます。';
 
   @override
-  String get personalizationHeading => 'プロフィール & パーソナライズ';
-
-  @override
   String get personalizationThemePreset => 'テーマプリセット';
 
   @override
