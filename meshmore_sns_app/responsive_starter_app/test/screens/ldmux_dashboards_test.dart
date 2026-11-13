@@ -13,6 +13,7 @@ import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/screens/dashboards/forest_dashboard.dart';
+import 'package:meshmore_sns_app/screens/dashboards/umber_dashboard.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
@@ -124,6 +125,27 @@ void main() {
     addTearDown(t.view.reset);
     final MeshcoreController mc = _mc(FakeMeshcoreTransport(connected: true));
     await _pump(t, mc, MmThemePreset.forest, textScale: 2);
+    await t.pumpAndSettle();
+    expect(t.takeException(), isNull);
+    await _drain(t, mc);
+  });
+
+  testWidgets('Umber has its own dashboard, and its cluster is the signature',
+      (WidgetTester t) async {
+    final MeshcoreController mc = _mc(FakeMeshcoreTransport(connected: true));
+    await _pump(t, mc, MmThemePreset.umber);
+    expect(find.byType(UmberDashboard), findsOneWidget);
+    expect(find.byType(DashboardScreen), findsNothing);
+    expect(find.byKey(const ValueKey<String>('umber-cluster')), findsOneWidget);
+    await _drain(t, mc);
+  });
+
+  testWidgets('Umber survives 320 dp at 200 % text', (WidgetTester t) async {
+    t.view.physicalSize = const Size(320, 900);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    final MeshcoreController mc = _mc(FakeMeshcoreTransport(connected: true));
+    await _pump(t, mc, MmThemePreset.umber, textScale: 2);
     await t.pumpAndSettle();
     expect(t.takeException(), isNull);
     await _drain(t, mc);

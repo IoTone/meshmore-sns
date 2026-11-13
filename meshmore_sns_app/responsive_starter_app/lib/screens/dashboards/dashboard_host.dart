@@ -14,6 +14,7 @@ import 'hyperlocal_dashboard.dart';
 import 'nerv_dashboard.dart';
 import 'recon_dashboard.dart';
 import 'studio_dashboard.dart';
+import 'umber_dashboard.dart';
 
 /// R8 dashboard host — selects the **per-skin dashboard layout**. Most
 /// skins use the SEELE monolith ([DashboardScreen]); NERV gets its own
@@ -75,6 +76,8 @@ class DashboardHost extends StatelessWidget {
       // Forest answers "how deep" rather than "how many": the depth bar is the
       // only element in the app that shows the mesh's shape.
       MmThemePreset.forest => const ForestDashboard(),
+      // Umber is a workbench: four instruments in a square, no panels.
+      MmThemePreset.umber => const UmberDashboard(),
       // The remaining LDMUX presets land here on purpose: a layout is a screen's
       // own design, and inheriting the SEELE monolith is the honest default until
       // one of them earns a layout of its own. This is not a forgotten case — the

@@ -38,13 +38,13 @@ void main() {
     MmThemePreset.studio,
     MmThemePreset.air,
     MmThemePreset.forest,
+    MmThemePreset.umber,
   };
 
   /// Presets that still inherit the monolith. Each name here is a theme that has
   /// had its palette done and its layout not done yet.
   const Set<MmThemePreset> inheritingLayout = <MmThemePreset>{
     MmThemePreset.daybreak,
-    MmThemePreset.umber,
   };
 
   /// Presets whose sound is knowingly another preset's pack. Every entry is a
