@@ -666,9 +666,17 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
       (
         label: l.settingsGroupConnect,
         rows: <(IconData, String, String)>[
+          // Two doors, because the two screens answer different questions. The
+          // row that used to be the only one said "Radio connection" and opened
+          // a developer console.
           (
             Icons.bluetooth_searching,
             l.settingsHubDiagnostics,
+            '/settings/connection'
+          ),
+          (
+            Icons.monitor_heart_outlined,
+            l.diagnosticsTitle,
             '/settings/diagnostics'
           ),
           (Icons.handyman_outlined, l.settingsHubTools, '/settings/tools'),

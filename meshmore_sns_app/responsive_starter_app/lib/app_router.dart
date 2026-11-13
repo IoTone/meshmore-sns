@@ -17,6 +17,7 @@ import 'screens/doc_reader_screen.dart';
 import 'screens/dm_screen.dart';
 import 'screens/connect_screen.dart';
 import 'screens/diagnostics_screen.dart';
+import 'screens/radio_connection_screen.dart';
 import 'screens/terms_screen.dart';
 import 'screens/location_settings_screen.dart';
 import 'screens/chat_search_screen.dart';
@@ -88,6 +89,12 @@ final GoRouter appRouter = GoRouter(
         peerPubKeyHex: state.pathParameters['pubkey']!,
       ),
     ),
+    GoRoute(
+      path: '/settings/connection',
+      builder: (_, __) => const RadioConnectionScreen(),
+    ),
+    // The console. Separate from the screen above because the two answer
+    // different questions: "is my radio linked" and "what did the link say".
     GoRoute(
       path: '/settings/diagnostics',
       builder: (_, __) => const DiagnosticsScreen(),

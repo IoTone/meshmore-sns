@@ -258,6 +258,7 @@ void main() {
     '/settings/app',
     '/settings/profile',
     '/settings/location',
+    '/settings/connection',
     '/settings/diagnostics',
     '/connect',
     '/settings/networks',

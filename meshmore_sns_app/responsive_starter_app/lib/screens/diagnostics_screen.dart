@@ -15,13 +15,13 @@ import '../bot/responder.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/failure.dart';
 import 'raw_record_card.dart';
+import '../ui/mm_confirm.dart';
 import '../ui/mm_components.dart';
+import '../ui/radio_connection_facts.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
-import '../ui/mm_confirm.dart';
 import '../ui/mm_scaffold.dart';
 import '../theme/mm_skin.dart';
-import '../ui/radio_health_block.dart';
 import 'diagnostics_redaction.dart';
 import '../meshcore/chat_store.dart';
 import '../places/place_store.dart';
@@ -242,22 +242,11 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final ColorScheme cs = Theme.of(context).colorScheme;
     final AppLocalizations l = AppLocalizations.of(context);
-    final bool live = mc.state == MeshcoreConnectionState.ready ||
-        mc.state == MeshcoreConnectionState.handshaking ||
-        mc.state == MeshcoreConnectionState.reconnecting;
     final int nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     // R23: full capture buffer scrolls inside a bounded pane below,
     // so the page-level scroll keeps the State/Sends/Capture context
     // visible regardless of how long the log gets.
     final List<String> log = mc.captureLog.reversed.toList();
-
-    // The profile byte has three readings and only one of them is a fault,
-    // so the label says which without judging it.
-    String viaLabel(AppLocalizations l, RxVia via) => switch (via) {
-          RxVia.primary => l.rxViaPrimary,
-          RxVia.secondary => l.rxViaSecondary,
-          RxVia.unknown => l.rxViaUnknown,
-        };
 
     final MmSkin skin = context.skin;
     // One fact per line. A joined subtitle could not be read at a glance and
@@ -268,17 +257,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           child: Text(text,
               style: TextStyle(
                   color: cs.onSurface,
-                  fontSize: skin.type.sizeBody,
-                  fontFamily: skin.type.bodyFamily,
-                  height: 1.35)),
-        );
-    // A fault is the one thing here that gets a sentence, because it is the
-    // only line a reader can act on.
-    Widget fault(String text) => Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text(text,
-              style: TextStyle(
-                  color: cs.error,
                   fontSize: skin.type.sizeBody,
                   fontFamily: skin.type.bodyFamily,
                   height: 1.35)),
@@ -339,16 +317,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       );
     }
 
-    final String stateText = switch (mc.state) {
-          MeshcoreConnectionState.disconnected => l.diagnosticsStateDisconnected,
-          MeshcoreConnectionState.handshaking => l.diagnosticsStateHandshaking,
-          MeshcoreConnectionState.ready => l.diagnosticsStateReady,
-          MeshcoreConnectionState.reconnecting =>
-            l.diagnosticsStateReconnecting,
-          MeshcoreConnectionState.failed => l.diagnosticsStateFailed,
-        } +
-        (mc.isConnecting ? l.diagnosticsConnectingSuffix : '');
-
     return Scaffold(
       appBar:
           AppBar(title: Text(AppLocalizations.of(context).diagnosticsTitle)),
@@ -359,159 +327,23 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           // appears when the link reports it, and a shifting child list makes
           // the list's keep-alive wrappers remount subtrees that own a
           // collapsible group.
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              section(l.diagnosticsSectionConnection),
-              fact(l.diagnosticsStateLine(stateText)),
-              if (mc.selfInfo != null)
-                fact(l.diagnosticsDeviceLine(mc.selfInfo!.name,
-                    '${mc.selfInfo!.frequencyMhz}',
-                    '${mc.selfInfo!.spreadingFactor}')),
-              if (mc.batteryMillivolts != null)
-                fact(l.diagnosticsBatteryLine(
-                        mc.batteryVolts!.toStringAsFixed(2),
-                        '${mc.batteryPercent}') +
-                    (mc.charging == true ? l.diagnosticsChargingSuffix : '')),
-              if (mc.mtu != null)
-                fact(l.diagnosticsMtuLine(
-                    '${mc.mtu}', '${MeshcoreBle.requiredMtu}')),
-              // Which radio carried the last channel datagram. The byte only
-              // means something while a second profile is on, so "unreported"
-              // is the normal reading on a single-profile radio.
-              if (mc.lastFrame case final ChannelDataFrame d)
-                fact(l.diagnosticsDatagramLine(
-                    '${d.channelIndex}',
-                    viaLabel(l, d.via),
-                    '0x${d.dataType.toRadixString(16).padLeft(4, '0')}')),
-              if (mc.reconnectAttempt > 0)
-                fact(l.diagnosticsReconnectLine('${mc.reconnectAttempt}') +
-                    (mc.gaveUp ? l.diagnosticsGaveUpSuffix : '')),
-              // A handshake started more than once, or one that got no answer,
-              // is the shape of the report that read "handshaking for a long
-              // time". Shown only when there is something to see: one clean
-              // handshake is the normal case, and this page is already dense.
-              if (mc.handshakeAttempts > 1 || mc.handshakeTimeouts > 0)
-                fact(l.diagnosticsHandshakeLine(
-                    '${mc.handshakeAttempts}', '${mc.handshakeTimeouts}')),
-              // A teardown the phone never finished. Counted, not a fault: the
-              // app opened a new link anyway, and this is the only trace that
-              // the previous one had to be abandoned.
-              if (mc.linkCloseTimeouts > 0)
-                fact(l.diagnosticsLinkCloseLine('${mc.linkCloseTimeouts}')),
-              if (mc.mtuRefusal != null)
-                fault(l.diagnosticsMtuRefusedLine(
-                    '${mc.mtuRefusal!.mtu}', '${MeshcoreBle.requiredMtu}'))
-              else if (mc.truncatedFrames > 0 ||
-                  mc.trailingBytesFrames > 0 ||
-                  mc.emptyFrames > 0)
-                fact(l.diagnosticsFramingLine('${mc.truncatedFrames}',
-                    '${mc.trailingBytesFrames}', '${mc.emptyFrames}'))
-              else if (mc.failure != null)
-                fault(l.diagnosticsErrorLine(failureText(l, mc.failure!)))
-              else if (mc.error != null)
-                fault(l.diagnosticsErrorLine('${mc.error}')),
-              // A frame that lost a step. It is a fault rather than a counter
-              // because the app cannot say which part of it is missing, and
-              // the only honest reading is that some of its data may not be
-              // there.
-              if (mc.framesDropped > 0)
-                fault(l.diagnosticsFramesDroppedLine(mc.framesDropped)),
-              // APP-C5 — the app's own duty-cycle meter, always charging.
-              // A refusal is the one line here a user can act on, so it is a
-              // sentence rather than a counter when it has happened.
-              fact(mc.airtimeBudget == null
-                  ? l.airtimeSpentLineUnlimited(_shortDuration(mc.airtimeSpent))
-                  : l.airtimeSpentLine(_shortDuration(mc.airtimeSpent),
-                      _shortDuration(mc.airtimeBudget!))),
-              if (mc.airtimeRefusals > 0)
-                fault(l.airtimeRefusedCount(mc.airtimeRefusals)),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                // Three peer actions, one control. They used to be a filled
-                // button, an outlined button with an icon and an outlined
-                // button without one, side by side: three weights for three
-                // peers, which reads as a ranking nobody intended. `MmAction`
-                // is the app's own control, and every one of them carries an
-                // icon so the row scans as a row.
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.start,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: <Widget>[
-                    MmAction(
-                      key: const ValueKey<String>('diag-connect'),
-                      icon: live ? Icons.link_off : Icons.bluetooth_searching,
-                      label: live
-                          ? l.diagnosticsDisconnect
-                          : l.actionConnect,
-                      onPressed: () => live ? mc.disconnect() : mc.connect(),
-                    ),
-                    MmAction(
-                      key: const ValueKey<String>('diag-pair'),
-                      icon: Icons.add_link,
-                      // One connect screen: pairing and connecting are two states
-                      // of the same question, and `/connect` is where both live.
-                      label: l.diagnosticsPairRadio,
-                      onPressed: () => context.push('/connect'),
-                    ),
-                    if (mc.hasPairedDevice)
-                      MmAction(
-                        key: const ValueKey<String>('diag-forget'),
-                        icon: Icons.link_off,
-                        label: l.diagnosticsForgetShort,
-                        onPressed: () => _confirmForget(mc),
-                      ),
-                  ],
-                ),
-              ),
-              if (mc.hasPairedDevice)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: fact(l.diagnosticsPairedLine('${mc.pairedName}')),
-                ),
-              // D8.7 — the BLE identity can survive a reflash while the
-              // radio's own key does not. When the key changed, the history
-              // on screen belongs to another node and nothing is migrated
-              // until the user says which radio this is.
-              if (mc.radioChanged)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        l.diagnosticsRadioChangedLine(
-                            _shortKey(mc.previousRadioKey ?? '?'),
-                            _shortKey(mc.ownPubKeyHex ?? '?')),
-                        style: TextStyle(
-                            color: cs.error,
-                            fontSize: skin.type.sizeBody,
-                            fontFamily: skin.type.bodyFamily,
-                            height: 1.35),
-                      ),
-                      const SizedBox(height: 4),
-                      // The same control as every other action on the page: a
-                      // lone OutlinedButton here was the fourth style on one
-                      // screen.
-                      MmAction(
-                        icon: Icons.check,
-                        label: l.diagnosticsRadioChangedAccept,
-                        onPressed: () => mc.acceptRadioIdentity(),
-                      ),
-                    ],
-                  ),
-                ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                // The block carries its own title and its own Read action, so
-                // a section header above it said "radio health" twice in the
-                // same breath — the duplicated label rule the dashboard obeys.
-                child: const RadioHealthBlock(),
-              ),
-            ],
+          // The facts and the four actions are one widget, shared with
+          // `/settings/connection`: a developer reading frames wants the link
+          // state visible, and two copies of these lines would drift.
+          const RadioConnectionFacts(),
+          // The door back to the reader-facing half. A console is a place a
+          // person arrives at deliberately, and the way out is named.
+          Padding(
+            padding: EdgeInsets.symmetric(
+                horizontal: skin.space.step(1), vertical: skin.space.step(2)),
+            child: ListTile(
+              key: const ValueKey<String>('diagnostics-connection-row'),
+              leading: const Icon(Icons.bluetooth_searching),
+              title: Text(l.settingsHubDiagnostics),
+              subtitle: Text(l.connectionDiagnosticsExplainer),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/connection'),
+            ),
           ),
           // Everything below is a developer surface: it is folded away by
           // default so the connection facts and the one action stay the page.
@@ -847,21 +679,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
     );
   }
 
-  /// Forget is irreversible — it drops the paired record, the OS bond and the
-  /// history entry — so it asks first and names the consequence.
-  Future<void> _confirmForget(MeshcoreController mc) async {
-    final AppLocalizations l = AppLocalizations.of(context);
-    final bool forget = await mmConfirm(
-      context,
-      title: l.diagnosticsForgetConfirmTitle,
-      body: l.diagnosticsForgetConfirmBody,
-      cancelLabel: l.cancel,
-      confirmLabel: l.diagnosticsForgetShort,
-      destructive: true,
-    );
-    if (forget) await mc.forgetDevice();
-  }
-
   String _label(String hex) {
     try {
       final MeshcoreInbound f = MeshcoreFrameCodec.decode(_hex(hex));
@@ -952,18 +769,3 @@ class _BotSoakPanel extends StatelessWidget {
     );
   }
 }
-
-/// Seconds to `12s`, a minute and more to `1m 05s`. The meter line is read at a
-/// glance next to other one-fact lines, so it never says `0:00:12`.
-String _shortDuration(Duration d) {
-  final int s = d.inSeconds;
-  if (s < 60) return '${s}s';
-  final int m = s ~/ 60;
-  final int rest = s % 60;
-  return rest == 0 ? '${m}m' : '${m}m ${rest.toString().padLeft(2, '0')}s';
-}
-
-/// The first and last four hex characters of a key, which is enough to tell two
-/// radios apart without putting a 64-character key in a sentence.
-String _shortKey(String hex) =>
-    hex.length <= 8 ? hex : '${hex.substring(0, 4)}…${hex.substring(hex.length - 4)}';

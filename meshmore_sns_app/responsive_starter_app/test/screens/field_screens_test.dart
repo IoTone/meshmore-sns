@@ -63,6 +63,32 @@ Widget _host(Widget child, MmThemePreset preset) {
   );
 }
 
+
+/// The same harness, with the fence controller handed in so a test can put
+/// fences in it and then read what the list does with them.
+Widget _hostFences(Widget child, MeshcoreController mc, GeofenceController g) =>
+    MultiProvider(
+      providers: <SingleChildWidget>[
+        ChangeNotifierProvider<ThemeController>(create: (_) => ThemeController()),
+        ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+        ChangeNotifierProvider<GeofenceController>.value(value: g),
+        ChangeNotifierProvider<PlaceStore>(create: (_) => PlaceStore()),
+        Provider<PlaceReportBudget>(
+            create: (_) => PlaceReportBudget(clock: DateTime.now)),
+      ],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: const <LocalizationsDelegate<Object>>[
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: child,
+      ),
+    );
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
@@ -91,4 +117,69 @@ void main() {
           findsOneWidget);
     });
   }
+
+  testWidgets('the fence list gains a search once it is long, and the search '
+      'filters', (WidgetTester t) async {
+    final MeshcoreController mc = MeshcoreController();
+    final GeofenceController g = GeofenceController(mc: mc, autoTick: false);
+    addTearDown(g.dispose);
+    addTearDown(mc.dispose);
+    await t.pumpWidget(_hostFences(const GeofencesScreen(), mc, g));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('geofence-search')), findsNothing,
+        reason: 'a search field over nothing is furniture');
+
+    // Real IO: the sealed store cannot write inside the fake-async zone, so a
+    // fence added without `runAsync` never returns.
+    await t.runAsync(() async {
+      for (int i = 0; i < 4; i++) {
+        await g.addFence(
+            label: 'Fence ${i + 1}',
+            latitude: 39 + i * 0.001,
+            longitude: -105,
+            radiusMeters: 250);
+      }
+    });
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('geofence-search')), findsOneWidget);
+    expect(find.text('Fence 4'), findsOneWidget);
+
+    await t.enterText(
+        find.byKey(const ValueKey<String>('geofence-search')), 'fence 4');
+    await t.pumpAndSettle();
+    expect(find.text('Fence 4'), findsOneWidget);
+    expect(find.text('Fence 1'), findsNothing);
+
+    await t.enterText(
+        find.byKey(const ValueKey<String>('geofence-search')), 'nothing here');
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('geofence-no-matches')),
+        findsOneWidget);
+    expect(find.text('Fence 1'), findsNothing);
+  });
+
+  testWidgets('editing a fence keeps it and changes what was asked',
+      (WidgetTester t) async {
+    final MeshcoreController mc = MeshcoreController();
+    final GeofenceController g = GeofenceController(mc: mc, autoTick: false);
+    addTearDown(g.dispose);
+    addTearDown(mc.dispose);
+    await t.runAsync(() async {
+      await g.addFence(
+          label: 'Camp', latitude: 39, longitude: -105, radiusMeters: 250);
+    });
+    final String id = g.fences.single.id;
+    await t.pumpWidget(_hostFences(const GeofencesScreen(), mc, g));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(ValueKey<String>('geofence-edit-$id')));
+    await t.pumpAndSettle();
+    await t.enterText(
+        find.byKey(const ValueKey<String>('geofence-name')), 'Base camp');
+    await t.pump();
+    await t.tap(find.byKey(const ValueKey<String>('geofence-save')));
+    await t.pumpAndSettle();
+    expect(g.fences.single.label, 'Base camp');
+    expect(g.fences.single.id, id, reason: 'an edit is not a delete and add');
+  });
+
 }

@@ -340,4 +340,27 @@ void main() {
         findsOneWidget);
     ctrl.dispose();
   });
+
+  testWidgets('the console keeps its frames and names the way back',
+      (WidgetTester t) async {
+    // The split's other half: a reader-facing screen for the facts, and this
+    // page for the evidence. The row at the top is the way back, and the
+    // developer fold is still here rather than deleted.
+    final (MeshcoreController ctrl, FakeMeshcoreTransport fake) = await pump(t);
+    await t.tap(find.byKey(const ValueKey<String>('diag-connect')));
+    await t.pumpAndSettle();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    expect(
+        find.byKey(const ValueKey<String>('diagnostics-connection-row')),
+        findsOneWidget);
+    expect(find.text('DEVELOPER'), findsOneWidget);
+    await openDeveloper(t);
+    await t.ensureVisible(find.text('Send a raw record'));
+    await t.pumpAndSettle();
+    expect(find.text('Send a raw record'), findsOneWidget);
+    ctrl.dispose();
+  });
+
 }
