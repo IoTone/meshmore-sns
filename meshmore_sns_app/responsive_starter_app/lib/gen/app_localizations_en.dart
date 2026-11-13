@@ -6557,7 +6557,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mapDensityCellArea(String size) {
-    return '$size across, so every cell covers the same ground area.';
+    return '$size across, so a cell is the same size on screen at every zoom.';
   }
 
   @override

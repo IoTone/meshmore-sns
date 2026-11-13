@@ -8,10 +8,15 @@ import 'package:latlong2/latlong.dart' hide Path;
 
 import '../util/mm_format.dart';
 
-/// Node density per equal area, as map polygons.
+/// Node density per cell, as map polygons.
 ///
-/// This is the property the deleted equal-area grid held and nothing else did:
-/// cells of the same ground area, so a count per cell compares like with like.
+/// A count per cell, so a count compares like with like inside one view. The
+/// cell is a fixed size *on the glass* rather than a fixed area of ground: the
+/// radius is a pixel count converted to metres at the current zoom
+/// (`hexRadiusForZoom`), so the field does not change shape as the reader zooms
+/// and the ground area it covers is stated beside it. It was a fixed ground area
+/// once, and the hexagons jumped by up to two and a half times at every ladder
+/// step as a result.
 /// The radar is radial with a saturating clamp and the pins are points, so
 /// neither can say "eleven nodes in this square kilometre".
 ///

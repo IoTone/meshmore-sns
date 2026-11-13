@@ -4396,7 +4396,7 @@
       }
     }
   },
-  "mapDensityCellArea": "{size} across, so every cell covers the same ground area.",
+  "mapDensityCellArea": "{size} across, so a cell is the same size on screen at every zoom.",
   "@mapDensityCellArea": {
     "placeholders": {
       "size": {

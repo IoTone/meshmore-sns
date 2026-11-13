@@ -6296,7 +6296,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String mapDensityCellArea(String size) {
-    return '$size ごと。どのセルも同じ面積です。';
+    return '$size ごと。どのズームでも画面上の大きさは同じです。';
   }
 
   @override

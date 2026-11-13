@@ -648,6 +648,11 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
         label: l.settingsGroupLocation,
         rows: <(IconData, String, String)>[
           (Icons.my_location, l.settingsHubLocation, '/settings/location'),
+          // Two things a reader does rather than two things they share. They
+          // were three taps deep inside "Location & sharing", which is where a
+          // setting goes, and a fence is not a setting: it fires while you walk.
+          (Icons.fence_outlined, l.geofenceTitle, '/settings/geofences'),
+          (Icons.cell_tower, l.coverageTitle, '/settings/coverage'),
         ],
       ),
       (

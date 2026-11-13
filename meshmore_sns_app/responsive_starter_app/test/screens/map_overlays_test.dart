@@ -175,9 +175,10 @@ void main() {
     // ignore: avoid_print
     print('PROBE after-tap texts=${t.widgetList<Text>(find.byType(Text)).map((Text x) => x.data).where((String? d) => d != null).take(14).toList()}');
     await t.pumpAndSettle();
-    expect(find.textContaining('so every cell covers'),
+    expect(find.textContaining('the same size on screen'),
         findsOneWidget,
-        reason: 'the sheet says what a square covers, at the size drawn');
+        reason: 'the sheet says what the cell is at the size drawn, and it is a '
+            'screen size now rather than a fixed ground area');
     semantics.dispose();
     await _drain(t, mc);
   });

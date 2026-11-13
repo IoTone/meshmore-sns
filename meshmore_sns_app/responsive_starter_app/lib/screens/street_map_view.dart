@@ -1312,7 +1312,7 @@ class _StreetMapViewState extends State<StreetMapView> {
           ]
         : const <DensityPoint>[];
     // The field, not a scatter of boxes: `hexField` returns every hexagon that
-    // holds a node, each the same ground area within a zoom band, and the shade
+    // holds a node, each the same size on the glass, and the shade
     // comes from the count. The lattice is anchored to the visible box's own
     // north-west corner, so panning moves the field with the ground instead of
     // re-anchoring it on the operator's fix (which made the old squares step as
@@ -1556,9 +1556,10 @@ class _StreetMapViewState extends State<StreetMapView> {
               if (hexes.isNotEmpty && _densityCellsDrawn)
                 PolygonLayer<HexCell>(
                   // A continuous field rather than a scatter of boxes: every
-                  // hexagon is the same ground area at every zoom, and its shade
-                  // is its count. Built once per change of the field, not once
-                  // per build: see [_hexPolygons].
+                  // hexagon is the same size on the glass at every zoom, its
+                  // ground area is what the chip states, and its shade is its
+                  // count. Built once per change of the field, not once per
+                  // build: see [_hexPolygons].
                   polygons: _hexPolygons,
                 ),
               // R61 — event maps (festival streets, courses, camps).

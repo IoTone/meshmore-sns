@@ -10969,7 +10969,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapDensityCellArea.
   ///
   /// In en, this message translates to:
-  /// **'{size} across, so every cell covers the same ground area.'**
+  /// **'{size} across, so a cell is the same size on screen at every zoom.'**
   String mapDensityCellArea(String size);
 
   /// No description provided for @mapDensityCellOpen.

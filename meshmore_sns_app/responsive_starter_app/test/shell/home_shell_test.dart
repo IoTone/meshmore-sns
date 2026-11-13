@@ -268,12 +268,21 @@ void main() {
   });
 
   testWidgets('the view strip jumps views (R11, R64)', (WidgetTester t) async {
+    // Tall enough for the whole hub: it gained Geofences and Coverage, and a
+    // 600 dp test viewport cuts the later groups off, which is a property of the
+    // viewport rather than of the screen being asserted.
+    await t.binding.setSurfaceSize(const Size(400, 1400));
+    addTearDown(() => t.binding.setSurfaceSize(null));
     await _pumpApp(t);
     await t.tap(find.byTooltip('Settings'));
     await t.pumpAndSettle();
     expect(find.widgetWithText(AppBar, 'Settings'), findsOneWidget);
-    // Settings hub shows the three sub-screen entries.
+    // The hub's first rows, then the app group further down: the location group
+    // gained Geofences and Coverage, so the list is longer than a 600 dp test
+    // viewport and the later rows have to be scrolled to.
     expect(find.text('Device configuration'), findsOneWidget);
+    expect(find.text('Geofences'), findsOneWidget);
+    expect(find.text('Coverage'), findsOneWidget);
     expect(find.text('App settings'), findsOneWidget);
     expect(find.text('Appearance & accessibility'), findsOneWidget);
   });
