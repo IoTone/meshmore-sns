@@ -8,6 +8,7 @@ import '../dashboard_screen.dart';
 import 'aghud_dashboard.dart';
 import 'air_dashboard.dart';
 import 'dashboard_degraded_banner.dart';
+import 'daybreak_dashboard.dart';
 import 'drpop_dashboard.dart';
 import 'forest_dashboard.dart';
 import 'hyperlocal_dashboard.dart';
@@ -78,10 +79,14 @@ class DashboardHost extends StatelessWidget {
       MmThemePreset.forest => const ForestDashboard(),
       // Umber is a workbench: four instruments in a square, no panels.
       MmThemePreset.umber => const UmberDashboard(),
-      // The remaining LDMUX presets land here on purpose: a layout is a screen's
-      // own design, and inheriting the SEELE monolith is the honest default until
-      // one of them earns a layout of its own. This is not a forgotten case — the
-      // arm is reached only by presets with no bundle above it.
+      // Daybreak is the other white page, and it is a report rather than a spec
+      // sheet: cards with a leading accent bar, not hairlines and a ledger.
+      MmThemePreset.daybreak => const DaybreakDashboard(),
+      // Every preset has a layout of its own now. The arm stays as the honest
+      // default for a preset added later: a layout is a screen's own design, and
+      // inheriting the SEELE monolith is better than a blank page until the new
+      // skin earns one. `test/theme/theme_integration_test.dart` fails the moment
+      // a preset is added without deciding which it is.
       _ => const DashboardScreen(),
     };
   }

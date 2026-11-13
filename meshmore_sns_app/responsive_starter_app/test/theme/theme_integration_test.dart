@@ -39,13 +39,14 @@ void main() {
     MmThemePreset.air,
     MmThemePreset.forest,
     MmThemePreset.umber,
-  };
-
-  /// Presets that still inherit the monolith. Each name here is a theme that has
-  /// had its palette done and its layout not done yet.
-  const Set<MmThemePreset> inheritingLayout = <MmThemePreset>{
     MmThemePreset.daybreak,
   };
+
+  /// Presets that still inherit the monolith. Empty now: every preset has a
+  /// layout of its own. Kept as a named set rather than deleted, because the
+  /// assertion below is what fails when a preset is added without a decision,
+  /// and an empty set is the honest record of "none left".
+  const Set<MmThemePreset> inheritingLayout = <MmThemePreset>{};
 
   /// Presets whose sound is knowingly another preset's pack. Every entry is a
   /// debt: the theme changes colour and not the cue set, so two themes sound

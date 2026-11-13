@@ -12,6 +12,7 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
+import 'package:meshmore_sns_app/screens/dashboards/daybreak_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/forest_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/umber_dashboard.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
@@ -146,6 +147,28 @@ void main() {
     addTearDown(t.view.reset);
     final MeshcoreController mc = _mc(FakeMeshcoreTransport(connected: true));
     await _pump(t, mc, MmThemePreset.umber, textScale: 2);
+    await t.pumpAndSettle();
+    expect(t.takeException(), isNull);
+    await _drain(t, mc);
+  });
+
+  testWidgets('Daybreak has its own dashboard, and its cards wear the bar',
+      (WidgetTester t) async {
+    final MeshcoreController mc = _mc(FakeMeshcoreTransport(connected: true));
+    await _pump(t, mc, MmThemePreset.daybreak);
+    expect(find.byType(DaybreakDashboard), findsOneWidget);
+    expect(find.byType(DashboardScreen), findsNothing);
+    // Three cards: the hero, the radio and the events.
+    expect(find.byKey(const ValueKey<String>('daybreak-card')), findsNWidgets(3));
+    await _drain(t, mc);
+  });
+
+  testWidgets('Daybreak survives 320 dp at 200 % text', (WidgetTester t) async {
+    t.view.physicalSize = const Size(320, 900);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    final MeshcoreController mc = _mc(FakeMeshcoreTransport(connected: true));
+    await _pump(t, mc, MmThemePreset.daybreak, textScale: 2);
     await t.pumpAndSettle();
     expect(t.takeException(), isNull);
     await _drain(t, mc);

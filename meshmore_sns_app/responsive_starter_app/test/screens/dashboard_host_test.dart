@@ -12,6 +12,7 @@ import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/screens/dashboards/air_dashboard.dart';
+import 'package:meshmore_sns_app/screens/dashboards/daybreak_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/forest_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/umber_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/nerv_dashboard.dart';
@@ -117,16 +118,17 @@ void main() {
     // The icon-only Bluetooth button is named for screen readers.
     expect(find.byTooltip('Device'), findsOneWidget);
 
-    // A preset with no layout of its own inherits the default one, and the
-    // host's key holds either way. Daybreak is the last LDMUX look without a
-    // layout of its own, so it is the case that proves the fallback still works
-    // now that Air, Forest and Umber have layouts of their own.
-    await tc.setPreset(MmThemePreset.daybreak);
-    await t.pumpAndSettle();
-    expect(find.byKey(dashboardKey), findsOneWidget);
-    expect(find.byType(DashboardScreen), findsOneWidget,
-        reason: 'a preset without a layout inherits the monolith');
-    expect(find.byType(StudioDashboard), findsNothing);
+    // Every preset has a layout of its own now, so the fallback arm is proved
+    // by the switch's own default rather than by a preset: the host's key holds
+    // under every preset, which is the invariant that matters here.
+    for (final MmThemePreset p in MmThemePreset.values) {
+      await tc.setPreset(p);
+      // `pump`, not `pumpAndSettle`: AG-HUD's gauge and the Hyperlocal radar
+      // sweep forever, so settling is not a thing this loop can do.
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 50));
+      expect(find.byKey(dashboardKey), findsOneWidget, reason: '$p');
+    }
 
     // Forest has its own layout now: the depth bar is its signature.
     await tc.setPreset(MmThemePreset.forest);
@@ -138,6 +140,12 @@ void main() {
     await tc.setPreset(MmThemePreset.umber);
     await t.pumpAndSettle();
     expect(find.byType(UmberDashboard), findsOneWidget);
+    expect(find.byType(DashboardScreen), findsNothing);
+
+    // Daybreak has its own layout now: the leading accent bar is its signature.
+    await tc.setPreset(MmThemePreset.daybreak);
+    await t.pumpAndSettle();
+    expect(find.byType(DaybreakDashboard), findsOneWidget);
     expect(find.byType(DashboardScreen), findsNothing);
 
     // Air has its own layout now: a white page cannot carry an instrument.
