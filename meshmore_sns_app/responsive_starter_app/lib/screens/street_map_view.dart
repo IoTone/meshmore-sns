@@ -32,6 +32,7 @@ import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
 import '../maps/event_layer.dart';
 import '../maps/map_source.dart';
+import '../maps/map_overlay_prefs.dart';
 import '../maps/map_view_state.dart';
 import '../maps/maps_controller.dart';
 import '../maps/tile_math.dart';
@@ -222,10 +223,18 @@ class _StreetMapViewState extends State<StreetMapView> {
   // `/settings/coverage`, which is where a survey belongs: a page that states
   // what it counted.
 
+  /// What the map has been asked to draw, read from the store at startup and
+  /// written back whenever it changes.
+  ///
+  /// One value rather than a field per toggle: the store and the screen cannot
+  /// disagree about a flag, and a second overlay becomes one more field here
+  /// instead of one more piece of state that has to remember to persist itself.
+  MapOverlayPrefs _overlays = MapOverlayPrefs.defaults;
+
   /// The equal-area density overlay, off by default: it is a reading about the
   /// mesh, not a record of it, so it is something to ask for rather than
   /// something to dismiss on every visit.
-  bool _showDensity = false;
+  bool get _showDensity => _overlays.density;
 
   /// Whether the density cells are large enough on screen to carry their
   /// counts. The fills and the numbers are one piece of information, so they
@@ -513,6 +522,13 @@ class _StreetMapViewState extends State<StreetMapView> {
     // Step three of the ladder, read before the first frame so the camera
     // opens where the user left it instead of jumping once the preference
     // arrives. A malformed value is dropped by the decoder.
+    // What the reader asked the map to draw. Session-only until now: a
+    // reader who turned the hexagon field on found it off again on the next
+    // launch, which reads as the app forgetting a decision they made.
+    MapOverlayPrefsStore.load().then((MapOverlayPrefs prefs) {
+      if (!mounted || prefs == _overlays) return;
+      setState(() => _overlays = prefs);
+    });
     MapViewPrefs.load().then((SavedMapView? view) {
       if (!mounted || view == null) return;
       setState(() {
@@ -1051,6 +1067,18 @@ class _StreetMapViewState extends State<StreetMapView> {
       _showDensity ||
       (maps?.layers.any((EventLayer e) => e.visible) ?? false);
 
+  /// Turn the density field on or off, and remember the answer.
+  ///
+  /// One writer for one preference: the switch, a future gesture and anything
+  /// else that changes the field all go through here, so the store cannot be
+  /// left holding a value the screen is not showing.
+  void _setDensity(bool on) {
+    if (_overlays.density == on) return;
+    final MapOverlayPrefs next = _overlays.copyWith(density: on);
+    setState(() => _overlays = next);
+    unawaited(MapOverlayPrefsStore.save(next));
+  }
+
   /// Everything the map shows, in one sheet.
   ///
   /// The map had eleven controls down its right edge — a column taller than a
@@ -1103,8 +1131,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                               fontSize: skin.type.sizeSm))
                       : null,
                   onChanged: (bool v) {
-                    setSheet(() => _showDensity = v);
-                    setState(() {});
+                    _setDensity(v);
+                    setSheet(() {});
                   },
                 ),
                 Divider(color: cs.outlineVariant, height: 16),
