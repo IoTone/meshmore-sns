@@ -23,9 +23,17 @@ enum FetchStatus {
 
 class FetchResult {
   const FetchResult(this.status,
-      {this.bytes, this.maxAge, this.etag, this.lastModified});
+      {this.bytes, this.maxAge, this.etag, this.lastModified, this.tooLarge = false});
   final FetchStatus status;
   final Uint8List? bytes;
+
+  /// The body was longer than the caller's cap, so it was abandoned part way
+  /// through rather than read to the end and rejected afterwards.
+  ///
+  /// Carried as a flag rather than as its own [FetchStatus] because every
+  /// existing switch over that enum is about the network's answer, and this is
+  /// the same answer with a body the caller refuses to hold.
+  final bool tooLarge;
 
   /// From Cache-Control max-age / Expires, if the server said.
   final Duration? maxAge;
@@ -34,8 +42,15 @@ class FetchResult {
 }
 
 /// The network seam: tests swap in a fake.
+///
+/// [maxBytes] is a cap on the body. The tile path passes none because a tile is
+/// small and bounded by its own format; the event-layer path passes the layer
+/// budget, because a publisher's GeoJSON has no bound at all. Without it the
+/// whole document was buffered in memory before `_downloadLayer` compared its
+/// length to the cap, so a 400 MB FeatureCollection was read in full and then
+/// discarded — the cap protected the disk and nothing else.
 typedef MapFetcher = Future<FetchResult> Function(Uri url,
-    {String? etag, int? ifModifiedSinceMs});
+    {String? etag, int? ifModifiedSinceMs, int? maxBytes});
 
 /// A stable app identity, as the OSM tile policy requires; only the
 /// version moves between releases.
@@ -76,7 +91,7 @@ String? headerValue(HttpHeaders headers, String name, {bool join = false}) {
 /// Default fetcher over dart:io. Never sends no-cache headers; sends
 /// If-None-Match / If-Modified-Since when it has them.
 MapFetcher httpMapFetcher(String Function() userAgent) {
-  return (Uri url, {String? etag, int? ifModifiedSinceMs}) async {
+  return (Uri url, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
     final HttpClient client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 15)
       ..userAgent = userAgent();
@@ -108,9 +123,19 @@ MapFetcher httpMapFetcher(String Function() userAgent) {
         await resp.drain<void>();
         return const FetchResult(FetchStatus.failed);
       }
+      // Refuse on the announced length before reading a byte, and then guard
+      // every chunk as well, because a chunked response announces nothing.
+      if (maxBytes != null &&
+          resp.contentLength > 0 &&
+          resp.contentLength > maxBytes) {
+        return const FetchResult(FetchStatus.ok, tooLarge: true);
+      }
       final BytesBuilder bb = BytesBuilder(copy: false);
       await for (final List<int> chunk
           in resp.timeout(const Duration(seconds: 60))) {
+        if (maxBytes != null && bb.length + chunk.length > maxBytes) {
+          return const FetchResult(FetchStatus.ok, tooLarge: true);
+        }
         bb.add(chunk);
       }
       return FetchResult(FetchStatus.ok,

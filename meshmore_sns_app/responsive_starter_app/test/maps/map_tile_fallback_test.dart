@@ -23,7 +23,7 @@ import 'package:meshmore_sns_app/maps/tile_store.dart';
 /// there is no ancestor at all.
 class _NeverFetch {
   Future<FetchResult> call(Uri url,
-          {String? etag, int? ifModifiedSinceMs}) async =>
+          {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
       const FetchResult(FetchStatus.failed);
 }
 

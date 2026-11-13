@@ -23,7 +23,7 @@ const String _geo = '{"type":"FeatureCollection","features":[{"type":"Feature",'
 
 /// A well-behaved server: PNG tiles with ETags, 304s when asked.
 Future<FetchResult> _goodServer(Uri u,
-    {String? etag, int? ifModifiedSinceMs}) async {
+    {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
   if (u.path.endsWith('.geojson')) {
     return FetchResult(FetchStatus.ok,
         bytes: Uint8List.fromList(utf8.encode(_geo)));
@@ -84,7 +84,7 @@ void main() {
   test('no network: fails loudly, never hangs', () async {
     final MapsSelfTest st = MapsSelfTest(
       sandbox: Directory('${dir.path}/sb'),
-      fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+      fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
           const FetchResult(FetchStatus.failed),
       retryFloor: const Duration(seconds: 1),
     );
@@ -98,7 +98,7 @@ void main() {
   test('a server that ignores ETags still passes, and says so', () async {
     final MapsSelfTest st = MapsSelfTest(
       sandbox: Directory('${dir.path}/sb'),
-      fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) =>
+      fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) =>
           _goodServer(u),
       retryFloor: const Duration(seconds: 1),
     );

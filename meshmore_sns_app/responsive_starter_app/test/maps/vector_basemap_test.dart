@@ -25,7 +25,7 @@ class _FakeFetch {
   bool offline = false;
   int calls = 0;
 
-  Future<FetchResult> call(Uri url, {String? etag, int? ifModifiedSinceMs}) async {
+  Future<FetchResult> call(Uri url, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
     calls++;
     if (offline) return const FetchResult(FetchStatus.failed);
     return FetchResult(FetchStatus.ok, bytes: bytes);
@@ -132,7 +132,7 @@ void main() {
         () async {
       final MapsController m = MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
             const FetchResult(FetchStatus.missing),
         pace: Duration.zero,
       );
@@ -149,7 +149,7 @@ void main() {
     test('R81 even an unexpected error stays a ProviderException', () async {
       final MapsController m = MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
             throw StateError('boom'),
         pace: Duration.zero,
       );

@@ -53,7 +53,7 @@ class _ProbeFetch {
   int notModified = 0;
   int bytes = 0;
 
-  Future<FetchResult> call(Uri url, {String? etag, int? ifModifiedSinceMs}) async {
+  Future<FetchResult> call(Uri url, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
     if (failAfter != null && failAfter! <= 0) offline = true;
     if (offline) return const FetchResult(FetchStatus.failed);
     requests++;

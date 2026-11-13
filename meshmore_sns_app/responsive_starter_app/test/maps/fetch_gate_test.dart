@@ -97,7 +97,7 @@ void main() {
       final List<String> asked = <String>[];
       final MapsController m = MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) {
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) {
           asked.add(u.path);
           final Completer<FetchResult> c = Completer<FetchResult>();
           pending.add(c);
@@ -140,7 +140,7 @@ void main() {
       int calls = 0;
       final MapsController m = MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async {
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
           calls++;
           return const FetchResult(FetchStatus.missing);
         },
@@ -159,7 +159,7 @@ void main() {
     test('a network failure is NOT missing', () async {
       final MapsController m = MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
             const FetchResult(FetchStatus.failed),
         pace: Duration.zero,
       );

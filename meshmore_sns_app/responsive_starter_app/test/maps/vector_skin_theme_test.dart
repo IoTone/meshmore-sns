@@ -24,7 +24,7 @@ import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 /// layers, including the label halo.
 class _NeverFetch {
   Future<FetchResult> call(Uri url,
-          {String? etag, int? ifModifiedSinceMs}) async =>
+          {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
       const FetchResult(FetchStatus.failed);
 }
 

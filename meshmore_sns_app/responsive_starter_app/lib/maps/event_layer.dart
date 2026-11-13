@@ -131,9 +131,23 @@ LatLng? _pt(Object? c) {
   return LatLng(lat.toDouble(), lon.toDouble());
 }
 
-List<LatLng> _ring(Object? c) => c is List
-    ? c.map(_pt).whereType<LatLng>().toList()
-    : const <LatLng>[];
+/// A coordinate list, or nothing at all.
+///
+/// One malformed coordinate used to be dropped and the rest of the ring kept,
+/// which silently re-drew the shape through a different set of corners: a
+/// publisher's typo became our invented boundary with nothing on screen to say
+/// so. A shape is either the publisher's or it is not, so any bad vertex voids
+/// the whole list and the feature simply does not appear.
+List<LatLng> _ring(Object? c) {
+  if (c is! List) return const <LatLng>[];
+  final List<LatLng> out = <LatLng>[];
+  for (final Object? v in c) {
+    final LatLng? p = _pt(v);
+    if (p == null) return const <LatLng>[];
+    out.add(p);
+  }
+  return out;
+}
 
 void _geometry(Map<String, Object?> g, String? label, GeoShapes out) {
   final Object? c = g['coordinates'];
@@ -178,3 +192,12 @@ void _geometry(Map<String, Object?> g, String? label, GeoShapes out) {
       }
   }
 }
+
+/// How many point markers of one layer reach the screen.
+///
+/// A GeoJSON of every shop in a city is legitimate and would put tens of
+/// thousands of markers into a `MarkerLayer`, which is the most expensive widget
+/// flutter_map has. The cap is a performance bound, and it is stated on the layer
+/// row so the map and the management screen cannot disagree about how much of
+/// the file is being drawn.
+const int kMaxEventPointsDrawn = 2000;

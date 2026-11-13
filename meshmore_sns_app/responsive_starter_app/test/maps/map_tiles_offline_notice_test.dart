@@ -40,7 +40,7 @@ void main() {
   Future<MapsController> controller({required bool online}) async {
     final MapsController maps = MapsController(
       rootDir: () async => dir,
-      fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async => online
+      fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async => online
           ? const FetchResult(FetchStatus.ok, bytes: null)
           : const FetchResult(FetchStatus.failed),
       pace: Duration.zero,

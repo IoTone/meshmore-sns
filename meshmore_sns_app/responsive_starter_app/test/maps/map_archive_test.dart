@@ -122,7 +122,7 @@ void main() {
 
   MapsController make({Duration pace = Duration.zero}) => MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async {
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
           tileCalls.add(u);
           return FetchResult(FetchStatus.ok, bytes: Uint8List(10));
         },

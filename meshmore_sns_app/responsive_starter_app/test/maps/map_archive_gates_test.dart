@@ -66,7 +66,7 @@ void main() {
   MapsController make({required NetworkGate gate, required DiskSpace disk}) =>
       MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
             FetchResult(FetchStatus.ok, bytes: Uint8List(10)),
         archiveFetcher: host.call,
         diskSpace: disk,

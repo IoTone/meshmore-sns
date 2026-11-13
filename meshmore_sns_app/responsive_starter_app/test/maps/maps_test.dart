@@ -29,7 +29,7 @@ class FakeFetch {
   Duration? maxAge;
   bool answer304 = false;
 
-  Future<FetchResult> call(Uri url, {String? etag, int? ifModifiedSinceMs}) async {
+  Future<FetchResult> call(Uri url, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
     calls.add((url, etag));
     if (offline || failing.any(url.toString().contains)) {
       return const FetchResult(FetchStatus.failed);
@@ -482,7 +482,7 @@ void main() {
       int calls = 0;
       final MapsController m = MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async {
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
           calls++;
           return FetchResult(FetchStatus.ok, bytes: Uint8List(1000),
               maxAge: const Duration(days: 1));
@@ -510,7 +510,7 @@ void main() {
       int calls = 0;
       final MapsController m = MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async {
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
           calls++;
           await Future<void>.delayed(const Duration(milliseconds: 20));
           return FetchResult(FetchStatus.ok, bytes: Uint8List(1000),
@@ -537,7 +537,7 @@ void main() {
       // kept at least seven days, so the store must floor it, not follow it.
       final MapsController m = MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
             const FetchResult(FetchStatus.failed),
         clock: () => now,
       );
@@ -557,7 +557,7 @@ void main() {
       // tiles; the pack stops at the budget, not past it.
       final MapsController big = MapsController(
         rootDir: () async => dir,
-        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+        fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
             FetchResult(FetchStatus.ok, bytes: Uint8List(20 * 1000 * 1000)),
         clock: () => now,
         pace: Duration.zero,
@@ -611,6 +611,33 @@ void main() {
       again.dispose();
     });
   });
+  test('a ring with one bad vertex is refused rather than reshaped', () {
+    // One malformed coordinate used to be dropped and the rest kept, which
+    // re-drew the publisher's boundary through a different set of corners with
+    // nothing on screen to say so.
+    final GeoShapes? s = parseGeoJson('''
+{"type":"FeatureCollection","features":[
+ {"type":"Feature","properties":{"name":"good"},
+  "geometry":{"type":"Polygon","coordinates":[[[0,0],[1,0],[1,1],[0,1],[0,0]]]}},
+ {"type":"Feature","properties":{"name":"typo"},
+  "geometry":{"type":"Polygon","coordinates":[[[0,0],[1,0],[1,"x"],[0,1],[0,0]]]}}
+]}''');
+    expect(s, isNotNull);
+    expect(s!.polygons, hasLength(1),
+        reason: 'the ring with a bad vertex became a different polygon');
+    expect(s.polygons.single.length, 5);
+  });
+
+  test('a document that parses and holds nothing is not called malformed', () {
+    // Refusal classification lives in the controller, so this pins the parse
+    // side: an empty FeatureCollection is a valid document with no features.
+    final GeoShapes? empty = parseGeoJson(
+        '{"type":"FeatureCollection","features":[]}');
+    expect(empty, isNotNull);
+    expect(empty!.count, 0);
+    // And something that is not GeoJSON at all is still refused.
+    expect(parseGeoJson('{"hello":1}'), isNull);
+  });
 }
 
 class _FixedRandom implements Random {
@@ -622,4 +649,6 @@ class _FixedRandom implements Random {
   bool nextBool() => v >= 0.5;
   @override
   int nextInt(int max) => (v * max).floor();
+
+
 }

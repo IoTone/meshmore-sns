@@ -286,7 +286,7 @@ class _OneEventLayerState extends State<_OneEventLayer> {
               // 24 dp box around a 10 dp dot: the marker is where the
               // label's tooltip is reachable from, and 10 dp is below the
               // project's own 48 dp floor by a wide margin.
-              for (final GeoPoint p in s.points.take(2000))
+              for (final GeoPoint p in s.points.take(kMaxEventPointsDrawn))
                 Marker(
                   point: p.at,
                   width: 24,

@@ -57,7 +57,22 @@ enum PackRefusal {
 }
 
 /// Why an event layer was not added.
-enum LayerRefusal { badUrl, offline, notGeoJson, tooLarge, overBudget }
+enum LayerRefusal {
+  badUrl,
+  offline,
+
+  /// The document is not GeoJSON this build can read.
+  notGeoJson,
+
+  /// It parsed, and it holds nothing to draw.
+  ///
+  /// A publisher's empty FeatureCollection is a legitimate document and was
+  /// reported as `notGeoJson`, which told the reader their file was malformed
+  /// when it was simply empty. This is the honest refusal.
+  empty,
+  tooLarge,
+  overBudget,
+}
 
 /// R61 — offline maps (issue #5): the tile cache, region packs, event
 /// layers, the storage budget and expiry. See
@@ -1425,17 +1440,22 @@ class MapsController extends ChangeNotifier with SafeNotifier {
   }
 
   Future<LayerRefusal?> _downloadLayer(EventLayer l) async {
-    final FetchResult r = await _fetch(Uri.parse(l.url));
+    final FetchResult r =
+        await _fetch(Uri.parse(l.url), maxBytes: maxLayerBytes);
     _noteFetch(r.status);
+    if (r.tooLarge) return LayerRefusal.tooLarge;
     if (r.status == FetchStatus.failed) return LayerRefusal.offline;
     if (r.status != FetchStatus.ok || r.bytes == null) {
       return LayerRefusal.notGeoJson;
     }
     final Uint8List b = r.bytes!;
+    // Still checked, because a fake fetcher in a test has no cap and a caller
+    // may pass one larger than the budget check below.
     if (b.length > maxLayerBytes) return LayerRefusal.tooLarge;
     final GeoShapes? shapes =
         parseGeoJson(utf8.decode(b, allowMalformed: true));
-    if (shapes == null || shapes.count == 0) return LayerRefusal.notGeoJson;
+    if (shapes == null) return LayerRefusal.notGeoJson;
+    if (shapes.count == 0) return LayerRefusal.empty;
     if (pinnedBytes - l.bytes + b.length > budgetBytes) {
       return LayerRefusal.overBudget;
     }

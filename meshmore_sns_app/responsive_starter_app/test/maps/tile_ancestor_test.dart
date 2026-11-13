@@ -24,7 +24,7 @@ class _NeverFetch {
   int calls = 0;
 
   Future<FetchResult> call(Uri url,
-      {String? etag, int? ifModifiedSinceMs}) async {
+      {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
     calls++;
     return const FetchResult(FetchStatus.failed);
   }

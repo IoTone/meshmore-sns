@@ -82,6 +82,7 @@ String layerRefusalText(AppLocalizations l, LayerRefusal r) => switch (r) {
       LayerRefusal.badUrl => l.layerRefusalBadUrl,
       LayerRefusal.offline => l.packRefusalOffline,
       LayerRefusal.notGeoJson => l.layerRefusalNotGeoJson,
+      LayerRefusal.empty => l.layerRefusalEmpty,
       LayerRefusal.tooLarge => l.layerRefusalTooLarge,
       LayerRefusal.overBudget => l.packRefusalBudget,
     };
@@ -361,12 +362,35 @@ class _PackRow extends StatelessWidget {
 
 enum _LayerAction { refresh, keep, delete }
 
-class _LayerRow extends StatelessWidget {
+class _LayerRow extends StatefulWidget {
   const _LayerRow({required this.layer});
   final EventLayer layer;
 
   @override
+  State<_LayerRow> createState() => _LayerRowState();
+}
+
+class _LayerRowState extends State<_LayerRow> {
+  /// Whether the file behind this layer parsed, once we have asked. Null while
+  /// the answer is on its way, so the row never claims a layer is broken while
+  /// the read is in flight.
+  bool? _parsed;
+
+  @override
+  void initState() {
+    super.initState();
+    _ask();
+  }
+
+  Future<void> _ask() async {
+    final bool ok =
+        await context.read<MapsController>().shapesFor(widget.layer) != null;
+    if (mounted && ok != _parsed) setState(() => _parsed = ok);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final EventLayer layer = widget.layer;
     final AppLocalizations l = AppLocalizations.of(context);
     final MapsController maps = context.read<MapsController>();
     final MmSkin skin = context.skin;
@@ -387,6 +411,18 @@ class _LayerRow extends StatelessWidget {
             Text('${l.mapsLayerFeatures(e.features)} · ${fmtBytes(e.bytes)}',
                 style: sub),
             Text(expiryText(l, e.expiresAtMs), style: sub),
+            // A layer switched on whose file will not parse draws nothing, and
+            // the switch alone would say "on" beside an empty map. This is the
+            // one place to say which of the two it is, and the row is the only
+            // surface that has both the switch and the file's state.
+            if (_parsed == false)
+              Text(l.mapsLayerFileMissing,
+                  style: sub.copyWith(color: skin.color.alert)),
+            // The map draws a bounded number of point markers, so a dense layer
+            // is partly drawn. The row says so rather than letting the feature
+            // count promise more than the map delivers.
+            if (e.features > kMaxEventPointsDrawn)
+              Text(l.mapsLayerDense(kMaxEventPointsDrawn), style: sub),
           ],
         ),
         trailing: PopupMenuButton<_LayerAction>(
