@@ -1,0 +1,183 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
+import '../maps/geofence_render.dart';
+import '../ui/mm_components.dart';
+import '../util/mm_format.dart';
+import 'geofence_controller.dart';
+
+/// Draw a fence on the map: a name, a radius, and a preview of the circle.
+///
+/// The radius is a slider whose numbers are distances in the reader's units, not
+/// a raw metre count. A fence radius in metres only is the same defect as an
+/// untranslated distance anywhere else, and the app already has one formatter for
+/// that (`MmFormat`), so the slider and the map's own cell-size chip cannot
+/// disagree about what a distance looks like.
+///
+/// The preview is the same [GeofenceRender] the map draws, so what the reader
+/// sizes here is what they get there.
+class GeofenceCreateSheet extends StatefulWidget {
+  const GeofenceCreateSheet({
+    super.key,
+    required this.latitude,
+    required this.longitude,
+    this.initialRadiusMeters = 250,
+  });
+
+  final double latitude;
+  final double longitude;
+  final double initialRadiusMeters;
+
+  /// The stops the slider moves through, in metres.
+  ///
+  /// A ladder rather than a continuous range: a fence is a judgement about a
+  /// place ("this camp", "this block"), and 1 m of precision on a 250 m circle is
+  /// a number nobody can act on. The stops are the same 1/2/5 ladder the map's
+  /// own cell size uses, so the two read as one system.
+  static const List<double> stops = <double>[
+    50,
+    100,
+    150,
+    250,
+    400,
+    600,
+    1000,
+    1500,
+    2500,
+    5000,
+  ];
+
+  /// The stop nearest [metres], for a caller that wants to open on a value.
+  static int indexFor(double metres) {
+    int best = 0;
+    for (int i = 1; i < stops.length; i++) {
+      if ((stops[i] - metres).abs() < (stops[best] - metres).abs()) best = i;
+    }
+    return best;
+  }
+
+  @override
+  State<GeofenceCreateSheet> createState() => _GeofenceCreateSheetState();
+}
+
+class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
+  late final TextEditingController _name = TextEditingController();
+  late int _index = GeofenceCreateSheet.indexFor(widget.initialRadiusMeters);
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = context.skin;
+    final FormatPrefs? prefs = context.watchFormatPrefs;
+    final double metres = GeofenceCreateSheet.stops[_index];
+    final GeofenceRender preview =
+        GeofenceRender.of(alert: skin.color.alert, inside: false);
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(skin.space.screenEdge,
+            skin.space.rowInset, skin.space.screenEdge, skin.space.screenEdge),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              l.geofenceCreateTitle,
+              style: TextStyle(
+                color: skin.color.fg,
+                fontSize: skin.type.sizeLg,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            SizedBox(height: skin.space.rowGap),
+            TextField(
+              key: const ValueKey<String>('geofence-name'),
+              controller: _name,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                labelText: l.geofenceNameLabel,
+                hintText: l.geofenceDefaultName(
+                    context.read<GeofenceController>().fences.length + 1),
+              ),
+            ),
+            SizedBox(height: skin.space.sectionGap),
+            // The preview: the same fill and ring the map will draw, at the size
+            // the slider is currently on. A number alone does not tell a reader
+            // whether 400 m is a camp or a county.
+            Row(
+              children: <Widget>[
+                Container(
+                  width: skin.space.step(9),
+                  height: skin.space.step(9),
+                  decoration: BoxDecoration(
+                    color: preview.fill,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: preview.ring, width: preview.ringWidth),
+                  ),
+                ),
+                SizedBox(width: skin.space.rowInset),
+                Expanded(
+                  child: Text(
+                    MmFormat.distance(metres, prefs: prefs),
+                    key: const ValueKey<String>('geofence-radius-value'),
+                    style: TextStyle(
+                      color: skin.color.fg,
+                      fontFamily: skin.type.monoFamily,
+                      fontSize: skin.type.sizeLg,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Slider(
+              key: const ValueKey<String>('geofence-radius'),
+              value: _index.toDouble(),
+              min: 0,
+              max: (GeofenceCreateSheet.stops.length - 1).toDouble(),
+              divisions: GeofenceCreateSheet.stops.length - 1,
+              label: MmFormat.distance(metres, prefs: prefs),
+              onChanged: (double v) => setState(() => _index = v.round()),
+            ),
+            SizedBox(height: skin.space.rowGap),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                MmAction(
+                  key: const ValueKey<String>('geofence-cancel'),
+                  icon: Icons.close,
+                  label: l.actionCancel,
+                  onPressed: () => Navigator.pop(context),
+                ),
+                SizedBox(width: skin.space.rowGap),
+                MmAction(
+                  key: const ValueKey<String>('geofence-save'),
+                  icon: Icons.check,
+                  label: l.actionSave,
+                  onPressed: () => Navigator.pop(
+                    context,
+                    (
+                      label: _name.text.trim(),
+                      radiusMeters: metres,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

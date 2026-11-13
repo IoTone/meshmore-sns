@@ -4836,6 +4836,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placePhotoFetching => 'メッシュに写真を問い合わせています…';
 
   @override
+  String get geofenceCreateTitle => 'ここにフェンスを描く';
+
+  @override
+  String get geofenceNameLabel => '名前';
+
+  @override
+  String get actionSave => '保存';
+
+  @override
   String get geofenceTitle => 'ジオフェンス';
 
   @override

@@ -8494,6 +8494,24 @@ abstract class AppLocalizations {
   /// **'Asking the mesh for the photo…'**
   String get placePhotoFetching;
 
+  /// No description provided for @geofenceCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw a fence here'**
+  String get geofenceCreateTitle;
+
+  /// No description provided for @geofenceNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get geofenceNameLabel;
+
+  /// No description provided for @actionSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get actionSave;
+
   /// No description provided for @geofenceTitle.
   ///
   /// In en, this message translates to:

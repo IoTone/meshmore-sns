@@ -16,6 +16,8 @@ import '../gen/app_localizations.dart';
 import '../field/relationship.dart';
 import '../meshcore/own_location.dart';
 import '../geofence/geofence_controller.dart';
+import '../geofence/geofence_create_sheet.dart';
+import '../maps/geofence_render.dart';
 import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
 import '../maps/coverage_quilt.dart';
@@ -543,6 +545,96 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// inside a cell and the square was never the thing that was opened. Asking
   /// which square contains the tapped point has no such ordering problem, and
   /// a tap on empty map outside every square still does nothing.
+  /// What a long-press on the map makes: a place, or a fence.
+  ///
+  /// One extra tap on the place path, and the reason is that a fence had no
+  /// map gesture at all: it could only be created from Settings, three taps
+  /// away, by typing a radius. A chooser is the smallest thing that gives the
+  /// fence a gesture without taking the place's away.
+  Future<void> _createHere(BuildContext context, LatLng point) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    // Captured before the first await: the sheet's own context is gone by the
+    // time the fence is saved, and this State is the thing that outlives it.
+    final GeofenceController? fences =
+        Provider.of<GeofenceController?>(context, listen: false);
+    final String? choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListTile(
+              key: const ValueKey<String>('map-create-place'),
+              leading: const Icon(Icons.push_pin_outlined),
+              title: Text(l.mapReportPlace),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pop(sheet, 'place'),
+            ),
+            ListTile(
+              key: const ValueKey<String>('map-create-fence'),
+              leading: const Icon(Icons.radio_button_unchecked),
+              title: Text(l.geofenceCreateTitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pop(sheet, 'fence'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'place') {
+      await _createPlace(this.context, point);
+      return;
+    }
+    // The State's own context, not the parameter: the parameter is the caller's
+    // and the analyzer is right that it cannot be trusted across the await.
+    final ({String label, double radiusMeters})? made =
+        await showModalBottomSheet<({String label, double radiusMeters})>(
+      context: this.context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext _) => GeofenceCreateSheet(
+        latitude: point.latitude,
+        longitude: point.longitude,
+      ),
+    );
+    if (made == null || !mounted || fences == null) return;
+    await fences.addFence(
+      label: made.label.isEmpty
+          ? l.geofenceDefaultName(fences.fences.length + 1)
+          : made.label,
+      latitude: point.latitude,
+      longitude: point.longitude,
+      radiusMeters: made.radiusMeters,
+    );
+  }
+
+  /// One fence, drawn as an area with a boundary rather than as a line.
+  ///
+  /// The hysteresis band is not drawn as a second ring: a reader needs one
+  /// boundary, not a geometry lesson, and the band is already what the engine
+  /// enforces. Drawing it was two nearly-identical circles that read as one
+  /// blurred line and made the fence look like a rendering fault.
+  CircleMarker _fenceCircle(
+    StoredGeofence f, {
+    required bool inside,
+    required Color alert,
+  }) {
+    final GeofenceRender paint =
+        GeofenceRender.of(alert: alert, inside: inside);
+    return CircleMarker(
+      key: ValueKey<String>('fence-ring-\${f.id}'),
+      point: LatLng(f.latitude, f.longitude),
+      radius: f.radiusMeters,
+      useRadiusInMeter: true,
+      color: paint.fill,
+      borderColor: paint.ring,
+      borderStrokeWidth: paint.ringWidth,
+    );
+  }
+
   void _onMapTap(TapPosition _, LatLng point) {
     if (!_showDensity) return;
     for (final HexCell cell in _densityCells) {
@@ -1351,8 +1443,13 @@ class _StreetMapViewState extends State<StreetMapView> {
               // precision rather than the snapped default that belongs to
               // "here" (meshmore-places-spec.md §9).
               onTap: _onMapTap,
+              // Long-press is the map's one "make something here" gesture, and
+              // it already made a place. A fence is the other thing a reader
+              // draws on a map, so the gesture now asks which, rather than
+              // taking a second gesture that would fight the pan and the
+              // shell's horizontal page drag.
               onLongPress: (TapPosition _, LatLng point) =>
-                  _createPlace(context, point),
+                  _createHere(context, point),
               // R115 — the vector map is painted from this skin's tokens, so
               // the underlay has to be this skin's ground: a tile that has not
               // arrived yet must read as land in this skin, not as Studio's
@@ -1452,28 +1549,22 @@ class _StreetMapViewState extends State<StreetMapView> {
                         borderColor: cs.tertiary.withValues(alpha: .75),
                         borderStrokeWidth: 1.4,
                       ),
-                  // A fence is drawn as its radius plus the margin band the
-                  // hysteresis actually uses: an entry is at 95 % of this
-                  // circle, a leave at 105 %, so the pair of rings is the
-                  // fence's real extent rather than a decoration.
-                  for (final StoredGeofence f in fences) ...<CircleMarker>[
-                    CircleMarker(
-                      point: LatLng(f.latitude, f.longitude),
-                      radius: f.radiusMeters,
-                      useRadiusInMeter: true,
-                      color: Colors.transparent,
-                      borderColor: cs.secondary.withValues(alpha: .85),
-                      borderStrokeWidth: 1.6,
+                  // A fence is a boundary that fires, so it is the loudest
+                  // thing on the map rather than the quietest. It was two
+                  // 1.6 px rings in the secondary colour with no fill, which
+                  // is invisible over a busy basemap: the one element that is
+                  // supposed to shout could not be seen at all.
+                  //
+                  // The fill makes the boundary an area, and the state
+                  // (`isInside`) is what changes it: standing inside a fence
+                  // is the thing the reader needs to know at a glance, and the
+                  // controller already computed it with nobody listening.
+                  for (final StoredGeofence f in fences)
+                    _fenceCircle(
+                      f,
+                      inside: geofences?.isInside(f.id) ?? false,
+                      alert: context.skin.color.alert,
                     ),
-                    CircleMarker(
-                      point: LatLng(f.latitude, f.longitude),
-                      radius: f.radiusMeters * 1.05,
-                      useRadiusInMeter: true,
-                      color: Colors.transparent,
-                      borderColor: cs.secondary.withValues(alpha: .35),
-                      borderStrokeWidth: 1.0,
-                    ),
-                  ],
                   // Reach estimates, drawn only where the screen can show
                   // them (see `peerReachRings` above).
                   ...peerReachRings,
@@ -1530,6 +1621,53 @@ class _StreetMapViewState extends State<StreetMapView> {
                 ),
               ),
               // Peer markers.
+              // Fence names above the pins, because a fence is a boundary the
+              // reader drew and a pin is a node that arrived: if the two
+              // collide, the reader's own label wins.
+              if (fences.isNotEmpty)
+                MarkerLayer(
+                  markers: <Marker>[
+                    for (final StoredGeofence f in fences)
+                      Marker(
+                        key: ValueKey<String>('fence-label-\${f.id}'),
+                        point: LatLng(f.latitude, f.longitude),
+                        width: 140,
+                        height: 28,
+                        alignment: Alignment.center,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => context.push('/settings/geofences'),
+                          child: IgnorePointer(
+                            child: Text(
+                              f.label,
+                              key: ValueKey<String>('fence-name-\${f.id}'),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: context.skin.color.alert,
+                                fontSize: context.skin.type.sizeSm,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: .5,
+                                // A halo in the skin's own ground, not a
+                                // black one: on a paper theme a dark halo
+                                // behind dark text is a smudge, and the point
+                                // of the halo is to separate the label from
+                                // whatever the basemap put under it.
+                                shadows: <Shadow>[
+                                  Shadow(
+                                    blurRadius: 3,
+                                    color: context.skin.color.base
+                                        .withValues(alpha: .85),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               MarkerLayer(
                 markers: <Marker>[
                   for (final DiscoveredNode n in withLoc)

@@ -5037,6 +5037,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placePhotoFetching => 'Asking the mesh for the photo…';
 
   @override
+  String get geofenceCreateTitle => 'Draw a fence here';
+
+  @override
+  String get geofenceNameLabel => 'Name';
+
+  @override
+  String get actionSave => 'Save';
+
+  @override
   String get geofenceTitle => 'Geofences';
 
   @override
