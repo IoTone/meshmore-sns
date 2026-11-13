@@ -3595,9 +3595,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get mapsLayerNotLoaded => '未ダウンロード';
-
-  @override
   String get mapsLayerName => '名前';
 
   @override
@@ -6149,13 +6146,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapCoverageShow => 'カバレッジ表示';
 
   @override
-  String get mapCoverageHide => 'カバレッジ表示を隠す';
-
-  @override
   String get heatEmpty => 'この1時間、この範囲で交信は聞こえていません。';
 
   @override
   String get elevationEmpty => 'まだ誰も高度を報告していません。センサーを持つ相手に問い合わせるか、広告を待ってください。';
+
+  @override
+  String get mapOverlaysTitle => 'マップに表示するもの';
 
   @override
   String get mapKeyTitle => '地図の凡例';
@@ -6197,9 +6194,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mapDensityShow => 'セルごとのノード密度';
-
-  @override
-  String get mapDensityHide => 'ノード密度を隠す';
 
   @override
   String mapDensityCellTitle(int count) {

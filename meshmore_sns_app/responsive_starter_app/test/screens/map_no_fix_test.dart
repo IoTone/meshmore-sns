@@ -88,10 +88,12 @@ void main() {
     expect(fm.options.initialCenter, MapCentre.worldCentre);
     expect(find.text('Find me'), findsOneWidget,
         reason: 'the banner carries the action that helps');
-    // The offline-maps control is in the column even with no fix, because a
-    // map with no position is exactly when a reader goes looking for a region
-    // to download.
-    expect(find.byTooltip('Offline maps'), findsOneWidget);
+    // Offline maps is reachable with no fix, because a map with no position is
+    // exactly when a reader goes looking for a region to download. It is a row
+    // in the overlays sheet now, one tap from the same column.
+    await t.tap(find.byKey(const ValueKey<String>('map-overlays-button')));
+    await t.pumpAndSettle();
+    expect(find.text('Offline maps'), findsOneWidget);
     c.dispose();
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));

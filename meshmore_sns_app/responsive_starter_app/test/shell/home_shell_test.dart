@@ -584,11 +584,16 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget,
           reason: '${preset.name}: Map is reachable from the grid');
       expect(find.byType(MapScreen), findsOneWidget);
-      // The offline-maps control is in the map's own column, and deliberately:
-      // reaching it used to mean a row called "Manage event maps", which named
-      // the wrong screen entirely.
-      expect(find.byTooltip('Offline maps'), findsOneWidget,
-          reason: 'offline maps has its own control in the map column');
+      // Offline maps is one tap from the map's own column: the overlays sheet
+      // holds it as a row, which is where the map's other "what do I see" choices
+      // live. It used to be a cell of its own, and before that a row called
+      // "Manage event maps", which named the wrong screen entirely.
+      await t.tap(find.byKey(const ValueKey<String>('map-overlays-button')));
+      await t.pumpAndSettle();
+      expect(find.text('Offline maps'), findsOneWidget,
+          reason: 'offline maps is reachable from the map itself');
+      await t.tapAt(const Offset(10, 10));
+      await t.pumpAndSettle();
       expect(t.takeException(), isNull);
     }
   });

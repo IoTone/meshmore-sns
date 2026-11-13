@@ -104,10 +104,11 @@ class StreetMapView extends StatefulWidget {
   static const double controlCell = 48;
   static const double controlsInset = 12;
 
-  /// How many cells the column draws today, pinned by
+  /// How many cells the column draws today: zoom in, zoom out, recentre,
+  /// basemap, overlays, report a place. Pinned by
   /// `test/screens/map_chrome_test.dart` so a new control has to update this
   /// rather than silently misplacing whatever is placed beside the column.
-  static const int controlCount = 10;
+  static const int controlCount = 6;
 
   /// Bottom edge of the column when the host adds [extras] controls.
   static double controlsBottomFor(int extras) =>
@@ -801,15 +802,24 @@ class _StreetMapViewState extends State<StreetMapView> {
     );
   }
 
-  /// The event-layer switches. A sheet rather than a menu because there is one
-  /// switch per layer and turning three on is three taps, not three openings;
-  /// and because a `Switch` here is the same control the layers are managed
-  /// with in Settings, in the skin's own colours.
-  Future<void> _showLayers(
+  /// Whether anything the overlays sheet owns is currently drawn, so the one
+  /// control can say so at a glance.
+  bool _anyOverlayShown(MapsController? maps) =>
+      _showDensity ||
+      _showCoverage ||
+      (maps?.layers.any((EventLayer e) => e.visible) ?? false);
+
+  /// Everything the map shows, in one sheet.
+  ///
+  /// The map had eleven controls down its right edge — a column taller than a
+  /// phone is wide — and five of them were one switch each. A reader who wants to
+  /// change what the map shows has one place to look now, and the column is short
+  /// enough to leave the map itself a full edge.
+  Future<void> _showOverlays(
     BuildContext context,
     AppLocalizations l,
     MapsController? maps,
-    List<EventLayer> layers,
+    List<MapSource> sources,
   ) async {
     await showModalBottomSheet<void>(
       context: context,
@@ -817,71 +827,110 @@ class _StreetMapViewState extends State<StreetMapView> {
       isScrollControlled: true,
       builder: (BuildContext c) {
         final MmSkin skin = c.skin;
-        return SafeArea(
-          top: false,
-          child: ListView(
-            key: const ValueKey<String>('map-layers-sheet'),
-            shrinkWrap: true,
-            padding: const EdgeInsets.only(bottom: 12),
-            children: <Widget>[
-              Padding(
-                padding: EdgeInsets.fromLTRB(skin.space.step(7),
-                    skin.space.step(2), skin.space.step(7), skin.space.step(3)),
-                child: Text(l.mapsLayers,
-                    style: TextStyle(
-                        color: skin.color.fgMuted,
-                        fontSize: skin.type.sizeSm,
-                        letterSpacing: 1.4,
-                        fontWeight: FontWeight.w600)),
-              ),
-              if (layers.isEmpty)
+        final ColorScheme cs = Theme.of(c).colorScheme;
+        final List<EventLayer> layers = maps?.layers ?? const <EventLayer>[];
+        return StatefulBuilder(
+          builder: (BuildContext c2, StateSetter setSheet) => SafeArea(
+            top: false,
+            child: ListView(
+              key: const ValueKey<String>('map-overlays-sheet'),
+              shrinkWrap: true,
+              padding: const EdgeInsets.only(bottom: 12),
+              children: <Widget>[
                 Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: skin.space.step(7)),
-                  child: Text(l.mapsNoLayersShort,
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+                  child: Text(l.mapOverlaysTitle,
                       style: TextStyle(
                           color: skin.color.fgMuted,
-                          fontSize: skin.type.sizeBody)),
-                )
-              else
-                for (final EventLayer e in layers)
-                  SwitchListTile(
-                    key: ValueKey<String>('map-layer-${e.id}'),
-                    value: e.visible,
-                    onChanged: (bool v) => maps?.setLayerVisible(e, v),
-                    secondary: Icon(
-                      // A layer that is on but has nothing to draw says so,
-                      // instead of looking like an empty map.
-                      e.visible && !(maps?.isLayerLoaded(e) ?? false)
-                          ? Icons.error_outline
-                          : Icons.layers_outlined,
-                      color: e.visible && !(maps?.isLayerLoaded(e) ?? false)
-                          ? skin.color.alert
-                          : skin.color.fgMuted,
-                    ),
-                    title: Text(e.name,
-                        style: TextStyle(
-                            color: skin.color.fg,
-                            fontSize: skin.type.sizeBodyLg)),
-                    subtitle: Text(
-                        e.visible && !(maps?.isLayerLoaded(e) ?? false)
-                            ? l.mapsLayerNotLoaded
-                            : Uri.parse(e.url).host,
+                          fontSize: skin.type.sizeSm,
+                          letterSpacing: 1.4,
+                          fontWeight: FontWeight.w600)),
+                ),
+                SwitchListTile(
+                  key: const ValueKey<String>('map-density-toggle'),
+                  value: _showDensity,
+                  title: Text(l.mapDensityShow,
+                      style: TextStyle(
+                          color: skin.color.fg, fontSize: skin.type.sizeBody)),
+                  subtitle: _showDensity
+                      ? Text(
+                          l.mapDensityCellSize(
+                              densityCellLabel(_densityCellMetresShown)),
+                          style: TextStyle(
+                              color: skin.color.fgMuted,
+                              fontSize: skin.type.sizeSm))
+                      : null,
+                  onChanged: (bool v) {
+                    setSheet(() => _showDensity = v);
+                    setState(() {});
+                  },
+                ),
+                SwitchListTile(
+                  key: const ValueKey<String>('map-coverage-toggle'),
+                  value: _showCoverage,
+                  title: Text(l.mapCoverageShow,
+                      style: TextStyle(
+                          color: skin.color.fg, fontSize: skin.type.sizeBody)),
+                  onChanged: (bool v) {
+                    setSheet(() => _showCoverage = v);
+                    setState(() {});
+                  },
+                ),
+                Divider(color: cs.outlineVariant, height: 16),
+                if (layers.isEmpty)
+                  // Said out loud rather than left blank: an overlay section
+                  // with nothing under it reads as a loading state.
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                    child: Text(l.mapsNoLayersShort,
+                        key: const ValueKey<String>('map-overlays-no-layers'),
                         style: TextStyle(
                             color: skin.color.fgMuted,
                             fontSize: skin.type.sizeSm)),
                   ),
-              // No "manage" row: the column has its own offline-maps control
-              // now, so this sheet is about which layers are on, and nothing
-              // else. Two routes to the same screen, one of them labelled with
-              // the wrong name, was the confusion.
-
-            ],
+                if (layers.isNotEmpty) ...<Widget>[
+                  for (final EventLayer e in layers)
+                    SwitchListTile(
+                      key: ValueKey<String>('map-layer-${e.id}'),
+                      value: e.visible,
+                      title: Text(e.name,
+                          style: TextStyle(
+                              color: skin.color.fg,
+                              fontSize: skin.type.sizeBody)),
+                      onChanged: (bool v) {
+                        maps?.setLayerVisible(e, v);
+                        setSheet(() {});
+                        setState(() {});
+                      },
+                    ),
+                ],
+                Divider(color: cs.outlineVariant, height: 16),
+                ListTile(
+                  key: const ValueKey<String>('map-key-button'),
+                  leading: Icon(Icons.key_outlined, color: skin.color.accent),
+                  title: Text(l.mapKeyTitle,
+                      style: TextStyle(
+                          color: skin.color.fg, fontSize: skin.type.sizeBody)),
+                  onTap: () => _showKey(context, l),
+                ),
+                ListTile(
+                  key: const ValueKey<String>('map-offline-maps-button'),
+                  leading: Icon(Icons.download_for_offline_outlined,
+                      color: skin.color.accent),
+                  title: Text(l.mapsTitle,
+                      style: TextStyle(
+                          color: skin.color.fg, fontSize: skin.type.sizeBody)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => c.push('/settings/maps'),
+                ),
+              ],
+            ),
           ),
         );
       },
     );
   }
+
 
   /// Drops a pin where the long-press landed and reports it on the active
   /// channel. The budget, the label check and the identity check all answer
@@ -1649,31 +1698,22 @@ class _StreetMapViewState extends State<StreetMapView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                // One control for everything the map *shows*: the density
+                // field, the reception quilt, the event layers and the key. Four
+                // separate buttons put four cells in a column that was already
+                // taller than the phone, and a reader who wanted two overlays had
+                // to find two buttons that each said one word.
                 IconButton(
-                  key: const ValueKey<String>('map-density-toggle'),
-                  tooltip:
-                      _showDensity ? l.mapDensityHide : l.mapDensityShow,
+                  key: const ValueKey<String>('map-overlays-button'),
+                  tooltip: l.mapOverlaysTitle,
                   iconSize: 18,
                   constraints: const BoxConstraints(
                       minWidth: StreetMapView.controlCell,
                       minHeight: StreetMapView.controlCell),
-                  icon: Icon(_showDensity ? Icons.blur_on : Icons.blur_off),
-                  onPressed: () =>
-                      setState(() => _showDensity = !_showDensity),
-                ),
-                IconButton(
-                  key: const ValueKey<String>('map-coverage-toggle'),
-                  tooltip:
-                      _showCoverage ? l.mapCoverageHide : l.mapCoverageShow,
-                  iconSize: 18,
-                  constraints: const BoxConstraints(
-                      minWidth: StreetMapView.controlCell,
-                      minHeight: StreetMapView.controlCell),
-                  icon: Icon(_showCoverage
-                      ? Icons.grid_on
-                      : Icons.grid_off_outlined),
-                  onPressed: () =>
-                      setState(() => _showCoverage = !_showCoverage),
+                  icon: Icon(_anyOverlayShown(maps)
+                      ? Icons.auto_awesome
+                      : Icons.auto_awesome_outlined),
+                  onPressed: () => _showOverlays(context, l, maps, sources),
                 ),
                 IconButton(
                   tooltip: l.gridZoomTighter,
@@ -1732,56 +1772,6 @@ class _StreetMapViewState extends State<StreetMapView> {
                   onPressed: () => _pickBasemap(context, l, sources,
                       current: vectorDrawn ? kOsmVector.id : shownSource.id),
                 ),
-                // R90 — event maps belong on the map. They used to be a
-                // switch buried in Settings > Offline maps, which is where
-                // you manage a layer, not where you look at one. Visibility
-                // toggles here; add / refresh / delete stays in Settings.
-                Builder(
-                  builder: (BuildContext ctx) {
-                    final MapsController? maps =
-                        Provider.of<MapsController?>(ctx);
-                    final List<EventLayer> layers =
-                        maps?.layers ?? const <EventLayer>[];
-                    final bool anyShown =
-                        layers.any((EventLayer e) => e.visible);
-                    // Visibility is a set of switches, not a menu of
-                    // commands: the same reason the basemap picker above is a
-                    // sheet. `CheckedPopupMenuItem` drew a framework checkbox
-                    // in the framework's ink, closed on every tap so two layers
-                    // were two openings, and its tick was the only place the
-                    // skin's colour did not reach.
-                    return IconButton(
-                      key: const ValueKey<String>('map-layers-menu'),
-                      tooltip: l.mapsLayers,
-                      iconSize: 18,
-                      constraints: const BoxConstraints(
-                          minWidth: StreetMapView.controlCell,
-                          minHeight: StreetMapView.controlCell),
-                      icon:
-                          Icon(anyShown ? Icons.layers : Icons.layers_outlined),
-                      onPressed: () => _showLayers(ctx, l, maps, layers),
-                    );
-                  },
-                ),
-                // Offline maps, one tap. It used to be two: the layers sheet
-                // ended in "Manage event maps…", which named event maps and
-                // landed on the offline map settings — the owner's report was
-                // that the label did not say where it went. The control says
-                // what it is and goes there.
-                Builder(
-                  builder: (BuildContext ctx) {
-                    return IconButton(
-                      key: const ValueKey<String>('map-offline-maps-button'),
-                      tooltip: l.mapsTitle,
-                      iconSize: 18,
-                      constraints: const BoxConstraints(
-                          minWidth: StreetMapView.controlCell,
-                          minHeight: StreetMapView.controlCell),
-                      icon: const Icon(Icons.download_for_offline_outlined),
-                      onPressed: () => ctx.push('/settings/maps'),
-                    );
-                  },
-                ),
                 // Reporting a place is a control in this column, not a panel
                 // on the left: a labelled box at the bottom left overlapped the
                 // density chip above the attribution, and put one map tool on
@@ -1797,20 +1787,6 @@ class _StreetMapViewState extends State<StreetMapView> {
                       minHeight: StreetMapView.controlCell),
                   icon: const Icon(Icons.add_location_alt_outlined),
                   onPressed: () => _createPlace(context, _map.camera.center),
-                ),
-                // What the marks mean. The map draws a coloured square, a
-                // circle, a ring, a lattice and an arrow, and nothing on it
-                // said which was which — the owner's "there is no key view
-                // button on the map".
-                IconButton(
-                  key: const ValueKey<String>('map-key-button'),
-                  tooltip: l.mapKeyTitle,
-                  iconSize: 18,
-                  constraints: const BoxConstraints(
-                      minWidth: StreetMapView.controlCell,
-                      minHeight: StreetMapView.controlCell),
-                  icon: const Icon(Icons.key_outlined),
-                  onPressed: () => _showKey(context, l),
                 ),
                 // Host tools (the Map tab's offline maps and places) join the
                 // same column, under the built-in controls, so every map tool

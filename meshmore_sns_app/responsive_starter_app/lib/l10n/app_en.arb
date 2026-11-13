@@ -2423,7 +2423,6 @@
     }
   },
   "mapsLayerFeatures": "{n} features",
-  "mapsLayerNotLoaded": "Not downloaded yet",
   "@mapsLayerFeatures": {
     "placeholders": {
       "n": {
@@ -4336,9 +4335,9 @@
   "voiceNotesSession": "Kept on this phone until the app closes. A note is not saved to history.",
   "gridRangeAuto": "Auto",
   "mapCoverageShow": "Coverage shading",
-  "mapCoverageHide": "Hide coverage shading",
   "heatEmpty": "No chatter overheard here in the last hour.",
   "elevationEmpty": "Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.",
+  "mapOverlaysTitle": "What the map shows",
   "mapKeyTitle": "Map key",
   "mapKeyRepeater": "Repeater",
   "mapKeyClient": "Client radio",
@@ -4360,7 +4359,6 @@
     }
   },
   "mapDensityShow": "Node density per cell",
-  "mapDensityHide": "Hide node density",
   "mapDensityCellTitle": "{count, plural, =1{1 node in this square} other{{count} nodes in this square}}",
   "@mapDensityCellTitle": {
     "placeholders": {

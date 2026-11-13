@@ -6362,12 +6362,6 @@ abstract class AppLocalizations {
   /// **'{n} features'**
   String mapsLayerFeatures(int n);
 
-  /// No description provided for @mapsLayerNotLoaded.
-  ///
-  /// In en, this message translates to:
-  /// **'Not downloaded yet'**
-  String get mapsLayerNotLoaded;
-
   /// No description provided for @mapsLayerName.
   ///
   /// In en, this message translates to:
@@ -10696,12 +10690,6 @@ abstract class AppLocalizations {
   /// **'Coverage shading'**
   String get mapCoverageShow;
 
-  /// No description provided for @mapCoverageHide.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide coverage shading'**
-  String get mapCoverageHide;
-
   /// No description provided for @heatEmpty.
   ///
   /// In en, this message translates to:
@@ -10713,6 +10701,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.'**
   String get elevationEmpty;
+
+  /// No description provided for @mapOverlaysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What the map shows'**
+  String get mapOverlaysTitle;
 
   /// No description provided for @mapKeyTitle.
   ///
@@ -10791,12 +10785,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Node density per cell'**
   String get mapDensityShow;
-
-  /// No description provided for @mapDensityHide.
-  ///
-  /// In en, this message translates to:
-  /// **'Hide node density'**
-  String get mapDensityHide;
 
   /// No description provided for @mapDensityCellTitle.
   ///

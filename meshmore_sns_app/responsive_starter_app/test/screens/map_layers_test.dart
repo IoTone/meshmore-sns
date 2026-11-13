@@ -55,7 +55,8 @@ class _Net {
   }
 }
 
-const ValueKey<String> _layersKey = ValueKey<String>('map-layers-menu');
+const ValueKey<String> _layersKey =
+    ValueKey<String>('map-overlays-button');
 
 // flutter_map's layer widgets are generic (`PolygonLayer<Polygon>` once the
 // points infer the type argument), so byType would need that exact argument.

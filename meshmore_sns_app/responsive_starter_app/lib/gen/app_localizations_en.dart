@@ -3744,9 +3744,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mapsLayerNotLoaded => 'Not downloaded yet';
-
-  @override
   String get mapsLayerName => 'Name';
 
   @override
@@ -6407,14 +6404,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapCoverageShow => 'Coverage shading';
 
   @override
-  String get mapCoverageHide => 'Hide coverage shading';
-
-  @override
   String get heatEmpty => 'No chatter overheard here in the last hour.';
 
   @override
   String get elevationEmpty =>
       'Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.';
+
+  @override
+  String get mapOverlaysTitle => 'What the map shows';
 
   @override
   String get mapKeyTitle => 'Map key';
@@ -6456,9 +6453,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapDensityShow => 'Node density per cell';
-
-  @override
-  String get mapDensityHide => 'Hide node density';
 
   @override
   String mapDensityCellTitle(int count) {

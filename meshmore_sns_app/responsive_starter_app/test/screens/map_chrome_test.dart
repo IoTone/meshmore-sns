@@ -36,7 +36,8 @@ import '../meshcore/fake_transport.dart';
 /// must not be drawn as an arc through the middle of it.
 const ValueKey<String> _controlsKey = ValueKey<String>('map-controls');
 const ValueKey<String> _placesKey = ValueKey<String>('map-places-button');
-const ValueKey<String> _layersKey = ValueKey<String>('map-layers-menu');
+const ValueKey<String> _overlaysKey =
+    ValueKey<String>('map-overlays-button');
 
 Future<(MapsController, MeshcoreController)> _pump(WidgetTester t) async {
   await t.binding.setSurfaceSize(const Size(400, 800));
@@ -130,14 +131,21 @@ void main() {
     }
     // Under the built-in controls, not above them: the column reads zoom,
     // recentre, basemap, layers, then the host's tools.
-    final double layersY = t.getTopLeft(find.byKey(_layersKey)).dy;
+    final double layersY = t.getTopLeft(find.byKey(_overlaysKey)).dy;
     expect(t.getTopLeft(find.byKey(_placesKey)).dy, greaterThan(layersY));
     // The offline-maps button is back, and deliberately: the owner's report was
     // that reaching the offline map settings meant a row called "Manage event
     // maps", which named the wrong thing. A control that says "Offline maps"
     // and goes there is worth one cell in the column.
+    // Offline maps and the key are rows inside the overlays sheet now, not cells
+    // of their own: the column had grown taller than the phone it draws on.
+    await t.tap(find.byKey(_overlaysKey));
+    await t.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('map-offline-maps-button')),
         findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('map-key-button')), findsOneWidget);
+    await t.tapAt(const Offset(20, 20));
+    await t.pumpAndSettle();
     // The declared cell count is what anything placed beside the column uses to
     // avoid it, so it must equal what is actually drawn. It said seven while ten
     // were drawn, which would have misplaced the next host control by 144 dp.
@@ -156,6 +164,11 @@ void main() {
   testWidgets('the map has a key that names every mark it draws',
       (WidgetTester t) async {
     final (MapsController m, MeshcoreController mc) = await _pump(t);
+    // Two taps, as a reader makes them: the overlays sheet, then the key row
+    // inside it.
+    await t.tap(find.byKey(const ValueKey<String>('map-overlays-button')));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 400));
     await t.tap(find.byKey(const ValueKey<String>('map-key-button')));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
@@ -166,6 +179,10 @@ void main() {
       'Which way the phone points',
       'Estimated reach of a peer',
       'Nodes per square',
+      'Reception, from adverts you heard',
+      'A fence you set',
+      'Your own track',
+      'A node that just sent a message',
     ]) {
       expect(find.text(label), findsOneWidget,
           reason: '$label is drawn on the map and must be explained');

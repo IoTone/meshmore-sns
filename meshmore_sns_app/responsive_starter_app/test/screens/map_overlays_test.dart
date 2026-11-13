@@ -98,14 +98,23 @@ void main() {
 
     // Off by default: a reading about the mesh is something to ask for.
     expect(find.byType(PolygonLayer<HexCell>), findsNothing);
+    // One control for everything the map shows: the toggles live in its sheet.
+    expect(find.byKey(const ValueKey<String>('map-overlays-button')),
+        findsOneWidget);
+    await t.tap(find.byKey(const ValueKey<String>('map-overlays-button')));
+    await t.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('map-density-toggle')),
         findsOneWidget);
     expect(find.byKey(const ValueKey<String>('map-coverage-toggle')),
         findsOneWidget);
 
+    // The sheet is already open (above); switching the layer on is one tap, and
+    // the sheet is dismissed afterwards so the map itself can be tapped.
     await t.tap(find.byKey(const ValueKey<String>('map-density-toggle')));
     await t.pump();
     await t.pump(const Duration(milliseconds: 300));
+    await t.tapAt(const Offset(20, 20));
+    await t.pumpAndSettle();
 
     final PolygonLayer<HexCell> layer = t.widget<PolygonLayer<HexCell>>(
         find.byType(PolygonLayer<HexCell>));
@@ -131,6 +140,9 @@ void main() {
     // covers; this one asserts the label that makes them readable.
     expect(find.byKey(const ValueKey<String>('map-density-size')),
         findsOneWidget);
+    // The chip over the map. (The switch's subtitle in the sheet says the same
+    // thing at the same size, which is why the sheet is dismissed above before
+    // this is counted.)
     expect(find.textContaining('Cells'), findsOneWidget);
 
     // And a tap on a square names the nodes in it. The screen point comes from
@@ -182,6 +194,11 @@ void main() {
     fake.emit(advertFrameAt(lat: 39.0001, lon: -104.9999, name: 'N1'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 300));
+    // Everything the map shows is behind one control now, so a test that wants
+    // the density layer opens the sheet first — which is also the shortest
+    // statement of what a reader does.
+    await t.tap(find.byKey(const ValueKey<String>('map-overlays-button')));
+    await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey<String>('map-density-toggle')));
     await t.pump();
     await t.pump(const Duration(milliseconds: 300));
@@ -191,8 +208,11 @@ void main() {
     while ((e = t.takeException()) != null) {
       expect('$e', isNot(contains('overflowed')), reason: '$e');
     }
-    expect(find.byTooltip(_en.mapDensityHide), findsOneWidget,
-        reason: 'the label follows the state');
+    // The toggle is a switch in the sheet now, and its state is the assertion:
+    // the sheet stays open so a second overlay is one more tap, not a reopening.
+    final SwitchListTile density =
+        t.widget<SwitchListTile>(find.byKey(const ValueKey<String>('map-density-toggle')));
+    expect(density.value, isTrue, reason: 'the switch says the layer is on');
     await _drain(t, mc);
   });
 }
