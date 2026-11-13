@@ -4369,7 +4369,7 @@
       }
     }
   },
-  "mapDensityCellArea": "{size} squares, so every cell covers the same ground area.",
+  "mapDensityCellArea": "{size} across, so every cell covers the same ground area.",
   "@mapDensityCellArea": {
     "placeholders": {
       "size": {
@@ -4396,7 +4396,7 @@
       }
     }
   },
-  "mapDensityCellSize": "Squares: nodes per {size}",
+  "mapDensityCellSize": "Cells: nodes per {size}",
   "@mapDensityCellSize": {
     "placeholders": {
       "size": {

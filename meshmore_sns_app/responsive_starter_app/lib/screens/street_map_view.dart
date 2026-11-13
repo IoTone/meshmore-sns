@@ -20,6 +20,7 @@ import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
 import '../maps/coverage_quilt.dart';
 import '../maps/density_overlay.dart';
+import '../maps/hex_field.dart';
 import '../maps/message_bubble.dart';
 import '../theme/viz_palette.dart';
 import '../maps/basemap_prefs.dart';
@@ -225,7 +226,13 @@ class _StreetMapViewState extends State<StreetMapView> {
 
   /// The squares last drawn, so a tap on the map can name the one it landed in.
   /// Rebuilt with the layer, because the set depends on where the nodes are.
-  List<DensityCell> _densityCells = const <DensityCell>[];
+  List<HexCell> _densityCells = const <HexCell>[];
+
+  /// The hexagon's circumradius, in metres, for the current zoom: a cell that is
+  /// legible as a shape at street zoom and does not become a mosaic at a city
+  /// view. Unlike the squares this replaces, the *ground* area stays fixed while
+  /// the zoom changes within a band, so the field is read as one thing.
+  double _hexRadiusMetres = kDefaultHexCircumradiusMetres;
   bool _centered = false;
 
   /// The view the user left, read once at startup. It is step three of the
@@ -509,8 +516,8 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// a tap on empty map outside every square still does nothing.
   void _onMapTap(TapPosition _, LatLng point) {
     if (!_showDensity) return;
-    for (final DensityCell cell in _densityCells) {
-      if (cellContains(cell, point)) {
+    for (final HexCell cell in _densityCells) {
+      if (hexContains(cell.centre, _hexRadiusMetres, point)) {
         final MeshcoreController mc =
             Provider.of<MeshcoreController>(context, listen: false);
         _showDensityCell(context, mc, cell);
@@ -519,17 +526,32 @@ class _StreetMapViewState extends State<StreetMapView> {
     }
   }
 
+  /// The camera's visible box, or null before the map has been laid out.
+  ///
+  /// `MapController.camera` throws until the map has rendered once, and this
+  /// build runs on the first frame — before that. Reading it unguarded is a
+  /// crash on every cold open, which is exactly what the basemap picker test
+  /// caught.
+  GeoBox? _visibleBox() {
+    try {
+      final LatLngBounds b = _map.camera.visibleBounds;
+      return GeoBox(south: b.south, west: b.west, north: b.north, east: b.east);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// The cell size of the layer currently drawn, so the sheet can say what one
   /// square covers. Kept as a field because the sheet outlives the build.
   double _densityCellMetresShown = kDensityCellMetres;
 
   Future<void> _showDensityCell(
-      BuildContext ctx, MeshcoreController mc, DensityCell cell) {
+      BuildContext ctx, MeshcoreController mc, HexCell cell) {
     final Map<String, DiscoveredNode> byKey = <String, DiscoveredNode>{
       for (final DiscoveredNode n in mc.nodes) n.pubKeyHex: n,
     };
     final List<DiscoveredNode> inside = <DiscoveredNode>[
-      for (final String k in cell.pubKeys)
+      for (final String k in cell.points)
         if (byKey[k] != null) byKey[k]!,
     ];
     final AppLocalizations l = AppLocalizations.of(ctx);
@@ -1020,6 +1042,12 @@ class _StreetMapViewState extends State<StreetMapView> {
         if (mounted) setState(() => _densityCellsDrawn = wantCells);
       });
     }
+    // The hexagon radius follows the zoom in bands, so the ground area is a
+    // constant inside each band rather than creeping with every pinch.
+    final double pxPerMetre = 1 /
+        StreetMapView.metersPerPixel(
+            _zoom, hasFix ? start.centre.latitude : 39);
+    _hexRadiusMetres = hexRadiusForZoom(pxPerMetre);
     final List<DensityPoint> densityPoints = _showDensity
         ? <DensityPoint>[
             for (final DiscoveredNode n in mc.nodes)
@@ -1027,25 +1055,28 @@ class _StreetMapViewState extends State<StreetMapView> {
                 (lat: n.latitude!, lon: n.longitude!, pubKey: n.pubKeyHex),
           ]
         : const <DensityPoint>[];
-    List<DensityCell> density = const <DensityCell>[];
-    if (densityPoints.isNotEmpty) {
-      double sumLat = 0;
-      double sumLon = 0;
-      for (final DensityPoint p in densityPoints) {
-        sumLat += p.lat;
-        sumLon += p.lon;
-      }
-      density = densityCells(
-        points: densityPoints,
-        anchor: hasFix
-            ? start.centre
-            : LatLng(sumLat / densityPoints.length, sumLon / densityPoints.length),
-        cellMetres: densityCellMetres,
-      );
-    }
+    // The field, not a scatter of boxes: `hexField` returns every hexagon that
+    // holds a node, each the same ground area within a zoom band, and the shade
+    // comes from the count. The lattice is anchored to the visible box's own
+    // north-west corner, so panning moves the field with the ground instead of
+    // re-anchoring it on the operator's fix (which made the old squares step as
+    // they walked).
+    final List<HexCell> hexes = densityPoints.isEmpty
+        ? const <HexCell>[]
+        : hexField(
+            points: densityPoints,
+            box: _visibleBox() ??
+                GeoBox(
+                  south: start.centre.latitude - 0.01,
+                  west: start.centre.longitude - 0.01,
+                  north: start.centre.latitude + 0.01,
+                  east: start.centre.longitude + 0.01,
+                ),
+            circumradiusMetres: _hexRadiusMetres,
+          );
     // The tap handler reads this, and it is the same list the layer draws, so
-    // the square that opens is the square that was tapped.
-    _densityCells = density;
+    // the cell that opens is the cell that was tapped.
+    _densityCells = hexes;
 
     // The Map tab always draws: the world view is a real answer to "where am
     // I", and the owner asked for exactly that when no position is known. This
@@ -1222,16 +1253,25 @@ class _StreetMapViewState extends State<StreetMapView> {
               // way the radar cannot. Under the pins and the reach circles,
               // over the quilt, because a cell is about where nodes are and a
               // ring is about how far they reach.
-              if (density.isNotEmpty && _densityCellsDrawn)
-                PolygonLayer<DensityCell>(
-                  // The skin's viz accent, not the theme's primary: a cell
-                  // drawn in primary over this skin's own basemap was
-                  // invisible on the phone, which the synthetic width test
-                  // could not see. The palette exists for exactly this.
-                  polygons: densityPolygons(
-                    cells: density,
-                    color: VizPalette.of(context.skin).accent,
-                  ),
+              if (hexes.isNotEmpty && _densityCellsDrawn)
+                PolygonLayer<HexCell>(
+                  // A continuous field rather than a scatter of boxes: every
+                  // hexagon is the same ground area at every zoom, and its shade
+                  // is its count. The skin's viz accent, not the theme's primary:
+                  // a cell drawn in primary over this skin's own basemap was
+                  // invisible on the phone.
+                  polygons: <Polygon<HexCell>>[
+                    for (final HexCell c in hexes)
+                      Polygon<HexCell>(
+                        points: hexCorners(c.centre, _hexRadiusMetres),
+                        hitValue: c,
+                        color: VizPalette.of(context.skin).accent.withValues(
+                            alpha: hexAlpha(c.count)),
+                        borderColor:
+                            VizPalette.of(context.skin).accent.withValues(alpha: 0.45),
+                        borderStrokeWidth: 0.8,
+                      ),
+                  ],
                 ),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),
@@ -1407,10 +1447,10 @@ class _StreetMapViewState extends State<StreetMapView> {
               // pin's own box covers its cell's centre, which is where a badge
               // there would sit — and a tap meant for the square opened the
               // node instead.
-              if (density.isNotEmpty && _densityCellsDrawn)
+              if (hexes.isNotEmpty && _densityCellsDrawn)
                 MarkerLayer(
                   markers: <Marker>[
-                    for (final DensityCell c in density)
+                    for (final HexCell c in hexes)
                       Marker(
                         point: c.centre,
                         width: 48,
@@ -1569,7 +1609,7 @@ class _StreetMapViewState extends State<StreetMapView> {
           ),
         // The density cell size, stated where the counts are: a count only means
         // something next to the distance it is a count per.
-        if (density.isNotEmpty)
+        if (hexes.isNotEmpty)
           Positioned(
             left: StreetMapView.controlsInset,
             bottom: 92,

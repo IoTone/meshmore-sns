@@ -11,7 +11,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/gen/app_localizations_en.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/maps/density_overlay.dart';
+import 'package:meshmore_sns_app/maps/hex_field.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/street_map_view.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
@@ -97,7 +97,7 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
 
     // Off by default: a reading about the mesh is something to ask for.
-    expect(find.byType(PolygonLayer<DensityCell>), findsNothing);
+    expect(find.byType(PolygonLayer<HexCell>), findsNothing);
     expect(find.byKey(const ValueKey<String>('map-density-toggle')),
         findsOneWidget);
     expect(find.byKey(const ValueKey<String>('map-coverage-toggle')),
@@ -107,22 +107,23 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 300));
 
-    final PolygonLayer<DensityCell> layer =
-        t.widget<PolygonLayer<DensityCell>>(
-            find.byType(PolygonLayer<DensityCell>));
+    final PolygonLayer<HexCell> layer = t.widget<PolygonLayer<HexCell>>(
+        find.byType(PolygonLayer<HexCell>));
     // How many squares there are is a property of the zoom now, because the
     // cell size follows it: the assertion is that every located node is in one
     // of them, not that the count happens to be two.
     expect(layer.polygons, isNotEmpty);
-    // Every located node is in exactly one square, and the square carries the
+    // Every located node is in exactly one hexagon, and the hexagon carries the
     // keys a tap needs to name them.
     final Set<String> keys = <String>{
-      for (final Polygon<DensityCell> p in layer.polygons)
-        ...p.hitValue!.pubKeys,
+      for (final Polygon<HexCell> p in layer.polygons) ...p.hitValue!.points,
     };
     expect(keys, hasLength(3));
     expect(layer.polygons.first.hitValue!.count,
-        layer.polygons.first.hitValue!.pubKeys.length);
+        layer.polygons.first.hitValue!.points.length);
+    // A hexagon has six corners and the width/height ratio a regular one has,
+    // which is what stops the field reading as a row of squashed cells.
+    expect(layer.polygons.first.points, hasLength(6));
 
     // A count only means something next to the distance it is a count per, so
     // the size is stated on screen. Whether the numbers themselves are drawn
@@ -130,7 +131,7 @@ void main() {
     // covers; this one asserts the label that makes them readable.
     expect(find.byKey(const ValueKey<String>('map-density-size')),
         findsOneWidget);
-    expect(find.textContaining('Squares'), findsOneWidget);
+    expect(find.textContaining('Cells'), findsOneWidget);
 
     // And a tap on a square names the nodes in it. The screen point comes from
     // the camera rather than from a guess, so the tap lands inside the square
@@ -146,19 +147,20 @@ void main() {
     // The label the widget actually carries, rather than a guess at which
     // square is first: how many nodes share one depends on the zoom's cell size.
     final String label = counts.first.properties.label!;
-    expect(layer.polygons
-        .any((Polygon<DensityCell> p) => _en.mapDensityCellTitle(p.hitValue!.count) == label),
+    expect(
+        layer.polygons.any(
+            (Polygon<HexCell> p) => _en.mapDensityCellTitle(p.hitValue!.count) == label),
         isTrue,
-        reason: 'the label names a real square, count and all');
-    final DensityCell tapped = layer.polygons
-        .firstWhere((Polygon<DensityCell> p) =>
+        reason: 'the label names a real cell, count and all');
+    final HexCell tapped = layer.polygons
+        .firstWhere((Polygon<HexCell> p) =>
             _en.mapDensityCellTitle(p.hitValue!.count) == label)
         .hitValue!;
     await t.tap(find.byKey(ValueKey<String>('density-count-${tapped.id}')));
     // ignore: avoid_print
     print('PROBE after-tap texts=${t.widgetList<Text>(find.byType(Text)).map((Text x) => x.data).where((String? d) => d != null).take(14).toList()}');
     await t.pumpAndSettle();
-    expect(find.textContaining('squares, so every cell covers'),
+    expect(find.textContaining('so every cell covers'),
         findsOneWidget,
         reason: 'the sheet says what a square covers, at the size drawn');
     semantics.dispose();

@@ -6214,7 +6214,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String mapDensityCellArea(String size) {
-    return '$size の区画で、どのセルも同じ面積です。';
+    return '$size ごと。どのセルも同じ面積です。';
   }
 
   @override
@@ -6249,7 +6249,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String mapDensityCellSize(String size) {
-    return '四角 = $size あたりのノード数';
+    return 'セル: $size あたりのノード数';
   }
 
   @override

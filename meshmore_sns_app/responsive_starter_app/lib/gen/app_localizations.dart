@@ -10807,7 +10807,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapDensityCellArea.
   ///
   /// In en, this message translates to:
-  /// **'{size} squares, so every cell covers the same ground area.'**
+  /// **'{size} across, so every cell covers the same ground area.'**
   String mapDensityCellArea(String size);
 
   /// No description provided for @mapDensityCellOpen.
@@ -10843,7 +10843,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapDensityCellSize.
   ///
   /// In en, this message translates to:
-  /// **'Squares: nodes per {size}'**
+  /// **'Cells: nodes per {size}'**
   String mapDensityCellSize(String size);
 
   /// No description provided for @actionReplyMention.

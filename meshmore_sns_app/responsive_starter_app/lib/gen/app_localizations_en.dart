@@ -6473,7 +6473,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mapDensityCellArea(String size) {
-    return '$size squares, so every cell covers the same ground area.';
+    return '$size across, so every cell covers the same ground area.';
   }
 
   @override
@@ -6509,7 +6509,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mapDensityCellSize(String size) {
-    return 'Squares: nodes per $size';
+    return 'Cells: nodes per $size';
   }
 
   @override
