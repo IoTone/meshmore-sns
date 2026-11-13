@@ -7,9 +7,12 @@ import '../gen/app_localizations.dart';
 import '../geofence/geofence_controller.dart';
 import '../geofence/geofence_store.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../places/place_create_sheet.dart';
+import '../places/place_wiring.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
+import '../util/mm_format.dart';
 
 /// Settings → Location → Geofences.
 ///
@@ -112,19 +115,68 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
                   fence: f,
                   inside: fences.isInside(f.id),
                   onDelete: () => fences.removeFence(f.id),
+                  // A fence and a place are the same fact twice: a centre, a
+                  // name, and how much ground it covers. A fence the crew should
+                  // also see as a pin is one tap from being one.
+                  onSaveAsPlace: () => PlaceCreateSheet.show(
+                    context,
+                    latitude: f.latitude,
+                    longitude: f.longitude,
+                    composer: placeComposerOf(context),
+                    initialLabel: f.label,
+                  ),
                 ),
             if (fences.alerts.isNotEmpty) ...<Widget>[
               SizedBox(height: skin.space.step(5)),
-              MmSectionHeader(l.geofenceEventsSection),
-              for (final GeofenceAlert a in fences.alerts.reversed.take(10))
-                Text(
-                  a.isEntry
-                      ? l.geofenceEntered(a.fence.label)
-                      : l.geofenceLeft(a.fence.label),
-                  key: ValueKey<String>(
-                      'geofence-event-${a.fence.id}-${a.at.millisecondsSinceEpoch}'),
-                  style: TextStyle(
-                      color: skin.color.fg, fontSize: skin.type.sizeBody),
+              Row(
+                children: <Widget>[
+                  Expanded(child: MmSectionHeader(l.geofenceEventsSection)),
+                  // The log is evidence, and evidence you cannot destroy is a
+                  // liability. Deleting a fence clears its own crossings; this
+                  // clears the history of the fences that remain.
+                  MmAction(
+                    key: const ValueKey<String>('geofence-clear-log'),
+                    label: l.geofenceClearLog,
+                    dense: true,
+                    onPressed: () => fences.clearAlerts(),
+                  ),
+                ],
+              ),
+              // Newest first, with the time, because a crossing without a time
+              // is an anecdote and the log is meant to answer "what happened
+              // last night". The list is the store's own cap, so a morning after
+              // is a scroll rather than a memory.
+              for (final GeofenceAlert a in fences.alerts.reversed.take(40))
+                Padding(
+                  padding: EdgeInsets.only(bottom: skin.space.step(1)),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      SizedBox(
+                        width: skin.space.step(9) * 2,
+                        child: Text(
+                          geofenceStamp(context, a.at),
+                          style: TextStyle(
+                            color: skin.color.fgMuted,
+                            fontFamily: skin.type.monoFamily,
+                            fontSize: skin.type.sizeSm,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          a.isEntry
+                              ? l.geofenceEntered(a.fence.label)
+                              : l.geofenceLeft(a.fence.label),
+                          key: ValueKey<String>(
+                              'geofence-event-${a.fence.id}-${a.at.millisecondsSinceEpoch}'),
+                          style: TextStyle(
+                              color: skin.color.fg,
+                              fontSize: skin.type.sizeBody),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ],
@@ -139,11 +191,13 @@ class _FenceRow extends StatelessWidget {
     required this.fence,
     required this.inside,
     required this.onDelete,
+    required this.onSaveAsPlace,
   });
 
   final StoredGeofence fence;
   final bool inside;
   final VoidCallback onDelete;
+  final VoidCallback onSaveAsPlace;
 
   @override
   Widget build(BuildContext context) {
@@ -176,6 +230,12 @@ class _FenceRow extends StatelessWidget {
             ),
           ),
           IconButton(
+            key: ValueKey<String>('geofence-as-place-${fence.id}'),
+            tooltip: l.geofenceSaveAsPlace,
+            onPressed: onSaveAsPlace,
+            icon: const Icon(Icons.push_pin_outlined),
+          ),
+          IconButton(
             key: ValueKey<String>('geofence-delete-${fence.id}'),
             tooltip: l.geofenceDelete,
             onPressed: onDelete,
@@ -185,4 +245,19 @@ class _FenceRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The time a crossing happened, in the reader's clock.
+///
+/// Today is the common case and gets the time alone. Anything older carries the
+/// day, because a log read the next morning must not put yesterday's crossings
+/// in the same column as this morning's.
+String geofenceStamp(BuildContext context, DateTime at) {
+  final DateTime now = DateTime.now();
+  final String time = MmFormat.clock(at, prefs: context.formatPrefs);
+  final bool today = at.year == now.year && at.month == now.month && at.day == now.day;
+  if (today) return time;
+  final String day =
+      MaterialLocalizations.of(context).formatShortMonthDay(at);
+  return '$day $time';
 }

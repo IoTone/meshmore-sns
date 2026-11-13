@@ -38,10 +38,10 @@ void main() {
   test('time is not an input, so a renewal keeps the id (spec test 5)', () {
     final DateTime first = DateTime.utc(2026, 11, 5, 12);
     final DateTime later = first.add(const Duration(hours: 6));
-    final Place a = parsePlace('[PLACE]51.500741,-0.124596 Ford [water]',
+    final Place a = parsePlace('[PLACE1]51.500741,-0.124596 Ford [water]',
             receivedAt: first, reporterName: 'W1ABC')
         .place!;
-    final Place b = parsePlace('[PLACE]51.500741,-0.124596 Ford [water]',
+    final Place b = parsePlace('[PLACE1]51.500741,-0.124596 Ford [water]',
             receivedAt: later, reporterName: 'W1ABC')
         .place!;
     expect(b.id, a.id);
@@ -55,7 +55,7 @@ void main() {
   });
 
   test('changing the transmitted precision changes the id (spec test 5)', () {
-    final Place exact = parsePlace('[PLACE]51.500741,-0.124596 Ford [water]',
+    final Place exact = parsePlace('[PLACE1]51.500741,-0.124596 Ford [water]',
             receivedAt: DateTime.utc(2026), reporterName: 'W1ABC')
         .place!;
     final Place snapped = exact.copyWith(
@@ -76,11 +76,11 @@ void main() {
   });
 
   test('an unkeyed report is marked so by the parsed row', () {
-    final Place unkeyed = parsePlace('[PLACE]51.5,-0.12 Ford [water]',
+    final Place unkeyed = parsePlace('[PLACE1]51.5,-0.12 Ford [water]',
             receivedAt: DateTime.utc(2026), reporterName: 'W1ABC')
         .place!;
     expect(unkeyed.isUnkeyed, isTrue);
-    final Place keyed = parsePlace('[PLACE]51.5,-0.12 Ford [water]',
+    final Place keyed = parsePlace('[PLACE1]51.5,-0.12 Ford [water]',
             receivedAt: DateTime.utc(2026),
             reporterName: 'W1ABC',
             reporterKey: _key)

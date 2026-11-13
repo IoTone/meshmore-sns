@@ -12,6 +12,7 @@ import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/screens/dashboards/air_dashboard.dart';
+import 'package:meshmore_sns_app/screens/dashboards/forest_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/nerv_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/studio_dashboard.dart';
 import 'package:meshmore_sns_app/screens/dashboards/my_pubkey_line.dart';
@@ -116,15 +117,21 @@ void main() {
     expect(find.byTooltip('Device'), findsOneWidget);
 
     // A preset with no layout of its own inherits the default one, and the
-    // host's key holds either way. Forest is one of the three LDMUX looks that
-    // has not earned a layout yet, so it is the case that proves the fallback
-    // still works now that Air has one of its own.
-    await tc.setPreset(MmThemePreset.forest);
+    // host's key holds either way. Umber is one of the LDMUX looks that has not
+    // earned a layout yet, so it is the case that proves the fallback still
+    // works now that Air and Forest have layouts of their own.
+    await tc.setPreset(MmThemePreset.umber);
     await t.pumpAndSettle();
     expect(find.byKey(dashboardKey), findsOneWidget);
     expect(find.byType(DashboardScreen), findsOneWidget,
         reason: 'a preset without a layout inherits the monolith');
     expect(find.byType(StudioDashboard), findsNothing);
+
+    // Forest has its own layout now: the depth bar is its signature.
+    await tc.setPreset(MmThemePreset.forest);
+    await t.pumpAndSettle();
+    expect(find.byType(ForestDashboard), findsOneWidget);
+    expect(find.byType(DashboardScreen), findsNothing);
 
     // Air has its own layout now: a white page cannot carry an instrument.
     await tc.setPreset(MmThemePreset.air);

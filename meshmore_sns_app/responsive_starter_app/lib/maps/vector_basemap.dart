@@ -435,7 +435,33 @@ class _VectorBasemapLayerState extends State<VectorBasemapLayer> {
   /// blink through its ground colour.
   VectorBasemapStyle? _shown;
 
+  /// The provider handed to the renderer, kept for the life of this State.
+  ///
+  /// It used to be constructed inside `build`, so every rebuild of the map —
+  /// and the map rebuilt once a second — handed the renderer a *new* provider
+  /// object and a new `TileProviders` map. The renderer keys its parsed-tile
+  /// cache off those, so each rebuild orphaned up to 24 MB of parsed tiles and
+  /// started again. That is a heap that never settles, and it is the second
+  /// half of the out-of-memory report.
+  MmVectorTileProvider? _provider;
+  TileProviders? _providers;
+  String? _providerSourceId;
+
   MapSource get source => widget.source;
+
+  /// The provider for [maps] and the current source, rebuilt only when either
+  /// actually changes.
+  TileProviders _providersFor(MapsController maps) {
+    if (_providers != null && _providerSourceId == source.id) {
+      return _providers!;
+    }
+    _provider = MmVectorTileProvider(maps, source);
+    _providerSourceId = source.id;
+    _providers = TileProviders(<String, VectorTileProvider>{
+      kVectorBasemapSourceId: _provider!,
+    });
+    return _providers!;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -456,9 +482,7 @@ class _VectorBasemapLayerState extends State<VectorBasemapLayer> {
         return VectorTileLayer(
           theme: style.theme,
           sprites: style.sprites,
-          tileProviders: TileProviders(<String, VectorTileProvider>{
-            kVectorBasemapSourceId: MmVectorTileProvider(maps, source),
-          }),
+          tileProviders: _providersFor(maps),
           // Isolates for parsing/rendering (NOT network parallelism: that is
           // MapsController.viewGate). The library default is 4; R80 had
           // set 2. Ignored in debug builds, where the library runs one

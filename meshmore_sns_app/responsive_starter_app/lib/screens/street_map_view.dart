@@ -239,6 +239,18 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// Rebuilt with the layer, because the set depends on where the nodes are.
   List<HexCell> _densityCells = const <HexCell>[];
 
+  /// The field and its polygons, and the inputs they were built from.
+  ///
+  /// The field is the most expensive thing this screen computes: a lattice over
+  /// the viewport, a cell per hexagon, and six corners per cell. It used to be
+  /// rebuilt on every build, and the map rebuilds for reasons that have nothing
+  /// to do with the field — a message bubble fading, a skin change, a poll, a
+  /// geofence sample. Memoising it on the inputs that actually change the
+  /// picture is what keeps a rebuild cheap enough to be harmless.
+  List<HexCell> _hexCache = const <HexCell>[];
+  List<Polygon<HexCell>> _hexPolygons = const <Polygon<HexCell>>[];
+  String _hexKey = '';
+
   /// The hexagon's circumradius, in metres, for the current zoom: a cell that is
   /// legible as a shape at street zoom and does not become a mosaic at a city
   /// view. Unlike the squares this replaces, the *ground* area stays fixed while
@@ -674,6 +686,21 @@ class _StreetMapViewState extends State<StreetMapView> {
         p.lon >= visible.west &&
         p.lon <= visible.east);
     return any ? visible : _nodeBox(points);
+  }
+
+  /// A cheap fingerprint of the points the field is built from.
+  ///
+  /// Not a hash of the whole list: a rolling mix of each point's key and
+  /// position, which is enough to notice a node appearing, moving or leaving
+  /// and cheap enough to run on every build.
+  static int _densitySignature(List<DensityPoint> points) {
+    int h = 17;
+    for (final DensityPoint p in points) {
+      h = h * 31 + p.pubKey.hashCode;
+      h = h * 31 + p.lat.hashCode;
+      h = h * 31 + p.lon.hashCode;
+    }
+    return h;
   }
 
   /// A box around the nodes themselves, for the first frame — before the map has
@@ -1169,8 +1196,33 @@ class _StreetMapViewState extends State<StreetMapView> {
     final MapsController? maps = Provider.of<MapsController?>(context);
     // Fences are drawn when the app provides them; a harness that builds this
     // view on its own simply has none.
+    //
+    // **Read without listening, and subscribe to a signature instead.**
+    // `GeofenceController` ticks once a second and calls `notifyListeners()` on
+    // every sample, so watching it here rebuilt this entire view — the hex
+    // field, a polygon per cell, the vector layer and its tile provider — once
+    // a second, for ever, whether or not a fence existed. That is the
+    // out-of-memory and the "isn't responding" report: a full-screen rebuild
+    // per second that allocates thousands of objects and never lets the heap
+    // settle.
+    //
+    // The map draws exactly two things from the controller: the fences, and
+    // whether the reader is inside each one. So it selects that, and a sample
+    // that changes neither rebuilds nothing.
     final GeofenceController? geofences =
-        Provider.of<GeofenceController?>(context);
+        Provider.of<GeofenceController?>(context, listen: false);
+    context.select<GeofenceController?, String>((GeofenceController? g) {
+      if (g == null) return '';
+      final StringBuffer b = StringBuffer();
+      for (final StoredGeofence f in g.fences) {
+        b
+          ..write(f.id)
+          ..write(f.label)
+          ..write(f.radiusMeters)
+          ..write(g.isInside(f.id) ? '1' : '0');
+      }
+      return b.toString();
+    });
     final List<StoredGeofence> fences =
         geofences?.fences ?? const <StoredGeofence>[];
     final List<MapSource> sources = maps?.sources ?? kBuiltInSources;
@@ -1267,17 +1319,48 @@ class _StreetMapViewState extends State<StreetMapView> {
     // they walked).
     // ignore: avoid_print
 
-    final List<HexCell> hexes = densityPoints.isEmpty
-        ? const <HexCell>[]
-        : hexField(
-            points: densityPoints,
-            box: _fieldBox(densityPoints),
-            circumradiusMetres: _hexRadiusMetres,
-            includeEmpty: true,
-            // A 48 px hexagon tiles a phone screen into about four hundred, so
-            // the bound is the viewport rather than a budget for a scatter.
-            maxCells: 800,
-          );
+    // The field is memoised on the inputs that change the picture: the box, the
+    // cell size, the nodes in it, and the skin (the fill and the edge come from
+    // the palette). Everything else that rebuilds this screen reuses it.
+    final GeoBox fieldBox = _fieldBox(densityPoints);
+    final String hexKey = densityPoints.isEmpty
+        ? ''
+        : '${fieldBox.south},${fieldBox.west},${fieldBox.north},'
+            '${fieldBox.east}|$_hexRadiusMetres|${context.skin.preset.name}|'
+            '${_densitySignature(densityPoints)}';
+    if (hexKey != _hexKey) {
+      _hexKey = hexKey;
+      _hexCache = densityPoints.isEmpty
+          ? const <HexCell>[]
+          : hexField(
+              points: densityPoints,
+              box: fieldBox,
+              circumradiusMetres: _hexRadiusMetres,
+              includeEmpty: true,
+              // A 48 px hexagon tiles a phone screen into about four hundred,
+              // so the bound is the viewport rather than a budget for a scatter.
+              maxCells: 800,
+            );
+      _hexPolygons = <Polygon<HexCell>>[
+        for (final HexCell c in _hexCache)
+          Polygon<HexCell>(
+            points: hexCorners(c.centre, _hexRadiusMetres),
+            hitValue: c,
+            // The fill carries the count and the ink; the *edge* is what makes
+            // it a field. An accent-coloured lattice over a satellite photograph
+            // disappeared into the vegetation it was measuring, so the line is
+            // the skin's foreground — the one colour guaranteed to differ from
+            // the ground it is drawn on — and the fill keeps the accent.
+            color: VizPalette.of(context.skin)
+                .accent
+                .withValues(alpha: hexAlpha(c.count)),
+            borderColor:
+                cs.onSurface.withValues(alpha: c.count == 0 ? 0.22 : 0.55),
+            borderStrokeWidth: c.count == 0 ? 0.7 : 1.1,
+          ),
+      ];
+    }
+    final List<HexCell> hexes = _hexCache;
     // The tap handler reads this, and it is the same list the layer draws, so
     // the cell that opens is the cell that was tapped.
     _densityCells = hexes;
@@ -1471,28 +1554,9 @@ class _StreetMapViewState extends State<StreetMapView> {
                 PolygonLayer<HexCell>(
                   // A continuous field rather than a scatter of boxes: every
                   // hexagon is the same ground area at every zoom, and its shade
-                  // is its count. The skin's viz accent, not the theme's primary:
-                  // a cell drawn in primary over this skin's own basemap was
-                  // invisible on the phone.
-                  polygons: <Polygon<HexCell>>[
-                    for (final HexCell c in hexes)
-                      Polygon<HexCell>(
-                        points: hexCorners(c.centre, _hexRadiusMetres),
-                        hitValue: c,
-                        // The fill carries the count and the ink; the *edge* is
-                        // what makes it a field. An accent-coloured lattice over
-                        // a satellite photograph disappeared into the vegetation
-                        // it was measuring, so the line is the skin's foreground
-                        // — the one colour guaranteed to differ from the ground
-                        // it is drawn on — and the fill keeps the accent.
-                        color: VizPalette.of(context.skin)
-                            .accent
-                            .withValues(alpha: hexAlpha(c.count)),
-                        borderColor: cs.onSurface
-                            .withValues(alpha: c.count == 0 ? 0.22 : 0.55),
-                        borderStrokeWidth: c.count == 0 ? 0.7 : 1.1,
-                      ),
-                  ],
+                  // is its count. Built once per change of the field, not once
+                  // per build: see [_hexPolygons].
+                  polygons: _hexPolygons,
                 ),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),

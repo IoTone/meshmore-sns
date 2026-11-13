@@ -136,6 +136,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboardRadio => 'ラジオ';
 
   @override
+  String get dashForestCanopy => '樹冠';
+
+  @override
+  String get dashForestNoRoutes => 'まだ経路が学習されていません。無線機は誰への経路も知りません。';
+
+  @override
+  String get dashForestContacts => '連絡先';
+
+  @override
   String get dashNervLink => 'リンク';
 
   @override
@@ -4264,6 +4273,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeHiddenByRefutation => '既知の鍵からの否定によりここでは非表示';
 
   @override
+  String get placeFenceThis => 'この場所を囲む';
+
+  @override
+  String placeFenceMade(Object n) {
+    return '作成しました。一覧に $n 件あります。';
+  }
+
+  @override
   String get placeDirections => '経路';
 
   @override
@@ -4879,6 +4896,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get geofenceDelete => 'フェンスを削除';
+
+  @override
+  String get geofenceSaveAsPlace => '場所として保存';
+
+  @override
+  String get geofenceClearLog => '履歴を消去';
 
   @override
   String get geofenceEventsSection => '最近の出入り';

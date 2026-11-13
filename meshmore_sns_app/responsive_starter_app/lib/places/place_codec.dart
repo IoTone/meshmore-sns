@@ -33,7 +33,23 @@ import 'place_id.dart';
 const int placeMaxLabelRunes = 60;
 
 /// The tag every report starts with.
-const String placeTag = '[PLACE]';
+/// The tag this build writes.
+///
+/// The version is part of the tag rather than a token after the coordinates,
+/// because the tag is the one part of the grammar every client must agree on
+/// before it can parse anything, and a reader that does not know `[PLACE1]`
+/// falls back to showing the line as ordinary text — which is the safe failure.
+/// It was `[PLACE]` for the first two releases and that spelling is still read
+/// (see [placeTagsRead]), so a message sent by an older build is not lost.
+const String placeTag = '[PLACE1]';
+
+/// The older spelling, still accepted. One tag cost one byte in a 160-byte
+/// text and saved a compatibility break.
+const String legacyPlaceTag = '[PLACE]';
+
+/// Every tag this build can read, longest first so `[PLACE1]` is not mistaken
+/// for `[PLACE]` followed by a stray `1`.
+const List<String> placeTagsRead = <String>[placeTag, legacyPlaceTag];
 
 /// Why a message is not a usable place report.
 enum PlaceParseFailure {
@@ -99,7 +115,10 @@ PlaceParseOutcome parsePlace(
   PlaceProvenance provenance = PlaceProvenance.received,
 }) {
   final String trimmed = text.trim();
-  if (!trimmed.startsWith(placeTag)) {
+  final String? tag = placeTagsRead
+      .where((String t) => trimmed.startsWith(t))
+      .firstOrNull;
+  if (tag == null) {
     return const PlaceParseOutcome.rejected(PlaceParseFailure.notAPlace);
   }
   if (trimmed.contains('\n')) {
@@ -110,7 +129,7 @@ PlaceParseOutcome parsePlace(
         PlaceParseFailure.missingReporter);
   }
 
-  String body = trimmed.substring(placeTag.length).trimLeft();
+  String body = trimmed.substring(tag.length).trimLeft();
 
   // 1. TTL: last token, exactly once.
   PlaceTtl? ttl;

@@ -40,7 +40,10 @@ class PlaceEchoLine extends StatelessWidget {
   static Place? placeOf(ChatMessage message, {DateTime Function()? clock}) {
     if (message.outgoing) return null;
     final String text = message.text;
-    if (!text.contains(placeTag)) return null;
+    // Either spelling: a peer running an older build still sends `[PLACE]`, and
+    // a message that is not a place at all still falls through to null here and
+    // to plain text in the renderer.
+    if (!placeTagsRead.any(text.contains)) return null;
     final int at = text.indexOf(': ');
     final bool prefixed = at > 0 && !text.substring(0, at).contains('[');
     final String sender = prefixed ? text.substring(0, at) : '';

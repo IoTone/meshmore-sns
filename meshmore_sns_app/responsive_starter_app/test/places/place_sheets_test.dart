@@ -124,7 +124,7 @@ void main() {
       await t.pumpAndSettle();
 
       expect(sender.sent.single,
-          '[PLACE]51.500741,-0.124596 Ford is out [water] [TTL:6h]');
+          '[PLACE1]51.500741,-0.124596 Ford is out [water] [TTL:6h]');
       expect(store.live().single.label, 'Ford is out');
     });
 
@@ -143,7 +143,7 @@ void main() {
       await t.pump();
       await t.tap(find.byKey(const ValueKey<String>('place-send')));
       await t.pump();
-      expect(sender.sent.single, startsWith('[PLACE]51.501,-0.125 Ford'));
+      expect(sender.sent.single, startsWith('[PLACE1]51.501,-0.125 Ford'));
     });
 
     testWidgets('an empty label is refused in place, and nothing is sent',

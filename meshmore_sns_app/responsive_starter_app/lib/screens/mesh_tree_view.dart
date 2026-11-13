@@ -923,7 +923,29 @@ class _MeshTreePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _MeshTreePainter old) => true;
+  /// Repaint only when something the picture is made of changed.
+  ///
+  /// This returned `true` unconditionally, so a full-screen canvas of edges,
+  /// rings and labels was repainted on every frame the widget was rebuilt for
+  /// any reason at all — a skin change, a toast, a poll. On a mesh with a few
+  /// hundred nodes that is the most expensive paint in the app, and it was
+  /// running for free.
+  bool shouldRepaint(covariant _MeshTreePainter old) =>
+      old.type != type ||
+      old.textScale != textScale ||
+      old.radial != radial ||
+      old.labels != labels ||
+      old.graph != graph ||
+      old.positions != positions ||
+      old.knownPubKeys != knownPubKeys ||
+      old.favPubKeys != favPubKeys ||
+      old.accent != accent ||
+      old.accentDim != accentDim ||
+      old.hub != hub ||
+      old.edge != edge ||
+      old.edgeFloat != edgeFloat ||
+      old.label != label ||
+      old.bg != bg;
 }
 
 /// Glyph shape per node role. Circle = endpoint, square = repeater

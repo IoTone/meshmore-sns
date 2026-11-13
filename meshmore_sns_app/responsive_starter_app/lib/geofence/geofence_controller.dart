@@ -61,9 +61,11 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
   final Map<String, GeofenceWatch> _watches = <String, GeofenceWatch>{};
   final List<GeofenceAlert> _alerts = <GeofenceAlert>[];
 
-  /// Alerts kept for the screen. A walk that crosses three fences produces
-  /// three lines; the cap only stops a stuck GPS from growing a list forever.
-  static const int alertCapacity = 50;
+  /// Alerts kept for the screen and in the log. A walk that crosses three
+  /// fences produces three lines, and the store keeps the last
+  /// [GeofenceStore.alertCapacity] across restarts so the morning after has an
+  /// answer.
+  static const int alertCapacity = GeofenceStore.alertCapacity;
 
   List<StoredGeofence> get fences => List<StoredGeofence>.unmodifiable(_fences);
 
@@ -75,6 +77,25 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
     _fences
       ..clear()
       ..addAll(await GeofenceStore.load());
+    _alerts
+      ..clear()
+      ..addAll(<GeofenceAlert>[
+        for (final StoredGeofenceAlert a in await GeofenceStore.loadAlerts())
+          GeofenceAlert(
+            // The fence a crossing belongs to may have been deleted since. The
+            // label travels with the alert, so the log keeps its meaning and the
+            // row simply has no fence to open.
+            fence: StoredGeofence(
+              id: a.fenceId,
+              label: a.label,
+              latitude: 0,
+              longitude: 0,
+              radiusMeters: 0,
+            ),
+            event: a.entered ? GeofenceEvent.entered : GeofenceEvent.left,
+            at: a.at,
+          ),
+      ]);
     _rebuildWatches();
     notifyListeners();
   }
@@ -121,6 +142,10 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
       _alerts.removeRange(0, _alerts.length - alertCapacity);
     }
     notifyListeners();
+    // Written after the listeners so the screen updates at once and the disk
+    // catches up behind it. A crossing is evidence, so it is persisted rather
+    // than kept in a list that dies with the process.
+    unawaited(_saveAlerts());
     // After the listeners, so the screen is already showing the new line by the
     // time the cue plays for it.
     onRaised?.call(raised);
@@ -148,11 +173,40 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
+  /// Forget every crossing, on disk and in memory.
+  ///
+  /// A log you cannot clear is a log you did not agree to. Deleting a fence
+  /// clears its own crossings; this is the other door, for the history of
+  /// fences that are still there.
+  Future<void> clearAlerts() async {
+    if (_alerts.isEmpty) return;
+    _alerts.clear();
+    notifyListeners();
+    await _saveAlerts();
+  }
+
+  /// The crossing log as the store keeps it.
+  Future<void> _saveAlerts() => GeofenceStore.saveAlerts(<StoredGeofenceAlert>[
+        for (final GeofenceAlert a in _alerts)
+          StoredGeofenceAlert(
+            fenceId: a.fence.id,
+            label: a.fence.label,
+            entered: a.isEntry,
+            at: a.at,
+          ),
+      ]);
+
   Future<void> removeFence(String id) async {
     _fences.removeWhere((StoredGeofence f) => f.id == id);
     _watches.remove(id);
+    // Deleting a fence deletes its crossings too, and the persisted log with
+    // them. That is the promise the fence screen already made and a test holds
+    // it: a history you cannot delete from the surface that owns it is a history
+    // that outlives your consent. The log's own cap and the "clear" action are
+    // the other two ways it ends.
     _alerts.removeWhere((GeofenceAlert a) => a.fence.id == id);
     await GeofenceStore.save(_fences);
+    await _saveAlerts();
     notifyListeners();
   }
 

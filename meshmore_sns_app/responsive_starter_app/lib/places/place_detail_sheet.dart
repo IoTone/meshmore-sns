@@ -4,7 +4,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import 'package:provider/provider.dart';
+
 import '../gen/app_localizations.dart';
+import '../geofence/geofence_controller.dart';
+import '../geofence/geofence_create_sheet.dart';
+import '../ui/mm_components.dart';
 import '../theme/mm_skin.dart';
 import 'place.dart';
 import 'place_confirmation.dart';
@@ -218,6 +223,15 @@ class PlaceDetailSheet extends StatelessWidget {
                     child: Text(l.placeRefuteToSender),
                   ),
                 ],
+                // A place is already a centre and a name; a fence is that plus
+                // a radius. Making one from the other is one tap and no typing,
+                // which is the whole reason both exist.
+                MmAction(
+                  key: const ValueKey<String>('place-to-geofence'),
+                  icon: Icons.shield_outlined,
+                  label: l.placeFenceThis,
+                  onPressed: () => _fence(context),
+                ),
                 TextButton.icon(
                   key: const ValueKey<String>('place-directions'),
                   icon: const Icon(Icons.directions_outlined, size: 18),
@@ -290,6 +304,37 @@ class PlaceDetailSheet extends StatelessWidget {
     Navigator.of(context).pop();
     ScaffoldMessenger.maybeOf(context)
         ?.showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  /// Open the fence sheet centred on this place, and save what comes back.
+  Future<void> _fence(BuildContext context) async {
+    final GeofenceController? fences =
+        Provider.of<GeofenceController?>(context, listen: false);
+    if (fences == null) return;
+    final ({String label, double radiusMeters})? made =
+        await showModalBottomSheet<({String label, double radiusMeters})>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext _) => GeofenceCreateSheet(
+        latitude: place.latitude,
+        longitude: place.longitude,
+      ),
+    );
+    if (made == null) return;
+    final AppLocalizations l = AppLocalizations.of(context);
+    await fences.addFence(
+      // A fence named after the place it was made from, so the two line up in
+      // both lists without anyone retyping the name.
+      label: made.label.isEmpty ? place.label : made.label,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      radiusMeters: made.radiusMeters,
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(content: Text(l.placeFenceMade(fences.fences.length))));
+    }
   }
 
   Future<void> _share(BuildContext context) async {

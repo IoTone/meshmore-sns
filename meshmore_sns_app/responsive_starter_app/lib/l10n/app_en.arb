@@ -90,6 +90,9 @@
   "botRulesSave": "Save",
   "botFromBot": "bot",
   "dashboardRadio": "RADIO",
+  "dashForestCanopy": "Canopy",
+  "dashForestNoRoutes": "No learned routes yet. The radio has not been told how to reach anyone.",
+  "dashForestContacts": "Contacts",
   "dashNervLink": "Link",
   "dashNervNode": "Node",
   "dashNervRegion": "Region",
@@ -2920,6 +2923,8 @@
     }
   },
   "placeHiddenByRefutation": "Hidden here after a refutation from a known key",
+  "placeFenceThis": "Fence this place",
+  "placeFenceMade": "Fenced. {n} in your list.",
   "placeDirections": "Directions",
   "placeDirectionsCopied": "Coordinates copied",
   "placeShareAddress": "Share the address",
@@ -3414,6 +3419,8 @@
   "geofenceInsideNow": "You are inside",
   "geofenceOutsideNow": "You are outside",
   "geofenceDelete": "Delete fence",
+  "geofenceSaveAsPlace": "Save as a place",
+  "geofenceClearLog": "Clear log",
   "geofenceEventsSection": "Recent crossings",
   "geofenceEntered": "Entered {label}",
   "@geofenceEntered": {

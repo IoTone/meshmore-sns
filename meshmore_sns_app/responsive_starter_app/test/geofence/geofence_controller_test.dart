@@ -131,4 +131,50 @@ void main() {
     expect(heard, hasLength(2));
     expect(heard.last.single.isEntry, isFalse);
   });
+  test('a crossing survives a restart, and the log is capped', () async {
+    final GeofenceController first = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    await first.load();
+    await first.addFence(
+        label: 'Camp', latitude: 0, longitude: 0, radiusMeters: 100);
+    first.sample(_at(94 / 111320.0, 0));
+    first.sample(_at(106 / 111320.0, 0));
+    // The write is not awaited by sample, so give it the microtask it needs.
+    await Future<void>.delayed(Duration.zero);
+    expect(first.alerts, hasLength(2));
+
+    // A second controller stands in for the next launch: it reads only from the
+    // store, exactly as a cold start does.
+    final GeofenceController next = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    await next.load();
+    expect(next.alerts, hasLength(2),
+        reason: 'the log is the point: what happened last night');
+    expect(next.alerts.first.isEntry, isTrue);
+    expect(next.alerts.last.isEntry, isFalse);
+    // Compared as instants, not as representations: the log round-trips through
+    // an epoch millisecond, which comes back in the local zone.
+    expect(next.alerts.first.at.millisecondsSinceEpoch,
+        t0.millisecondsSinceEpoch);
+    expect(next.alerts.first.fence.label, 'Camp');
+  });
+
+  test('deleting a fence deletes its crossings, on disk as well', () async {
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    await g.load();
+    await g.addFence(
+        label: 'Camp', latitude: 0, longitude: 0, radiusMeters: 100);
+    final String id = g.fences.single.id;
+    g.sample(_at(94 / 111320.0, 0));
+    await Future<void>.delayed(Duration.zero);
+    await g.removeFence(id);
+    expect(g.alerts, isEmpty);
+    final GeofenceController next = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    await next.load();
+    expect(next.alerts, isEmpty,
+        reason: 'a history that outlives deleting its fence is not consent');
+  });
+
 }

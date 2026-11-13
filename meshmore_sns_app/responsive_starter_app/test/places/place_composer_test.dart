@@ -61,7 +61,7 @@ void main() {
       );
       expect(r.sent, isTrue);
       expect(sender.sent.single,
-          '[PLACE]51.500741,-0.124596 Water at the ford [water] [TTL:2d]');
+          '[PLACE1]51.500741,-0.124596 Water at the ford [water] [TTL:2d]');
       final PlaceParseOutcome parsed = parsePlace(
         sender.sent.single,
         receivedAt: now,
@@ -96,7 +96,7 @@ void main() {
         precision: PlacePrecision.snapped100m,
       );
       expect(r.place!.decimals, 3);
-      expect(sender.sent.single, startsWith('[PLACE]51.501,-0.125 '));
+      expect(sender.sent.single, startsWith('[PLACE1]51.501,-0.125 '));
       // A receiver that parses the same bytes computes the same id.
       final Place reparsed = parsePlace(
         sender.sent.single,

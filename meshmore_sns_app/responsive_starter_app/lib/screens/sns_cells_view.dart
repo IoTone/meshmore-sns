@@ -850,5 +850,35 @@ class _SnsCellsPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SnsCellsPainter old) => true;
+  /// Repaint only when something the picture is made of changed.
+  ///
+  /// This returned `true` unconditionally. `nowMs` is the one input that moves
+  /// on its own, and it only moves while a toast is alive, so comparing it is
+  /// what keeps the lattice still when nothing is happening — which is most of
+  /// the time this view is open.
+  bool shouldRepaint(covariant _SnsCellsPainter old) =>
+      old.type != type ||
+      old.textScale != textScale ||
+      old.selfLat != selfLat ||
+      old.selfLon != selfLon ||
+      old.maxHalfMeters != maxHalfMeters ||
+      old.heat != heat ||
+      old.heatCounts != heatCounts ||
+      old.quiet != quiet ||
+      old.quietLabel != quietLabel ||
+      old.nodes != nodes ||
+      old.toasts != toasts ||
+      old.flashPubKey != flashPubKey ||
+      old.nowMs != nowMs ||
+      old.toastLifeMs != toastLifeMs ||
+      old.accent != accent ||
+      old.hot != hot ||
+      old.cool != cool ||
+      old.node != node ||
+      old.flash != flash ||
+      old.self != self ||
+      old.label != label ||
+      old.toastBg != toastBg ||
+      old.toastBorder != toastBorder ||
+      old.bg != bg;
 }

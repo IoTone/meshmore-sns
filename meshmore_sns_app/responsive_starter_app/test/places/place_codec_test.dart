@@ -25,7 +25,7 @@ void main() {
   group('the spec examples', () {
     test('water at the ford', () {
       final Place p =
-          _parse('[PLACE]51.500741,-0.124596 Water at the ford [water] [TTL:2d]');
+          _parse('[PLACE1]51.500741,-0.124596 Water at the ford [water] [TTL:2d]');
       expect(p.type, PlaceType.water);
       expect(p.typeToken, 'water');
       expect(p.label, 'Water at the ford');
@@ -40,7 +40,7 @@ void main() {
 
     test('hazard with a comma in the label', () {
       final Place p = _parse(
-          '[PLACE]51.500741,-0.124596 Bridge out, do not cross [hazard] [TTL:6h]');
+          '[PLACE1]51.500741,-0.124596 Bridge out, do not cross [hazard] [TTL:6h]');
       expect(p.type, PlaceType.hazard);
       expect(p.label, 'Bridge out, do not cross');
       expect(p.ttl, PlaceTtl.h6);
@@ -48,7 +48,7 @@ void main() {
 
     test('a bracketed word inside the label survives (spec test 2)', () {
       final Place p = _parse(
-          '[PLACE]51.5,-0.12 Old [ford] marker [look] [TTL:12h]');
+          '[PLACE1]51.5,-0.12 Old [ford] marker [look] [TTL:12h]');
       expect(p.type, PlaceType.look);
       expect(p.typeToken, 'look');
       expect(p.label, 'Old [ford] marker');
@@ -58,27 +58,27 @@ void main() {
     test('an unknown word in the type position is other, and kept (spec test 3)',
         () {
       final Place p =
-          _parse('[PLACE]51.5,-0.12 Meeting [shelter] [TTL:1h]');
+          _parse('[PLACE1]51.5,-0.12 Meeting [shelter] [TTL:1h]');
       expect(p.type, PlaceType.other);
       expect(p.typeToken, 'shelter');
       expect(p.label, 'Meeting');
     });
 
     test('a trailing bracketed word is the type even with no TTL', () {
-      final Place p = _parse('[PLACE]51.5,-0.12 Old [ford]');
+      final Place p = _parse('[PLACE1]51.5,-0.12 Old [ford]');
       expect(p.type, PlaceType.other);
       expect(p.typeToken, 'ford');
       expect(p.label, 'Old');
     });
 
     test('no TTL takes the type default', () {
-      final Place p = _parse('[PLACE]51.5,-0.12 Spring [water]');
+      final Place p = _parse('[PLACE1]51.5,-0.12 Spring [water]');
       expect(p.ttl, PlaceTtl.d2);
       expect(p.expiresAt, _received.add(const Duration(days: 2)));
     });
 
     test('no type and no TTL is a plain place, 24 h', () {
-      final Place p = _parse('[PLACE]51.5,-0.12 A marker');
+      final Place p = _parse('[PLACE1]51.5,-0.12 A marker');
       expect(p.type, PlaceType.other);
       expect(p.typeToken, 'other');
       expect(p.ttl, PlaceTtl.h24);
@@ -89,7 +89,7 @@ void main() {
     for (final PlaceType type in PlaceType.values) {
       test('${type.token} with a TTL', () {
         final String text =
-            '[PLACE]-33.868800,151.209300 Track closed [${type.token}] [TTL:${type.defaultTtl.token}]';
+            '[PLACE1]-33.868800,151.209300 Track closed [${type.token}] [TTL:${type.defaultTtl.token}]';
         final Place p = _parse(text);
         expect(p.type, type);
         expect(p.ttl, type.defaultTtl);
@@ -98,7 +98,7 @@ void main() {
       });
 
       test('${type.token} without a TTL', () {
-        final Place p = _parse('[PLACE]47.606200,-122.332100 Marker [${type.token}]');
+        final Place p = _parse('[PLACE1]47.606200,-122.332100 Marker [${type.token}]');
         expect(p.type, type);
         expect(p.ttl, type.defaultTtl);
       });
@@ -107,46 +107,46 @@ void main() {
 
   group('coordinates', () {
     test('a decimal point is mandatory', () {
-      expect(_reject('[PLACE]51,-0.12 Marker [look]'), PlaceParseFailure.badCoordinates);
+      expect(_reject('[PLACE1]51,-0.12 Marker [look]'), PlaceParseFailure.badCoordinates);
     });
 
     test('more than six places is refused, never rounded', () {
-      expect(_reject('[PLACE]51.5007411,-0.124596 Marker [look]'),
+      expect(_reject('[PLACE1]51.5007411,-0.124596 Marker [look]'),
           PlaceParseFailure.badCoordinates);
     });
 
     test('a missing comma is refused', () {
-      expect(_reject('[PLACE]51.5 -0.12 Marker [look]'),
+      expect(_reject('[PLACE1]51.5 -0.12 Marker [look]'),
           PlaceParseFailure.badCoordinates);
     });
 
     test('a latitude past the pole is refused', () {
-      expect(_reject('[PLACE]91.0,-0.12 Marker [look]'),
+      expect(_reject('[PLACE1]91.0,-0.12 Marker [look]'),
           PlaceParseFailure.badCoordinates);
-      expect(_reject('[PLACE]-90.5,-0.12 Marker [look]'),
+      expect(_reject('[PLACE1]-90.5,-0.12 Marker [look]'),
           PlaceParseFailure.badCoordinates);
     });
 
     test('a longitude past the antimeridian is refused', () {
-      expect(_reject('[PLACE]51.5,181.0 Marker [look]'),
+      expect(_reject('[PLACE1]51.5,181.0 Marker [look]'),
           PlaceParseFailure.badCoordinates);
     });
 
     test('negative zero keeps its value', () {
-      final Place p = _parse('[PLACE]-0.000001,-0.000001 Marker [look]');
+      final Place p = _parse('[PLACE1]-0.000001,-0.000001 Marker [look]');
       expect(p.latE6, -1);
       expect(p.lonE6, -1);
     });
 
     test('the pair\'s precision is the coarser coordinate', () {
-      final Place p = _parse('[PLACE]51.500741,-0.12 Marker [look]');
+      final Place p = _parse('[PLACE1]51.500741,-0.12 Marker [look]');
       expect(p.latE6, 51500741);
       expect(p.decimals, 2);
       expect(p.precision, PlacePrecision.snapped1km);
     });
 
     test('an arrived precision of four places is none of our three choices', () {
-      final Place p = _parse('[PLACE]51.5007,-0.1245 Marker [look]');
+      final Place p = _parse('[PLACE1]51.5007,-0.1245 Marker [look]');
       expect(p.precision, isNull);
       expect(p.accuracyMeters, isNull);
     });
@@ -154,19 +154,19 @@ void main() {
 
   group('the label', () {
     test('empty is a location, not a place', () {
-      expect(_reject('[PLACE]51.5,-0.12 [look]'), PlaceParseFailure.emptyLabel);
-      expect(_reject('[PLACE]51.5,-0.12   '), PlaceParseFailure.emptyLabel);
+      expect(_reject('[PLACE1]51.5,-0.12 [look]'), PlaceParseFailure.emptyLabel);
+      expect(_reject('[PLACE1]51.5,-0.12   '), PlaceParseFailure.emptyLabel);
     });
 
     test('60 characters travel, 61 do not', () {
       final String sixty = List<String>.filled(60, 'x').join();
-      expect(_parse('[PLACE]51.5,-0.12 $sixty [look]').label, sixty);
-      expect(_reject('[PLACE]51.5,-0.12 ${List<String>.filled(61, 'x').join()} [look]'),
+      expect(_parse('[PLACE1]51.5,-0.12 $sixty [look]').label, sixty);
+      expect(_reject('[PLACE1]51.5,-0.12 ${List<String>.filled(61, 'x').join()} [look]'),
           PlaceParseFailure.labelTooLong);
     });
 
     test('a multiline message is not a place', () {
-      expect(_reject('[PLACE]51.5,-0.12 one\n[PLACE]51.5,-0.12 two'),
+      expect(_reject('[PLACE1]51.5,-0.12 one\n[PLACE]51.5,-0.12 two'),
           PlaceParseFailure.notAPlace);
     });
 
@@ -179,22 +179,22 @@ void main() {
 
   group('the TTL position', () {
     test('a TTL that is not last is refused', () {
-      expect(_reject('[PLACE]51.5,-0.12 [TTL:6h] Marker [look]'),
+      expect(_reject('[PLACE1]51.5,-0.12 [TTL:6h] Marker [look]'),
           PlaceParseFailure.misplacedTtl);
     });
 
     test('an unknown duration means the message is ordinary text', () {
-      expect(_reject('[PLACE]51.5,-0.12 Marker [look] [TTL:5h]'),
+      expect(_reject('[PLACE1]51.5,-0.12 Marker [look] [TTL:5h]'),
           PlaceParseFailure.unknownDuration);
-      expect(_reject('[PLACE]51.5,-0.12 Marker [look] [TTL:hours]'),
+      expect(_reject('[PLACE1]51.5,-0.12 Marker [look] [TTL:hours]'),
           PlaceParseFailure.unknownDuration);
-      expect(_reject('[PLACE]51.5,-0.12 Marker [look] [TTL:8d]'),
+      expect(_reject('[PLACE1]51.5,-0.12 Marker [look] [TTL:8d]'),
           PlaceParseFailure.unknownDuration);
     });
 
     test('two TTL tokens say two things and are refused', () {
       final PlaceParseFailure? failure =
-          _reject('[PLACE]51.5,-0.12 Marker [look] [TTL:6h] [TTL:1h]');
+          _reject('[PLACE1]51.5,-0.12 Marker [look] [TTL:6h] [TTL:1h]');
       expect(failure, isNotNull);
       expect(
           failure,
@@ -203,14 +203,14 @@ void main() {
     });
 
     test('two type tokens in the type position are refused', () {
-      expect(_reject('[PLACE]51.5,-0.12 Marker [water] [look]'),
+      expect(_reject('[PLACE1]51.5,-0.12 Marker [water] [look]'),
           PlaceParseFailure.duplicateToken);
     });
   });
 
   test('an unnamed, unkeyed sender cannot derive an id', () {
     expect(
-        parsePlace('[PLACE]51.5,-0.12 Marker [look]', receivedAt: _received)
+        parsePlace('[PLACE1]51.5,-0.12 Marker [look]', receivedAt: _received)
             .failure,
         PlaceParseFailure.missingReporter);
   });
@@ -218,9 +218,9 @@ void main() {
   group('encoding', () {
     test('a place encodes to the canonical line and reads back', () {
       final Place p = _parse(
-          '[PLACE]51.500741,-0.124596 Water at the ford [water] [TTL:2d]');
+          '[PLACE1]51.500741,-0.124596 Water at the ford [water] [TTL:2d]');
       expect(encodePlace(p),
-          '[PLACE]51.500741,-0.124596 Water at the ford [water] [TTL:2d]');
+          '[PLACE1]51.500741,-0.124596 Water at the ford [water] [TTL:2d]');
       final Place again = _parse(encodePlace(p));
       expect(again.id, p.id);
       expect(again.label, p.label);
@@ -233,7 +233,7 @@ void main() {
 
     test('every type encodes with its own token and reads back', () {
       for (final PlaceType type in PlaceType.values) {
-        final Place p = _parse('[PLACE]12.345678,98.765432 A place [${type.token}]');
+        final Place p = _parse('[PLACE1]12.345678,98.765432 A place [${type.token}]');
         final Place again = _parse(encodePlace(p));
         expect(again.type, type);
         expect(again.id, p.id);
@@ -241,20 +241,20 @@ void main() {
     });
 
     test('a snapped point transmits the digits it was snapped to', () {
-      final Place exact = _parse('[PLACE]51.500741,-0.124596 A place [look]');
+      final Place exact = _parse('[PLACE1]51.500741,-0.124596 A place [look]');
       final Place snapped = exact.copyWith(
         latE6: PlacePrecision.snapped100m.convertE6(51.500741),
         lonE6: PlacePrecision.snapped100m.convertE6(-0.124596),
         decimals: 3,
       );
-      expect(encodePlace(snapped), '[PLACE]51.501,-0.125 A place [look] [TTL:1h]');
+      expect(encodePlace(snapped), '[PLACE1]51.501,-0.125 A place [look] [TTL:1h]');
       final Place again = _parse(encodePlace(snapped));
       expect(again.latE6, snapped.latE6);
       expect(again.lonE6, snapped.lonE6);
     });
 
     test('a label that cannot travel is refused, not rewritten', () {
-      final Place p = _parse('[PLACE]51.5,-0.12 Marker [look]');
+      final Place p = _parse('[PLACE1]51.5,-0.12 Marker [look]');
       expect(() => encodePlace(p.copyWith(label: '   ')), throwsArgumentError);
       expect(() => encodePlace(p.copyWith(label: List<String>.filled(61, 'x').join())),
           throwsArgumentError);
@@ -270,4 +270,36 @@ void main() {
       expect(placeLabelProblem('A place'), isNull);
     });
   });
+
+  group('the tag carries a version, and the old one is still read', () {
+    Place parse(String text) => parsePlace(
+          text,
+          receivedAt: DateTime.utc(2026, 11, 13, 12),
+          reporterName: 'Ana',
+        ).place!;
+
+    test('this build writes the versioned tag', () {
+      final Place p = parse('[PLACE1]38.9,-104.7 Ford [water] [TTL:2d]');
+      expect(encodePlace(p), startsWith('[PLACE1]'));
+    });
+
+    test('an older build\'s tag parses the same as the new one', () {
+      final Place old = parse('[PLACE]38.9,-104.7 Ford [water] [TTL:2d]');
+      final Place now = parse('[PLACE1]38.9,-104.7 Ford [water] [TTL:2d]');
+      expect(old.label, now.label);
+      expect(old.latE6, now.latE6);
+      expect(old.type, now.type);
+      expect(old.ttl, now.ttl);
+    });
+
+    test('the version is not mistaken for a coordinate', () {
+      // `[PLACE]1` must not parse as the legacy tag followed by a stray digit.
+      expect(
+          parsePlace('[PLACE]1',
+                  receivedAt: DateTime.utc(2026, 11, 13), reporterName: 'Ana')
+              .place,
+          isNull);
+    });
+  });
+
 }

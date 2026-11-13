@@ -9,6 +9,7 @@ import 'aghud_dashboard.dart';
 import 'air_dashboard.dart';
 import 'dashboard_degraded_banner.dart';
 import 'drpop_dashboard.dart';
+import 'forest_dashboard.dart';
 import 'hyperlocal_dashboard.dart';
 import 'nerv_dashboard.dart';
 import 'recon_dashboard.dart';
@@ -71,11 +72,13 @@ class DashboardHost extends StatelessWidget {
       MmThemePreset.studio => const StudioDashboard(),
       // Air has a layout of its own: a white page cannot carry an instrument.
       MmThemePreset.air => const AirDashboard(),
-      // The remaining three LDMUX presets (forest, daybreak, umber) land here on
-      // purpose: a layout is a screen's own design, and inheriting the SEELE
-      // monolith is the honest default until one of them earns a layout of its
-      // own. This is not a forgotten case — the arm is reached only by presets
-      // with no bundle above it.
+      // Forest answers "how deep" rather than "how many": the depth bar is the
+      // only element in the app that shows the mesh's shape.
+      MmThemePreset.forest => const ForestDashboard(),
+      // The remaining LDMUX presets land here on purpose: a layout is a screen's
+      // own design, and inheriting the SEELE monolith is the honest default until
+      // one of them earns a layout of its own. This is not a forgotten case — the
+      // arm is reached only by presets with no bundle above it.
       _ => const DashboardScreen(),
     };
   }

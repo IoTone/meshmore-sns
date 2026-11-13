@@ -37,12 +37,12 @@ void main() {
     MmThemePreset.recon,
     MmThemePreset.studio,
     MmThemePreset.air,
+    MmThemePreset.forest,
   };
 
   /// Presets that still inherit the monolith. Each name here is a theme that has
   /// had its palette done and its layout not done yet.
   const Set<MmThemePreset> inheritingLayout = <MmThemePreset>{
-    MmThemePreset.forest,
     MmThemePreset.daybreak,
     MmThemePreset.umber,
   };

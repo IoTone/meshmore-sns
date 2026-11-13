@@ -326,6 +326,24 @@ abstract class AppLocalizations {
   /// **'RADIO'**
   String get dashboardRadio;
 
+  /// No description provided for @dashForestCanopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Canopy'**
+  String get dashForestCanopy;
+
+  /// No description provided for @dashForestNoRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'No learned routes yet. The radio has not been told how to reach anyone.'**
+  String get dashForestNoRoutes;
+
+  /// No description provided for @dashForestContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get dashForestContacts;
+
   /// No description provided for @dashNervLink.
   ///
   /// In en, this message translates to:
@@ -7546,6 +7564,18 @@ abstract class AppLocalizations {
   /// **'Hidden here after a refutation from a known key'**
   String get placeHiddenByRefutation;
 
+  /// No description provided for @placeFenceThis.
+  ///
+  /// In en, this message translates to:
+  /// **'Fence this place'**
+  String get placeFenceThis;
+
+  /// No description provided for @placeFenceMade.
+  ///
+  /// In en, this message translates to:
+  /// **'Fenced. {n} in your list.'**
+  String placeFenceMade(Object n);
+
   /// No description provided for @placeDirections.
   ///
   /// In en, this message translates to:
@@ -8577,6 +8607,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Delete fence'**
   String get geofenceDelete;
+
+  /// No description provided for @geofenceSaveAsPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as a place'**
+  String get geofenceSaveAsPlace;
+
+  /// No description provided for @geofenceClearLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear log'**
+  String get geofenceClearLog;
 
   /// No description provided for @geofenceEventsSection.
   ///

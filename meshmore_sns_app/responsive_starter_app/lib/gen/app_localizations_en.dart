@@ -156,6 +156,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardRadio => 'RADIO';
 
   @override
+  String get dashForestCanopy => 'Canopy';
+
+  @override
+  String get dashForestNoRoutes =>
+      'No learned routes yet. The radio has not been told how to reach anyone.';
+
+  @override
+  String get dashForestContacts => 'Contacts';
+
+  @override
   String get dashNervLink => 'Link';
 
   @override
@@ -4434,6 +4444,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Hidden here after a refutation from a known key';
 
   @override
+  String get placeFenceThis => 'Fence this place';
+
+  @override
+  String placeFenceMade(Object n) {
+    return 'Fenced. $n in your list.';
+  }
+
+  @override
   String get placeDirections => 'Directions';
 
   @override
@@ -5081,6 +5099,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geofenceDelete => 'Delete fence';
+
+  @override
+  String get geofenceSaveAsPlace => 'Save as a place';
+
+  @override
+  String get geofenceClearLog => 'Clear log';
 
   @override
   String get geofenceEventsSection => 'Recent crossings';
