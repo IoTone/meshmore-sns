@@ -704,11 +704,10 @@ class _GridScreenState extends State<GridScreen>
     return radarRingStepMeters(km * 1000) * 3 / 1000;
   }
 
-  /// Pretty distance label for a scale stop (e.g. "25 m" / "5 km").
-  String _rangeValue(double km) {
-    if (km < 1) return '${(km * 1000).round()} m';
-    return '${km.toStringAsFixed(0)} km';
-  }
+  /// Pretty distance label for a scale stop (e.g. "25 m" / "5 km"), in the
+  /// reader's units.
+  String _rangeValue(double km) =>
+      MmFormat.step(km * 1000, prefs: context.formatPrefs);
 
   /// Cheap "did the live node list change" check for the
   /// auto-track-until-interaction path. We compare by length first
@@ -1220,9 +1219,8 @@ class _GridLegend extends StatelessWidget {
             ],
           ),
         );
-    final String scaleValueDisplay = scaleKm < 1
-        ? '${(scaleKm * 1000).round()} m'
-        : '${scaleKm.toStringAsFixed(0)} km';
+    final String scaleValueDisplay =
+        MmFormat.step(scaleKm * 1000, prefs: context.formatPrefs);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),

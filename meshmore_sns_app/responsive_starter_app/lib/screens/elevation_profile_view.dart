@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import 'grid_notice.dart';
 import '../theme/mm_skin.dart';
+import '../util/mm_format.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_components.dart';
@@ -231,6 +232,7 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
                     _RefId.burj: l.elevationRefBurj,
                     _RefId.mtFuji: l.elevationRefMtFuji,
                   },
+                  format: context.formatPrefs,
                 ),
               ),
             );
@@ -416,6 +418,7 @@ class _ElevationProfilePainter extends CustomPainter {
     required this.unknownLabel,
     required this.peerCountLabel,
     required this.referenceLabels,
+    required this.format,
   });
 
   final double? selfAltMeters;
@@ -445,6 +448,9 @@ class _ElevationProfilePainter extends CustomPainter {
   final String unknownLabel;
   final String peerCountLabel;
   final Map<_RefId, String> referenceLabels;
+
+  /// The reader's units, for the altitude axis.
+  final FormatPrefs? format;
 
   /// Max altitude shown on the axis — slightly above Mt Fuji.
   static const double _altMax = 4500.0;
@@ -713,7 +719,7 @@ class _ElevationProfilePainter extends CustomPainter {
           gap: 6);
       final TextPainter tp = TextPainter(
         text: TextSpan(
-          text: a < 1000 ? '${a.round()} m' : '${(a / 1000).toStringAsFixed(1)} km',
+          text: MmFormat.step(a, prefs: format),
           style: TextStyle(
               color: accent,
               fontSize: type.size(9) * textScale,
@@ -853,6 +859,10 @@ class _ElevationProfilePainter extends CustomPainter {
       peers != old.peers ||
       knownPubKeys != old.knownPubKeys ||
       favPubKeys != old.favPubKeys ||
+      // The axis labels are drawn from the reader's units: without this a change
+      // of unit repainted every widget around the chart and left the chart
+      // saying metres.
+      format != old.format ||
       scanT != old.scanT;
 }
 
