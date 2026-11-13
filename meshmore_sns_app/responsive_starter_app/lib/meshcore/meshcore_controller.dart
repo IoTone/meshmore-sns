@@ -1992,6 +1992,16 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       await ChatStore.saveDropped(<String, int>{});
     }
     await ChatStore.clear();
+    // The meshbook is a *copy* of the last 24 h of channel text, kept in
+    // SharedPreferences and remembered across launches, and the coverage record
+    // is a trail-shaped set of cells. Both survived "delete everything the app
+    // kept", which left a readable copy of yesterday's conversation on disk after
+    // the app said it had been deleted.
+    _meshbook.clearAll();
+    _meshbookSaveTimer?.cancel();
+    await _meshbook.clearPersisted();
+    _coverage.clear();
+    unawaited(CoverageStore.clear());
     notifyListeners();
   }
 
