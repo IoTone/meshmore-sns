@@ -177,4 +177,94 @@ void main() {
         reason: 'a history that outlives deleting its fence is not consent');
   });
 
+
+  group('editing a fence', () {
+    test('a rename keeps the id, the crossings and the inside state', () async {
+      final GeofenceController g = GeofenceController(
+          mc: MeshcoreController(), clock: () => t0, autoTick: false);
+      await g.load();
+      await g.addFence(
+          label: 'Camp', latitude: 0, longitude: 0, radiusMeters: 100);
+      final String id = g.fences.single.id;
+      // Walk in, so there is a crossing and a state to preserve.
+      g.sample(_at(94 / 111320.0, 0));
+      await Future<void>.delayed(Duration.zero);
+      expect(g.isInside(id), isTrue);
+      expect(g.alerts, hasLength(1));
+
+      await g.updateFence(id: id, label: 'Base camp');
+
+      expect(g.fences.single.id, id, reason: 'the id is the fence');
+      expect(g.fences.single.label, 'Base camp');
+      expect(g.fences.single.radiusMeters, 100);
+      expect(g.isInside(id), isTrue,
+          reason: 'a rename is not a crossing');
+      expect(g.alerts, hasLength(1),
+          reason: 'the crossing stays filed under the same fence');
+    });
+
+    test('a resize keeps the watch, and a shrink reports the leave', () async {
+      final GeofenceController g = GeofenceController(
+          mc: MeshcoreController(), clock: () => t0, autoTick: false);
+      await g.load();
+      await g.addFence(
+          label: 'Camp', latitude: 0, longitude: 0, radiusMeters: 100);
+      final String id = g.fences.single.id;
+      g.sample(_at(94 / 111320.0, 0));
+      await Future<void>.delayed(Duration.zero);
+      expect(g.isInside(id), isTrue);
+
+      // Grow it: still inside, and no second entry.
+      await g.updateFence(id: id, radiusMeters: 400);
+      expect(g.fences.single.radiusMeters, 400);
+      expect(g.sample(_at(94 / 111320.0, 0)), isEmpty);
+
+      // Shrink it below where we stand: the next sample says we left, which is
+      // true, and it is the only honest reading of a fence that no longer
+      // contains us.
+      await g.updateFence(id: id, radiusMeters: 50);
+      final List<GeofenceAlert> left = g.sample(_at(94 / 111320.0, 0));
+      expect(left, hasLength(1));
+      expect(left.single.isEntry, isFalse);
+    });
+
+    test('an edit survives a reload', () async {
+      final GeofenceController g = GeofenceController(
+          mc: MeshcoreController(), clock: () => t0, autoTick: false);
+      await g.load();
+      await g.addFence(
+          label: 'Camp', latitude: 0, longitude: 0, radiusMeters: 100);
+      final String id = g.fences.single.id;
+      await g.updateFence(id: id, label: 'Base camp', radiusMeters: 600);
+
+      final GeofenceController next = GeofenceController(
+          mc: MeshcoreController(), clock: () => t0, autoTick: false);
+      await next.load();
+      expect(next.fences.single.id, id);
+      expect(next.fences.single.label, 'Base camp');
+      expect(next.fences.single.radiusMeters, 600);
+    });
+
+    test('an empty name is refused rather than blanking the fence', () async {
+      final GeofenceController g = GeofenceController(
+          mc: MeshcoreController(), clock: () => t0, autoTick: false);
+      await g.load();
+      await g.addFence(
+          label: 'Camp', latitude: 0, longitude: 0, radiusMeters: 100);
+      final String id = g.fences.single.id;
+      await g.updateFence(id: id, label: '   ');
+      expect(g.fences.single.label, 'Camp');
+    });
+
+    test('an unknown id changes nothing', () async {
+      final GeofenceController g = GeofenceController(
+          mc: MeshcoreController(), clock: () => t0, autoTick: false);
+      await g.load();
+      await g.addFence(
+          label: 'Camp', latitude: 0, longitude: 0, radiusMeters: 100);
+      await g.updateFence(id: 'nope', label: 'Other');
+      expect(g.fences.single.label, 'Camp');
+    });
+  });
+
 }

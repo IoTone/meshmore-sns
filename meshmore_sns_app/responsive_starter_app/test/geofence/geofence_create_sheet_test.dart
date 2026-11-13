@@ -85,4 +85,68 @@ void main() {
     expect(GeofenceCreateSheet.indexFor(99999),
         GeofenceCreateSheet.stops.length - 1);
   });
+
+  testWidgets('the edit sheet opens on the fence it is changing',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(420, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final GeofenceController fences =
+        GeofenceController(mc: MeshcoreController(), autoTick: false);
+    addTearDown(fences.dispose);
+    ({String label, double radiusMeters})? result;
+    await t.pumpWidget(
+      MultiProvider(
+        providers: <ChangeNotifierProvider<ChangeNotifier>>[
+          ChangeNotifierProvider<GeofenceController>.value(value: fences),
+          ChangeNotifierProvider<FormatPrefs>.value(value: FormatPrefs()),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: LocaleController.supported,
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: Scaffold(
+            body: Builder(
+              builder: (BuildContext ctx) => TextButton(
+                onPressed: () async {
+                  result = await showModalBottomSheet<
+                      ({String label, double radiusMeters})>(
+                    context: ctx,
+                    isScrollControlled: true,
+                    builder: (_) => const GeofenceCreateSheet(
+                      latitude: 40,
+                      longitude: -105,
+                      initialRadiusMeters: 600,
+                      initialLabel: 'Base camp',
+                      editing: true,
+                    ),
+                  );
+                },
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await t.tap(find.text('open'));
+    await t.pumpAndSettle();
+
+    // The title says it is a change, and the fields are the fence's own.
+    expect(find.text('Change this fence'), findsOneWidget);
+    expect(find.text('Base camp'), findsOneWidget);
+    expect(find.text('600 m'), findsOneWidget);
+
+    await t.enterText(
+        find.byKey(const ValueKey<String>('geofence-name')), 'Base camp 2');
+    await t.tap(find.byKey(const ValueKey<String>('geofence-save')));
+    await t.pumpAndSettle();
+    expect(result?.label, 'Base camp 2');
+    expect(result?.radiusMeters, 600);
+  });
+
 }

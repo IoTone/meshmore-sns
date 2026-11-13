@@ -10,7 +10,11 @@ import '../ui/mm_components.dart';
 import '../util/mm_format.dart';
 import 'geofence_controller.dart';
 
-/// Draw a fence on the map: a name, a radius, and a preview of the circle.
+/// Draw a fence, or change one: a name, a radius, and a preview of the circle.
+///
+/// One sheet for both, because they are the same three fields. Editing used to
+/// mean deleting a fence and drawing it again, which threw away its crossings and
+/// its inside/outside state for a typo in its name.
 ///
 /// The radius is a slider whose numbers are distances in the reader's units, not
 /// a raw metre count. A fence radius in metres only is the same defect as an
@@ -26,11 +30,21 @@ class GeofenceCreateSheet extends StatefulWidget {
     required this.latitude,
     required this.longitude,
     this.initialRadiusMeters = 250,
+    this.initialLabel,
+    this.editing = false,
   });
 
   final double latitude;
   final double longitude;
   final double initialRadiusMeters;
+
+  /// The name to open with. Null for a new fence, which starts empty and shows
+  /// the default name as its hint.
+  final String? initialLabel;
+
+  /// True when this sheet is changing a fence that already exists, which changes
+  /// the title and nothing else: the fields are the same fields.
+  final bool editing;
 
   /// The stops the slider moves through, in metres.
   ///
@@ -65,7 +79,8 @@ class GeofenceCreateSheet extends StatefulWidget {
 }
 
 class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
-  late final TextEditingController _name = TextEditingController();
+  late final TextEditingController _name =
+      TextEditingController(text: widget.initialLabel ?? '');
   late int _index = GeofenceCreateSheet.indexFor(widget.initialRadiusMeters);
 
   @override
@@ -73,6 +88,13 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
     _name.dispose();
     super.dispose();
   }
+
+  void _save(BuildContext context) => Navigator.pop(
+        context,
+        (label: _name.text.trim(), radiusMeters: _currentMetres),
+      );
+
+  double get _currentMetres => GeofenceCreateSheet.stops[_index];
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +115,7 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              l.geofenceCreateTitle,
+              widget.editing ? l.geofenceEditTitle : l.geofenceCreateTitle,
               style: TextStyle(
                 color: skin.color.fg,
                 fontSize: skin.type.sizeLg,
@@ -110,6 +132,7 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
                 hintText: l.geofenceDefaultName(
                     context.read<GeofenceController>().fences.length + 1),
               ),
+              onSubmitted: (_) => _save(context),
             ),
             SizedBox(height: skin.space.sectionGap),
             // The preview: the same fill and ring the map will draw, at the size
@@ -165,13 +188,7 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
                   key: const ValueKey<String>('geofence-save'),
                   icon: Icons.check,
                   label: l.actionSave,
-                  onPressed: () => Navigator.pop(
-                    context,
-                    (
-                      label: _name.text.trim(),
-                      radiusMeters: metres,
-                    ),
-                  ),
+                  onPressed: () => _save(context),
                 ),
               ],
             ),

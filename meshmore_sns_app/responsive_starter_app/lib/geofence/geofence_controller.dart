@@ -173,6 +173,42 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
+  /// Change a fence's name or its radius, keeping everything else.
+  ///
+  /// The id is the fence: it is what its crossings are filed under and what the
+  /// map's label opens, so an edit rewrites the record in place rather than
+  /// deleting one fence and adding another. A rename therefore keeps its history,
+  /// and a resize keeps the watch's own state (see [GeofenceWatch.rebase]).
+  ///
+  /// Moving a fence is deliberately not part of this. A centre is where the
+  /// reader drew it, and "move" needs a gesture on the map that does not exist
+  /// yet; a sheet that silently moved a fence would be worse than the delete and
+  /// redraw it takes today.
+  Future<void> updateFence({
+    required String id,
+    String? label,
+    double? radiusMeters,
+  }) async {
+    final int at = _fences.indexWhere((StoredGeofence f) => f.id == id);
+    if (at < 0) return;
+    final StoredGeofence old = _fences[at];
+    final double radius = radiusMeters ?? old.radiusMeters;
+    if (!radius.isFinite || radius <= 0) return;
+    final String wanted = (label ?? old.label).trim();
+    final StoredGeofence next = StoredGeofence(
+      id: old.id,
+      label: wanted.isEmpty ? old.label : wanted,
+      latitude: old.latitude,
+      longitude: old.longitude,
+      radiusMeters: radius,
+    );
+    if (next.label == old.label && next.radiusMeters == old.radiusMeters) return;
+    _fences[at] = next;
+    _watches[id]?.rebase(next.toEngine());
+    await GeofenceStore.save(_fences);
+    notifyListeners();
+  }
+
   /// Forget every crossing, on disk and in memory.
   ///
   /// A log you cannot clear is a log you did not agree to. Deleting a fence

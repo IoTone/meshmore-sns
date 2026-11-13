@@ -42,7 +42,7 @@ enum GeofenceEvent { entered, left, unchanged, noPosition }
 final class GeofenceWatch {
   GeofenceWatch(this.fence);
 
-  final Geofence fence;
+  Geofence fence;
 
   bool _inside = false;
   int _entries = 0;
@@ -52,6 +52,17 @@ final class GeofenceWatch {
   /// How many continuous stays have begun. Used by the alert path so it can say
   /// "3rd time today" without re-deriving the state.
   int get entries => _entries;
+
+  /// Point this watch at an edited fence without losing where we stand.
+  ///
+  /// An edit is the same fence with a new name or a new radius, so the state
+  /// stays: a reader who renames a fence they are standing in has not left it,
+  /// and re-deriving from "outside" would fire an entry on the next sample for
+  /// a crossing that never happened. If the new radius excludes us, the next
+  /// sample reports the leave, which is true and is what a shrink means.
+  void rebase(Geofence next) {
+    fence = next;
+  }
 
   /// Feeds one position. A sample with no fix changes nothing and says so:
   /// treating "no position" as "outside" would fire a leave on every GPS gap.

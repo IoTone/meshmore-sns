@@ -483,7 +483,17 @@ class _StreetMapViewState extends State<StreetMapView> {
     super.initState();
     // The session's own memory, read before the disk preference so a basemap
     // picked a moment ago is not overwritten by the one from last week.
-    _viewState = context.read<MapViewState?>();
+    //
+    // The lookup tries the non-nullable registration first: `Provider.of<X?>`
+    // does not match a provider registered as `X`, and the app registers the
+    // real thing. Reading only the nullable spelling returned null in the app
+    // while passing in a harness that happened to use the nullable one.
+    _viewState = _findViewState(context);
+    _viewState?.addListener(_onViewStateRequest);
+    // A request made while no map was mounted is still waiting: the reader
+    // asked, left the screen, and arrived here. One frame after the first
+    // render is when the camera exists and can be moved.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onViewStateRequest());
     final String? sessionSource = _viewState?.sourceId;
     if (sessionSource != null) {
       _sourceId = sessionSource;
@@ -542,6 +552,38 @@ class _StreetMapViewState extends State<StreetMapView> {
     _heading.value = h;
   }
 
+  /// The app-scoped view memory, however it was registered.
+  static MapViewState? _findViewState(BuildContext context) {
+    try {
+      return Provider.of<MapViewState>(context, listen: false);
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  /// Someone outside the map asked to look at a place.
+  ///
+  /// A request, not a memory: another screen named a camera and this is the
+  /// first map that can obey it. It is taken once, so a later pan is not undone
+  /// by a request that was already answered.
+  void _onViewStateRequest() {
+    final ({LatLng centre, double zoom})? asked = _viewState?.takeRequest();
+    if (asked == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        _map.move(asked.centre, asked.zoom);
+      } catch (_) {
+        // The map has not rendered yet; it will, and a request that arrived
+        // during that frame is one frame early rather than lost.
+      }
+      // A request is a deliberate move, so the position ladder must not pull
+      // the camera back to the reader's own fix on the next sample.
+      _userMoved = true;
+      _rememberView();
+    });
+  }
+
   @override
   void dispose() {
     // Leaving the map stops the warm-up: an in-flight loop that keeps walking
@@ -551,6 +593,7 @@ class _StreetMapViewState extends State<StreetMapView> {
     _warm?.cancel();
     _saveView?.cancel();
     _compass.removeListener(_onCompass);
+    _viewState?.removeListener(_onViewStateRequest);
     _heading.dispose();
     if (_ownsCompass) _compass.dispose();
     super.dispose();
@@ -1669,18 +1712,21 @@ class _StreetMapViewState extends State<StreetMapView> {
                   markers: <Marker>[
                     for (final StoredGeofence f in fences)
                       Marker(
-                        key: ValueKey<String>('fence-label-\${f.id}'),
+                        key: ValueKey<String>('fence-label-${f.id}'),
                         point: LatLng(f.latitude, f.longitude),
                         width: 140,
                         height: 28,
                         alignment: Alignment.center,
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap: () => context.push('/settings/geofences'),
+                          // The label names one fence, so it opens that fence
+                          // rather than the list it shares with nineteen others.
+                          onTap: () => context
+                              .push('/settings/geofences?id=${f.id}'),
                           child: IgnorePointer(
                             child: Text(
                               f.label,
-                              key: ValueKey<String>('fence-name-\${f.id}'),
+                              key: ValueKey<String>('fence-name-${f.id}'),
                               textAlign: TextAlign.center,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

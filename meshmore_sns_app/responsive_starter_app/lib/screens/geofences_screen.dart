@@ -1,12 +1,20 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../geofence/geofence_controller.dart';
+import '../geofence/geofence_create_sheet.dart';
 import '../geofence/geofence_store.dart';
+import '../maps/geofence_fit.dart';
+import '../maps/map_view_state.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../shell/shell_view_request.dart';
 import '../places/place_create_sheet.dart';
 import '../places/place_wiring.dart';
 import '../theme/mm_skin.dart';
@@ -34,6 +42,114 @@ class GeofencesScreen extends StatefulWidget {
 class _GeofencesScreenState extends State<GeofencesScreen> {
   int _radius = 250;
   bool _adding = false;
+
+  /// The fence the map's label named, if the screen was opened from one.
+  ///
+  /// Read once: the fence stays marked for as long as the screen is open, so a
+  /// reader who scrolls away and back does not lose the thing they came for.
+  String? _focused;
+
+  /// The search text. Only shown once there are more than a few fences: a
+  /// search field over two rows is furniture.
+  final TextEditingController _search = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _search.addListener(() => setState(() {}));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_focused != null) return;
+    // The screen is also built outside a router (the skin tests render it as a
+    // plain `MaterialApp` home), where there is no route to read a query from.
+    if (GoRouter.maybeOf(context) == null) return;
+    final String? id = GoRouterState.of(context).uri.queryParameters['id'];
+    if (id != null && id.isNotEmpty) _focused = id;
+  }
+
+  /// The app-scoped view memory, however it was registered.
+  ///
+  /// `Provider.of<X?>` does not match a provider registered as `X` — the lookup
+  /// that reads only the nullable spelling returns null in the app and works in
+  /// whichever harness happens to use the nullable one. This tries the real
+  /// registration first.
+  static MapViewState? _viewState(BuildContext context) {
+    try {
+      return Provider.of<MapViewState>(context, listen: false);
+    } on ProviderNotFoundException {
+      try {
+        return Provider.of<MapViewState?>(context, listen: false);
+      } on ProviderNotFoundException {
+        return null;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  /// The fences the list should show, with the one the map named first.
+  List<StoredGeofence> _visible(GeofenceController fences) {
+    final String q = _search.text.trim().toLowerCase();
+    final List<StoredGeofence> rows = <StoredGeofence>[
+      for (final StoredGeofence f in fences.fences)
+        if (q.isEmpty || f.label.toLowerCase().contains(q)) f,
+    ];
+    final String? focused = _focused;
+    if (focused == null) return rows;
+    final int at = rows.indexWhere((StoredGeofence f) => f.id == focused);
+    if (at <= 0) return rows;
+    // Opening a fence puts it at the top rather than scrolling to it: the list
+    // is at most twenty rows, and "the first row is the one you asked for" needs
+    // no scroll maths that break at a different text size.
+    final StoredGeofence first = rows[at];
+    rows.removeAt(at);
+    return <StoredGeofence>[first, ...rows];
+  }
+
+  Future<void> _edit(GeofenceController fences, StoredGeofence fence) async {
+    final ({String label, double radiusMeters})? made =
+        await showModalBottomSheet<({String label, double radiusMeters})>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext _) => GeofenceCreateSheet(
+        latitude: fence.latitude,
+        longitude: fence.longitude,
+        initialRadiusMeters: fence.radiusMeters,
+        initialLabel: fence.label,
+        editing: true,
+      ),
+    );
+    if (made == null) return;
+    await fences.updateFence(
+      id: fence.id,
+      label: made.label,
+      radiusMeters: made.radiusMeters,
+    );
+  }
+
+  /// Ask the shell for the map, with every fence in view.
+  void _showAll(GeofenceController fences) {
+    final Size size = MediaQuery.sizeOf(context);
+    final ({LatLng centre, double zoom})? fit = fitGeofences(
+      fences.fences,
+      viewportPx: math.min(size.width, size.height),
+    );
+    if (fit == null) return;
+    // The map takes the instruction and the shell switches to it. Both before
+    // the pop, so the tab is already the map when this screen goes away.
+    _viewState(context)?.requestView(centre: fit.centre, zoom: fit.zoom);
+    // Registered as nullable in `main.dart`, so this spelling is the right one.
+    context.read<ShellViewRequest?>()?.openMap();
+    Navigator.of(context).pop();
+  }
 
   Future<void> _addHere(GeofenceController fences) async {
     final MeshcoreController mc = context.read<MeshcoreController>();
@@ -103,17 +219,52 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
                 onPressed: _adding ? null : () => _addHere(fences),
               ),
             SizedBox(height: skin.space.step(5)),
-            MmSectionHeader(l.geofenceListSection),
+            Row(
+              children: <Widget>[
+                Expanded(child: MmSectionHeader(l.geofenceListSection)),
+                // A list of fences is a list of places, and a list does not
+                // answer "where are they". This is the one control that turns
+                // the list back into the map it came from.
+                if (fences.fences.isNotEmpty)
+                  MmAction(
+                    key: const ValueKey<String>('geofence-show-all'),
+                    icon: Icons.map_outlined,
+                    label: l.geofenceShowAll,
+                    dense: true,
+                    onPressed: () => _showAll(fences),
+                  ),
+              ],
+            ),
+            if (fences.fences.length > 3)
+              Padding(
+                padding: EdgeInsets.only(top: skin.space.step(2)),
+                child: TextField(
+                  key: const ValueKey<String>('geofence-search'),
+                  controller: _search,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search, size: 18),
+                    hintText: l.geofenceSearchHint,
+                    isDense: true,
+                  ),
+                ),
+              ),
             if (fences.fences.isEmpty)
               Text(l.geofenceEmpty,
                   key: const ValueKey<String>('geofence-empty'),
                   style: TextStyle(
                       color: skin.color.fgMuted, fontSize: skin.type.sizeSm))
+            else if (_visible(fences).isEmpty)
+              Text(l.geofenceNoMatches,
+                  key: const ValueKey<String>('geofence-no-matches'),
+                  style: TextStyle(
+                      color: skin.color.fgMuted, fontSize: skin.type.sizeSm))
             else
-              for (final StoredGeofence f in fences.fences)
+              for (final StoredGeofence f in _visible(fences))
                 _FenceRow(
                   fence: f,
                   inside: fences.isInside(f.id),
+                  focused: f.id == _focused,
+                  onEdit: () => _edit(fences, f),
                   onDelete: () => fences.removeFence(f.id),
                   // A fence and a place are the same fact twice: a centre, a
                   // name, and how much ground it covers. A fence the crew should
@@ -190,12 +341,20 @@ class _FenceRow extends StatelessWidget {
   const _FenceRow({
     required this.fence,
     required this.inside,
+    required this.focused,
+    required this.onEdit,
     required this.onDelete,
     required this.onSaveAsPlace,
   });
 
   final StoredGeofence fence;
   final bool inside;
+
+  /// True when the map's own label opened this fence. It is marked rather than
+  /// scrolled to, and it is first in the list, so the reader sees the one they
+  /// tapped without hunting for it.
+  final bool focused;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onSaveAsPlace;
 
@@ -203,8 +362,16 @@ class _FenceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     final MmSkin skin = context.skin;
-    return Padding(
+    return Container(
+      key: ValueKey<String>('geofence-row-${fence.id}'),
       padding: EdgeInsets.symmetric(vertical: skin.space.step(2)),
+      decoration: focused
+          ? BoxDecoration(
+              border: Border(
+                left: BorderSide(color: skin.color.accent, width: 3),
+              ),
+            )
+          : null,
       child: Row(
         children: <Widget>[
           Icon(
@@ -226,8 +393,21 @@ class _FenceRow extends StatelessWidget {
                   style: TextStyle(
                       color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
                 ),
+                if (focused)
+                  Text(
+                    l.geofenceFocused,
+                    key: ValueKey<String>('geofence-focused-${fence.id}'),
+                    style: TextStyle(
+                        color: skin.color.accent, fontSize: skin.type.sizeSm),
+                  ),
               ],
             ),
+          ),
+          IconButton(
+            key: ValueKey<String>('geofence-edit-${fence.id}'),
+            tooltip: l.geofenceEdit,
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined),
           ),
           IconButton(
             key: ValueKey<String>('geofence-as-place-${fence.id}'),
