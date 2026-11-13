@@ -23,6 +23,7 @@ import '../maps/density_overlay.dart';
 import '../maps/hex_field.dart';
 import '../maps/message_bubble.dart';
 import '../theme/viz_palette.dart';
+import '../util/mm_format.dart';
 import '../maps/basemap_prefs.dart';
 import '../maps/compass.dart';
 import '../maps/map_centre.dart';
@@ -918,8 +919,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                           color: skin.color.fg, fontSize: skin.type.sizeBody)),
                   subtitle: _showDensity
                       ? Text(
-                          l.mapDensityCellSize(
-                              densityCellLabel(_densityCellMetresShown)),
+                          l.mapDensityCellSize(densityCellLabel(
+                              _densityCellMetresShown, prefs: c.formatPrefs)),
                           style: TextStyle(
                               color: skin.color.fgMuted,
                               fontSize: skin.type.sizeSm))
@@ -1783,7 +1784,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                   border: Border.all(color: cs.outline),
                 ),
                 child: Text(
-                  l.mapDensityCellSize(densityCellLabel(densityCellMetres)),
+                  l.mapDensityCellSize(densityCellLabel(densityCellMetres,
+                      prefs: context.formatPrefs)),
                   style: TextStyle(
                       color: cs.onSurface,
                       fontSize: context.skin.type.sizeMicro),

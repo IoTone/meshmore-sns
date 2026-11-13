@@ -9142,6 +9142,78 @@ abstract class AppLocalizations {
   /// **'Connection & background'**
   String get settingsAppGroupRadio;
 
+  /// No description provided for @settingsAppGroupReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Units and time'**
+  String get settingsAppGroupReading;
+
+  /// No description provided for @settingsUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance units'**
+  String get settingsUnits;
+
+  /// No description provided for @settingsUnitsMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'Metres and kilometres'**
+  String get settingsUnitsMetric;
+
+  /// No description provided for @settingsUnitsMetricHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How every MeshCore tool reports distance.'**
+  String get settingsUnitsMetricHint;
+
+  /// No description provided for @settingsUnitsImperial.
+  ///
+  /// In en, this message translates to:
+  /// **'Feet and miles'**
+  String get settingsUnitsImperial;
+
+  /// No description provided for @settingsUnitsImperialHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Converted from the metres the radio reports.'**
+  String get settingsUnitsImperialHint;
+
+  /// No description provided for @settingsClock24.
+  ///
+  /// In en, this message translates to:
+  /// **'24-hour clock'**
+  String get settingsClock24;
+
+  /// No description provided for @settingsClock24On.
+  ///
+  /// In en, this message translates to:
+  /// **'14:32'**
+  String get settingsClock24On;
+
+  /// No description provided for @settingsClock12On.
+  ///
+  /// In en, this message translates to:
+  /// **'2:32 PM'**
+  String get settingsClock12On;
+
+  /// No description provided for @settingsCelsius.
+  ///
+  /// In en, this message translates to:
+  /// **'Celsius'**
+  String get settingsCelsius;
+
+  /// No description provided for @settingsCelsiusOn.
+  ///
+  /// In en, this message translates to:
+  /// **'21 °C'**
+  String get settingsCelsiusOn;
+
+  /// No description provided for @settingsFahrenheitOn.
+  ///
+  /// In en, this message translates to:
+  /// **'70 °F'**
+  String get settingsFahrenheitOn;
+
   /// No description provided for @settingsAppGroupSound.
   ///
   /// In en, this message translates to:

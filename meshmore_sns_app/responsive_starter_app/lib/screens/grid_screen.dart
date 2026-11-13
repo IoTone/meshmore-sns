@@ -28,6 +28,7 @@ import 'grid_prefs_store.dart';
 import '../maps/compass.dart';
 import '../maps/radar_scale.dart';
 import '../theme/viz_palette.dart';
+import '../util/mm_format.dart';
 import 'weather_view.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
@@ -1096,6 +1097,8 @@ class _GridScreenState extends State<GridScreen>
                                             // one of the marks it sweeps over.
                                             sweepColor: VizPalette.sweepFor(
                                                 context.skin),
+                                            format:
+                                                context.formatPrefs,
                                             subtle: cs.onSurface
                                                 .withValues(alpha: .12),
                                             ringStroke: cs.outline
@@ -1347,6 +1350,7 @@ class _GridPainter extends CustomPainter {
     required this.sweep,
     required this.reduceMotion,
     required this.sweepColor,
+    required this.format,
     required this.accent,
     required this.subtle,
     required this.ringStroke,
@@ -1378,6 +1382,10 @@ class _GridPainter extends CustomPainter {
   /// The sweep's own colour: the hue opposite this skin's accent, so the hand of
   /// the clock is never mistaken for a node.
   final Color sweepColor;
+
+  /// The reader's units, so a ring label says miles where the reader reads miles.
+  final FormatPrefs? format;
+
   final Color accent;
   final Color subtle;
   final Color ringStroke;
@@ -1525,7 +1533,8 @@ class _GridPainter extends CustomPainter {
     // typical fleets.
     for (final double f in ringFracs) {
       // The rim is three whole steps, so each label lands on one.
-      final String label = radarDistanceLabel(scaleKm * f * 1000);
+      final String label =
+          radarDistanceLabel(scaleKm * f * 1000, prefs: format);
       final TextPainter tp = TextPainter(
         text: TextSpan(
           text: label,
@@ -1698,6 +1707,7 @@ class _GridPainter extends CustomPainter {
       old.tick != tick ||
       old.reduceMotion != reduceMotion ||
       old.sweepColor != sweepColor ||
+      old.format != format ||
       old.rippleAt != rippleAt ||
       old.scaleKm != scaleKm ||
       old.type != type ||

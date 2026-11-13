@@ -20,6 +20,7 @@ import '../ui/mm_confirm.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/storage_use_block.dart';
 import '../ui/mm_scaffold.dart';
+import '../util/mm_format.dart';
 import '../tts/tts_controller.dart';
 
 /// General app settings (R3/R4/R5/R21). Connection, language, TTS,
@@ -65,6 +66,46 @@ class AppSettingsScreen extends StatelessWidget {
         duration: const Duration(seconds: 6),
       ),
     );
+  }
+
+  /// A stand-in for a screen mounted without the store (a harness, a screenshot
+  /// test). Static so it does not make this widget mutable; the app always has
+  /// the real one above it.
+  static final FormatPrefs _fallbackFormat = FormatPrefs();
+
+  Future<void> _pickUnits(
+      BuildContext ctx, FormatPrefs fmt, AppLocalizations l) async {
+    final DistanceUnits? picked = await showModalBottomSheet<DistanceUnits>(
+      context: ctx,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListTile(
+              key: const ValueKey<String>('units-metric'),
+              title: Text(l.settingsUnitsMetric),
+              subtitle: Text(l.settingsUnitsMetricHint),
+              trailing: fmt.units == DistanceUnits.metric
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () => Navigator.pop(sheet, DistanceUnits.metric),
+            ),
+            ListTile(
+              key: const ValueKey<String>('units-imperial'),
+              title: Text(l.settingsUnitsImperial),
+              subtitle: Text(l.settingsUnitsImperialHint),
+              trailing: fmt.units == DistanceUnits.imperial
+                  ? const Icon(Icons.check)
+                  : null,
+              onTap: () => Navigator.pop(sheet, DistanceUnits.imperial),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) await fmt.setUnits(picked);
   }
 
   String _languageLabel(AppLocalizations l, Locale? loc) {
@@ -126,6 +167,9 @@ class AppSettingsScreen extends StatelessWidget {
     final TtsController tts = context.watch<TtsController>();
     final DemoMode demo = context.watch<DemoMode>();
     final MeshcoreController mc = context.watch<MeshcoreController>();
+    // A harness may mount this screen without the provider; the neutral defaults
+    // are the same answer the app gives before the store has loaded.
+    final FormatPrefs fmt = context.watchFormatPrefs ?? _fallbackFormat;
     final LocaleController lc = context.watch<LocaleController>();
     final AppLocalizations l = AppLocalizations.of(context);
     return Scaffold(
@@ -205,6 +249,44 @@ class AppSettingsScreen extends StatelessWidget {
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _pickAirtimePolicy(context, mc, l),
+            ),
+            SizedBox(height: context.skin.space.sectionGap),
+            MmSectionHeader(l.settingsAppGroupReading),
+            // Units and clock. The app had no such setting at all: distances were
+            // metres and kilometres in six formatting sites and every timestamp
+            // followed the phone's locale, so a reader who thinks in miles
+            // converted in their head and a 12-hour phone showed two clock
+            // conventions in one app.
+            ListTile(
+              key: const ValueKey<String>('settings-units-distance'),
+              leading: const Icon(Icons.straighten),
+              title: Text(l.settingsUnits),
+              subtitle: Text(
+                  fmt.units == DistanceUnits.imperial
+                      ? l.settingsUnitsImperial
+                      : l.settingsUnitsMetric,
+                  style: TextStyle(color: cs.onSurfaceVariant)),
+              onTap: () => _pickUnits(context, fmt, l),
+            ),
+            SwitchListTile(
+              key: const ValueKey<String>('settings-clock-24'),
+              secondary: const Icon(Icons.schedule),
+              title: Text(l.settingsClock24),
+              subtitle: Text(
+                  fmt.clock24 ? l.settingsClock24On : l.settingsClock12On,
+                  style: TextStyle(color: cs.onSurfaceVariant)),
+              value: fmt.clock24,
+              onChanged: (bool v) => fmt.setClock24(v),
+            ),
+            SwitchListTile(
+              key: const ValueKey<String>('settings-temperature'),
+              secondary: const Icon(Icons.thermostat),
+              title: Text(l.settingsCelsius),
+              subtitle: Text(
+                  fmt.celsius ? l.settingsCelsiusOn : l.settingsFahrenheitOn,
+                  style: TextStyle(color: cs.onSurfaceVariant)),
+              value: fmt.celsius,
+              onChanged: (bool v) => fmt.setCelsius(v),
             ),
             SizedBox(height: context.skin.space.sectionGap),
             MmSectionHeader(l.settingsAppGroupSound),

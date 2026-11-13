@@ -5246,6 +5246,42 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsAppGroupRadio => '接続とバックグラウンド';
 
   @override
+  String get settingsAppGroupReading => '単位と時刻';
+
+  @override
+  String get settingsUnits => '距離の単位';
+
+  @override
+  String get settingsUnitsMetric => 'メートル・キロメートル';
+
+  @override
+  String get settingsUnitsMetricHint => 'MeshCore のツールが報告する距離そのままです。';
+
+  @override
+  String get settingsUnitsImperial => 'フィート・マイル';
+
+  @override
+  String get settingsUnitsImperialHint => '無線機が報告するメートルから換算します。';
+
+  @override
+  String get settingsClock24 => '24時間表示';
+
+  @override
+  String get settingsClock24On => '14:32';
+
+  @override
+  String get settingsClock12On => '午後2:32';
+
+  @override
+  String get settingsCelsius => '摂氏';
+
+  @override
+  String get settingsCelsiusOn => '21 °C';
+
+  @override
+  String get settingsFahrenheitOn => '70 °F';
+
+  @override
   String get settingsAppGroupSound => '表示と音';
 
   @override

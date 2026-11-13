@@ -5467,6 +5467,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppGroupRadio => 'Connection & background';
 
   @override
+  String get settingsAppGroupReading => 'Units and time';
+
+  @override
+  String get settingsUnits => 'Distance units';
+
+  @override
+  String get settingsUnitsMetric => 'Metres and kilometres';
+
+  @override
+  String get settingsUnitsMetricHint =>
+      'How every MeshCore tool reports distance.';
+
+  @override
+  String get settingsUnitsImperial => 'Feet and miles';
+
+  @override
+  String get settingsUnitsImperialHint =>
+      'Converted from the metres the radio reports.';
+
+  @override
+  String get settingsClock24 => '24-hour clock';
+
+  @override
+  String get settingsClock24On => '14:32';
+
+  @override
+  String get settingsClock12On => '2:32 PM';
+
+  @override
+  String get settingsCelsius => 'Celsius';
+
+  @override
+  String get settingsCelsiusOn => '21 °C';
+
+  @override
+  String get settingsFahrenheitOn => '70 °F';
+
+  @override
   String get settingsAppGroupSound => 'Reading and sound';
 
   @override

@@ -73,6 +73,7 @@ import 'package:meshmore_sns_app/splash/branded_splash_screen.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tts/tts_controller.dart';
+import 'package:meshmore_sns_app/util/mm_format.dart';
 import 'package:meshmore_sns_app/ui/mm_collapse_controller.dart';
 
 Future<void> main() async {
@@ -261,6 +262,11 @@ Future<void> startApp() async {
         // the cue path reads it, the node sheet writes it — but only
         // this instance touches the prefs key.
         ChangeNotifierProvider<PeerProfiles>(create: (_) => PeerProfiles()),
+        // Units and clock: one store, read by the formatter every surface uses,
+        // so "km" cannot survive in one screen after the reader chose miles.
+        ChangeNotifierProvider<FormatPrefs>(
+          create: (_) => FormatPrefs()..load(),
+        ),
         ChangeNotifierProvider<TtsController>(
           // Speech answers to the same audio master as the cues —
           // without this the quick-mute silenced every chime and

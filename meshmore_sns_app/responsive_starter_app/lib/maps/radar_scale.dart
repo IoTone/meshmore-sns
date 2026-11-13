@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 import 'dart:math' as math;
 
+import '../util/mm_format.dart';
+
 /// The distance a radar's rings are drawn at, in metres, from a third to the rim.
 ///
 /// The dial labels its rings at a third, two thirds and the rim, so it is the
@@ -32,7 +34,8 @@ double radarRingStepMeters(double maxMeters) {
 ///
 /// Whole numbers only, because the step is round by construction; a label with a
 /// decimal means [radarRingStepMeters] was bypassed.
-String radarDistanceLabel(double meters) {
+String radarDistanceLabel(double meters, {FormatPrefs? prefs}) {
+  if (prefs != null) return MmFormat.step(meters, prefs: prefs);
   if (meters < 1000) return '${meters.round()} m';
   final double km = meters / 1000;
   return '${km.round()} km';

@@ -6,6 +6,8 @@ import 'dart:ui';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
+import '../util/mm_format.dart';
+
 /// Node density per equal area, as map polygons.
 ///
 /// This is the property the deleted equal-area grid held and nothing else did:
@@ -122,7 +124,10 @@ double densityCellMetresFor({
 }
 
 /// The cell size written the way a person reads it: "250 m", "1 km", "25 km".
-String densityCellLabel(double metres) {
+String densityCellLabel(double metres, {FormatPrefs? prefs}) {
+  // A reader in miles reads the cell's width in feet or miles too: the chip and
+  // the hexagons it labels must not disagree about the unit.
+  if (prefs != null) return MmFormat.step(metres, prefs: prefs);
   if (metres >= 1000) {
     final double km = metres / 1000;
     return km == km.roundToDouble()
