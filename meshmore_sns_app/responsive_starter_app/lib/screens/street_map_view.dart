@@ -382,7 +382,6 @@ class _StreetMapViewState extends State<StreetMapView> {
     setState(() => _outsidePacks = outside);
   }
 
-  double? _headingDeg;
 
   /// The app's one compass when there is one above us, so the arrow and both
   /// radars answer from the same filter; its own only when shown alone.
@@ -483,16 +482,25 @@ class _StreetMapViewState extends State<StreetMapView> {
     _compass.start();
   }
 
+  /// The phone's bearing, kept out of `setState` on purpose.
+  ///
+  /// A compass sample arrives several times a second while the phone turns, and
+  /// rebuilding this screen for one of them rebuilt every marker, every reach
+  /// ring, the density field and the coverage quilt — the whole map, to move one
+  /// arrow. The notifier rebuilds the arrow and the legend that reads it, and
+  /// nothing else.
+  final ValueNotifier<double?> _heading = ValueNotifier<double?>(null);
+
   void _onCompass() {
     final double? h = _compass.heading;
     if (!mounted) return;
+    final double? current = _heading.value;
     if (h == null) {
-      if (_headingDeg == null) return;
-      setState(() => _headingDeg = null);
+      if (current != null) _heading.value = null;
       return;
     }
-    if (_headingDeg != null && (h - _headingDeg!).abs() < 1.0) return;
-    setState(() => _headingDeg = h);
+    if (current != null && (h - current).abs() < 1.0) return;
+    _heading.value = h;
   }
 
   @override
@@ -504,6 +512,7 @@ class _StreetMapViewState extends State<StreetMapView> {
     _warm?.cancel();
     _saveView?.cancel();
     _compass.removeListener(_onCompass);
+    _heading.dispose();
     if (_ownsCompass) _compass.dispose();
     super.dispose();
   }
@@ -1547,14 +1556,18 @@ class _StreetMapViewState extends State<StreetMapView> {
                       width: 56,
                       height: 56,
                       alignment: Alignment.center,
-                      child: _SelfGlyph(
-                        colour: cs.primary,
-                        // The ring is a skin token, not white: on the light
-                        // skin a white ring around a pale dot disappears.
-                        ring: context.skin.color.fg,
-                        // The self bearing is the phone's magnetometer, the
-                        // one heading in the app a radio never supplies.
-                        headingDeg: _headingDeg,
+                      // Only this subtree rebuilds on a compass sample: the
+                      // marker's arrow, not the map, the pins or the overlays.
+                      child: ValueListenableBuilder<double?>(
+                        valueListenable: _heading,
+                        builder: (BuildContext _, double? heading, Widget? __) =>
+                            _SelfGlyph(
+                          colour: cs.primary,
+                          // The ring is a skin token, not white: on the light
+                          // skin a white ring around a pale dot disappears.
+                          ring: context.skin.color.fg,
+                          headingDeg: heading,
+                        ),
                       ),
                     ),
                 ],
@@ -1645,8 +1658,13 @@ class _StreetMapViewState extends State<StreetMapView> {
               // radio: a MeshCore node reports a position, never a facing. It
               // is drawn only while a compass reading exists, so the legend
               // for it appears only while there is an arrow to explain.
-              if (_headingDeg != null && hasPersonalPosition)
-                Padding(
+              if (hasPersonalPosition)
+                ValueListenableBuilder<double?>(
+                  valueListenable: _heading,
+                  builder: (BuildContext _, double? heading, Widget? __) =>
+                      heading == null
+                          ? const SizedBox.shrink()
+                          : Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1667,6 +1685,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                       ),
                     ],
                   ),
+                ),
                 ),
               // R114 — a pack has a zoom range. Outside it, offline, the map is
               // showing coarser tiles on purpose, and saying so once is the
