@@ -11,7 +11,6 @@ import '../l10n/locale_controller.dart';
 import '../meshcore/airtime.dart';
 import '../meshcore/block_store.dart';
 import '../meshcore/meshcore_controller.dart';
-import '../notifications/channel_notification_prefs.dart';
 import '../notifications/notifier.dart';
 import '../perms/permissions_service.dart';
 import '../theme/mm_skin.dart';
@@ -128,7 +127,6 @@ class AppSettingsScreen extends StatelessWidget {
     final DemoMode demo = context.watch<DemoMode>();
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final LocaleController lc = context.watch<LocaleController>();
-    final NotificationPrefs np = context.watch<NotificationPrefs>();
     final AppLocalizations l = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l.settingsHeading)),
@@ -245,30 +243,17 @@ class AppSettingsScreen extends StatelessWidget {
               value: tts.enabled,
               onChanged: (bool v) => tts.setEnabled(v),
             ),
-            // The Public channel is the one every radio hears, so it is the one
-            // a user most needs to quiet: a busy channel that alerts all day
-            // teaches people to ignore the app. This is a master silence for
-            // that slot, kept in the same per-channel store the chat header
-            // edits, so the two never disagree — the toggle is the slot-0
-            // bundle's `muted` flag, not a second setting beside it. An SOS is
-            // not silenced by it, and the subtitle says so rather than leaving
-            // a user to find out.
-            SwitchListTile(
-              key: const ValueKey<String>(
-                  'settings-public-channel-notifications'),
-              title: Text(l.settingsPublicChannelNotifications),
-              subtitle: Text(
-                np.prefsFor(0).muted
-                    ? l.settingsPublicChannelNotificationsOff
-                    : l.settingsPublicChannelNotificationsOn,
-                style: TextStyle(color: cs.onSurfaceVariant),
-              ),
-              secondary: Icon(np.prefsFor(0).muted
-                  ? Icons.notifications_off_outlined
-                  : Icons.notifications_active_outlined),
-              value: !np.prefsFor(0).muted,
-              onChanged: (bool v) =>
-                  np.setFor(0, np.prefsFor(0).copyWith(muted: !v)),
+            // Silence is per channel and lives on the channel's own sheet, in
+            // Settings → Channels: asking it here answered for slot 0 only, so
+            // the switch that said "public channel notifications" was the one
+            // channel nobody could silence from anywhere else — and the sheet
+            // pointed back here. One place, every channel.
+            ListTile(
+              key: const ValueKey<String>('settings-channel-silence'),
+              leading: const Icon(Icons.notifications_off_outlined),
+              title: Text(l.settingsSilencePerChannel),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/channels'),
             ),
             // R5 / U5 — Voice quality picker (rate / pitch / voice +
             // preview). Always reachable, even when SPEECH is off —

@@ -2418,8 +2418,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifSectionTitle => 'Notifications';
 
   @override
-  String get notifMutedNotice =>
-      'Silenced in Settings. These switches apply when it is turned back on.';
+  String get notifMutedNoticeHere =>
+      'Silenced. These switches apply when it is turned back on.';
+
+  @override
+  String get notifMuted => 'Silence this channel';
+
+  @override
+  String get settingsSilencePerChannel => 'Silence a channel';
+
+  @override
+  String get notifMutedSub =>
+      'Keeps the messages, stops the alert, the speech and the badge.';
 
   @override
   String get notifOs => 'Show a notification';
@@ -5458,18 +5468,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppGroupSound => 'Reading and sound';
-
-  @override
-  String get settingsPublicChannelNotifications =>
-      'Public channel notifications';
-
-  @override
-  String get settingsPublicChannelNotificationsOn =>
-      'Messages on the Public channel alert this phone.';
-
-  @override
-  String get settingsPublicChannelNotificationsOff =>
-      'Silent on this phone. An SOS on the channel still alerts.';
 
   @override
   String get settingsAppGroupData => 'Data';

@@ -2313,7 +2313,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifSectionTitle => '通知';
 
   @override
-  String get notifMutedNotice => '設定でミュートされています。ここのスイッチは再びオンにしたときに適用されます。';
+  String get notifMutedNoticeHere => '通知は停止中です。再び有効にすると下のスイッチが効きます。';
+
+  @override
+  String get notifMuted => 'このチャンネルを通知停止';
+
+  @override
+  String get settingsSilencePerChannel => 'チャンネルの通知を止める';
+
+  @override
+  String get notifMutedSub => 'メッセージは保存し、通知・読み上げ・バッジだけ止めます。';
 
   @override
   String get notifOs => '通知を表示';
@@ -5238,17 +5247,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsAppGroupSound => '表示と音';
-
-  @override
-  String get settingsPublicChannelNotifications => 'パブリックチャンネルの通知';
-
-  @override
-  String get settingsPublicChannelNotificationsOn =>
-      'パブリックチャンネルのメッセージをこの端末で通知します。';
-
-  @override
-  String get settingsPublicChannelNotificationsOff =>
-      'この端末では通知しません。チャンネルの SOS は通知します。';
 
   @override
   String get settingsAppGroupData => 'データ';

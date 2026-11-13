@@ -4058,11 +4058,29 @@ abstract class AppLocalizations {
   /// **'Notifications'**
   String get notifSectionTitle;
 
-  /// No description provided for @notifMutedNotice.
+  /// No description provided for @notifMutedNoticeHere.
   ///
   /// In en, this message translates to:
-  /// **'Silenced in Settings. These switches apply when it is turned back on.'**
-  String get notifMutedNotice;
+  /// **'Silenced. These switches apply when it is turned back on.'**
+  String get notifMutedNoticeHere;
+
+  /// No description provided for @notifMuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Silence this channel'**
+  String get notifMuted;
+
+  /// No description provided for @settingsSilencePerChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Silence a channel'**
+  String get settingsSilencePerChannel;
+
+  /// No description provided for @notifMutedSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps the messages, stops the alert, the speech and the badge.'**
+  String get notifMutedSub;
 
   /// Per-channel: post an OS notification.
   ///
@@ -9129,24 +9147,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reading and sound'**
   String get settingsAppGroupSound;
-
-  /// No description provided for @settingsPublicChannelNotifications.
-  ///
-  /// In en, this message translates to:
-  /// **'Public channel notifications'**
-  String get settingsPublicChannelNotifications;
-
-  /// No description provided for @settingsPublicChannelNotificationsOn.
-  ///
-  /// In en, this message translates to:
-  /// **'Messages on the Public channel alert this phone.'**
-  String get settingsPublicChannelNotificationsOn;
-
-  /// No description provided for @settingsPublicChannelNotificationsOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Silent on this phone. An SOS on the channel still alerts.'**
-  String get settingsPublicChannelNotificationsOff;
 
   /// No description provided for @settingsAppGroupData.
   ///

@@ -18,18 +18,18 @@ import 'package:meshmore_sns_app/tts/tts_controller.dart';
 
 import '../meshcore/fake_transport.dart';
 
-/// Settings carries one switch for the Public channel: whether messages there
-/// alert this phone at all.
+/// Silence is per channel, and Settings points at the one place that owns it.
 ///
-/// The switch is not a second setting beside the per-channel bundle the chat
-/// header edits. It is slot 0's `muted` flag, so the two can never disagree,
-/// and the live suite proves the service honours it
-/// (`test/notifications/notification_service_test.dart`).
+/// Settings carried a single switch for the *public* channel, so channels 1..n
+/// could not be silenced anywhere — and the channel sheet's muted notice pointed
+/// back at a switch that would not have silenced that channel even if found. The
+/// switch lives on each channel's own sheet now; Settings has a row that goes
+/// there.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const ValueKey<String> switchKey =
-      ValueKey<String>('settings-public-channel-notifications');
+  const ValueKey<String> rowKey =
+      ValueKey<String>('settings-channel-silence');
 
   Future<NotificationPrefs> pump(
     WidgetTester t, {
@@ -79,53 +79,27 @@ void main() {
     return np;
   }
 
-  Future<void> revealSwitch(WidgetTester t) async {
+  Future<void> revealRow(WidgetTester t) async {
     await t.scrollUntilVisible(
-      find.byKey(switchKey),
+      find.byKey(rowKey),
       240,
       scrollable: find.byType(Scrollable).first,
     );
     await t.pumpAndSettle();
   }
 
-  testWidgets('the switch starts on and says what on means',
+  testWidgets('Settings sends silence to the screen that owns it',
       (WidgetTester t) async {
     await pump(t);
-    await revealSwitch(t);
-    final SwitchListTile tile = t.widget<SwitchListTile>(find.byKey(switchKey));
-    expect(tile.value, isTrue);
-    expect(find.textContaining('alert this phone'), findsOneWidget);
-  });
-
-  testWidgets(
-      'turning it off mutes slot 0, and the copy names the SOS '
-      'exception', (WidgetTester t) async {
-    final NotificationPrefs np = await pump(t);
-    await revealSwitch(t);
-    await t.tap(find.byKey(switchKey));
-    await t.pumpAndSettle();
-
-    expect(np.prefsFor(0).muted, isTrue,
-        reason: 'the switch is the channel bundle, not a setting beside it');
-    expect(find.textContaining('SOS'), findsOneWidget,
-        reason: 'a user has to be able to see that an SOS is not silenced');
-  });
-
-  testWidgets('turning it back on restores the switches the user had',
-      (WidgetTester t) async {
-    // Silenced while speech was on for this channel: re-enabling must bring
-    // the speech back rather than resetting the channel to its defaults.
-    final NotificationPrefs np = NotificationPrefs(
-      seed: <int, ChannelNotificationPrefs>{
-        0: const ChannelNotificationPrefs(tts: true, muted: true),
-      },
-    );
-    await pump(t, prefs: np);
-    await revealSwitch(t);
-    await t.tap(find.byKey(switchKey));
-    await t.pumpAndSettle();
-    expect(np.prefsFor(0).muted, isFalse);
-    expect(np.prefsFor(0).tts, isTrue,
-        reason: 'a master silence must not rewrite the bundle it silences');
+    await revealRow(t);
+    expect(find.byKey(rowKey), findsOneWidget,
+        reason: 'one row, naming the effect');
+    expect(find.text('Silence a channel'), findsOneWidget);
+    // The per-channel switch is gone from here: two homes for one setting is how
+    // the notice on the channel sheet came to point at the wrong screen.
+    expect(
+        find.byKey(
+            const ValueKey<String>('settings-public-channel-notifications')),
+        findsNothing);
   });
 }

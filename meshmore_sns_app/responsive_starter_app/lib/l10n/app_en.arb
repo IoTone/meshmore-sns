@@ -1535,7 +1535,10 @@
     "description": "OS notification body for an SOS. Deliberately omits the coordinates: the lock screen is not where a position should be published."
   },
   "notifSectionTitle": "Notifications",
-  "notifMutedNotice": "Silenced in Settings. These switches apply when it is turned back on.",
+  "notifMutedNoticeHere": "Silenced. These switches apply when it is turned back on.",
+  "notifMuted": "Silence this channel",
+  "settingsSilencePerChannel": "Silence a channel",
+  "notifMutedSub": "Keeps the messages, stops the alert, the speech and the badge.",
   "@notifSectionTitle": {
     "description": "Section heading in the channel editor for the per-channel notification bundle."
   },
@@ -3746,9 +3749,6 @@
   },
   "settingsAppGroupRadio": "Connection & background",
   "settingsAppGroupSound": "Reading and sound",
-  "settingsPublicChannelNotifications": "Public channel notifications",
-  "settingsPublicChannelNotificationsOn": "Messages on the Public channel alert this phone.",
-  "settingsPublicChannelNotificationsOff": "Silent on this phone. An SOS on the channel still alerts.",
   "settingsAppGroupData": "Data",
   "settingsAppGroupSystem": "System",
   "aboutReplayIntro": "Replay the first-run screens",
