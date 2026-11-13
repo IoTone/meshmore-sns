@@ -54,6 +54,14 @@ void main() {
     });
   });
 
+  group('a temperature range', () {
+    test('names both ends, or one when they agree', () {
+      expect(MmFormat.range(4, 19, prefs: metric), '4–19°C');
+      expect(MmFormat.range(7, 7, prefs: metric), '7°C');
+      expect(MmFormat.range(0, 100, prefs: imperial), '32–212°F');
+    });
+  });
+
   group('clock', () {
     test('24-hour by default, with padded hours', () {
       expect(MmFormat.clock(DateTime(2026, 1, 1, 9, 5), prefs: metric),

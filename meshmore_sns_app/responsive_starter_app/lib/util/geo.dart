@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 import 'dart:math' as math;
 
+import 'mm_format.dart';
+
 /// Great-circle distance (haversine) in **metres** between two
 /// WGS-84 points. Inputs are degrees.
 double haversineMeters(
@@ -36,9 +38,12 @@ double bearingRadians(
 /// Pretty-print a metre distance for chat / nodes lists. Sub-km is
 /// rounded to the nearest 10 m; ≥ 1 km uses one decimal of km.
 /// Returns `null` for null input so callers can chain `?.`.
-String? formatDistance(double? meters) {
+String? formatDistance(double? meters, {FormatPrefs? prefs}) {
   if (meters == null) return null;
   if (meters.isNaN || meters.isInfinite) return null;
+  // One formatter for the whole app: the reader's units, or the metric default
+  // when there is no store above the caller.
+  if (prefs != null) return '≈ ${MmFormat.distance(meters, prefs: prefs)}';
   if (meters < 1000) {
     final int rounded = (meters / 10).round() * 10;
     return '≈ $rounded m';

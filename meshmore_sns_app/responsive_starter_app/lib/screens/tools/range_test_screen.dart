@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../bot/bot_scope.dart';
 import '../../gen/app_localizations.dart';
+import '../../util/mm_format.dart';
 import '../../meshcore/meshcore_controller.dart';
 import '../../tools/range_test_tool.dart';
 import '../../tools/tools_controller.dart';
@@ -115,7 +116,8 @@ class RangeTestScreen extends StatelessWidget {
                 if (t.bestSnrDb != null)
                   ToolLine(l.rangeBest(fmtDb(t.bestSnrDb!))),
                 if (t.farthestM != null)
-                  ToolLine(l.rangeFarthest(geo.formatDistance(t.farthestM)!)),
+                  ToolLine(l.rangeFarthest(
+                      geo.formatDistance(t.farthestM, prefs: context.formatPrefs)!)),
               ],
             ),
           ),
@@ -125,7 +127,7 @@ class RangeTestScreen extends StatelessWidget {
               '#${r.seq}  '
               '${r.snrDb == null ? '' : '${fmtDb(r.snrDb!)} dB  '}'
               '${r.flood ? '${l.rangeFlood}  ' : ''}'
-              '${geo.formatDistance(r.distanceM) ?? ''}',
+              '${geo.formatDistance(r.distanceM, prefs: context.formatPrefs) ?? ''}',
             ),
         ],
       ],

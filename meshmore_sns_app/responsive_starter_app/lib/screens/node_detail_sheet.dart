@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../gen/app_localizations.dart';
+import '../util/mm_format.dart';
 import '../field/relationship.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
@@ -299,7 +300,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
     final IdentityMatch? idMatch =
         widget.isSelf ? null : mc.identityMatchFor(n.pubKeyHex);
     final String? distance =
-        geo.formatDistance(widget.distanceMeters);
+        geo.formatDistance(widget.distanceMeters, prefs: context.formatPrefs);
 
     // A pill is delimited by its TINT: a tint plus a stroke in the same colour
     // says the same edge twice, and on a paper ground it reads as a small box

@@ -134,14 +134,24 @@ abstract final class MmFormat {
     return '${celsius.round()} °C';
   }
 
+  /// A temperature range, for a summary that reports a low and a high.
+  static String range(double lo, double hi, {FormatPrefs? prefs}) {
+    final bool f = prefs != null && !prefs.celsius;
+    final String unit = f ? '°F' : '°C';
+    final int a = f ? (lo * 9 / 5 + 32).round() : lo.round();
+    final int b = f ? (hi * 9 / 5 + 32).round() : hi.round();
+    return a == b ? '$a$unit' : '$a–$b$unit';
+  }
+
   /// A time of day, in the reader's clock.
   ///
   /// 24-hour is the default here rather than the locale's, because this app's
   /// timestamps are evidence — a message's time, an alarm's deadline — and
   /// "2:32" without a marker is ambiguous in a way "14:32" is not. A reader who
   /// wants the phone's own format turns it off.
-  static String clock(DateTime at, {FormatPrefs? prefs, BuildContext? context}) {
-    final bool use24 = prefs?.clock24 ?? true;
+  static String clock(DateTime at,
+      {FormatPrefs? prefs, BuildContext? context, bool? clock24}) {
+    final bool use24 = clock24 ?? prefs?.clock24 ?? true;
     if (use24) {
       return '${at.hour.toString().padLeft(2, '0')}:'
           '${at.minute.toString().padLeft(2, '0')}';

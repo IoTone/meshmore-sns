@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 import '../gen/app_localizations.dart';
+import 'mm_format.dart';
 
 /// APP-N3 — three clocks, never mixed.
 ///
@@ -84,11 +85,14 @@ class ClockReading {
 /// Absolute is what a reader expects beside a message, so the common case
 /// keeps its shape; the case that used to lie — a sender whose clock runs
 /// ahead, which used to print a time in the future — is named instead.
-String clockStamp(AppLocalizations l, DateTime at, {DateTime? now}) {
+String clockStamp(AppLocalizations l, DateTime at,
+    {DateTime? now, bool clock24 = true}) {
   final ClockReading r = ClockReading.message(at, now: now ?? DateTime.now());
   if (!r.allowsAbsolute) return clockText(l, r, now: now);
-  return '${at.hour.toString().padLeft(2, '0')}:'
-      '${at.minute.toString().padLeft(2, '0')}';
+  // The shape the reader chose in Settings: "14:32" or "2:32 PM". A message's
+  // time is the fact the row deliberately never prints, so the one place it is
+  // shown is the place to respect the setting.
+  return MmFormat.clock(at, clock24: clock24);
 }
 
 /// Renders a reading: relative age when the clock can be trusted, the

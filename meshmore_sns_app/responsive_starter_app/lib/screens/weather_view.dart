@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../util/mm_format.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -526,11 +527,9 @@ class _WindowRow extends StatelessWidget {
   final AppLocalizations l;
   final ColorScheme cs;
 
-  String _tempLabel(AmbientWx a) {
+  String _tempLabel(AmbientWx a, FormatPrefs? prefs) {
     if (!a.hasTemp) return '';
-    final int lo = a.tempMinC!.round();
-    final int hi = a.tempMaxC!.round();
-    return lo == hi ? '$lo°C' : '$lo–$hi°C';
+    return MmFormat.range(a.tempMinC!, a.tempMaxC!, prefs: prefs);
   }
 
   List<WxCondition> _others(AmbientWx a) {
@@ -593,7 +592,7 @@ class _WindowRow extends StatelessWidget {
                             fontWeight: FontWeight.w600)),
                   if (a.hasTemp) ...<Widget>[
                     if (a.dominant != null) const SizedBox(width: 8),
-                    Text(_tempLabel(a),
+                    Text(_tempLabel(a, context.formatPrefs),
                         style: TextStyle(
                             color: cs.onSurface,
                             fontFamily: context.skin.type.monoFamily,
@@ -660,28 +659,27 @@ class _MicroclimateBubble extends StatelessWidget {
   final ColorScheme cs;
   final AppLocalizations l;
 
-  String _label() {
+  String _label(FormatPrefs? prefs) {
     if (climate.placeName != null && climate.placeName!.isNotEmpty) {
       return climate.placeName!;
     }
     final double? d = mc.distanceMetersTo(climate.lat, climate.lon);
-    final String? fd = d == null ? null : geo.formatDistance(d);
+    final String? fd = d == null ? null : geo.formatDistance(d, prefs: prefs);
     return fd ?? l.wxMicroclimateNearby;
   }
 
-  String? _temp() {
+  String? _temp(FormatPrefs? prefs) {
     if (climate.measuredTempC != null) {
-      return '${climate.measuredTempC!.round()}°C';
+      return MmFormat.temperature(climate.measuredTempC!, prefs: prefs);
     }
     if (climate.tempAvgC == null) return null;
-    final int lo = climate.tempMinC!.round();
-    final int hi = climate.tempMaxC!.round();
-    return lo == hi ? '$lo°C' : '$lo–$hi°C';
+    return MmFormat.range(climate.tempMinC!, climate.tempMaxC!, prefs: prefs);
   }
 
   @override
   Widget build(BuildContext context) {
-    final String? t = _temp();
+    final FormatPrefs? prefs = context.formatPrefs;
+    final String? t = _temp(prefs);
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 7, 12, 7),
       decoration: BoxDecoration(
@@ -699,7 +697,7 @@ class _MicroclimateBubble extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(_label(),
+              Text(_label(prefs),
                   style: TextStyle(
                       color: cs.onSurface,
                       fontSize: context.skin.type.sizeBodyLg,

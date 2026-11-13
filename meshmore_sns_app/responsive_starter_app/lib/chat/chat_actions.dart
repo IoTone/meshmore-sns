@@ -20,6 +20,7 @@ import '../screens/delivery_status_icon.dart';
 import '../screens/tools/tool_pickers.dart';
 import '../ui/mm_confirm.dart';
 import '../util/clock_model.dart';
+import '../util/mm_format.dart';
 import 'draft_store.dart';
 
 /// R20 / U11 — per-message Reply / Copy / Delete actions (+ R76 Retry
@@ -101,7 +102,8 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
         children: <Widget>[
           // Route and signal belong to the transmission, not to the message,
           // so they are said once here instead of on every row of the thread.
-          if (_metaLine(l, m) case final String meta)
+          if (_metaLine(l, m, prefs: context.formatPrefs)
+              case final String meta)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
@@ -213,12 +215,12 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
 /// APP-N2 — what the transmission itself can say about this row: how it went
 /// out, how strong it arrived, and, for our own rows, what the app can vouch
 /// for. Null when there is nothing to say, so the sheet stays short.
-String? _metaLine(AppLocalizations l, ChatMessage m) {
+String? _metaLine(AppLocalizations l, ChatMessage m, {FormatPrefs? prefs}) {
   // The time leads, because it is the fact a row deliberately does not print:
   // a thread of stamps reads as a log file, so the sheet is where you go to ask
   // and this is the first thing it answers.
   final List<String> parts = <String>[
-    clockStamp(l, m.at),
+    clockStamp(l, m.at, clock24: prefs?.clock24 ?? true),
     if (m.isFlood) l.chatMetaFlood,
     if (m.snrDb != null) l.chatMetaSnr(m.snrDb!.toStringAsFixed(1)),
     if (m.outgoing && m.delivery != null) deliveryLabel(l, m.delivery!),

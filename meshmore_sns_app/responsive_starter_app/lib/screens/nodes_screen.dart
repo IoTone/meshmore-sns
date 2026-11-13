@@ -11,6 +11,7 @@ import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
+import '../util/mm_format.dart';
 import '../util/relative_time.dart';
 import 'node_detail_sheet.dart';
 import '../ui/mm_shape.dart';
@@ -625,7 +626,9 @@ class _NodesScreenState extends State<NodesScreen> {
                                     const SizedBox(width: 3),
                                     Text(
                                       <String>[
-                                        '${telem!.temperatureC!.toStringAsFixed(1)}°C',
+                                        MmFormat.temperature(
+                                            telem!.temperatureC!,
+                                            prefs: context.formatPrefs),
                                         if (telem.humidityPct != null)
                                           '${telem.humidityPct!.toStringAsFixed(0)}%',
                                       ].join(' · '),
