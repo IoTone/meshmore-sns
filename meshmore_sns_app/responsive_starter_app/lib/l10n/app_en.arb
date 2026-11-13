@@ -718,6 +718,7 @@
   "settingsHubProfile": "Appearance & accessibility",
   "settingsHubChannels": "Channels",
   "settingsHubDiagnostics": "Radio connection",
+  "bootStarting": "STARTING",
   "bootHeader": "MESHMORE  /  SYNCHRONIZING",
   "bootConnecting": "CONNECTING TO RADIO…",
   "bootHandshaking": "HANDSHAKING…",

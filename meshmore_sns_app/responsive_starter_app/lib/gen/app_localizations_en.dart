@@ -1324,6 +1324,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubDiagnostics => 'Radio connection';
 
   @override
+  String get bootStarting => 'STARTING';
+
+  @override
   String get bootHeader => 'MESHMORE  /  SYNCHRONIZING';
 
   @override

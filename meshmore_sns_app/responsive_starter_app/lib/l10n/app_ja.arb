@@ -666,6 +666,7 @@
   "settingsHubProfile": "外観とアクセシビリティ",
   "settingsHubChannels": "チャンネル",
   "settingsHubDiagnostics": "無線機の接続",
+  "bootStarting": "起動中",
   "bootHeader": "MESHMORE  /  同期中",
   "bootConnecting": "ラジオに接続中…",
   "bootHandshaking": "ハンドシェイク中…",

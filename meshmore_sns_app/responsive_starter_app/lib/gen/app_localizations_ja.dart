@@ -1258,6 +1258,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubDiagnostics => '無線機の接続';
 
   @override
+  String get bootStarting => '起動中';
+
+  @override
   String get bootHeader => 'MESHMORE  /  同期中';
 
   @override

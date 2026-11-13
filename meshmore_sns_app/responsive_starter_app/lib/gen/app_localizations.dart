@@ -2360,6 +2360,12 @@ abstract class AppLocalizations {
   /// **'Radio connection'**
   String get settingsHubDiagnostics;
 
+  /// No description provided for @bootStarting.
+  ///
+  /// In en, this message translates to:
+  /// **'STARTING'**
+  String get bootStarting;
+
   /// No description provided for @bootHeader.
   ///
   /// In en, this message translates to:

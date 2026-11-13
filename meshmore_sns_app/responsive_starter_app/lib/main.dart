@@ -469,11 +469,15 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  /// Flutter-side splash min-display gate. Even when first-run prefs
-  /// resolve in microseconds the user gets ~1.5 s of the branded
-  /// splash with the rotating icon + version readout. Without this,
-  /// shared_preferences typically resolves before the first frame
-  /// and the splash never shows.
+  /// Flutter-side splash floor.
+  ///
+  /// It existed to guarantee the branded splash was seen at all, because
+  /// `shared_preferences` usually resolves before the first frame. Two and a
+  /// bit seconds of it was a wait the reader paid on every cold launch, and it
+  /// was paid for a screen that was then replaced by a second one while the
+  /// radio came up. The floor is now just long enough to keep a one-frame flash
+  /// out of the launch; the waiting that has to happen is the radio's, and
+  /// `BootOverlay` owns that, with its own patience and its own SKIP.
   bool _minSplashElapsed = false;
 
   @override
@@ -506,7 +510,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         notifier.init().then((_) => service.start());
       }
     });
-    Future<void>.delayed(const Duration(milliseconds: 2200), () {
+    Future<void>.delayed(const Duration(milliseconds: 250), () {
       if (mounted) setState(() => _minSplashElapsed = true);
     });
   }

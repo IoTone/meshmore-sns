@@ -34,7 +34,9 @@ void main() {
   testWidgets('English splash shows the English subtitle, not Japanese',
       (WidgetTester t) async {
     await _pump(t, const Locale('en'));
-    expect(find.text('Mesh messaging over radio'), findsOneWidget);
+    // The surface sets the companion line in the skin's label case, so the
+    // lookup is matched the way the launch screen renders it.
+    expect(find.text('Mesh messaging over radio'.toUpperCase()), findsOneWidget);
     expect(find.text(kJapanese), findsNothing,
         reason: 'the Japanese literal was hardcoded before R75');
     expect(find.text('Meshmore SNS'), findsOneWidget,
@@ -44,7 +46,7 @@ void main() {
   testWidgets('Japanese splash shows the Japanese subtitle',
       (WidgetTester t) async {
     await _pump(t, const Locale('ja'));
-    expect(find.text(kJapanese), findsOneWidget);
-    expect(find.text('Mesh messaging over radio'), findsNothing);
+    expect(find.text(kJapanese.toUpperCase()), findsOneWidget);
+    expect(find.text('Mesh messaging over radio'.toUpperCase()), findsNothing);
   });
 }

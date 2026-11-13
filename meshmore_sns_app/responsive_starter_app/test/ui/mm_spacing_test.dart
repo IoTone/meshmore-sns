@@ -123,7 +123,9 @@ void main() {
       'lib/screens/street_map_view.dart': 1,
       'lib/screens/weather_view.dart': 12,
       'lib/shell/home_shell.dart': 3,
-      'lib/splash/branded_splash_screen.dart': 1,
+      // It is `MmBootSurface` and a lookup now: every number it used to carry
+      // moved into the shared launch surface.
+      'lib/splash/branded_splash_screen.dart': 0,
       'lib/ui/mm_components.dart': 4,
       'lib/ui/mm_edge_swipe.dart': 1,
     };
