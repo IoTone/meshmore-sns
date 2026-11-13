@@ -25,6 +25,7 @@ class MmScaffold extends StatelessWidget {
     this.padding,
     this.bottomEdge = true,
     this.closingRule = true,
+    this.edgeProgress = true,
   });
 
   final Widget child;
@@ -36,6 +37,10 @@ class MmScaffold extends StatelessWidget {
   /// Whether a body with no scrollable gets the solid closing rule instead of
   /// nothing. See [MmScrollEdge.closing].
   final bool closingRule;
+
+  /// Whether the edge line reports scroll position. False for a thread that
+  /// appends at the bottom, where a position bar would be a lie.
+  final bool edgeProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +56,8 @@ class MmScaffold extends StatelessWidget {
         : Padding(padding: padding!, child: child);
     final bool ornament = skin.ornament.any && !reduceMotion;
     final Widget framed = bottomEdge
-        ? MmScrollEdge(closing: closingRule, child: inner)
+        ? MmScrollEdge(
+            closing: closingRule, progress: edgeProgress, child: inner)
         : inner;
     // The app draws edge to edge, because Android 15 and later enforce it for a
     // targetSdk of 35 and above, and this app targets 36. So the body's own

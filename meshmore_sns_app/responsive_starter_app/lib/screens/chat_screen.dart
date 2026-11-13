@@ -770,6 +770,10 @@ class _ChatScreenState extends State<ChatScreen>
     }
 
     return MmScaffold(
+      // A thread appends at the bottom, so a bar that grows as you scroll would
+      // say the opposite of what the view does. The edge here is neutral: one
+      // hairline, the same length at every position.
+      edgeProgress: false,
       child: Column(
         children: <Widget>[
           // R91 — one row, one job: switch channel. The caption above it

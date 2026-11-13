@@ -36,6 +36,7 @@ class MmScrollEdge extends StatefulWidget {
     super.key,
     required this.child,
     this.closing = true,
+    this.progress = true,
     this.progressHeight = 2.0,
     this.closingHeight = 3.0,
   });
@@ -43,6 +44,11 @@ class MmScrollEdge extends StatefulWidget {
   /// The page. Its innermost scrollable is the one measured; a scrollable above
   /// this widget (the shell's page view) is not.
   final Widget child;
+
+  /// Whether the scroll line reports position. False draws a plain hairline
+  /// instead: a thread that appends at the bottom is not a page you read down, so
+  /// a bar that grows as you scroll says the opposite of what the view does.
+  final bool progress;
 
   /// Whether a body with no scrollable gets the solid closing rule. A canvas or
   /// a docked composer says no, because its own bottom edge is the control.
@@ -119,7 +125,13 @@ class _MmScrollEdgeState extends State<MmScrollEdge> {
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
-    final Widget edge = _sawScrollable
+    final Widget edge = !widget.progress
+        ? _ClosingRule(
+            key: const ValueKey<String>('mm-scroll-edge-neutral'),
+            height: widget.progressHeight,
+            color: skin.color.hairline,
+          )
+        : _sawScrollable
         ? (_scrolls
             ? _ProgressLine(
                 key: const ValueKey<String>('mm-scroll-edge'),

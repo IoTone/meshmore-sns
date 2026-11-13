@@ -137,6 +137,36 @@ void main() {
     expect(moved, lessThan(1));
   });
 
+  testWidgets('progress false draws one neutral hairline that never moves',
+      (WidgetTester t) async {
+    t.view.physicalSize = _phone;
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+
+    // A thread appends at the bottom: a position bar there reports the opposite
+    // of what the view does, so the edge is a plain rule at a fixed length.
+    await t.pumpWidget(_frame(
+      MmScrollEdge(
+        progress: false,
+        child: ListView(
+          children: <Widget>[
+            for (int i = 0; i < 40; i++) const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    ));
+    await t.pump();
+    final Finder neutral =
+        find.byKey(const ValueKey<String>('mm-scroll-edge-neutral'));
+    expect(neutral, findsOneWidget);
+    expect(_line(), findsNothing);
+    final double before = t.getRect(neutral).width;
+    await t.drag(find.byType(ListView), const Offset(0, -400));
+    await t.pump();
+    expect(t.getRect(neutral).width, before,
+        reason: 'the neutral edge must not respond to the scroll');
+  });
+
   testWidgets('a scrollable above the edge does not drive the line',
       (WidgetTester t) async {
     t.view.physicalSize = _phone;

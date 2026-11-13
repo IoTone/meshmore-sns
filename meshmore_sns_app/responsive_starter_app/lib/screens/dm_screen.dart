@@ -446,6 +446,9 @@ class _DmScreenState extends State<DmScreen> {
         ],
       ),
       body: MmScaffold(
+        // Same rule as the channel thread: no position bar over a list that
+        // appends at its own bottom.
+        edgeProgress: false,
         child: Column(
           children: <Widget>[
             HistoryRetentionNotice(
