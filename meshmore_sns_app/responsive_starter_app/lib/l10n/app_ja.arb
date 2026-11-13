@@ -1662,6 +1662,8 @@
   "deviceLocPermDenied": "スマートフォン GPS 取得には位置情報の許可が必要です。",
   "deviceLocPermDeniedPerm": "位置情報が永続的に拒否されました — OS 設定で許可してください。",
   "deviceOpenSettings": "設定を開く",
+  "connectionDiagnosticsRow": "診断とツール",
+  "connectionDiagnosticsExplainer": "生フレーム、フィクスチャ、テストコマンド。",
   "diagnosticsTitle": "無線機の診断",
   "diagnosticsRawFrameLog": "RAW フレームログ (新しい順)",
   "diagnosticsDisconnect": "切断",
@@ -1982,6 +1984,16 @@
   "packRefusalTooMany": "タイルが多すぎます。範囲を狭めるか最大ズームを下げてください。",
   "packRefusalBudget": "容量上限に収まりません。",
   "layerRefusalBadUrl": "https の URL が必要です。",
+  "mapsLayerDense": "高密度レイヤー: 地図は最初の {max} 件だけを描きます。",
+  "@mapsLayerDense": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "mapsLayerFileMissing": "このファイルを開けません。更新するか削除してください。",
+  "layerRefusalEmpty": "有効な GeoJSON ですが、描くものがありません。",
   "layerRefusalNotGeoJson": "その URL は GeoJSON を返しませんでした。",
   "layerRefusalTooLarge": "10 MB を超えています。重ね表示には大きすぎます。",
   "mapsSelfTest": "セルフテスト",
@@ -2327,6 +2339,12 @@
   "geofenceCreateTitle": "ここにフェンスを描く",
   "geofenceNameLabel": "名前",
   "actionSave": "保存",
+  "geofenceEditTitle": "このフェンスを変更",
+  "geofenceEdit": "フェンスを編集",
+  "geofenceSearchHint": "フェンスを検索",
+  "geofenceNoMatches": "その名前のフェンスはありません。",
+  "geofenceShowAll": "すべて地図で表示",
+  "geofenceFocused": "地図から開きました",
   "geofenceTitle": "ジオフェンス",
   "geofenceExplainer": "フェンスは見張る円です。入ったときと出たときに一度ずつ知らせるので、境界を歩いても通知が連続しません。",
   "geofenceAddSection": "フェンスを追加",
@@ -2403,6 +2421,7 @@
   "blockedKeysTitle": "ブロックした相手",
   "blockedKeysSubtitle": "{count, plural, =0{ブロックした鍵はありません} other{{count}件の鍵をブロック中}}",
   "blockedKeysEmpty": "ブロックした鍵はありません。鍵をブロックすると、その相手からのメッセージ・通知・プレイスがこの端末で非表示になります。",
+  "blockedKeysCannotStopShort": "このアプリ内のみ",
   "blockedKeysCannotStop": "ブロックはこのアプリ内だけの設定です。無線は今もパケットを受信・中継します。止まるのはこのアプリの表示だけです。",
   "blockedKeysUnblock": "ブロック解除",
   "blockedKeysSince": "{when}にブロック",
@@ -2515,6 +2534,8 @@
   "fujiUnknownShort": "縞 · 標高なし",
   "chatSpeechOffAction": "読み上げはアプリ設定でオフです",
   "nodeDetailAltitudeNotReported": "報告されません",
+  "gridCompassCalibrating": "較正のため、端末を一度ぐるりと回してください。",
+  "gridCompassLowAccuracy": "端末の方位精度が低い状態です。一度ぐるりと回してください。",
   "gridCompassDisturbed": "方位が取れません — ここは磁場が強すぎます。磁石から離し、平らに置いて一度ぐるりと回してください。",
   "gridPurposeRadial": "各ノードまでの距離と、最後に聞こえた時刻。",
   "gridPurposeWeather": "温度・湿度・気圧（報告するノードのみ）。",

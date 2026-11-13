@@ -71,7 +71,7 @@ void main() {
     } catch (_) {}
   });
 
-  Future<FetchResult> fetch(Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+  Future<FetchResult> fetch(Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
       u.path.endsWith('.geojson')
           ? FetchResult(FetchStatus.ok,
               bytes: Uint8List.fromList(_geo.codeUnits))

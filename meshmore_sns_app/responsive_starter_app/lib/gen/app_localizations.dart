@@ -5054,6 +5054,18 @@ abstract class AppLocalizations {
   /// **'Open settings'**
   String get deviceOpenSettings;
 
+  /// No description provided for @connectionDiagnosticsRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics and tools'**
+  String get connectionDiagnosticsRow;
+
+  /// No description provided for @connectionDiagnosticsExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw frames, fixtures and test commands.'**
+  String get connectionDiagnosticsExplainer;
+
   /// No description provided for @diagnosticsTitle.
   ///
   /// In en, this message translates to:
@@ -6625,6 +6637,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Needs an https URL.'**
   String get layerRefusalBadUrl;
+
+  /// No description provided for @mapsLayerDense.
+  ///
+  /// In en, this message translates to:
+  /// **'Dense layer: the map draws its first {max} features.'**
+  String mapsLayerDense(int max);
+
+  /// No description provided for @mapsLayerFileMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This file will not open. Refresh it or delete the layer.'**
+  String get mapsLayerFileMissing;
+
+  /// No description provided for @layerRefusalEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'That file is valid GeoJSON with nothing in it to draw.'**
+  String get layerRefusalEmpty;
 
   /// No description provided for @layerRefusalNotGeoJson.
   ///
@@ -8542,6 +8572,42 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get actionSave;
 
+  /// No description provided for @geofenceEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change this fence'**
+  String get geofenceEditTitle;
+
+  /// No description provided for @geofenceEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit fence'**
+  String get geofenceEdit;
+
+  /// No description provided for @geofenceSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search fences'**
+  String get geofenceSearchHint;
+
+  /// No description provided for @geofenceNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No fence has that name.'**
+  String get geofenceNoMatches;
+
+  /// No description provided for @geofenceShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all on the map'**
+  String get geofenceShowAll;
+
+  /// No description provided for @geofenceFocused.
+  ///
+  /// In en, this message translates to:
+  /// **'Opened from the map'**
+  String get geofenceFocused;
+
   /// No description provided for @geofenceTitle.
   ///
   /// In en, this message translates to:
@@ -8997,6 +9063,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No key is blocked. Blocking a key hides what it sends — messages, notifications, places — on this device.'**
   String get blockedKeysEmpty;
+
+  /// No description provided for @blockedKeysCannotStopShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Local only'**
+  String get blockedKeysCannotStopShort;
 
   /// No description provided for @blockedKeysCannotStop.
   ///
@@ -9501,6 +9573,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'not reported'**
   String get nodeDetailAltitudeNotReported;
+
+  /// No description provided for @gridCompassCalibrating.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn the phone right round once to calibrate.'**
+  String get gridCompassCalibrating;
+
+  /// No description provided for @gridCompassLowAccuracy.
+  ///
+  /// In en, this message translates to:
+  /// **'The phone reports a weak compass here. Turn it right round once.'**
+  String get gridCompassLowAccuracy;
 
   /// No description provided for @gridCompassDisturbed.
   ///

@@ -80,6 +80,31 @@ class MapViewState extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// A camera another surface asked for, waiting to be taken.
+  ///
+  /// [remember] is a memory and this is an instruction, and they are different
+  /// things. The memory answers "where was I"; the request answers "show me
+  /// this", which arrives from a screen that is not the map (a fence list, a
+  /// shared position) and has to survive until a map exists to obey it. It is
+  /// taken once and cleared, so it can never fight a pan that happens after.
+  ({LatLng centre, double zoom})? _request;
+
+  /// Ask the map to look at [centre] at [zoom].
+  void requestView({required LatLng centre, required double zoom}) {
+    _request = (centre: centre, zoom: zoom);
+    notifyListeners();
+  }
+
+  /// Take the pending request, if there is one.
+  ///
+  /// Whoever takes it owns it: the request is cleared here, so two maps — or a
+  /// map and a preview — cannot both act on it.
+  ({LatLng centre, double zoom})? takeRequest() {
+    final ({LatLng centre, double zoom})? r = _request;
+    _request = null;
+    return r;
+  }
+
   /// Forget everything. Called when the app leaves the foreground.
   void discard() {
     if (_centre == null && _zoom == null && _sourceId == null) return;

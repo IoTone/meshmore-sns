@@ -2983,6 +2983,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceOpenSettings => 'Open settings';
 
   @override
+  String get connectionDiagnosticsRow => 'Diagnostics and tools';
+
+  @override
+  String get connectionDiagnosticsExplainer =>
+      'Raw frames, fixtures and test commands.';
+
+  @override
   String get diagnosticsTitle => 'Radio diagnostics';
 
   @override
@@ -3883,6 +3890,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get layerRefusalBadUrl => 'Needs an https URL.';
+
+  @override
+  String mapsLayerDense(int max) {
+    return 'Dense layer: the map draws its first $max features.';
+  }
+
+  @override
+  String get mapsLayerFileMissing =>
+      'This file will not open. Refresh it or delete the layer.';
+
+  @override
+  String get layerRefusalEmpty =>
+      'That file is valid GeoJSON with nothing in it to draw.';
 
   @override
   String get layerRefusalNotGeoJson => 'That URL didn\'t return GeoJSON.';
@@ -5064,6 +5084,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionSave => 'Save';
 
   @override
+  String get geofenceEditTitle => 'Change this fence';
+
+  @override
+  String get geofenceEdit => 'Edit fence';
+
+  @override
+  String get geofenceSearchHint => 'Search fences';
+
+  @override
+  String get geofenceNoMatches => 'No fence has that name.';
+
+  @override
+  String get geofenceShowAll => 'Show all on the map';
+
+  @override
+  String get geofenceFocused => 'Opened from the map';
+
+  @override
   String get geofenceTitle => 'Geofences';
 
   @override
@@ -5375,6 +5413,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'No key is blocked. Blocking a key hides what it sends — messages, notifications, places — on this device.';
 
   @override
+  String get blockedKeysCannotStopShort => 'Local only';
+
+  @override
   String get blockedKeysCannotStop =>
       'A block is local to this app. The radio still receives and relays the packet; what stops is what this app shows.';
 
@@ -5659,6 +5700,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeDetailAltitudeNotReported => 'not reported';
+
+  @override
+  String get gridCompassCalibrating =>
+      'Turn the phone right round once to calibrate.';
+
+  @override
+  String get gridCompassLowAccuracy =>
+      'The phone reports a weak compass here. Turn it right round once.';
 
   @override
   String get gridCompassDisturbed =>

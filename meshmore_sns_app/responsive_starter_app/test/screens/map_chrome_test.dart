@@ -49,7 +49,7 @@ Future<(MapsController, MeshcoreController)> _pump(WidgetTester t) async {
     dir = await Directory.systemTemp.createTemp('mapchrome');
     maps = MapsController(
       rootDir: () async => dir,
-      fetcher: (Uri url, {String? etag, int? ifModifiedSinceMs}) async =>
+      fetcher: (Uri url, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
           FetchResult(FetchStatus.ok,
               bytes: Uint8List(100), maxAge: const Duration(hours: 1)),
       prefsKey: 'maps.chrome.test.v1',

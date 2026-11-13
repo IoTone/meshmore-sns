@@ -49,7 +49,7 @@ Future<void> _pump(WidgetTester t, MmThemePreset preset) async {
     final Directory dir = await Directory.systemTemp.createTemp('picker');
     maps = MapsController(
       rootDir: () async => dir,
-      fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs}) async =>
+      fetcher: (Uri u, {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
           const FetchResult(FetchStatus.failed),
       pace: Duration.zero,
     );

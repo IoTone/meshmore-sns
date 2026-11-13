@@ -44,7 +44,7 @@ import '../meshcore/fake_transport.dart';
 /// and a rebuild that changes nothing reuses the field it already has.
 class _Net {
   Future<FetchResult> call(Uri url,
-          {String? etag, int? ifModifiedSinceMs}) async =>
+          {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async =>
       FetchResult(FetchStatus.ok,
           bytes: Uint8List(1000), maxAge: const Duration(hours: 1));
 }

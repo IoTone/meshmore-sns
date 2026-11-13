@@ -2857,6 +2857,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceOpenSettings => '設定を開く';
 
   @override
+  String get connectionDiagnosticsRow => '診断とツール';
+
+  @override
+  String get connectionDiagnosticsExplainer => '生フレーム、フィクスチャ、テストコマンド。';
+
+  @override
   String get diagnosticsTitle => '無線機の診断';
 
   @override
@@ -3729,6 +3735,17 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get layerRefusalBadUrl => 'https の URL が必要です。';
+
+  @override
+  String mapsLayerDense(int max) {
+    return '高密度レイヤー: 地図は最初の $max 件だけを描きます。';
+  }
+
+  @override
+  String get mapsLayerFileMissing => 'このファイルを開けません。更新するか削除してください。';
+
+  @override
+  String get layerRefusalEmpty => '有効な GeoJSON ですが、描くものがありません。';
 
   @override
   String get layerRefusalNotGeoJson => 'その URL は GeoJSON を返しませんでした。';
@@ -4862,6 +4879,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionSave => '保存';
 
   @override
+  String get geofenceEditTitle => 'このフェンスを変更';
+
+  @override
+  String get geofenceEdit => 'フェンスを編集';
+
+  @override
+  String get geofenceSearchHint => 'フェンスを検索';
+
+  @override
+  String get geofenceNoMatches => 'その名前のフェンスはありません。';
+
+  @override
+  String get geofenceShowAll => 'すべて地図で表示';
+
+  @override
+  String get geofenceFocused => '地図から開きました';
+
+  @override
   String get geofenceTitle => 'ジオフェンス';
 
   @override
@@ -5155,6 +5190,9 @@ class AppLocalizationsJa extends AppLocalizations {
       'ブロックした鍵はありません。鍵をブロックすると、その相手からのメッセージ・通知・プレイスがこの端末で非表示になります。';
 
   @override
+  String get blockedKeysCannotStopShort => 'このアプリ内のみ';
+
+  @override
   String get blockedKeysCannotStop =>
       'ブロックはこのアプリ内だけの設定です。無線は今もパケットを受信・中継します。止まるのはこのアプリの表示だけです。';
 
@@ -5434,6 +5472,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodeDetailAltitudeNotReported => '報告されません';
+
+  @override
+  String get gridCompassCalibrating => '較正のため、端末を一度ぐるりと回してください。';
+
+  @override
+  String get gridCompassLowAccuracy => '端末の方位精度が低い状態です。一度ぐるりと回してください。';
 
   @override
   String get gridCompassDisturbed =>

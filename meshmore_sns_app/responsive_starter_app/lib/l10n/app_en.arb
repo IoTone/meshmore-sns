@@ -1873,6 +1873,8 @@
   "deviceLocPermDenied": "Location permission needed for a phone GPS fix.",
   "deviceLocPermDeniedPerm": "Location permission permanently denied — open OS settings to grant it.",
   "deviceOpenSettings": "Open settings",
+  "connectionDiagnosticsRow": "Diagnostics and tools",
+  "connectionDiagnosticsExplainer": "Raw frames, fixtures and test commands.",
   "diagnosticsTitle": "Radio diagnostics",
   "diagnosticsRawFrameLog": "RAW FRAME LOG (newest first)",
   "diagnosticsDisconnect": "Disconnect",
@@ -2484,6 +2486,16 @@
   "packRefusalTooMany": "Too many tiles. Shrink the area or lower the top zoom.",
   "packRefusalBudget": "Won't fit in the storage budget.",
   "layerRefusalBadUrl": "Needs an https URL.",
+  "mapsLayerDense": "Dense layer: the map draws its first {max} features.",
+  "@mapsLayerDense": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "mapsLayerFileMissing": "This file will not open. Refresh it or delete the layer.",
+  "layerRefusalEmpty": "That file is valid GeoJSON with nothing in it to draw.",
   "layerRefusalNotGeoJson": "That URL didn't return GeoJSON.",
   "layerRefusalTooLarge": "Over 10 MB: too big for an overlay.",
   "mapsSelfTest": "Self-test",
@@ -3401,6 +3413,12 @@
   "geofenceCreateTitle": "Draw a fence here",
   "geofenceNameLabel": "Name",
   "actionSave": "Save",
+  "geofenceEditTitle": "Change this fence",
+  "geofenceEdit": "Edit fence",
+  "geofenceSearchHint": "Search fences",
+  "geofenceNoMatches": "No fence has that name.",
+  "geofenceShowAll": "Show all on the map",
+  "geofenceFocused": "Opened from the map",
   "geofenceTitle": "Geofences",
   "geofenceExplainer": "A fence is a circle you watch. It tells you once when you enter it and once when you leave, so walking along its edge does not produce a stream of alerts.",
   "geofenceAddSection": "Add a fence",
@@ -3668,6 +3686,7 @@
     }
   },
   "blockedKeysEmpty": "No key is blocked. Blocking a key hides what it sends — messages, notifications, places — on this device.",
+  "blockedKeysCannotStopShort": "Local only",
   "blockedKeysCannotStop": "A block is local to this app. The radio still receives and relays the packet; what stops is what this app shows.",
   "blockedKeysUnblock": "Unblock",
   "blockedKeysSince": "Blocked {when}",
@@ -3843,6 +3862,8 @@
   "fujiUnknownShort": "Striped · no altitude",
   "chatSpeechOffAction": "Speech is off in App settings",
   "nodeDetailAltitudeNotReported": "not reported",
+  "gridCompassCalibrating": "Turn the phone right round once to calibrate.",
+  "gridCompassLowAccuracy": "The phone reports a weak compass here. Turn it right round once.",
   "gridCompassDisturbed": "No heading — the magnetic field here is too strong. Lay the phone flat, away from magnets, and turn it right round once.",
   "gridPurposeRadial": "How far each node is, and how long ago it was heard.",
   "gridPurposeWeather": "Temperature, humidity and pressure, from nodes that report them.",

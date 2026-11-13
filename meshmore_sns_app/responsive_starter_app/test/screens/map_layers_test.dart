@@ -44,7 +44,7 @@ const String _geo = '''
 class _Net {
   final Map<String, String> bodies = <String, String>{};
   Future<FetchResult> call(Uri url,
-      {String? etag, int? ifModifiedSinceMs}) async {
+      {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
     final String? body = bodies[url.toString()];
     return FetchResult(FetchStatus.ok,
         bytes: body != null
