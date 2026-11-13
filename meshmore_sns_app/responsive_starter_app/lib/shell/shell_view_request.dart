@@ -31,8 +31,13 @@ class ShellViewRequest extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Ask the shell to show the Map tab. The grid's picker has a row that
-  /// leaves for it, because the map is a tab and not a grid view.
+  /// Ask the shell to show the Map tab.
+  ///
+  /// No surface calls this today — the grid's street-map view left the picker
+  /// and the Map tab became a page of the shell — but the shell answers it, and
+  /// the case it exists for has not gone away: anything that can name a place
+  /// on a map (a place notification, a shared position) needs to send the reader
+  /// there from outside the shell.
   void openMap() {
     _chatSlot = null;
     _view = RequestedView.map;

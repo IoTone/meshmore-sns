@@ -309,6 +309,18 @@ void main() {
         reason: 'a channel notification tap opens the thread it belongs to');
   });
 
+  testWidgets('and asking for the Map lands on the Map', (WidgetTester t) async {
+    // Nothing calls `openMap` today, so it had no proof it works. A request that
+    // is answered but never tested is one refactor away from answering nothing.
+    final ShellViewRequest request = ShellViewRequest();
+    final MeshcoreController mc = MeshcoreController();
+    await _pumpApp(t, mc: mc, viewRequest: request);
+    expect(find.byKey(dashboardKey), findsOneWidget);
+    request.openMap();
+    await t.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
+  });
+
   testWidgets('there is no switcher menu, only the strip (R64)',
       (WidgetTester t) async {
     await _pumpApp(t);
