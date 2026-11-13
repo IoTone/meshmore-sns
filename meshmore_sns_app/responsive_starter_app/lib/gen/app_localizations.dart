@@ -2294,6 +2294,18 @@ abstract class AppLocalizations {
   /// **'CONNECTION'**
   String get settingsGroupConnect;
 
+  /// No description provided for @settingsGroupLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'LOCATION'**
+  String get settingsGroupLocation;
+
+  /// No description provided for @settingsHubLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location & sharing'**
+  String get settingsHubLocation;
+
   /// No description provided for @settingsGroupAbout.
   ///
   /// In en, this message translates to:

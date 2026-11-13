@@ -623,6 +623,20 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
             l.settingsHubFirmware,
             '/settings/firmware'
           ),
+          // The radio's own battery. It had no hub row at all, so on the five
+          // dashboards that do not link it the only way to it was Device
+          // configuration — a readout two screens away from the tab that shows
+          // the link.
+          (Icons.battery_5_bar_outlined, l.batteryTitle, '/settings/battery'),
+        ],
+      ),
+      // Where the device says it is. The screen existed four taps deep inside
+      // App settings → Auto-publish location, and geofences and the coverage
+      // survey live under it, so the app's whole location story had no front door.
+      (
+        label: l.settingsGroupLocation,
+        rows: <(IconData, String, String)>[
+          (Icons.my_location, l.settingsHubLocation, '/settings/location'),
         ],
       ),
       (

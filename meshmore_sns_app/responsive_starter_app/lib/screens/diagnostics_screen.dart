@@ -452,8 +452,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                     MmAction(
                       key: const ValueKey<String>('diag-pair'),
                       icon: Icons.add_link,
+                      // One connect screen: pairing and connecting are two states
+                      // of the same question, and `/connect` is where both live.
                       label: l.diagnosticsPairRadio,
-                      onPressed: () => context.push('/pair'),
+                      onPressed: () => context.push('/connect'),
                     ),
                     if (mc.hasPairedDevice)
                       MmAction(

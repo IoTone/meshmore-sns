@@ -213,6 +213,7 @@ void main() {
     await t.pumpAndSettle();
     for (final String g in <String>[
       'RADIO',
+      'LOCATION',
       'APP',
       'CONNECTION',
       'ABOUT',
@@ -220,7 +221,8 @@ void main() {
       expect(find.text(g), findsOneWidget, reason: 'group label $g');
     }
     double y(String s) => t.getTopLeft(find.text(s)).dy;
-    expect(y('RADIO'), lessThan(y('APP')));
+    expect(y('RADIO'), lessThan(y('LOCATION')));
+    expect(y('LOCATION'), lessThan(y('APP')));
     expect(y('APP'), lessThan(y('CONNECTION')));
     expect(y('CONNECTION'), lessThan(y('ABOUT')));
   });

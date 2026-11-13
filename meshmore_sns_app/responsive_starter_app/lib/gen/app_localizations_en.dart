@@ -1289,6 +1289,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGroupConnect => 'CONNECTION';
 
   @override
+  String get settingsGroupLocation => 'LOCATION';
+
+  @override
+  String get settingsHubLocation => 'Location & sharing';
+
+  @override
   String get settingsGroupAbout => 'ABOUT';
 
   @override

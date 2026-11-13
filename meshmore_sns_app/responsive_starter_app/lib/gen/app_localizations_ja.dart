@@ -1225,6 +1225,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsGroupConnect => '接続';
 
   @override
+  String get settingsGroupLocation => '位置情報';
+
+  @override
+  String get settingsHubLocation => '位置情報と共有';
+
+  @override
   String get settingsGroupAbout => 'このアプリについて';
 
   @override
