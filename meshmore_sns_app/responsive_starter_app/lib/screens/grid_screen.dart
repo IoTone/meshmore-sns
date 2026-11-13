@@ -1548,38 +1548,21 @@ class _GridPainter extends CustomPainter {
         Offset(center.dx + maxR * f - tp.width - 4, center.dy - tp.height - 2),
       );
     }
-    // North, as a red marker that moves with the dial.
+    // North, as a red marker that moves with the dial — the arrow alone.
     //
     // The radar plots every peer by *real* bearing, so with a heading the dial
-    // turns and north is no longer the top. A letter painted at 12 o'clock then
-    // lies: it would keep saying north while the dial said otherwise. The
-    // triangle is drawn at the bearing north actually sits at, and stays at the
-    // top only in the north-up fallback, where it is telling the truth.
+    // turns and north is no longer the top. The triangle is drawn at the bearing
+    // north actually sits at, and stays at the top only in the north-up
+    // fallback, where it is telling the truth.
+    //
+    // It carried an "N" outside the rim, and that letter was doing harm twice:
+    // it sat on the same bearing as the arrow and collided with it at most
+    // headings, and because it was painted upright it read as a label lying on
+    // the rim rather than a direction. A triangle is unmistakable in every
+    // rotation, and the dial's ticks already say which way is which.
     final double northAt = CompassHeading.northMarkerDegrees(headingDegrees);
     paintNorthMarker(canvas, center, maxR,
         markerDegrees: northAt, color: northMarker);
-    final TextPainter north = TextPainter(
-      text: TextSpan(
-        text: 'N',
-        style: TextStyle(
-            color: northMarker,
-            fontSize: type.sizeMicro * textScale,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1,
-            fontFamily: type.monoFamily),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    final double na = northAt * math.pi / 180;
-    final double labelR = maxR + 4;
-    north.paint(
-      canvas,
-      Offset(
-        center.dx + labelR * math.sin(na) - north.width / 2,
-        center.dy - labelR * math.cos(na) - north.height / 2,
-      ),
-    );
-
     // Cross-hair guides (faint).
     final Paint cross = Paint()
       ..style = PaintingStyle.stroke

@@ -246,6 +246,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get linkChipOffline => 'オフライン';
 
   @override
+  String get linkChipConnect => '無線機に接続';
+
+  @override
   String linkChipSemantics(String state) {
     return 'ラジオ: $state';
   }

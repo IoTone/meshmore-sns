@@ -133,6 +133,7 @@
   "linkChipFail": "FAIL",
   "linkChipScan": "SCAN",
   "linkChipOffline": "OFFLINE",
+  "linkChipConnect": "Connect a radio",
   "linkChipSemantics": "Radio {state}",
   "@linkChipSemantics": {
     "placeholders": {

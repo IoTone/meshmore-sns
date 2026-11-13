@@ -321,6 +321,41 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Map'), findsOneWidget);
   });
 
+  testWidgets('the link chip offers the radio\'s screens from every view',
+      (WidgetTester t) async {
+    // Device configuration and Battery used to be reachable from two of the seven
+    // dashboards and nowhere else; the app bar could only pair. The chip now opens
+    // the radio's own four screens once the link is up.
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await _pumpApp(t, mc: mc);
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+    expect(mc.state, MeshcoreConnectionState.ready,
+        reason: 'the chip only offers the menu once there is a link');
+    await t.tap(find.byType(RadioLinkIndicator));
+    await t.pumpAndSettle();
+    for (final String key in <String>[
+      'radio-sheet-device',
+      'radio-sheet-battery',
+      'radio-sheet-diagnostics',
+      'radio-sheet-connect',
+    ]) {
+      expect(find.byKey(ValueKey<String>(key)), findsOneWidget, reason: key);
+    }
+    // Close the sheet before the tree goes, or its route animation leaves a timer
+    // behind and the harness fails the test for the wrong reason.
+    Navigator.of(t.element(find.byKey(const ValueKey<String>('radio-sheet-connect'))))
+        .pop();
+    await t.pumpAndSettle();
+    mc.dispose();
+  });
+
   testWidgets('there is no switcher menu, only the strip (R64)',
       (WidgetTester t) async {
     await _pumpApp(t);

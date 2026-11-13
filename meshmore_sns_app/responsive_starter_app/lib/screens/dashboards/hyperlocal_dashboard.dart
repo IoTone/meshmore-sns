@@ -167,7 +167,6 @@ class _HyperlocalDashboardState extends State<HyperlocalDashboard>
                                     type: skin.type,
                                     textScale: MediaQuery.textScalerOf(context)
                                         .scale(1),
-                                    northLabel: 'N',
                                     headingDegrees: _compass.heading,
                                     northMarker: VizPalette.north,
                                   ),
@@ -377,7 +376,6 @@ class _RadarPainter extends CustomPainter {
     required this.fgMuted,
     required this.monoFamily,
     required this.type,
-    required this.northLabel,
     required this.textScale,
     required this.headingDegrees,
     required this.northMarker,
@@ -409,7 +407,6 @@ class _RadarPainter extends CustomPainter {
   /// north letter a literal 10, which meant the radar's own text ignored both
   /// the in-app font size and the system one while everything around it grew.
   final MmType type;
-  final String northLabel;
 
   /// The user's text scale, multiplied into every size this painter draws.
   ///
@@ -486,22 +483,13 @@ class _RadarPainter extends CustomPainter {
           lead);
     }
 
-    // North, as a red marker that moves with the dial. A letter fixed at the
-    // top would keep saying north after the dial turned.
+    // North, as a red marker that moves with the dial — the arrow alone. It used
+    // to carry an "N" beside it, painted upright on the same bearing: the letter
+    // collided with the arrow at most headings and read as a label lying on the
+    // rim instead of a direction.
     final double northAt = CompassHeading.northMarkerDegrees(headingDegrees);
     paintNorthMarker(canvas, center, maxR,
         markerDegrees: northAt, color: northMarker);
-    final double na = northAt * math.pi / 180;
-    _label(
-        canvas,
-        northLabel,
-        Offset(
-          center.dx + (maxR + 4) * math.sin(na),
-          center.dy - (maxR + 4) * math.cos(na),
-        ),
-        northMarker,
-        radarLabelSizes(type, textScale: textScale).north,
-        center: true);
 
     // Blips (dots only — in-range names are drawn as decluttered
     // callouts in the gutter outside the rings, below).
@@ -613,26 +601,6 @@ class _RadarPainter extends CustomPainter {
         monoFamily: monoFamily,
         color: fg,
       );
-
-  void _label(Canvas canvas, String text, Offset at, Color color,
-      double skinSize,
-      {bool center = false}) {
-    // Callers pass a skin size; the user's own scale is applied here, once, so
-    // no label on this dial can be drawn at a size the font setting does not
-    // reach.
-    final double scaledSize = skinSize * textScale;
-    final TextPainter tp = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: TextStyle(
-            color: color, fontSize: scaledSize, fontFamily: monoFamily),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    final Offset o =
-        center ? Offset(at.dx - tp.width / 2, at.dy) : at;
-    tp.paint(canvas, o);
-  }
 
   @override
   bool shouldRepaint(_RadarPainter old) =>

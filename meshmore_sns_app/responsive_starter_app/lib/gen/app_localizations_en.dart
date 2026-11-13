@@ -266,6 +266,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkChipOffline => 'OFFLINE';
 
   @override
+  String get linkChipConnect => 'Connect a radio';
+
+  @override
   String linkChipSemantics(String state) {
     return 'Radio $state';
   }

@@ -698,6 +698,47 @@ class _GroupLabel extends StatelessWidget {
 
 /// Always-visible radio link state (every primary view). Tap → the
 /// Diagnostics & connect screen.
+/// The radio's four screens, from wherever the reader is.
+Future<void> _radioSheet(BuildContext context, AppLocalizations l) async {
+  final String? dest = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (BuildContext sheet) => SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          ListTile(
+            key: const ValueKey<String>('radio-sheet-device'),
+            leading: const Icon(Icons.router_outlined),
+            title: Text(l.settingsHubDevice),
+            onTap: () => Navigator.pop(sheet, '/settings/device'),
+          ),
+          ListTile(
+            key: const ValueKey<String>('radio-sheet-battery'),
+            leading: const Icon(Icons.battery_5_bar_outlined),
+            title: Text(l.batteryTitle),
+            onTap: () => Navigator.pop(sheet, '/settings/battery'),
+          ),
+          ListTile(
+            key: const ValueKey<String>('radio-sheet-diagnostics'),
+            leading: const Icon(Icons.monitor_heart_outlined),
+            title: Text(l.diagnosticsTitle),
+            onTap: () => Navigator.pop(sheet, '/settings/diagnostics'),
+          ),
+          ListTile(
+            key: const ValueKey<String>('radio-sheet-connect'),
+            leading: const Icon(Icons.bluetooth),
+            title: Text(l.linkChipConnect),
+            onTap: () => Navigator.pop(sheet, '/connect'),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (dest != null && context.mounted) context.push(dest);
+}
+
 class RadioLinkIndicator extends StatelessWidget {
   const RadioLinkIndicator({super.key});
 
@@ -746,7 +787,16 @@ class RadioLinkIndicator extends StatelessWidget {
       button: true,
       label: l.linkChipSemantics(v.label),
       child: InkWell(
-        onTap: () => context.push('/connect'),
+        // One universal door into the radio's own world, and which door it is
+        // depends on what the chip is saying. Offline, the answer is always
+        // pairing, so it goes straight there — that is the state where a menu
+        // costs a tap the reader does not have. Linked, it offers the four
+        // screens a reader actually reaches for; before this, the app bar could
+        // only pair, and Device configuration and Battery were reachable from two
+        // of the seven dashboards and nowhere else.
+        onTap: () => mc.state == MeshcoreConnectionState.ready
+            ? _radioSheet(context, l)
+            : context.push('/connect'),
         borderRadius: mmRadius(context, 20),
         // `DecoratedBox`, not `Container`: the chip's own dot is the first
         // `Container` in this subtree and the colour test finds it that way.

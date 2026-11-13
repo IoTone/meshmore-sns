@@ -542,6 +542,12 @@ abstract class AppLocalizations {
   /// **'OFFLINE'**
   String get linkChipOffline;
 
+  /// No description provided for @linkChipConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a radio'**
+  String get linkChipConnect;
+
   /// No description provided for @linkChipSemantics.
   ///
   /// In en, this message translates to:

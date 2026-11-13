@@ -132,6 +132,7 @@
   "linkChipFail": "失敗",
   "linkChipScan": "検索",
   "linkChipOffline": "オフライン",
+  "linkChipConnect": "無線機に接続",
   "linkChipSemantics": "ラジオ: {state}",
   "actionConnect": "接続する",
   "actionBlock": "このキーをブロック",
