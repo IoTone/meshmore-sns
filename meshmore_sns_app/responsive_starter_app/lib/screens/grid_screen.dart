@@ -1236,50 +1236,31 @@ class _GridScreenState extends State<GridScreen>
 /// in here so a new user can decode the grid at a glance.
 /// The rest of a legend, behind one tap. A legend explains glyphs; the
 /// sentences that explain the animations belong in a dialog, not on the canvas.
-class _LegendMore extends StatelessWidget {
-  const _LegendMore({required this.title, required this.lines});
-  final String title;
+/// The legend's own prose, printed in full wherever the legend is shown.
+///
+/// Every legend used to print a shorthand row and hide the explanation behind a
+/// "More" button. A legend you have to open twice is two legends, and the owner
+/// asked for the whole thing whenever the legend is on.
+class _LegendLines extends StatelessWidget {
+  const _LegendLines({required this.lines});
+
   final List<String> lines;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Builder(
-        builder: (BuildContext context) => MmAction(
-          dense: true,
-          label: title,
-          onPressed: () => showDialog<void>(
-            context: context,
-            builder: (BuildContext c) => AlertDialog(
-              title: Text(title),
-              content: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    for (final String line in lines)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(line,
-                            style: TextStyle(
-                                color: cs.onSurface,
-                                fontSize: context.skin.type.sizeBody)),
-                      ),
-                  ],
-                ),
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.pop(c),
-                  child: Text(MaterialLocalizations.of(c).closeButtonLabel),
-                ),
-              ],
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        for (final String line in lines)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(line,
+                style: TextStyle(
+                    color: cs.onSurface, fontSize: context.skin.type.sizeBody)),
           ),
-        ),
-      ),
+      ],
     );
   }
 }
@@ -1337,7 +1318,7 @@ class _GridLegend extends StatelessWidget {
           row(Icons.star, l.gridLegendFavShort),
           row(Icons.waves, l.gridLegendRippleShort),
           row(Icons.touch_app, l.gridLegendTapShort),
-          _LegendMore(title: l.gridLegendMore, lines: <String>[
+          _LegendLines(lines: <String>[
             l.gridLegendRings(scaleValueDisplay),
             l.gridLegendSelf,
             l.gridLegendNorth,
@@ -1862,7 +1843,7 @@ class _TreeLegend extends StatelessWidget {
               colour: cs.primary.withValues(alpha: .55)),
           row(Icons.more_horiz, l.treeFloodShort, colour: cs.onSurfaceVariant),
           row(Icons.arrow_forward, l.treeArrowShort),
-          _LegendMore(title: l.gridLegendMore, lines: <String>[
+          _LegendLines(lines: <String>[
             l.meshTreeLegendDesc,
             l.meshTreeLegendSelf,
             l.meshTreeLegendRepeater,
@@ -1932,7 +1913,7 @@ class _FujiLegend extends StatelessWidget {
               colour: cs.primary.withValues(alpha: .7)),
           row(Icons.help_outline, l.fujiUnknownShort,
               colour: cs.onSurfaceVariant),
-          _LegendMore(title: l.gridLegendMore, lines: <String>[
+          _LegendLines(lines: <String>[
             l.fujiLegendDesc,
             l.fujiLegendMe,
             l.fujiLegendRefs,
@@ -1993,7 +1974,7 @@ class _SnsCellsLegend extends StatelessWidget {
           row(Icons.ac_unit, l.snsCoolShort),
           row(Icons.chat_bubble_outline, l.snsToastShort, colour: cs.tertiary),
           row(Icons.timelapse, l.snsDecayShort),
-          _LegendMore(title: l.gridLegendMore, lines: <String>[
+          _LegendLines(lines: <String>[
             l.snsCellsLegendDesc,
             l.snsCellsLegendHot,
             l.snsCellsLegendCool,

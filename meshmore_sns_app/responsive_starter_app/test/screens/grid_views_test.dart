@@ -194,7 +194,7 @@ void main() {
     mc.dispose();
   });
 
-  testWidgets('the legend is a key; the prose is behind one tap',
+  testWidgets('the legend says everything when it is on',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(800, 1600));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -205,21 +205,16 @@ void main() {
 
     await t.tap(find.byTooltip('Show legend'));
     await t.pump();
-    // Every visible line in the panel is a glyph and two words, not a
-    // sentence about an animation.
-    for (final Text text in t.widgetList<Text>(find.byType(Text))) {
-      final String? data = text.data;
-      if (data == null || data.isEmpty) continue;
-      expect(data.length, lessThanOrEqualTo(60),
-          reason: 'legend line too long: "$data"');
-    }
-    // The sentences are still one tap away.
-    await t.tap(find.text('Full legend'));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 200));
-    expect(find.textContaining('Rings are distance bands'), findsOneWidget);
-    await t.pumpWidget(const SizedBox());
-    mc.dispose();
+    // The whole legend, in one place: the prose used to be behind a "More"
+    // button, and a legend you have to open twice is two legends.
+    expect(find.text('Full legend'), findsNothing,
+        reason: 'there is no second legend to open');
+    final List<String> shown = <String>[
+      for (final Text text in t.widgetList<Text>(find.byType(Text)))
+        if (text.data != null && text.data!.isNotEmpty) text.data!,
+    ];
+    expect(shown.length, greaterThan(4),
+        reason: 'the panel is the legend, not a shorthand of it');
   });
 
   testWidgets('a node without a position is a signal marker, not a bearing',
