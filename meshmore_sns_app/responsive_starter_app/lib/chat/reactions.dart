@@ -48,10 +48,13 @@ abstract final class Reactions {
   /// The hash that names one message: `SHA-256(text + uint32le(ts))`, first
   /// five bytes, base32.
   ///
-  /// The sender is *not* in the digest. MeshCore One carries the sender's name
-  /// beside the hash in a channel (`@[name]emoji\nhash`) and compares the pair,
-  /// so the same text sent at the same second by two people has one hash and
-  /// two reactions that do not collide. That is why [parse] returns the name.
+  /// The sender is *not* in the digest. MeshCore One carries the **target
+  /// message's author** beside the hash in a channel (`@[author]emoji\nhash`)
+  /// and compares the pair, so the same text sent at the same second by two
+  /// people has one hash and two reactions that do not collide. A client that
+  /// wrote the reactor's own name there produces lines that nothing else can
+  /// match, which is why [parse] returns the name and the caller checks it
+  /// against the message being reacted to.
   static String hashFor({
     required int timestampSeconds,
     required String text,

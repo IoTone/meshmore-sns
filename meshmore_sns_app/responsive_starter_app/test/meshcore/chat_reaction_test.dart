@@ -20,14 +20,17 @@ void main() {
       timestampSeconds: target.at.millisecondsSinceEpoch ~/ 1000,
       text: target.text,
     );
+    // The line names the message's author, which is what the other clients
+    // write and what the reader needs to pick the right message.
     final String line =
-        Reactions.encodeChannel(senderName: 'Kim', emoji: '👍', hash: hash);
+        Reactions.encodeChannel(senderName: 'Sam', emoji: '👍', hash: hash);
     final ({String hash, String emoji, String? senderName, bool isOpen})? rx =
         Reactions.parse(line);
     expect(rx, isNotNull);
     expect(rx!.hash, hash, reason: 'the reaction points at the target');
     expect(rx.emoji, '👍');
-    expect(rx.senderName, 'Kim');
+    expect(rx.senderName, 'Sam',
+        reason: "the line names the target's author, not the reactor");
   });
 
   test('text and time change the hash, and the sender does not', () {

@@ -3508,7 +3508,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     final String line = dm
         ? Reactions.encodeDirect(emoji: emoji, hash: hash)
         : Reactions.encodeChannel(
-            senderName: own == null || own.isEmpty ? '?' : own,
+            // The name in the line is the **target message's sender**, not the
+            // reactor: MeshCore One puts it there because a channel line carries
+            // no key and the reader needs to know which author's message the
+            // hash was taken over. Writing the reactor's own name made every
+            // reaction this app sent unmatchable by the clients that follow the
+            // convention.
+            senderName: _senderNameOf(target) ?? own ?? '?',
             emoji: emoji,
             hash: hash,
           );

@@ -296,23 +296,6 @@ Future<void> startApp() async {
             peers: ctx.read<PeerProfiles>(),
           )..load(),
         ),
-        // The pictures this session has announced and will serve on request.
-        // App-scoped, because an offer outlives the chat tab that made it and a
-        // reader has fifteen minutes to tap the preview.
-        Provider<MediaOfferStore>(create: (_) => MediaOfferStore()),
-        // Both halves of "announce, then fetch": previews heard on a channel and
-        // requests for offers this session still holds. It listens from the app,
-        // so a request is answered whichever tab is open.
-        Provider<MediaFetchService>(
-          create: (BuildContext ctx) => MediaFetchService(
-            mc: ctx.read<MeshcoreController>(),
-            offers: ctx.read<MediaOfferStore>(),
-            // The same codec the composer encodes with, so a fetched picture is
-            // decoded by the one library that is already bundled.
-            codec: const AvifMediaCodec(),
-          )..attach(),
-          dispose: (_, MediaFetchService s) => s.dispose(),
-        ),
         Provider<CueService>(
           create: (BuildContext ctx) {
             final ThemeController tc = ctx.read<ThemeController>();
@@ -329,6 +312,29 @@ Future<void> startApp() async {
         ),
         ChangeNotifierProvider<DemoMode>.value(value: demo),
         ChangeNotifierProvider<MeshcoreController>.value(value: controller),
+        // The pictures this session has announced and will serve on request.
+        // App-scoped, because an offer outlives the chat tab that made it and a
+        // reader has fifteen minutes to tap the preview.
+        //
+        // Both of these read the controller, so they are declared *after* it:
+        // provider resolves a lookup against the providers above it, and the
+        // first version sat above the controller, which threw
+        // "Could not find the correct Provider<MeshcoreController>" on the chat
+        // screen the moment it was opened.
+        Provider<MediaOfferStore>(create: (_) => MediaOfferStore()),
+        // Both halves of "announce, then fetch": previews heard on a channel and
+        // requests for offers this session still holds. It listens from the app,
+        // so a request is answered whichever tab is open.
+        Provider<MediaFetchService>(
+          create: (BuildContext ctx) => MediaFetchService(
+            mc: ctx.read<MeshcoreController>(),
+            offers: ctx.read<MediaOfferStore>(),
+            // The same codec the composer encodes with, so a fetched picture is
+            // decoded by the one library that is already bundled.
+            codec: const AvifMediaCodec(),
+          )..attach(),
+          dispose: (_, MediaFetchService s) => s.dispose(),
+        ),
         // R59 — the bot. `pskFor` is what makes the "never on Public"
         // refusal real: it reads the slot's live key off the radio,
         // so a slot reset to the stock key stops qualifying at once.

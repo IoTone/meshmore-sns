@@ -63,6 +63,7 @@ import '../theme/mm_skin.dart';
 import '../theme/mm_tokens.dart';
 import '../tts/tts_controller.dart';
 import '../ui/mm_components.dart';
+import '../util/provider_lookup.dart';
 import '../ui/mp1_preview.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/clock_model.dart';
@@ -1396,7 +1397,8 @@ class _ChatScreenState extends State<ChatScreen>
                   // The app provides one store for the session. A harness that
                   // pumps this screen without it still gets a working sheet:
                   // the offers simply live as long as the composer.
-                  offers: context.read<MediaOfferStore?>() ?? MediaOfferStore(),
+                  offers: readOrNull<MediaOfferStore>(context) ??
+                      MediaOfferStore(),
                 )
             : null,
         icon: const Icon(Icons.add_photo_alternate_outlined),
@@ -2165,7 +2167,7 @@ class _PhotoAnnouncementStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final MediaFetchService? fetch = context.watch<MediaFetchService?>();
+    final MediaFetchService? fetch = watchOrNull<MediaFetchService>(context);
     if (fetch == null) return const SizedBox.shrink();
     final List<PhotoAnnouncement> here = fetch.announcements
         .where((PhotoAnnouncement a) => a.channelIdx == channelIdx)
