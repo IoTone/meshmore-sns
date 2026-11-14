@@ -3437,7 +3437,7 @@
       }
     }
   },
-  "geofenceCorners": "{n} corners",
+  "geofenceCorners": "{n, plural, =1{1 corner} other{{n} corners}}",
   "@geofenceCorners": {
     "placeholders": {
       "n": {
@@ -3445,6 +3445,7 @@
       }
     }
   },
+  "geofenceCanvasTitle": "Save this fence",
   "geofencePolygonNote": "A drawn fence keeps the shape you drew. You can rename it here; reshaping it is not offered yet.",
   "geofenceDrawTitle": "Draw a fence",
   "geofenceDrawHint": "Tap the map to add a corner. Drag a corner to move it.",

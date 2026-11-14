@@ -2371,6 +2371,7 @@
       }
     }
   },
+  "geofenceCanvasTitle": "このフェンスを保存",
   "geofencePolygonNote": "描いた形のまま保存されます。ここでは名前を変えられますが、形の変更はまだできません。",
   "geofenceDrawTitle": "フェンスを描く",
   "geofenceDrawHint": "地図をタップして角を追加します。角はドラッグで移動できます。",

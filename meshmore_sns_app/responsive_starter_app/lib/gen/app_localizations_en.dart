@@ -5141,8 +5141,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String geofenceCorners(int n) {
-    return '$n corners';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n corners',
+      one: '1 corner',
+    );
+    return '$_temp0';
   }
+
+  @override
+  String get geofenceCanvasTitle => 'Save this fence';
 
   @override
   String get geofencePolygonNote =>

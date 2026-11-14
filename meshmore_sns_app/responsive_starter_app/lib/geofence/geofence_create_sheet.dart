@@ -129,7 +129,14 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              widget.editing ? l.geofenceEditTitle : l.geofenceCreateTitle,
+              // A drawn shape is not "here" and is not a radius: the sheet's
+              // title names what the reader is doing, and it was the circle
+              // flow's words on a polygon's save sheet.
+              widget.editing
+                  ? l.geofenceEditTitle
+                  : (widget.isPolygon
+                      ? l.geofenceCanvasTitle
+                      : l.geofenceCreateTitle),
               style: TextStyle(
                 color: skin.color.fg,
                 fontSize: skin.type.sizeLg,

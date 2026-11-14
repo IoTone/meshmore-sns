@@ -4937,6 +4937,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get geofenceCanvasTitle => 'このフェンスを保存';
+
+  @override
   String get geofencePolygonNote =>
       '描いた形のまま保存されます。ここでは名前を変えられますが、形の変更はまだできません。';
 

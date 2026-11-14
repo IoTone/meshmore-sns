@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
+import 'package:meshmore_sns_app/gen/app_localizations_en.dart';
 import 'package:meshmore_sns_app/geofence/geofence_controller.dart';
 import 'package:meshmore_sns_app/geofence/geofence_create_sheet.dart';
 import 'package:meshmore_sns_app/geofence/geofence_engine.dart';
@@ -191,5 +192,15 @@ void main() {
     expect(t.takeException(), isNull);
     expect(find.byKey(const ValueKey<String>('geofence-shape-preview')),
         findsOneWidget);
+  });
+
+  test('one corner is a corner, not "1 corners"', () {
+    // Seen on the handset while drawing a fence: the count read "1 corners" for
+    // the first tap, which is the kind of thing a reader notices immediately and
+    // a developer never sees.
+    final AppLocalizationsEn en = AppLocalizationsEn();
+    expect(en.geofenceCorners(1), '1 corner');
+    expect(en.geofenceCorners(2), '2 corners');
+    expect(en.geofenceCorners(7), '7 corners');
   });
 }

@@ -8677,8 +8677,14 @@ abstract class AppLocalizations {
   /// No description provided for @geofenceCorners.
   ///
   /// In en, this message translates to:
-  /// **'{n} corners'**
+  /// **'{n, plural, =1{1 corner} other{{n} corners}}'**
   String geofenceCorners(int n);
+
+  /// No description provided for @geofenceCanvasTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this fence'**
+  String get geofenceCanvasTitle;
 
   /// No description provided for @geofencePolygonNote.
   ///
