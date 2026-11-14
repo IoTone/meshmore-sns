@@ -1,11 +1,16 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:convert';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:meshcore/meshcore.dart';
 
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
+import '../ui/mm_collapse_controller.dart';
+import '../ui/mm_collapsible.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
 
@@ -41,12 +46,45 @@ class ChannelCreateSheet extends StatefulWidget {
         builder: (_) => ChannelCreateSheet(controller: controller),
       );
 
+  /// The firmware's channel-name limit, in bytes.
+  ///
+  /// `ChannelDetails::name` is `char name[32]` in the MeshCore firmware, so a
+  /// longer name is silently truncated by the radio. That matters more than
+  /// cosmetics: this sheet derives the key from the name, so deriving from a
+  /// 40-character string while the radio stores 32 bytes gives two clients the
+  /// same visible name and different keys — they simply cannot hear each other,
+  /// with nothing on either screen to say why.
+  static const int maxNameBytes = 32;
+
+  /// The name as the radio will store it: capped at the firmware's 32 bytes,
+  /// counted in UTF-8 bytes rather than characters so a multi-byte name is
+  /// capped where the firmware caps it.
+  static String capName(String raw) {
+    final String trimmed = raw.trim();
+    final List<int> bytes = utf8.encode(trimmed);
+    if (bytes.length <= maxNameBytes) return trimmed;
+    // Cut on a character boundary so a multi-byte rune is never halved.
+    final StringBuffer out = StringBuffer();
+    int used = 0;
+    for (final int rune in trimmed.runes) {
+      final int len = utf8.encode(String.fromCharCode(rune)).length;
+      if (used + len > maxNameBytes) break;
+      out.writeCharCode(rune);
+      used += len;
+    }
+    return out.toString();
+  }
+
   @override
   State<ChannelCreateSheet> createState() => _ChannelCreateSheetState();
 }
 
 class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
   final TextEditingController _name = TextEditingController();
+
+  /// The pasted or generated key field. Kept apart from `_hexKey` so the text and
+  /// the parsed value cannot drift, and disposed with the sheet.
+  final TextEditingController _hex = TextEditingController();
 
   /// Who may read it. The default is the name-derived key, because that is the
   /// choice that cannot surprise anyone: the same name in the same place gives
@@ -55,10 +93,53 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
   bool _busy = false;
   String? _error;
 
+  /// The advanced disclosure: everything the old slot dialog could do, folded
+  /// away so the two-tap path stays two taps.
+  final bool _advanced = false;
+
+
+  /// A slot the reader picked, when they did. Null means "the first free one".
+  int? _slotOverride;
+
+  /// A pasted or generated 32-hex key. When set, it wins over the name-derived
+  /// key: somebody pasting a key has the key, and deriving one from a name would
+  /// silently replace it with a different channel.
+  String? _hexKey;
+
   @override
   void dispose() {
     _name.dispose();
+    _hex.dispose();
     super.dispose();
+  }
+
+  /// Pick a slot, showing which are in use.
+  Future<int?> _pickSlot(BuildContext context, AppLocalizations l) async {
+    final MeshcoreController mc = widget.controller;
+    final int slots = mc.deviceInfo?.maxGroupChannels ?? 4;
+    final Map<int, String> used = <int, String>{
+      for (final MapEntry<int, String> e in mc.channels) e.key: e.value,
+    };
+    return showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext c) => SafeArea(
+        top: false,
+        child: ListView(
+          shrinkWrap: true,
+          children: <Widget>[
+            for (int i = 0; i < slots; i++)
+              ListTile(
+                key: ValueKey<String>('channel-create-slot-$i'),
+                title: Text(l.channelCreateSlotNumber(i)),
+                subtitle: Text(used[i] ?? l.channelsEmpty),
+                trailing: i == _slot ? const Icon(Icons.check) : null,
+                onTap: () => Navigator.pop(c, i),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// The first slot nothing is using, or null when every slot is taken.
@@ -67,6 +148,7 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
   /// disagree about how many slots the radio has: the controller's own probe
   /// walks `maxGroupChannels`, and that is what the list renders.
   int? get _slot {
+    if (_slotOverride != null) return _slotOverride;
     final MeshcoreController mc = widget.controller;
     final int slots = mc.deviceInfo?.maxGroupChannels ?? 4;
     final Set<int> used =
@@ -79,8 +161,19 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
 
   /// The key this channel will carry, once there is a name to derive it from.
   List<int>? get _psk {
+    final String? hex = _hexKey?.trim();
+    if (hex != null && hex.isNotEmpty) {
+      if (hex.length != 32 || !RegExp(r'^[0-9a-fA-F]+$').hasMatch(hex)) {
+        return null;
+      }
+      return <int>[
+        for (int i = 0; i < 32; i += 2)
+          int.parse(hex.substring(i, i + 2), radix: 16),
+      ];
+    }
     if (_publicKey) return List<int>.from(kPublicChannelPsk);
-    final String raw = _name.text.trim();
+    // Derived from the capped name, which is the one the radio will hold.
+    final String raw = ChannelCreateSheet.capName(_name.text);
     if (raw.isEmpty) return null;
     return MeshcoreChannelCrypto.channelPskFromHashtag(raw);
   }
@@ -106,8 +199,10 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
   /// sha256("#basecamp") is a channel nobody can find again by typing the name
   /// they chose, so the `#` is stored rather than implied.
   String get _storedName {
-    final String raw = _name.text.trim();
+    final String raw = ChannelCreateSheet.capName(_name.text);
+    // A name only gets a '#' when the key is derived from it.
     if (_publicKey) return raw;
+    if ((_hexKey ?? '').trim().isNotEmpty) return raw;
     return MeshcoreChannelCrypto.canonicalHashtag(raw);
   }
 
@@ -215,6 +310,91 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
               title: l.channelCreatePublicTitle,
               body: l.channelCreatePublicBody,
               onTap: () => setState(() => _publicKey = true),
+            ),
+            SizedBox(height: skin.space.step(3)),
+            // Everything the old slot dialog could do, one tap down. The simple
+            // path above stays two taps: a name, and who may read it.
+            MmCollapsibleSection(
+              id: MmGroupIds.channelAdvanced,
+              title: l.channelCreateAdvanced,
+              initiallyExpanded: _advanced,
+              children: <Widget>[
+                // Slot.
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: skin.space.step(2)),
+                  child: MmPickerTile(
+                    key: const ValueKey<String>('channel-create-slot-pick'),
+                    title: l.channelCreateSlotTile,
+                    value: slot == null ? '—' : '$slot',
+                    hint: l.channelCreateSlotHint,
+                    onTap: () async {
+                      final int? picked = await _pickSlot(context, l);
+                      if (picked != null) {
+                        setState(() => _slotOverride = picked);
+                      }
+                    },
+                  ),
+                ),
+                SizedBox(height: skin.space.step(2)),
+                // A pasted or generated key.
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: skin.space.step(2)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      TextField(
+                        key: const ValueKey<String>('channel-create-hex'),
+                        controller: _hex,
+                        maxLines: 1,
+                        style: TextStyle(
+                            color: skin.color.fg,
+                            fontSize: skin.type.sizeBody,
+                            fontFamily: skin.type.monoFamily),
+                        decoration: InputDecoration(
+                          labelText: l.channelCreateKeyLabel,
+                          hintText: l.channelCreateKeyHint,
+                          isDense: true,
+                        ),
+                        onChanged: (String v) =>
+                            setState(() => _hexKey = v.trim()),
+                      ),
+                      SizedBox(height: skin.space.step(1)),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              l.channelCreateKeyHelp,
+                              style: TextStyle(
+                                  color: skin.color.fgMuted,
+                                  fontSize: skin.type.sizeSm),
+                            ),
+                          ),
+                          MmAction(
+                            key: const ValueKey<String>(
+                                'channel-create-key-random'),
+                            label: l.channelCreateKeyRandom,
+                            dense: true,
+                            onPressed: () {
+                              // `Random.secure()` is the platform's own entropy;
+                              // the old "shake" mode collected accelerometer
+                              // noise for the same result and needed a hand.
+                              final math.Random r = math.Random.secure();
+                              final String hex = <int>[
+                                for (int i = 0; i < 16; i++) r.nextInt(256),
+                              ]
+                                  .map((int b) =>
+                                      b.toRadixString(16).padLeft(2, '0'))
+                                  .join();
+                              setState(() => _hexKey = hex);
+                              _hex.text = hex;
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: skin.space.step(3)),
             // Where it will live, said plainly rather than as a number to choose.

@@ -180,6 +180,7 @@ void main() {
       'locAutoPublish': MmGroupIds.locAutoPublish,
       'locBeacon': MmGroupIds.locBeacon,
       'locManual': MmGroupIds.locManual,
+      'channelAdvanced': MmGroupIds.channelAdvanced,
       'devRadio': MmGroupIds.devRadio,
       'diagnosticsDeveloper': MmGroupIds.diagnosticsDeveloper,
       'devIdentity': MmGroupIds.devIdentity,

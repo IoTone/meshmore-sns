@@ -2294,6 +2294,32 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelCreateNoSlot => 'この無線機のチャンネル枠はすべて使用中です。先にチャンネル画面で空けてください。';
 
   @override
+  String get channelCreateAdvanced => 'スロットとキー';
+
+  @override
+  String get channelCreateSlotTile => 'チャンネルスロット';
+
+  @override
+  String get channelCreateSlotHint => '選ばなければ空いている最初のスロットを使います。';
+
+  @override
+  String channelCreateSlotNumber(int n) {
+    return 'スロット $n';
+  }
+
+  @override
+  String get channelCreateKeyLabel => 'キー（16 進 32 文字）';
+
+  @override
+  String get channelCreateKeyHint => '他のクライアントから渡されたキーを貼り付け';
+
+  @override
+  String get channelCreateKeyHelp => '貼り付けたキーが名前より優先されます。';
+
+  @override
+  String get channelCreateKeyRandom => '生成';
+
+  @override
   String channelCreateExists(String name) {
     return '$name というチャンネルはすでにあります。';
   }

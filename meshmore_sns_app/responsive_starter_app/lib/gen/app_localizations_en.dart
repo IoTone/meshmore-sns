@@ -2402,6 +2402,33 @@ class AppLocalizationsEn extends AppLocalizations {
       'Every channel slot on this radio is in use. Free one on the channels screen first.';
 
   @override
+  String get channelCreateAdvanced => 'Slot and key';
+
+  @override
+  String get channelCreateSlotTile => 'Channel slot';
+
+  @override
+  String get channelCreateSlotHint =>
+      'The first free slot is used unless you pick one.';
+
+  @override
+  String channelCreateSlotNumber(int n) {
+    return 'Slot $n';
+  }
+
+  @override
+  String get channelCreateKeyLabel => 'Key, 32 hex characters';
+
+  @override
+  String get channelCreateKeyHint => 'Paste the key another client gave you';
+
+  @override
+  String get channelCreateKeyHelp => 'A pasted key wins over the name.';
+
+  @override
+  String get channelCreateKeyRandom => 'Generate';
+
+  @override
   String channelCreateExists(String name) {
     return 'There is already a channel called $name.';
   }

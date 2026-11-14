@@ -1398,6 +1398,21 @@
   "channelCreatePublicBody": "電波の届く範囲でパブリックチャンネルを使う全員が読めます。公開前提のときだけ選んでください。",
   "channelCreateSlotNote": "スロット {slot}（空いている最初の枠）に作成します。",
   "channelCreateNoSlot": "この無線機のチャンネル枠はすべて使用中です。先にチャンネル画面で空けてください。",
+  "channelCreateAdvanced": "スロットとキー",
+  "channelCreateSlotTile": "チャンネルスロット",
+  "channelCreateSlotHint": "選ばなければ空いている最初のスロットを使います。",
+  "channelCreateSlotNumber": "スロット {n}",
+  "@channelCreateSlotNumber": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "channelCreateKeyLabel": "キー（16 進 32 文字）",
+  "channelCreateKeyHint": "他のクライアントから渡されたキーを貼り付け",
+  "channelCreateKeyHelp": "貼り付けたキーが名前より優先されます。",
+  "channelCreateKeyRandom": "生成",
   "channelCreateExists": "{name} というチャンネルはすでにあります。",
   "channelCreateAction": "作成",
   "channelsEmpty": "— 未設定 —",

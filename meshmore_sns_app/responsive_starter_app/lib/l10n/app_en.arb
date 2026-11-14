@@ -1489,6 +1489,21 @@
   "channelCreatePublicBody": "Everyone within radio range on the public channel can read it. Use this only for a channel meant to be open.",
   "channelCreateSlotNote": "Goes in slot {slot}, the first one nothing is using.",
   "channelCreateNoSlot": "Every channel slot on this radio is in use. Free one on the channels screen first.",
+  "channelCreateAdvanced": "Slot and key",
+  "channelCreateSlotTile": "Channel slot",
+  "channelCreateSlotHint": "The first free slot is used unless you pick one.",
+  "channelCreateSlotNumber": "Slot {n}",
+  "@channelCreateSlotNumber": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "channelCreateKeyLabel": "Key, 32 hex characters",
+  "channelCreateKeyHint": "Paste the key another client gave you",
+  "channelCreateKeyHelp": "A pasted key wins over the name.",
+  "channelCreateKeyRandom": "Generate",
   "channelCreateExists": "There is already a channel called {name}.",
   "@channelCreateExists": {
     "placeholders": {

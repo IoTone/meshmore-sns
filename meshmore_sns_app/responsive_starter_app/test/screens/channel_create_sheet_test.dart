@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -242,6 +244,32 @@ void main() {
         findsOneWidget);
     mc.dispose();
   });
+
+  test('a name is capped where the firmware caps it, and the key follows', () {
+    // `ChannelDetails::name` is `char name[32]` in the firmware. A longer name is
+    // truncated by the radio, so deriving a key from the full string would give
+    // two clients the same visible name and different keys — a channel that
+    // silently cannot be heard.
+    final String long = '#abcdefghijklmnopqrstuvwxyz0123456789';
+    final String capped = ChannelCreateSheet.capName(long);
+    expect(utf8.encode(capped).length, lessThanOrEqualTo(32));
+    expect(capped.length, lessThan(long.length));
+  });
+
+  test('a multi-byte name is cut on a character boundary', () {
+    // 16 kana are 48 UTF-8 bytes; a byte-wise cut would halve one.
+    final String kana = 'あ' * 16;
+    final String capped = ChannelCreateSheet.capName(kana);
+    expect(utf8.encode(capped).length, lessThanOrEqualTo(32));
+    expect(capped.runes.every((int r) => r == 0x3042), isTrue,
+        reason: 'the cut split a character');
+    expect(utf8.decode(utf8.encode(capped)), capped);
+  });
+
+  test('a short name is left alone', () {
+    expect(ChannelCreateSheet.capName('  basecamp  '), 'basecamp');
+    expect(ChannelCreateSheet.capName(''), '');
+  });
 }
 
 /// Reads whether an `MmAction` is pressable without importing the widget.
@@ -265,4 +293,5 @@ class MmActionProbe {
     };
     return handler != null;
   }
+
 }

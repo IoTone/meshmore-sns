@@ -4046,6 +4046,54 @@ abstract class AppLocalizations {
   /// **'Every channel slot on this radio is in use. Free one on the channels screen first.'**
   String get channelCreateNoSlot;
 
+  /// No description provided for @channelCreateAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Slot and key'**
+  String get channelCreateAdvanced;
+
+  /// No description provided for @channelCreateSlotTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel slot'**
+  String get channelCreateSlotTile;
+
+  /// No description provided for @channelCreateSlotHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The first free slot is used unless you pick one.'**
+  String get channelCreateSlotHint;
+
+  /// No description provided for @channelCreateSlotNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Slot {n}'**
+  String channelCreateSlotNumber(int n);
+
+  /// No description provided for @channelCreateKeyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Key, 32 hex characters'**
+  String get channelCreateKeyLabel;
+
+  /// No description provided for @channelCreateKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the key another client gave you'**
+  String get channelCreateKeyHint;
+
+  /// No description provided for @channelCreateKeyHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'A pasted key wins over the name.'**
+  String get channelCreateKeyHelp;
+
+  /// No description provided for @channelCreateKeyRandom.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get channelCreateKeyRandom;
+
   /// No description provided for @channelCreateExists.
   ///
   /// In en, this message translates to:

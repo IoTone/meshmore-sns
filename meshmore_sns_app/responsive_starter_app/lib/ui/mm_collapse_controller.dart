@@ -34,6 +34,9 @@ abstract final class MmGroupIds {
   static const String persAudio = 'personalization.audio';
   // app_settings_screen.dart — storage, so a user can fold it away.
   static const String persStorage = 'settings.storage';
+  // channel_create_sheet.dart — slot and pasted key.
+  static const String channelAdvanced = 'channel.advanced';
+
   // app_settings_screen.dart — the radio's pairing PIN.
   static const String persSecurity = 'settings.security';
   // diagnostics_screen.dart
@@ -53,6 +56,7 @@ abstract final class MmGroupIds {
   static const String studioRecent = 'studio.recent';
 
   static const Set<String> all = <String>{
+    channelAdvanced,
     locAutoPublish,
     locBeacon,
     locManual,
