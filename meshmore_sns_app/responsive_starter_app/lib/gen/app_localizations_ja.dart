@@ -273,7 +273,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get blockConfirmBody =>
-      'この端末で、そのキーからのメッセージ・通知・地点を表示しなくなります。無線機は今も受信・中継しており、メッシュ上の誰もブロックを知りません。';
+      'この端末で、その相手からのメッセージ・通知・地点を表示しなくなります。無線機は今も受信・中継しており、メッシュ上の誰もブロックを知りません。';
 
   @override
   String get blockConfirmGo => 'ブロック';
@@ -763,7 +763,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodesFloodAdvertSent =>
-      'フラッドアドバートを送信 — メッシュ全体に伝播 (隣接 + リピーター)。相手側でも Advertise を実行するまで表示されません。';
+      'フラッドアドバートを送信 — メッシュ全体に伝播します。相手側でも Advertise を実行するまで表示されません。';
 
   @override
   String get nodesZeroHopAdvertSent => '直接届く範囲のラジオにだけ送りました。';
@@ -1092,7 +1092,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locMaster => '自動公開';
 
   @override
-  String get locMasterOn => 'オン — 現在地を範囲内のすべてのノードに知らせます';
+  String get locMasterOn => 'オン — 現在地をアドバートに載せて送ります';
 
   @override
   String get locMasterOff => 'オフ';
@@ -1358,7 +1358,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatHistoryUnreadableBody =>
-      'メッセージはこの端末に残っています。この端末にもう無い鍵で封印されているため、暗号化した書き出しから復元するまで読めません。';
+      'メッセージはこの端末に残っていますが、この端末にもう無い鍵で封印されています。暗号化した書き出しから復元するまで読めません。';
 
   @override
   String get diagnosticsHistoryStore => '履歴ストア';
@@ -1442,6 +1442,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String chatComposerHint(String channel) {
     return '$channel へメッセージ';
   }
+
+  @override
+  String get chatSendNotSent => '送信できませんでした（無線機が未接続）。メッセージは入力欄に戻しました。';
 
   @override
   String get chatSend => '送信';
@@ -1682,7 +1685,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deviceContactsNeedLocation =>
-      '現在地が未設定のため距離を測定できません。位置非公開の連絡先のみが対象です。GPS または手動ピンで位置を設定すると、遠方の GPS 連絡先も削除できます。';
+      '現在地が未設定のため距離を測定できません。位置非公開の連絡先のみが対象です。位置を設定すると、遠方の GPS 連絡先も削除できます。';
 
   @override
   String deviceContactsRemoveOutOfRangeDone(int count) {
@@ -1830,7 +1833,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String meshbookClearConfirm(String channel) {
-    return 'CH$channel の直近24時間のメッシュブックデータをクリアしますか？新しいチャンネルメッセージが届くと再構築されます。（チャンネルごとに別々に保存されます。）';
+    return 'CH$channel の直近24時間のメッシュブックデータをクリアしますか？新しいチャンネルメッセージが届くと再構築されます。';
   }
 
   @override
@@ -1908,7 +1911,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String weatherSelfNoEnv(String types) {
-    return 'このデバイスのファームウェアは環境テレメトリに対応していません。\n報告内容: $types。\nセンサー（例: T1000-E の BME280）には MeshCore センサーファームウェアが必要です。標準ビルドはバッテリー／GPS のみを送信し、環境モードを設定してもデバイス側でオフに戻されます。これはアプリの設定ではなくデバイス側の制限です。';
+    return 'このデバイスのファームウェアは環境テレメトリに対応していません。\n報告内容: $types。\nセンサー（例: T1000-E の BME280）には MeshCore センサーファームウェアが必要です。標準ビルドはバッテリーと GPS のみを送信します。これはデバイス側の制限で、アプリの設定ではありません。';
   }
 
   @override
@@ -2067,7 +2070,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get snsCellsLegendChannel =>
-      'チャンネルメッセージは送信者名を含みます — 送信者の位置が分かればそのセルを、分からなければ自分のセル（受信地点）を温めます。';
+      'チャンネルメッセージは送信者名を含みます。送信者の位置が分かればそのセルを、分からなければ自分のセルを温めます。';
 
   @override
   String get snsCellsLegendDecay => '直近1時間のみ追跡。保存はされません。';
@@ -2127,7 +2130,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get meshTreeLegendDesc =>
-      '無線がどの経路で各コンタクトに到達するかの有向グラフ。エッジは Contact.outPath — デバイスが送信に使う正確なリピーター連鎖。';
+      '無線がどの経路で各コンタクトに到達するかの有向グラフ。各エッジは、実際に送信に使う経路上のリピーターです。';
 
   @override
   String get meshTreeLegendSelf => 'あなた — 中央に固定。';
@@ -2604,7 +2607,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String deviceRegionSuggestBody(String lat, String lon, String label) {
-    return 'スマートフォンの GPS（$lat, $lon）に基づくと、該当するプリセットは「$label」です。国境付近では誤判定する可能性があるため、適用前に現地の法令に適合するか必ず確認してください。';
+    return 'スマートフォンの GPS（$lat, $lon）に該当するプリセットは「$label」です。適用前に、現地の法令に適合するか確認してください。';
   }
 
   @override
@@ -2710,7 +2713,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get devicePathHashSizeHelp =>
-      'このラジオが送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、直接送信のペイロード容量が減ります。';
+      'このラジオが送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、ペイロード容量が減ります。';
 
   @override
   String get devicePathHashUnread => '無線機はまだハッシュ長を伝えていません。';
@@ -3793,7 +3796,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get selfTestIntro =>
-      '地図のダウンロードを一通り検証します（実際のサーバー、保存、中断と再開、期限切れ）。サンドボックスで実行して後で削除するため、あなたの地図には影響しません。所要約 1 分、通信量は 1 MB 未満です。';
+      '地図のダウンロードを一通り検証します（実際のサーバー、保存、中断と再開、期限切れ）。サンドボックスで実行し後で削除するため、あなたの地図には影響しません。約 1 分、1 MB 未満です。';
 
   @override
   String get selfTestRun => 'セルフテストを実行';
@@ -3977,7 +3980,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String diagnosticsFramesDroppedLine(int count) {
-    return '$count 件のフレームが一部だけ処理されました。処理の途中で失敗したため、内容が不完全な可能性があります';
+    return '$count 件のフレームが一部だけ処理されました。内容が不完全な可能性があります';
   }
 
   @override
@@ -4506,7 +4509,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String diagnosticsRadioChangedLine(String previous, String current) {
-    return 'この無線機は前回まで使っていたものではありません(前回 $previous、今回 $current)。履歴・タグ・お気に入り・ブロックはアプリ側のものなので残ります。連絡先テーブル・チャンネル・無線設定は無線機側のものなので、この無線機の内容になります。';
+    return 'この無線機は前回まで使っていたものではありません(前回 $previous、今回 $current)。履歴・タグ・お気に入り・ブロックはアプリ側のものなので残ります。連絡先・チャンネル・無線設定は無線機側のものなので、この無線機の内容になります。';
   }
 
   @override
@@ -4614,8 +4617,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '位置情報が無効のため、距離・方位・場所のタグの基準がありません。それ以外は動作します。';
 
   @override
-  String get degradedMapOffline =>
-      '地図タイルを取得できません。同梱のベースマップと端末に保存済みの範囲は表示され、他の機能には影響しません。';
+  String get degradedMapOffline => '地図タイルを取得できません。同梱のベースマップと保存済みのタイルは表示されます。';
 
   @override
   String get sosTitle => '緊急';
@@ -4900,6 +4902,14 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get mediaReceivedTitle => '受信した写真';
+
+  @override
+  String mediaReceivedKept(int count) {
+    return '$count 枚（アプリを閉じるまで保持）';
+  }
+
+  @override
   String get mediaReceiveComplete => '写真を受信しました。';
 
   @override
@@ -4980,14 +4990,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get geofenceDrawNeedThree => 'フェンスには3つ以上の角が必要です。';
 
   @override
-  String get geofenceDrawStarted => 'フェンスを描いています。地図をタップして角を追加します。';
+  String get geofenceDrawStarted => 'フェンスを描いています。';
 
   @override
   String get geofenceTitle => 'ジオフェンス';
 
   @override
   String get geofenceExplainer =>
-      'フェンスは見張る円です。入ったときと出たときに一度ずつ知らせるので、境界を歩いても通知が連続しません。';
+      'フェンスは見張る範囲です。入ったときと出たときに一度ずつ知らせるので、境界を歩いても通知が連続しません。';
 
   @override
   String get geofenceAddSection => 'フェンスを追加';
@@ -5053,7 +5063,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get geofenceExplainerShort => '到着・出発を知らせる円';
+  String get geofenceExplainerShort => '到着・出発を知らせる範囲';
 
   @override
   String get coverageTitle => 'カバレッジ';
@@ -5872,7 +5882,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get storageClearAllStays =>
-      '無線機には影響しません。無線機自身の連絡先表、チャンネル、設定は残り、送信済みのメッセージは取り消されません。アプリの設定と、ダウンロード済みの地図地域も残ります。';
+      '無線機には影響しません。無線機自身の連絡先・チャンネル・設定は残り、送信済みのメッセージは取り消されません。アプリの設定とダウンロード済みの地図地域も残ります。';
 
   @override
   String storageClearAllTypeWord(String word) {
@@ -6141,7 +6151,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get firmwareNoInstallWhy =>
-      'アプリからのインストールは提供していません。インストールは無線機の送信待ちメッセージを数フレームまで消費し、無線機が捨てるメッセージを再同期する手段がアプリにまだありません。Diagnostics からの再起動が無線機に対する唯一の操作で、これはインストールではありません。';
+      'アプリからのインストールは提供していません。インストールは無線機の送信待ちメッセージを数フレームまで消費し、捨てられるメッセージを再同期する手段がアプリにありません。Diagnostics からの再起動が唯一の操作で、これはインストールではありません。';
 
   @override
   String get firmwareOtaLabel => '無線更新';
@@ -6156,7 +6166,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deviceRadio2Note =>
-      '第2プロファイルは無線機の送信時間の96〜99%を使います（100パケットで計測）。そのため切り替えは無線機側の設定で行い、このアプリでは変更しません。両方のプロファイルのフレームは受信しますが、第2プロファイル自体のパラメータは表示しません。';
+      '第2プロファイルは無線機の送信時間の96〜99%を使うため、切り替えは無線機側で行い、このアプリでは変更しません。両方のフレームは受信しますが、第2プロファイル自体のパラメータは表示しません。';
 
   @override
   String get deviceReadoutQuerying => '無線機に問い合わせ中…';
@@ -6225,7 +6235,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get diagnosticsRadioAlertsWhy =>
-      '無線機自身のブザーと振動で、無線機のルールに従って鳴ります。このアプリからは鳴らしません。スマートフォンが離れていても無線機側に設定が残ります。';
+      '無線機自身のブザーと振動で、無線機のルールに従って鳴ります。このアプリからは鳴らしません。スマートフォンが離れていても無線機側で動きます。';
 
   @override
   String get diagnosticsBuzzer => 'ブザー';
@@ -6394,7 +6404,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapKeyReach => '相手の推定到達距離';
 
   @override
-  String get mapKeyDensity => '区画あたりのノード数';
+  String get mapKeyDensity => 'セルあたりのノード数';
 
   @override
   String get mapKeyGeofence => '設定したフェンス';
@@ -6418,8 +6428,8 @@ class AppLocalizationsJa extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'この区画に $count ノード',
-      one: 'この区画に 1 ノード',
+      other: 'このセルに $count ノード',
+      one: 'このセルに 1 ノード',
     );
     return '$_temp0';
   }

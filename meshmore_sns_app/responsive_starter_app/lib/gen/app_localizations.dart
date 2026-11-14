@@ -593,7 +593,7 @@ abstract class AppLocalizations {
   /// No description provided for @blockConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'This hides what it sends on this device: messages, notifications and places. The radio still receives and relays the packet, and nothing on the mesh learns about the block.'**
+  /// **'Hides what this person sends, on this device: messages, notifications and places. The radio still receives and relays the packet, and the mesh does not learn about the block.'**
   String get blockConfirmBody;
 
   /// No description provided for @blockConfirmGo.
@@ -1475,7 +1475,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesFloodAdvertSent.
   ///
   /// In en, this message translates to:
-  /// **'Flood advert sent — propagates across the whole mesh (neighbours + repeaters). The other node must Advertise too before it appears here.'**
+  /// **'Flood advert sent — it crosses the whole mesh. The other node must advertise too before it appears here.'**
   String get nodesFloodAdvertSent;
 
   /// No description provided for @nodesZeroHopAdvertSent.
@@ -1829,7 +1829,7 @@ abstract class AppLocalizations {
   /// No description provided for @fujiLegendDesc.
   ///
   /// In en, this message translates to:
-  /// **'Altitude survey. Heights on a √-scaled axis against famous landmarks. Your device\'s altitude comes from device GPS telemetry or the phone fix.'**
+  /// **'Altitude survey. Heights on a √-scaled axis against famous landmarks. Your altitude comes from device GPS telemetry or the phone fix.'**
   String get fujiLegendDesc;
 
   /// No description provided for @fujiLegendMe.
@@ -2087,7 +2087,7 @@ abstract class AppLocalizations {
   /// No description provided for @locMasterOn.
   ///
   /// In en, this message translates to:
-  /// **'On — announces your position to every node in range'**
+  /// **'On — your position goes out with your adverts'**
   String get locMasterOn;
 
   /// No description provided for @locMasterOff.
@@ -2507,7 +2507,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatHistoryUnreadableBody.
   ///
   /// In en, this message translates to:
-  /// **'The messages are still saved here. They were sealed with a key this phone no longer has, so they cannot be read until they are restored from an encrypted export.'**
+  /// **'The messages are still saved here, sealed with a key this phone no longer has. They cannot be read until restored from an encrypted export.'**
   String get chatHistoryUnreadableBody;
 
   /// No description provided for @diagnosticsHistoryStore.
@@ -2629,6 +2629,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Message {channel}'**
   String chatComposerHint(String channel);
+
+  /// No description provided for @chatSendNotSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent — the radio is not connected. Your message is back in the box.'**
+  String get chatSendNotSent;
 
   /// No description provided for @chatSend.
   ///
@@ -3035,7 +3041,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsNeedLocation.
   ///
   /// In en, this message translates to:
-  /// **'No location set, so distance can\'t be measured — only location-hidden contacts are caught. Set your position (GPS or a manual pin) to also remove far-away GPS contacts.'**
+  /// **'No location set, so distance can\'t be measured — only location-hidden contacts are caught. Set your position to also remove far-away GPS contacts.'**
   String get deviceContactsNeedLocation;
 
   /// No description provided for @deviceContactsRemoveOutOfRangeDone.
@@ -3299,7 +3305,7 @@ abstract class AppLocalizations {
   /// No description provided for @meshbookClearConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Clear the last 24h of Meshbook data for CH{channel}? It rebuilds as new channel messages arrive. (Each channel is stored separately.)'**
+  /// **'Clear the last 24h of Meshbook data for CH{channel}? It rebuilds as new channel messages arrive.'**
   String meshbookClearConfirm(String channel);
 
   /// No description provided for @meshbookStats.
@@ -3437,7 +3443,7 @@ abstract class AppLocalizations {
   /// No description provided for @weatherSelfNoEnv.
   ///
   /// In en, this message translates to:
-  /// **'Environment telemetry isn\'t supported by this device\'s firmware.\nIt reported: {types}.\nThe sensor (e.g. the T1000-E\'s BME280) needs a MeshCore sensor firmware build — the standard build sends only battery/GPS, and the device clamps the environment mode back to off. This is a device limitation, not an app setting.'**
+  /// **'Environment telemetry isn\'t supported by this device\'s firmware.\nIt reported: {types}.\nThe sensor (e.g. the T1000-E\'s BME280) needs a MeshCore sensor build — the standard build sends only battery and GPS. This is the device, not a setting.'**
   String weatherSelfNoEnv(String types);
 
   /// No description provided for @weatherReporting.
@@ -3677,7 +3683,7 @@ abstract class AppLocalizations {
   /// No description provided for @snsCellsLegendChannel.
   ///
   /// In en, this message translates to:
-  /// **'Channel messages carry the sender\'s name — they warm the sender\'s cell when we know their location, otherwise your own cell (the receive point).'**
+  /// **'Channel messages carry the sender\'s name: they warm the sender\'s cell when we know where they are, otherwise your own cell.'**
   String get snsCellsLegendChannel;
 
   /// No description provided for @snsCellsLegendDecay.
@@ -3695,7 +3701,7 @@ abstract class AppLocalizations {
   /// Shown instead of the no-peers notice when the hop stop is what emptied the tree. The stop is named by its own label (Direct, <=3 hops, ...) rather than as a number, so it reads the same as the slider above it.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{None of your peers has a learned route at {stop}. 1 is heard without one — Flood / All shows it.} other{None of your peers has a learned route at {stop}. {count} are heard without one — Flood / All shows them.}}'**
+  /// **'{count, plural, =1{No peer has a learned route at {stop}. 1 is heard without one — Flood / All shows it.} other{No peer has a learned route at {stop}. {count} are heard without one — Flood / All shows them.}}'**
   String meshTreeFilteredEmptyFor(String stop, int count);
 
   /// No description provided for @meshTreeKey.
@@ -3767,7 +3773,7 @@ abstract class AppLocalizations {
   /// No description provided for @meshTreeLegendDesc.
   ///
   /// In en, this message translates to:
-  /// **'A directed graph of how the radio reaches each contact. Edges come from Contact.outPath — the exact repeater chain the device uses to send.'**
+  /// **'A directed graph of how the radio reaches each contact. Each edge is a repeater on the route the radio actually sends by.'**
   String get meshTreeLegendDesc;
 
   /// No description provided for @meshTreeLegendSelf.
@@ -4601,7 +4607,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionSuggestBody.
   ///
   /// In en, this message translates to:
-  /// **'Based on your phone GPS ({lat}, {lon}), the matching preset is {label}. Verify this is legal where you are before applying — particularly outside the country you set up in.'**
+  /// **'Your phone GPS ({lat}, {lon}) matches {label}. Check it is legal where you are before applying — especially outside the country you set it up in.'**
   String deviceRegionSuggestBody(String lat, String lon, String label);
 
   /// No description provided for @deviceRegionSuggestApply.
@@ -4805,7 +4811,7 @@ abstract class AppLocalizations {
   /// No description provided for @devicePathHashSizeHelp.
   ///
   /// In en, this message translates to:
-  /// **'The hash length this radio stamps on the packets it sends. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.'**
+  /// **'The hash length this radio stamps on its packets. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the payload budget.'**
   String get devicePathHashSizeHelp;
 
   /// No description provided for @devicePathHashUnread.
@@ -6743,7 +6749,7 @@ abstract class AppLocalizations {
   /// No description provided for @selfTestIntro.
   ///
   /// In en, this message translates to:
-  /// **'Checks map downloads end to end: the real servers, storage, downloads, pause and resume, expiry. It runs in a sandbox and deletes it afterwards, so your maps are not touched. Takes about a minute and under 1 MB of data.'**
+  /// **'Checks map downloads end to end: the real servers, storage, pause and resume, expiry. It runs in a sandbox that is deleted afterwards, so your maps are untouched. About a minute, under 1 MB.'**
   String get selfTestIntro;
 
   /// No description provided for @selfTestRun.
@@ -7061,7 +7067,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsFramesDroppedLine.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 frame arrived in part: a step of it failed, so its data may be incomplete} other{{count} frames arrived in part: a step of each failed, so their data may be incomplete}}'**
+  /// **'{count, plural, =1{1 frame arrived in part, so its data may be incomplete} other{{count} frames arrived in part, so their data may be incomplete}}'**
   String diagnosticsFramesDroppedLine(int count);
 
   /// No description provided for @diagnosticsFramingLine.
@@ -7855,7 +7861,7 @@ abstract class AppLocalizations {
   /// No description provided for @failureNotFound.
   ///
   /// In en, this message translates to:
-  /// **'The radio could not find the target of that request: the channel, contact or message is not on it. Refresh the contact list, then retry.'**
+  /// **'The radio could not find the target: the channel, contact or message is not on it. Refresh the contact list, then retry.'**
   String get failureNotFound;
 
   /// No description provided for @failureTableFull.
@@ -7921,7 +7927,7 @@ abstract class AppLocalizations {
   /// No description provided for @failurePairingNotKept.
   ///
   /// In en, this message translates to:
-  /// **'The radio paired but then could not encrypt on the next connection, so the pairing is not being kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.'**
+  /// **'The radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.'**
   String get failurePairingNotKept;
 
   /// No description provided for @failureServiceMissing.
@@ -7939,7 +7945,7 @@ abstract class AppLocalizations {
   /// No description provided for @failureMtuTooSmall.
   ///
   /// In en, this message translates to:
-  /// **'This radio\'s link is {mtu} bytes and a full frame needs {need}. Some firmware builds ask for the smaller size themselves, so this radio cannot carry the largest frames: try a newer firmware, or reconnect.'**
+  /// **'This radio\'s link is {mtu} bytes and a full frame needs {need}. Some firmware asks for the smaller size itself, so this radio cannot carry the largest frames: try newer firmware, or reconnect.'**
   String failureMtuTooSmall(String mtu, String need);
 
   /// No description provided for @failureFrameTruncated.
@@ -7969,7 +7975,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsRadioChangedLine.
   ///
   /// In en, this message translates to:
-  /// **'This radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay, because they belong to the app. The contact table, channels and radio settings come from the radio, so they are this one\'s.'**
+  /// **'This radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay — they belong to the app. Contacts, channels and radio settings come from the radio, so they are this one\'s.'**
   String diagnosticsRadioChangedLine(String previous, String current);
 
   /// No description provided for @diagnosticsRadioChangedAccept.
@@ -8029,7 +8035,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAirtimeHelp.
   ///
   /// In en, this message translates to:
-  /// **'Every frame this app sends is counted. At the limit it stops sending until the hour rolls on. The radio keeps its own legal limit either way.'**
+  /// **'Every frame this app sends is counted. At the limit it stops until the hour rolls on. The radio keeps its own legal limit either way.'**
   String get settingsAirtimeHelp;
 
   /// No description provided for @airtimePolicyOnePercent.
@@ -8131,7 +8137,7 @@ abstract class AppLocalizations {
   /// No description provided for @degradedMapOffline.
   ///
   /// In en, this message translates to:
-  /// **'Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.'**
+  /// **'Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw.'**
   String get degradedMapOffline;
 
   /// No description provided for @sosTitle.
@@ -8602,6 +8608,18 @@ abstract class AppLocalizations {
   /// **'Asked the sender for {count} packet(s).'**
   String mediaReceiveRequested(int count);
 
+  /// No description provided for @mediaReceivedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos received'**
+  String get mediaReceivedTitle;
+
+  /// No description provided for @mediaReceivedKept.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 photo, kept until the app closes} other{{count} photos, kept until the app closes}}'**
+  String mediaReceivedKept(int count);
+
   /// No description provided for @mediaReceiveComplete.
   ///
   /// In en, this message translates to:
@@ -8719,7 +8737,7 @@ abstract class AppLocalizations {
   /// No description provided for @geofencePolygonNote.
   ///
   /// In en, this message translates to:
-  /// **'A drawn fence keeps the shape you drew. You can rename it here; reshaping it is not offered yet.'**
+  /// **'A drawn fence keeps its shape. Renaming is offered here; reshaping is not yet.'**
   String get geofencePolygonNote;
 
   /// No description provided for @geofenceDrawTitle.
@@ -8755,7 +8773,7 @@ abstract class AppLocalizations {
   /// No description provided for @geofenceDrawStarted.
   ///
   /// In en, this message translates to:
-  /// **'Drawing a fence. Tap the map to add corners.'**
+  /// **'Drawing a fence.'**
   String get geofenceDrawStarted;
 
   /// No description provided for @geofenceTitle.
@@ -8767,7 +8785,7 @@ abstract class AppLocalizations {
   /// No description provided for @geofenceExplainer.
   ///
   /// In en, this message translates to:
-  /// **'A fence is a circle you watch. It tells you once when you enter it and once when you leave, so walking along its edge does not produce a stream of alerts.'**
+  /// **'A fence is an area you watch. It tells you once when you enter and once when you leave, so walking along its edge does not produce a stream of alerts.'**
   String get geofenceExplainer;
 
   /// No description provided for @geofenceAddSection.
@@ -8875,7 +8893,7 @@ abstract class AppLocalizations {
   /// No description provided for @geofenceExplainerShort.
   ///
   /// In en, this message translates to:
-  /// **'Circles that tell you when you arrive or leave'**
+  /// **'Areas that tell you when you arrive or leave'**
   String get geofenceExplainerShort;
 
   /// No description provided for @coverageTitle.
@@ -9001,7 +9019,7 @@ abstract class AppLocalizations {
   /// No description provided for @fieldExportExplainer.
   ///
   /// In en, this message translates to:
-  /// **'One file with the trail, the places, the answered pings and the check-in. It is plain JSON, not encrypted, so it can be handed on.'**
+  /// **'One file with the trail, places, answered pings and the check-in. Plain JSON, not encrypted, so it can be handed on.'**
   String get fieldExportExplainer;
 
   /// No description provided for @fieldExportAction.
@@ -9319,7 +9337,7 @@ abstract class AppLocalizations {
   /// No description provided for @blockedKeysUnreadable.
   ///
   /// In en, this message translates to:
-  /// **'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept, and new blocks will be saved normally.'**
+  /// **'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept; new blocks save normally.'**
   String get blockedKeysUnreadable;
 
   /// No description provided for @sosDestinationContactsLimit.
@@ -10135,7 +10153,7 @@ abstract class AppLocalizations {
   /// No description provided for @pingLostMeaning.
   ///
   /// In en, this message translates to:
-  /// **'Lost means no answer inside the time the radio estimated for the reply. A node that ignores requests, or one that is asleep, looks the same.'**
+  /// **'Lost means no answer within the time the radio estimated for the reply. A node that ignores requests and one that is asleep look the same.'**
   String get pingLostMeaning;
 
   /// No description provided for @contactFilterHint.
@@ -10237,7 +10255,7 @@ abstract class AppLocalizations {
   /// No description provided for @storageClearAllStays.
   ///
   /// In en, this message translates to:
-  /// **'The radio is untouched: its contact table, channels and settings stay, and a message already sent is not recalled. Your settings and the map regions you downloaded also stay.'**
+  /// **'The radio is untouched: its contacts, channels and settings stay, and a sent message is not recalled. Your settings and downloaded map regions stay too.'**
   String get storageClearAllStays;
 
   /// No description provided for @storageClearAllTypeWord.
@@ -10735,7 +10753,7 @@ abstract class AppLocalizations {
   /// No description provided for @firmwareNoInstallWhy.
   ///
   /// In en, this message translates to:
-  /// **'Installing is not offered from the app. An install consumes the radio\'s queued messages down to a handful of frames, and nothing in the app can yet re-sync the messages the radio would discard. A restart from Diagnostics is the only radio action offered, and it is not an install.'**
+  /// **'Installing is not offered from the app: an install consumes the radio\'s queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.'**
   String get firmwareNoInstallWhy;
 
   /// No description provided for @firmwareOtaLabel.
@@ -10759,7 +10777,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadio2Note.
   ///
   /// In en, this message translates to:
-  /// **'A second profile takes 96-99 % of the radio\'s transmit time (measured over 100 packets), which is why switching it is set on the radio and not here. Frames from both profiles are read; the second profile\'s own parameters are not shown.'**
+  /// **'A second profile takes 96-99 % of the radio\'s transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read; the second profile\'s own parameters are not shown.'**
   String get deviceRadio2Note;
 
   /// No description provided for @deviceReadoutQuerying.
@@ -10855,7 +10873,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsRadioAlertsWhy.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s own buzzer and vibration, for its own rules. Nothing in this app triggers them, and the radio keeps them while the phone is away.'**
+  /// **'The radio\'s own buzzer and vibration, for its own rules. Nothing in this app triggers them, and they keep working while the phone is away.'**
   String get diagnosticsRadioAlertsWhy;
 
   /// No description provided for @diagnosticsBuzzer.
@@ -11161,7 +11179,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapKeyDensity.
   ///
   /// In en, this message translates to:
-  /// **'Nodes per square'**
+  /// **'Nodes per cell'**
   String get mapKeyDensity;
 
   /// No description provided for @mapKeyGeofence.
@@ -11197,7 +11215,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapDensityCellTitle.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 node in this square} other{{count} nodes in this square}}'**
+  /// **'{count, plural, =1{1 node in this cell} other{{count} nodes in this cell}}'**
   String mapDensityCellTitle(int count);
 
   /// No description provided for @mapDensityCellArea.

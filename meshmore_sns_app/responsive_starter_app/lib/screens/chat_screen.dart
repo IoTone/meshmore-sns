@@ -26,7 +26,10 @@ import '../chat/export_passphrase_dialog.dart';
 import '../gen/app_localizations.dart';
 import '../media/media_codec.dart';
 import '../media/media_composer.dart';
+import '../media/media_inbox.dart';
 import '../media/media_transfer.dart';
+import '../media/photo_inbox.dart';
+import '../media/received_photos_sheet.dart';
 import '../voice/voice_capture.dart';
 import '../voice/voice_codec.dart';
 import '../voice/voice_composer.dart';
@@ -111,6 +114,15 @@ class _ChatScreenState extends State<ChatScreen>
     clock: DateTime.now,
   );
 
+  /// The pictures this session has taken off the channels.
+  ///
+  /// The app's `MediaInbox` reassembles a payload and hands it to whoever
+  /// claimed it; nothing claimed an image, so a photo sent on a channel was
+  /// reassembled and then dropped — the sender's receipt said "accepted" and
+  /// the receiver saw nothing at all. This is the claim, and it is per tab
+  /// because the sheet it opens is per channel.
+  PhotoInbox? _photos;
+
   /// The message the last send created, so a failure can put the text back.
 
   /// R29 — number of new messages that have arrived while the user
@@ -181,6 +193,23 @@ class _ChatScreenState extends State<ChatScreen>
     _input.addListener(_onComposerChanged);
     _syncBudget(mc);
     _syncDraftScope(mc);
+    // The inbound half of photos. The app-scoped inbox is the one consumer of
+    // the radio's datagrams; this listens to what it completed, so a picture
+    // that arrives while the reader is on another tab is still here when they
+    // come back.
+    // A nullable `read` still throws when nothing is registered, and a screen
+    // that cannot build without an inbox is a screen that breaks in every
+    // harness and every reduced app. The lookup is tolerant for the same reason
+    // `context.skin` is: the feature is optional, the composer is not.
+    MediaInbox? inbox;
+    try {
+      inbox = context.read<MediaInbox?>();
+    } on ProviderNotFoundException {
+      inbox = null;
+    }
+    if (inbox != null) {
+      _photos = PhotoInbox(completed: inbox.completed)..start();
+    }
   }
 
   /// R109-composer — the counter and the refusal read one model, so they cannot
@@ -466,6 +495,17 @@ class _ChatScreenState extends State<ChatScreen>
     );
   }
 
+  /// The pictures this session holds for the active channel, newest first.
+  Future<void> _openReceivedPhotos(MeshcoreController mc) async {
+    final PhotoInbox? inbox = _photos;
+    if (inbox == null) return;
+    await ReceivedPhotosSheet.show(
+      context,
+      photos: inbox.photosFor(mc.activeChannel),
+      codec: _media.codec,
+    );
+  }
+
   /// Make a channel without leaving the thread.
   ///
   /// The only way to make one used to be Settings → Channels, which is four taps
@@ -561,6 +601,7 @@ class _ChatScreenState extends State<ChatScreen>
       }
     }
     _draftTimer?.cancel();
+    _photos?.dispose();
     _input.dispose();
     _scroll.dispose();
     super.dispose();
@@ -583,13 +624,46 @@ class _ChatScreenState extends State<ChatScreen>
     // retry action on it, so restoring the text duplicated it and left the box
     // holding the last message the moment a send went wrong — the owner's "it
     // keeps the message after you send it".
+    //
+    // A send that produced **no row at all** is the other case, and it is the
+    // one that used to lose the text: nothing was written, so there is nothing
+    // in the thread to retry, and the draft is put back below.
     if (key != null) {
       _draftTimer?.cancel();
       unawaited(DraftStore.clear(key));
     }
-    unawaited(mc.sendChannelTextTo(mc.activeChannel, t));
-    _input.clear();
-    _nearWarned = false;
+    // The text is cleared only once something was actually sent. It used to be
+    // cleared first, so a send that returned null — the radio not ready, or a
+    // capability the firmware has denied — took the message out of the composer
+    // and put nothing in the thread: the reader's words were gone with no row
+    // and no explanation.
+    unawaited(mc.sendChannelTextTo(mc.activeChannel, t).then(
+      (ChatMessage? sent) {
+        if (!mounted) return;
+        if (sent == null) {
+          _restoreComposer(t, key);
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).chatSendNotSent)),
+          );
+          return;
+        }
+        _input.clear();
+        _nearWarned = false;
+      },
+    ));
+  }
+
+  /// Put a message back in the composer after a send that produced no row.
+  ///
+  /// Only when the field is still empty: a reader who has started typing
+  /// something else must not have it replaced by the message that failed.
+  void _restoreComposer(String text, String? draftKey) {
+    if (_input.text.isNotEmpty) return;
+    setState(() {
+      _input.text = text;
+      _input.selection = TextSelection.collapsed(offset: text.length);
+    });
+    if (draftKey != null) unawaited(DraftStore.save(draftKey, text));
   }
 
   Future<void> _onAction(MeshcoreController mc, ChatMessage m) async {
@@ -721,6 +795,9 @@ class _ChatScreenState extends State<ChatScreen>
     // sheet read the one store, so they cannot disagree about what is there.
     final VoiceInbox? voiceInbox = context.watch<VoiceInbox?>();
     final int voiceNotes = voiceInbox?.countFor(active) ?? 0;
+    // Pictures this session has taken off this channel, read where the buttons
+    // are drawn: the control appears only when there is one, because a fourth
+    // icon on every channel would be a promise that something is there.
     final BlockStore? blocks = context.watch<BlockStore?>();
     final BlockFilter filter = blocks == null
         ? (_fallbackFilter ??= BlockFilter(BlockStore()))
@@ -1246,6 +1323,7 @@ class _ChatScreenState extends State<ChatScreen>
   List<Widget> _composerActions(
       BuildContext context, MeshcoreController mc, AppLocalizations l) {
     final MeshcoreController m = mc;
+    final int receivedPhotos = _photos?.countFor(m.activeChannel) ?? 0;
     final bool ready = m.isReady;
     // Hidden, not disabled: a button that cannot work is a promise the app
     // cannot keep, and the strip above the composer already says where media
@@ -1258,6 +1336,16 @@ class _ChatScreenState extends State<ChatScreen>
           tooltip: l.voiceTitle,
           onPressed: ready ? () => _openVoice(m) : null,
           icon: const Icon(Icons.mic_none_outlined),
+        ),
+      if (receivedPhotos > 0)
+        IconButton(
+          key: const ValueKey<String>('chat-received-photos'),
+          tooltip: l.mediaReceivedTitle,
+          onPressed: () => _openReceivedPhotos(m),
+          icon: Badge(
+            label: Text('$receivedPhotos'),
+            child: const Icon(Icons.photo_library_outlined),
+          ),
         ),
       if (media)
         IconButton(
@@ -1290,7 +1378,9 @@ class _ChatScreenState extends State<ChatScreen>
       // budget the text is, so disabling here hides no explanation.
       IconButton(
         tooltip: l.chatSend,
-        onPressed: _input.text.trim().isEmpty || !_budget.canSend(_input.text)
+        onPressed: _input.text.trim().isEmpty ||
+                !_budget.canSend(_input.text) ||
+                !m.isReady
             ? null
             : () => _send(m),
         icon: const Icon(Icons.send),
@@ -1299,7 +1389,15 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   /// What three 48 dp buttons and their gaps take from the composer row.
-  static const double _composerActionsWidth = 48 * 3 + 8;
+  /// How wide the action row is, in the worst case it can be.
+  ///
+  /// Three buttons, plus the received-photos control when this channel has one.
+  /// The field's floor is measured against this, so a row that is one icon wider
+  /// than the constant would push the field under its own hint.
+  double get _composerActionsWidth {
+    final int buttons = (_photos?.photos.isNotEmpty ?? false) ? 4 : 3;
+    return 48 * buttons + 8;
+  }
 
   /// The width the field needs before the buttons take their own row: ten
   /// characters at the field's own size, plus its inset and its two icon slots.

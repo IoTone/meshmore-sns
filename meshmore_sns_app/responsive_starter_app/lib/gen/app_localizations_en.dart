@@ -294,7 +294,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get blockConfirmBody =>
-      'This hides what it sends on this device: messages, notifications and places. The radio still receives and relays the packet, and nothing on the mesh learns about the block.';
+      'Hides what this person sends, on this device: messages, notifications and places. The radio still receives and relays the packet, and the mesh does not learn about the block.';
 
   @override
   String get blockConfirmGo => 'Block';
@@ -802,7 +802,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodesFloodAdvertSent =>
-      'Flood advert sent — propagates across the whole mesh (neighbours + repeaters). The other node must Advertise too before it appears here.';
+      'Flood advert sent — it crosses the whole mesh. The other node must advertise too before it appears here.';
 
   @override
   String get nodesZeroHopAdvertSent => 'Sent to radios in direct range only.';
@@ -1000,7 +1000,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fujiLegendDesc =>
-      'Altitude survey. Heights on a √-scaled axis against famous landmarks. Your device\'s altitude comes from device GPS telemetry or the phone fix.';
+      'Altitude survey. Heights on a √-scaled axis against famous landmarks. Your altitude comes from device GPS telemetry or the phone fix.';
 
   @override
   String get fujiLegendMe =>
@@ -1153,8 +1153,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locMaster => 'Auto-publish';
 
   @override
-  String get locMasterOn =>
-      'On — announces your position to every node in range';
+  String get locMasterOn => 'On — your position goes out with your adverts';
 
   @override
   String get locMasterOff => 'Off';
@@ -1425,7 +1424,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatHistoryUnreadableBody =>
-      'The messages are still saved here. They were sealed with a key this phone no longer has, so they cannot be read until they are restored from an encrypted export.';
+      'The messages are still saved here, sealed with a key this phone no longer has. They cannot be read until restored from an encrypted export.';
 
   @override
   String get diagnosticsHistoryStore => 'History store';
@@ -1521,6 +1520,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String chatComposerHint(String channel) {
     return 'Message $channel';
   }
+
+  @override
+  String get chatSendNotSent =>
+      'Not sent — the radio is not connected. Your message is back in the box.';
 
   @override
   String get chatSend => 'Send';
@@ -1771,7 +1774,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceContactsNeedLocation =>
-      'No location set, so distance can\'t be measured — only location-hidden contacts are caught. Set your position (GPS or a manual pin) to also remove far-away GPS contacts.';
+      'No location set, so distance can\'t be measured — only location-hidden contacts are caught. Set your position to also remove far-away GPS contacts.';
 
   @override
   String deviceContactsRemoveOutOfRangeDone(int count) {
@@ -1919,7 +1922,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String meshbookClearConfirm(String channel) {
-    return 'Clear the last 24h of Meshbook data for CH$channel? It rebuilds as new channel messages arrive. (Each channel is stored separately.)';
+    return 'Clear the last 24h of Meshbook data for CH$channel? It rebuilds as new channel messages arrive.';
   }
 
   @override
@@ -1997,7 +2000,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String weatherSelfNoEnv(String types) {
-    return 'Environment telemetry isn\'t supported by this device\'s firmware.\nIt reported: $types.\nThe sensor (e.g. the T1000-E\'s BME280) needs a MeshCore sensor firmware build — the standard build sends only battery/GPS, and the device clamps the environment mode back to off. This is a device limitation, not an app setting.';
+    return 'Environment telemetry isn\'t supported by this device\'s firmware.\nIt reported: $types.\nThe sensor (e.g. the T1000-E\'s BME280) needs a MeshCore sensor build — the standard build sends only battery and GPS. This is the device, not a setting.';
   }
 
   @override
@@ -2161,7 +2164,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get snsCellsLegendChannel =>
-      'Channel messages carry the sender\'s name — they warm the sender\'s cell when we know their location, otherwise your own cell (the receive point).';
+      'Channel messages carry the sender\'s name: they warm the sender\'s cell when we know where they are, otherwise your own cell.';
 
   @override
   String get snsCellsLegendDecay =>
@@ -2177,9 +2180,9 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'None of your peers has a learned route at $stop. $count are heard without one — Flood / All shows them.',
+          'No peer has a learned route at $stop. $count are heard without one — Flood / All shows them.',
       one:
-          'None of your peers has a learned route at $stop. 1 is heard without one — Flood / All shows it.',
+          'No peer has a learned route at $stop. 1 is heard without one — Flood / All shows it.',
     );
     return '$_temp0';
   }
@@ -2224,7 +2227,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meshTreeLegendDesc =>
-      'A directed graph of how the radio reaches each contact. Edges come from Contact.outPath — the exact repeater chain the device uses to send.';
+      'A directed graph of how the radio reaches each contact. Each edge is a repeater on the route the radio actually sends by.';
 
   @override
   String get meshTreeLegendSelf => 'You — pinned at the centre.';
@@ -2722,7 +2725,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceRegionSuggestBody(String lat, String lon, String label) {
-    return 'Based on your phone GPS ($lat, $lon), the matching preset is $label. Verify this is legal where you are before applying — particularly outside the country you set up in.';
+    return 'Your phone GPS ($lat, $lon) matches $label. Check it is legal where you are before applying — especially outside the country you set it up in.';
   }
 
   @override
@@ -2830,7 +2833,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get devicePathHashSizeHelp =>
-      'The hash length this radio stamps on the packets it sends. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the directed payload budget.';
+      'The hash length this radio stamps on its packets. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the payload budget.';
 
   @override
   String get devicePathHashUnread =>
@@ -3953,7 +3956,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selfTestIntro =>
-      'Checks map downloads end to end: the real servers, storage, downloads, pause and resume, expiry. It runs in a sandbox and deletes it afterwards, so your maps are not touched. Takes about a minute and under 1 MB of data.';
+      'Checks map downloads end to end: the real servers, storage, pause and resume, expiry. It runs in a sandbox that is deleted afterwards, so your maps are untouched. About a minute, under 1 MB.';
 
   @override
   String get selfTestRun => 'Run self-test';
@@ -4140,10 +4143,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other:
-          '$count frames arrived in part: a step of each failed, so their data may be incomplete',
-      one:
-          '1 frame arrived in part: a step of it failed, so its data may be incomplete',
+      other: '$count frames arrived in part, so their data may be incomplete',
+      one: '1 frame arrived in part, so its data may be incomplete',
     );
     return '$_temp0';
   }
@@ -4609,7 +4610,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failureNotFound =>
-      'The radio could not find the target of that request: the channel, contact or message is not on it. Refresh the contact list, then retry.';
+      'The radio could not find the target: the channel, contact or message is not on it. Refresh the contact list, then retry.';
 
   @override
   String get failureTableFull =>
@@ -4653,7 +4654,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failurePairingNotKept =>
-      'The radio paired but then could not encrypt on the next connection, so the pairing is not being kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.';
+      'The radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.';
 
   @override
   String get failureServiceMissing =>
@@ -4665,7 +4666,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String failureMtuTooSmall(String mtu, String need) {
-    return 'This radio\'s link is $mtu bytes and a full frame needs $need. Some firmware builds ask for the smaller size themselves, so this radio cannot carry the largest frames: try a newer firmware, or reconnect.';
+    return 'This radio\'s link is $mtu bytes and a full frame needs $need. Some firmware asks for the smaller size itself, so this radio cannot carry the largest frames: try newer firmware, or reconnect.';
   }
 
   @override
@@ -4686,7 +4687,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosticsRadioChangedLine(String previous, String current) {
-    return 'This radio is not the one this app last used ($previous then, $current now). Your history, tags, favourites and blocks stay, because they belong to the app. The contact table, channels and radio settings come from the radio, so they are this one\'s.';
+    return 'This radio is not the one this app last used ($previous then, $current now). Your history, tags, favourites and blocks stay — they belong to the app. Contacts, channels and radio settings come from the radio, so they are this one\'s.';
   }
 
   @override
@@ -4736,7 +4737,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAirtimeHelp =>
-      'Every frame this app sends is counted. At the limit it stops sending until the hour rolls on. The radio keeps its own legal limit either way.';
+      'Every frame this app sends is counted. At the limit it stops until the hour rolls on. The radio keeps its own legal limit either way.';
 
   @override
   String get airtimePolicyOnePercent => '1 % duty cycle';
@@ -4804,7 +4805,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get degradedMapOffline =>
-      'Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw; the rest of the app is unaffected.';
+      'Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw.';
 
   @override
   String get sosTitle => 'Emergency';
@@ -5106,6 +5107,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mediaReceivedTitle => 'Photos received';
+
+  @override
+  String mediaReceivedKept(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos, kept until the app closes',
+      one: '1 photo, kept until the app closes',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mediaReceiveComplete => 'Photo received.';
 
   @override
@@ -5176,7 +5191,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geofencePolygonNote =>
-      'A drawn fence keeps the shape you drew. You can rename it here; reshaping it is not offered yet.';
+      'A drawn fence keeps its shape. Renaming is offered here; reshaping is not yet.';
 
   @override
   String get geofenceDrawTitle => 'Draw a fence';
@@ -5195,15 +5210,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get geofenceDrawNeedThree => 'A fence needs at least three corners.';
 
   @override
-  String get geofenceDrawStarted =>
-      'Drawing a fence. Tap the map to add corners.';
+  String get geofenceDrawStarted => 'Drawing a fence.';
 
   @override
   String get geofenceTitle => 'Geofences';
 
   @override
   String get geofenceExplainer =>
-      'A fence is a circle you watch. It tells you once when you enter it and once when you leave, so walking along its edge does not produce a stream of alerts.';
+      'A fence is an area you watch. It tells you once when you enter and once when you leave, so walking along its edge does not produce a stream of alerts.';
 
   @override
   String get geofenceAddSection => 'Add a fence';
@@ -5271,7 +5285,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geofenceExplainerShort =>
-      'Circles that tell you when you arrive or leave';
+      'Areas that tell you when you arrive or leave';
 
   @override
   String get coverageTitle => 'Coverage';
@@ -5357,7 +5371,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fieldExportExplainer =>
-      'One file with the trail, the places, the answered pings and the check-in. It is plain JSON, not encrypted, so it can be handed on.';
+      'One file with the trail, places, answered pings and the check-in. Plain JSON, not encrypted, so it can be handed on.';
 
   @override
   String get fieldExportAction => 'Export this session';
@@ -5574,7 +5588,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get blockedKeysUnreadable =>
-      'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept, and new blocks will be saved normally.';
+      'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept; new blocks save normally.';
 
   @override
   String sosDestinationContactsLimit(int count) {
@@ -6059,7 +6073,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pingLostMeaning =>
-      'Lost means no answer inside the time the radio estimated for the reply. A node that ignores requests, or one that is asleep, looks the same.';
+      'Lost means no answer within the time the radio estimated for the reply. A node that ignores requests and one that is asleep look the same.';
 
   @override
   String get contactFilterHint => 'Name or key prefix';
@@ -6125,7 +6139,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storageClearAllStays =>
-      'The radio is untouched: its contact table, channels and settings stay, and a message already sent is not recalled. Your settings and the map regions you downloaded also stay.';
+      'The radio is untouched: its contacts, channels and settings stay, and a sent message is not recalled. Your settings and downloaded map regions stay too.';
 
   @override
   String storageClearAllTypeWord(String word) {
@@ -6412,7 +6426,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firmwareNoInstallWhy =>
-      'Installing is not offered from the app. An install consumes the radio\'s queued messages down to a handful of frames, and nothing in the app can yet re-sync the messages the radio would discard. A restart from Diagnostics is the only radio action offered, and it is not an install.';
+      'Installing is not offered from the app: an install consumes the radio\'s queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.';
 
   @override
   String get firmwareOtaLabel => 'Over-the-air update';
@@ -6427,7 +6441,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRadio2Note =>
-      'A second profile takes 96-99 % of the radio\'s transmit time (measured over 100 packets), which is why switching it is set on the radio and not here. Frames from both profiles are read; the second profile\'s own parameters are not shown.';
+      'A second profile takes 96-99 % of the radio\'s transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read; the second profile\'s own parameters are not shown.';
 
   @override
   String get deviceReadoutQuerying => 'querying device…';
@@ -6496,7 +6510,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagnosticsRadioAlertsWhy =>
-      'The radio\'s own buzzer and vibration, for its own rules. Nothing in this app triggers them, and the radio keeps them while the phone is away.';
+      'The radio\'s own buzzer and vibration, for its own rules. Nothing in this app triggers them, and they keep working while the phone is away.';
 
   @override
   String get diagnosticsBuzzer => 'Buzzer';
@@ -6671,7 +6685,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapKeyReach => 'Estimated reach of a peer';
 
   @override
-  String get mapKeyDensity => 'Nodes per square';
+  String get mapKeyDensity => 'Nodes per cell';
 
   @override
   String get mapKeyGeofence => 'A fence you set';
@@ -6695,8 +6709,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count nodes in this square',
-      one: '1 node in this square',
+      other: '$count nodes in this cell',
+      one: '1 node in this cell',
     );
     return '$_temp0';
   }

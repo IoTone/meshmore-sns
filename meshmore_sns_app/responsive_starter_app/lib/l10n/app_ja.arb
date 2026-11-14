@@ -140,7 +140,7 @@
   "actionConnect": "接続する",
   "actionBlock": "この相手をブロック",
   "blockConfirmTitle": "このキーをブロックしますか？",
-  "blockConfirmBody": "この端末で、そのキーからのメッセージ・通知・地点を表示しなくなります。無線機は今も受信・中継しており、メッシュ上の誰もブロックを知りません。",
+  "blockConfirmBody": "この端末で、その相手からのメッセージ・通知・地点を表示しなくなります。無線機は今も受信・中継しており、メッシュ上の誰もブロックを知りません。",
   "blockConfirmGo": "ブロック",
   "blockDone": "ブロックしました。この端末はそのキーの送信を表示しません。",
   "blockFull": "ブロック一覧がいっぱいです。先に1件解除してください。",
@@ -377,7 +377,7 @@
   "nodesFloodAdvertBody": "メッシュ全体 — 隣接 + リピーター。発見に最適。",
   "nodesZeroHopAdvert": "直接アドバート",
   "nodesZeroHopAdvertBody": "隣接のみ — 再ブロードキャストなし。混雑したメッシュ向け。",
-  "nodesFloodAdvertSent": "フラッドアドバートを送信 — メッシュ全体に伝播 (隣接 + リピーター)。相手側でも Advertise を実行するまで表示されません。",
+  "nodesFloodAdvertSent": "フラッドアドバートを送信 — メッシュ全体に伝播します。相手側でも Advertise を実行するまで表示されません。",
   "nodesZeroHopAdvertSent": "直接届く範囲のラジオにだけ送りました。",
   "nodesSearchHint": "名前 / short ID / 公開鍵…",
   "nodesFilterStarred": "お気に入り",
@@ -554,7 +554,7 @@
   "locTileSubtitle": "スマートフォンの位置をラジオに送ります",
   "deviceGpsIntervalWhy": "このファームウェアがセンサーの読み取り間隔を決めるため、アプリからは変更できません。",
   "locMaster": "自動公開",
-  "locMasterOn": "オン — 現在地を範囲内のすべてのノードに知らせます",
+  "locMasterOn": "オン — 現在地をアドバートに載せて送ります",
   "locMasterOff": "オフ",
   "locInterval": "定期間隔",
   "locMovement": "スマートブロードキャスト (移動検知)",
@@ -773,7 +773,7 @@
     }
   },
   "chatHistoryUnreadableTitle": "この端末では履歴を開けません",
-  "chatHistoryUnreadableBody": "メッセージはこの端末に残っています。この端末にもう無い鍵で封印されているため、暗号化した書き出しから復元するまで読めません。",
+  "chatHistoryUnreadableBody": "メッセージはこの端末に残っていますが、この端末にもう無い鍵で封印されています。暗号化した書き出しから復元するまで読めません。",
   "diagnosticsHistoryStore": "履歴ストア",
   "diagnosticsHistoryStoreOk": "封印済みで読み取り可能",
   "diagnosticsHistoryStoreKeyLost": "封印済みだが、鍵がこの端末にありません",
@@ -808,6 +808,7 @@
       }
     }
   },
+  "chatSendNotSent": "送信できませんでした（無線機が未接続）。メッセージは入力欄に戻しました。",
   "chatSend": "送信",
   "chatBudgetNear": "上限が近いです:無線機は自分の名前もこのバイト数に含めます",
   "chatBudgetTooLong": "{over} バイト超過 — 無線機は残りを通知せずに切り捨てます",
@@ -972,7 +973,7 @@
       }
     }
   },
-  "deviceContactsNeedLocation": "現在地が未設定のため距離を測定できません。位置非公開の連絡先のみが対象です。GPS または手動ピンで位置を設定すると、遠方の GPS 連絡先も削除できます。",
+  "deviceContactsNeedLocation": "現在地が未設定のため距離を測定できません。位置非公開の連絡先のみが対象です。位置を設定すると、遠方の GPS 連絡先も削除できます。",
   "deviceContactsRemoveOutOfRangeDone": "圏外の連絡先を {count} 件削除しました。",
   "@deviceContactsRemoveOutOfRangeDone": {
     "placeholders": {
@@ -1068,7 +1069,7 @@
   "meshbookTopVoices": "トップ発言者",
   "meshbookTopics": "トピック",
   "meshbookClear": "クリア",
-  "meshbookClearConfirm": "CH{channel} の直近24時間のメッシュブックデータをクリアしますか？新しいチャンネルメッセージが届くと再構築されます。（チャンネルごとに別々に保存されます。）",
+  "meshbookClearConfirm": "CH{channel} の直近24時間のメッシュブックデータをクリアしますか？新しいチャンネルメッセージが届くと再構築されます。",
   "@meshbookClearConfirm": {
     "placeholders": {
       "channel": {
@@ -1121,7 +1122,7 @@
   "wxCondCold": "寒い",
   "weatherEmpty": "環境データを報告しているノードはまだありません。\nセンサー搭載ノードが照会されると表示されます — アプリ設定で「ノードのテレメトリを収集」を有効にしてください。",
   "weatherSelfNoTelemetry": "このデバイスはまだテレメトリを返していません。接続を確認してから、この画面を開き直してください。",
-  "weatherSelfNoEnv": "このデバイスのファームウェアは環境テレメトリに対応していません。\n報告内容: {types}。\nセンサー（例: T1000-E の BME280）には MeshCore センサーファームウェアが必要です。標準ビルドはバッテリー／GPS のみを送信し、環境モードを設定してもデバイス側でオフに戻されます。これはアプリの設定ではなくデバイス側の制限です。",
+  "weatherSelfNoEnv": "このデバイスのファームウェアは環境テレメトリに対応していません。\n報告内容: {types}。\nセンサー（例: T1000-E の BME280）には MeshCore センサーファームウェアが必要です。標準ビルドはバッテリーと GPS のみを送信します。これはデバイス側の制限で、アプリの設定ではありません。",
   "@weatherSelfNoEnv": {
     "placeholders": {
       "types": {
@@ -1248,7 +1249,7 @@
   "snsCellsLegendHot": "明るい赤 = 活発（直近1分で約5件以上）。",
   "snsCellsLegendCool": "白へ退色 = 沈静化。約1時間無活動で消滅。",
   "snsCellsLegendToast": "新着メッセージは発信元付近にトーストで点滅し、消えます。",
-  "snsCellsLegendChannel": "チャンネルメッセージは送信者名を含みます — 送信者の位置が分かればそのセルを、分からなければ自分のセル（受信地点）を温めます。",
+  "snsCellsLegendChannel": "チャンネルメッセージは送信者名を含みます。送信者の位置が分かればそのセルを、分からなければ自分のセルを温めます。",
   "snsCellsLegendDecay": "直近1時間のみ追跡。保存はされません。",
   "meshTreeEmpty": "コンタクト同期を待機中 — ツリーは各コンタクトの outPath から構築されます。",
   "meshTreeFilteredEmptyFor": "{count, plural, =1{{stop} に経路が分かっている相手はいません。経路不明の相手が 1 台います。「Flood / All」で表示されます。} other{{stop} に経路が分かっている相手はいません。経路不明の相手が {count} 台います。「Flood / All」で表示されます。}}",
@@ -1281,7 +1282,7 @@
   },
   "meshTreeRecenter": "中央に戻す",
   "meshTreeLegendTitle": "メッシュツリー",
-  "meshTreeLegendDesc": "無線がどの経路で各コンタクトに到達するかの有向グラフ。エッジは Contact.outPath — デバイスが送信に使う正確なリピーター連鎖。",
+  "meshTreeLegendDesc": "無線がどの経路で各コンタクトに到達するかの有向グラフ。各エッジは、実際に送信に使う経路上のリピーターです。",
   "meshTreeLegendSelf": "あなた — 中央に固定。",
   "meshTreeLegendRepeater": "四角はリピーターです。他のラジオのメッセージを中継します。",
   "meshTreeLegendRoom": "ひし形はルームサーバです。名前付きのルームを提供するラジオです。",
@@ -1559,7 +1560,7 @@
   "deviceRegionFamilyAsiaPacific": "アジア太平洋",
   "deviceRegionFamilyOther": "その他",
   "deviceRegionSuggestTitle": "現在地のプリセットを使いますか？",
-  "deviceRegionSuggestBody": "スマートフォンの GPS（{lat}, {lon}）に基づくと、該当するプリセットは「{label}」です。国境付近では誤判定する可能性があるため、適用前に現地の法令に適合するか必ず確認してください。",
+  "deviceRegionSuggestBody": "スマートフォンの GPS（{lat}, {lon}）に該当するプリセットは「{label}」です。適用前に、現地の法令に適合するか確認してください。",
   "@deviceRegionSuggestBody": {
     "placeholders": {
       "lat": {
@@ -1606,7 +1607,7 @@
   "deviceCodingRate": "符号化率 (5–8)",
   "deviceTxPower": "送信電力 (dBm)",
   "devicePathHashSize": "パスハッシュ長",
-  "devicePathHashSizeHelp": "このラジオが送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、直接送信のペイロード容量が減ります。",
+  "devicePathHashSizeHelp": "このラジオが送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、ペイロード容量が減ります。",
   "devicePathHashUnread": "無線機はまだハッシュ長を伝えていません。",
   "devicePathHashMismatch": "無線: {device}。この画面: {form}。適用を押すと画面の値が送られます。",
   "deviceRadioApplied": "無線機が変更を確認しました。",
@@ -2008,7 +2009,7 @@
   "layerRefusalNotGeoJson": "その URL は GeoJSON を返しませんでした。",
   "layerRefusalTooLarge": "10 MB を超えています。重ね表示には大きすぎます。",
   "mapsSelfTest": "セルフテスト",
-  "selfTestIntro": "地図のダウンロードを一通り検証します（実際のサーバー、保存、中断と再開、期限切れ）。サンドボックスで実行して後で削除するため、あなたの地図には影響しません。所要約 1 分、通信量は 1 MB 未満です。",
+  "selfTestIntro": "地図のダウンロードを一通り検証します（実際のサーバー、保存、中断と再開、期限切れ）。サンドボックスで実行し後で削除するため、あなたの地図には影響しません。約 1 分、1 MB 未満です。",
   "selfTestRun": "セルフテストを実行",
   "selfTestRunning": "実行中…",
   "selfTestPass": "すべて合格",
@@ -2061,7 +2062,7 @@
   "rxViaPrimary": "プライマリ無線",
   "rxViaSecondary": "無線 2",
   "rxViaUnknown": "無線の報告なし",
-  "diagnosticsFramesDroppedLine": "{count} 件のフレームが一部だけ処理されました。処理の途中で失敗したため、内容が不完全な可能性があります",
+  "diagnosticsFramesDroppedLine": "{count} 件のフレームが一部だけ処理されました。内容が不完全な可能性があります",
   "diagnosticsFramingLine": "不完全なフレーム: 途中で切れた {truncated} 件、余りのバイトがある {trailing} 件、空の {empty} 件",
   "diagnosticsForgetShort": "解除",
   "diagnosticsPairedLine": "ペアリング済み: {name} — 起動時に自動再接続します",
@@ -2212,7 +2213,7 @@
   "failureFrameTrailingBytes": "メッセージの末尾に余分なバイトがあり、破棄しました。件数は診断ページにあります。",
   "failureStorageFull": "ストレージが満杯のため書き込みを拒否しました。無言で削除はしていません。空き容量を確保してください。履歴はそのまま残ります。",
   "failureRadioSilent": "ラジオは要求を受け取りましたが、時間内に応答しませんでした。実行済みの可能性があります。再試行の前にラジオを確認してください。",
-  "diagnosticsRadioChangedLine": "この無線機は前回まで使っていたものではありません(前回 {previous}、今回 {current})。履歴・タグ・お気に入り・ブロックはアプリ側のものなので残ります。連絡先テーブル・チャンネル・無線設定は無線機側のものなので、この無線機の内容になります。",
+  "diagnosticsRadioChangedLine": "この無線機は前回まで使っていたものではありません(前回 {previous}、今回 {current})。履歴・タグ・お気に入り・ブロックはアプリ側のものなので残ります。連絡先・チャンネル・無線設定は無線機側のものなので、この無線機の内容になります。",
   "diagnosticsRadioChangedAccept": "この無線機を使う",
   "failureAirtimeBudget": "この1時間でアプリの送信時間の上限に達したため、送信していません。時間の経過とともにまた送信できます。",
   "failureLinkTimeout": "無線リンクを時間内に開けませんでした。送信はしていません。もう一度お試しください。",
@@ -2257,7 +2258,7 @@
   "degradedRadioAbsent": "ラジオが接続されていません。受信済みの内容は読めます。送信・テレメトリ・プレイスはラジオが接続するまで待機します。",
   "degradedRadioSilent": "ラジオはペアリングされていますが応答しません。直前の要求は実行済みの可能性があります。再試行の前にラジオを確認してください。",
   "degradedNoLocation": "位置情報が無効のため、距離・方位・場所のタグの基準がありません。それ以外は動作します。",
-  "degradedMapOffline": "地図タイルを取得できません。同梱のベースマップと端末に保存済みの範囲は表示され、他の機能には影響しません。",
+  "degradedMapOffline": "地図タイルを取得できません。同梱のベースマップと保存済みのタイルは表示されます。",
   "sosTitle": "緊急",
   "sosEntryTooltip": "緊急警報とチェックイン",
   "sosGoesToChannel": "チャンネル {name}",
@@ -2344,6 +2345,8 @@
   "mediaReceiveWaiting": "{total} 中 {received} パケット · 残り {missing} を待機中",
   "mediaReceiveAsk": "不足パケットを要求する",
   "mediaReceiveRequested": "送信者に {count} パケットを要求しました。",
+  "mediaReceivedTitle": "受信した写真",
+  "mediaReceivedKept": "{count} 枚（アプリを閉じるまで保持）",
   "mediaReceiveComplete": "写真を受信しました。",
   "mediaDecodeFailed": "写真は届きましたが読み取れません。",
   "mediaPhotoSemantics": "メッシュで受信した写真",
@@ -2383,9 +2386,9 @@
   "geofenceDrawDone": "完了",
   "geofenceDrawCancel": "キャンセル",
   "geofenceDrawNeedThree": "フェンスには3つ以上の角が必要です。",
-  "geofenceDrawStarted": "フェンスを描いています。地図をタップして角を追加します。",
+  "geofenceDrawStarted": "フェンスを描いています。",
   "geofenceTitle": "ジオフェンス",
-  "geofenceExplainer": "フェンスは見張る円です。入ったときと出たときに一度ずつ知らせるので、境界を歩いても通知が連続しません。",
+  "geofenceExplainer": "フェンスは見張る範囲です。入ったときと出たときに一度ずつ知らせるので、境界を歩いても通知が連続しません。",
   "geofenceAddSection": "フェンスを追加",
   "geofenceRadius": "{meters} m",
   "geofenceNeedsFix": "フェンスには現在地が必要です。先に無線を接続するか位置情報を許可してください。",
@@ -2403,7 +2406,7 @@
   "geofenceDefaultName": "フェンス {number}",
   "nodeClosing": "{name} は {distance} 先で近づいています",
   "nodeOpening": "{name} は {distance} 先で遠ざかっています",
-  "geofenceExplainerShort": "到着・出発を知らせる円",
+  "geofenceExplainerShort": "到着・出発を知らせる範囲",
   "coverageTitle": "カバレッジ",
   "coverageCountsTitle": "カバレッジ",
   "coverageBeforeStart": "現在地と、応答した相手を記録します。端末内にのみ保存され、アプリを閉じると記録は終わります。",
@@ -2658,7 +2661,7 @@
   "storageClearAll": "アプリが保持したデータをすべて削除",
   "storageClearAllTitle": "すべて削除しますか？",
   "storageClearAllGoes": "このアプリが保持していたメッセージ履歴、場所、移動の軌跡、未完了のメディア記録、キャッシュした地図タイルを削除します。",
-  "storageClearAllStays": "無線機には影響しません。無線機自身の連絡先表、チャンネル、設定は残り、送信済みのメッセージは取り消されません。アプリの設定と、ダウンロード済みの地図地域も残ります。",
+  "storageClearAllStays": "無線機には影響しません。無線機自身の連絡先・チャンネル・設定は残り、送信済みのメッセージは取り消されません。アプリの設定とダウンロード済みの地図地域も残ります。",
   "storageClearAllTypeWord": "確認のため {word} と入力",
   "storageClearAllConfirm": "削除",
   "storageClearAllDone": "削除しました。無線機と設定はそのままです。",
@@ -2741,7 +2744,7 @@
   "firmwareOtaSupported": "無線更新に対応してビルドされています",
   "firmwareOtaAbsent": "このビルドには無線更新がありません",
   "firmwareOtaUnknown": "未確認: 無線機が最初の接続時に応答します",
-  "firmwareNoInstallWhy": "アプリからのインストールは提供していません。インストールは無線機の送信待ちメッセージを数フレームまで消費し、無線機が捨てるメッセージを再同期する手段がアプリにまだありません。Diagnostics からの再起動が無線機に対する唯一の操作で、これはインストールではありません。",
+  "firmwareNoInstallWhy": "アプリからのインストールは提供していません。インストールは無線機の送信待ちメッセージを数フレームまで消費し、捨てられるメッセージを再同期する手段がアプリにありません。Diagnostics からの再起動が唯一の操作で、これはインストールではありません。",
   "firmwareOtaLabel": "無線更新",
   "deviceRadio2Seen": "第2プロファイル: {when}受信",
   "@deviceRadio2Seen": {
@@ -2752,7 +2755,7 @@
     }
   },
   "deviceRadio2Never": "第2プロファイル: 今回は受信なし",
-  "deviceRadio2Note": "第2プロファイルは無線機の送信時間の96〜99%を使います（100パケットで計測）。そのため切り替えは無線機側の設定で行い、このアプリでは変更しません。両方のプロファイルのフレームは受信しますが、第2プロファイル自体のパラメータは表示しません。",
+  "deviceRadio2Note": "第2プロファイルは無線機の送信時間の96〜99%を使うため、切り替えは無線機側で行い、このアプリでは変更しません。両方のフレームは受信しますが、第2プロファイル自体のパラメータは表示しません。",
   "deviceReadoutQuerying": "無線機に問い合わせ中…",
   "deviceReadoutFirmware": "ファームウェア: {value}",
   "@deviceReadoutFirmware": {
@@ -2847,7 +2850,7 @@
   "deviceRepeatNone": "中継: 報告なし",
   "deviceRepeatUnknown": "中継: —",
   "diagnosticsSectionRadioAlerts": "無線機のアラート",
-  "diagnosticsRadioAlertsWhy": "無線機自身のブザーと振動で、無線機のルールに従って鳴ります。このアプリからは鳴らしません。スマートフォンが離れていても無線機側に設定が残ります。",
+  "diagnosticsRadioAlertsWhy": "無線機自身のブザーと振動で、無線機のルールに従って鳴ります。このアプリからは鳴らしません。スマートフォンが離れていても無線機側で動きます。",
   "diagnosticsBuzzer": "ブザー",
   "diagnosticsVibration": "振動",
   "diagnosticsAlertNotRead": "未取得",
@@ -2872,7 +2875,19 @@
   "voiceNoMicrophone": "マイクを利用できないため録音できません。",
   "voiceNoCodec": "このビルドには音声コーデックがありません。",
   "voiceCost": "{datagrams} パケット、{mode} で約 {seconds} 秒の送信時間。",
-  "@voiceCost": {"placeholders": {"datagrams": {"type": "int"}, "seconds": {"type": "int"}, "mode": {"type": "String"}}},
+  "@voiceCost": {
+    "placeholders": {
+      "datagrams": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      },
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
   "voiceRecording": "録音中 {seconds} 秒、{bytes} バイト、約 {datagrams} パケット。",
   "voiceNoteSend": "音声を送信",
   "voiceNotePreview": "試聴",
@@ -2902,10 +2917,10 @@
   "mapKeyGeofence": "設定したフェンス",
   "mapKeyTrail": "自分の軌跡",
   "mapKeyMessage": "直前にメッセージを送ったノード",
-  "mapKeyDensity": "区画あたりのノード数",
+  "mapKeyDensity": "セルあたりのノード数",
   "mapMessageBubble": "{name} からメッセージが届きました",
   "mapDensityShow": "セルごとのノード密度",
-  "mapDensityCellTitle": "{count, plural, =1{この区画に 1 ノード} other{この区画に {count} ノード}}",
+  "mapDensityCellTitle": "{count, plural, =1{このセルに 1 ノード} other{このセルに {count} ノード}}",
   "mapDensityCellArea": "{size} ごと。どのズームでも画面上の大きさは同じです。",
   "mapDensityCellOpen": "このノードを開く",
   "bootFailedTitle": "Meshmore SNS を起動できませんでした。",
@@ -2914,7 +2929,11 @@
   "notifUnreadDigest": "{count, plural, =1{未読メッセージ 1 件} other{未読メッセージ {count} 件}}",
   "@notifUnreadDigest": {
     "description": "The body of the one line standing for a queue of messages the app did not announce one by one.",
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "mapDensityCellSize": "セル: {size} あたりのノード数",
   "actionReplyMention": "{name} に返信",

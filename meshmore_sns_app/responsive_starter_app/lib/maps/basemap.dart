@@ -8,6 +8,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+import '../theme/mm_skin.dart';
 import 'event_layer.dart';
 import 'map_source.dart';
 import 'maps_controller.dart';
@@ -229,12 +230,16 @@ class EventLayersOverlay extends StatelessWidget {
   }
 }
 
-Widget _dot(Color c, String? label) {
+Widget _dot(BuildContext context, Color c, String? label) {
+  // The ring separates a data dot from whatever the basemap put under it, so it
+  // is the skin's own ground rather than a literal black: on a pale raster
+  // basemap a black ring is a hard edge, and on the dark vector one it is
+  // invisible. `Colors.black54` was the only literal colour left in this file.
   final Widget dot = DecoratedBox(
     decoration: BoxDecoration(
       color: c,
       shape: BoxShape.circle,
-      border: Border.all(color: Colors.black54),
+      border: Border.all(color: context.skin.color.base),
     ),
   );
   return label == null ? dot : Tooltip(message: label, child: dot);
@@ -291,7 +296,11 @@ class _OneEventLayerState extends State<_OneEventLayer> {
                   point: p.at,
                   width: 24,
                   height: 24,
-                  child: Center(child: SizedBox(width: 10, height: 10, child: _dot(c, p.label))),
+                  child: Center(
+                      child: SizedBox(
+                          width: 10,
+                          height: 10,
+                          child: _dot(context, c, p.label))),
                 ),
             ]),
         ]);

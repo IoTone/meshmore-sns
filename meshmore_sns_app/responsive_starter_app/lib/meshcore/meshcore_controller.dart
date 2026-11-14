@@ -3091,9 +3091,23 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         timestamp: ts,
         text: t,
       ));
+    } on AirtimeRefused {
+      // The radio never saw this frame, so it is not a link failure: the row
+      // says why it did not go, and the copy names the budget. The channel path
+      // has said this since it was written; a DM refused by the same meter used
+      // to read "send failed" with no cause at all.
+      _failOutgoing(m.id, 'airtime budget',
+          cause: FailureCause.airtimeBudget);
+      notifyListeners();
     } catch (_) {
+      // APP-C2 rule 2, applied to a DM as well: a write that threw may have
+      // reached the radio's buffer before the link went, so the honest state is
+      // "cannot vouch for this one", not "did not send". This used to call
+      // `_markOutgoingFailed`, which claims the message never left — the one
+      // claim the app cannot make, and the one that makes a reader send it
+      // twice.
       _emitTaskError('sendDm');
-      _markOutgoingFailed(m.id);
+      _uncertainOutgoing(m.id, 'link dropped while sending');
       notifyListeners();
     }
     return m;
@@ -3211,6 +3225,29 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   final List<String> _recentInbound = <String>[];
   static const int _recentInboundCap = 64;
 
+  /// The time a received message was **sent**, when the sender's clock is
+  /// believable.
+  ///
+  /// The frame carries the sender's unix seconds and the app used to ignore it,
+  /// stamping every row with the moment it arrived. That is wrong in the case
+  /// that matters most: the radio queues inbound messages while the app is away
+  /// and the app drains them on reconnect, so a conversation from last night
+  /// arrived looking like it had just happened, all of it in one second.
+  ///
+  /// A sender's clock can also be wrong by years, so the stamp is used only
+  /// inside a window where it is evidence: not in the future, and not older than
+  /// the history the app keeps. Outside it the receive time is the honest answer,
+  /// because it is the one thing the app knows for certain.
+  DateTime _inboundAt(int unixSeconds) {
+    final DateTime now = DateTime.now();
+    if (unixSeconds <= 0) return now;
+    final DateTime sent =
+        DateTime.fromMillisecondsSinceEpoch(unixSeconds * 1000);
+    if (sent.isAfter(now.add(const Duration(hours: 1)))) return now;
+    if (sent.isBefore(now.subtract(const Duration(days: 7)))) return now;
+    return sent;
+  }
+
   bool _seenInbound(String key) {
     if (_recentInbound.contains(key)) return true;
     _recentInbound.add(key);
@@ -3241,6 +3278,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       channelIdx: -1,
       text: cm.text,
       outgoing: false,
+      at: _inboundAt(cm.timestamp),
       snrDb: cm.snrDb,
       isFlood: cm.isFlood,
       peerPubKeyHex: peer ?? prefixHex,
@@ -3281,10 +3319,21 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       // Same rule as a direct message: the queue can deliver one twice, and a
       // channel row is no less a duplicate for having no key on it.
       if (_seenInbound('c|${cm.channelIdx}|${cm.timestamp}|${cm.text}')) return;
+      // A message can arrive for a slot the probe has not named yet, or for a
+      // slot whose name is empty. The row was stored either way, but the strip
+      // is built from `channels`, so a slot with no entry had no chip: the
+      // message existed and the reader could not reach it. Registering the slot
+      // here is what makes "a message for a channel we do not have" visible
+      // instead of merely stored.
+      if (!_channels.containsKey(cm.channelIdx)) {
+        _channels[cm.channelIdx] = 'CH ${cm.channelIdx}';
+        _invalidateChannelsCache();
+      }
       final ChatMessage m = ChatMessage(
         channelIdx: cm.channelIdx,
         text: cm.text,
         outgoing: false,
+        at: _inboundAt(cm.timestamp),
         snrDb: cm.snrDb,
         isFlood: cm.isFlood,
       );

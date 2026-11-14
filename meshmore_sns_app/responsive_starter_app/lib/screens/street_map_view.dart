@@ -620,6 +620,13 @@ class _StreetMapViewState extends State<StreetMapView> {
     _viewState?.removeListener(_onViewStateRequest);
     _heading.dispose();
     if (_ownsCompass) _compass.dispose();
+    // The map's own controller owns a broadcast `StreamController` and an
+    // `AnimationController` (flutter_map 7.0.2, `MapControllerImpl.dispose`).
+    // Neither is closed by the widget: leaving the screen without this leaked
+    // both, and a live `AnimationController` is a ticker that keeps asking for
+    // frames. The owner's report is that the app periodically stops responding,
+    // and the map is the screen that is opened and left most often.
+    _map.dispose();
     super.dispose();
   }
 
@@ -1059,6 +1066,18 @@ class _StreetMapViewState extends State<StreetMapView> {
     BasemapPrefs.save(_rasterOverride);
   }
 
+  /// Drop a basemap choice whose source no longer exists.
+  ///
+  /// Called one frame after a build noticed the mismatch, so the map is already
+  /// drawing the default. Both memories are cleared: the field, and the
+  /// preference that would otherwise bring the dead id back on the next launch.
+  void _forgetMissingSource() {
+    if (!mounted || _rasterOverride == null) return;
+    setState(() => _rasterOverride = null);
+    _viewState?.rememberSource(kOsmVector.id);
+    unawaited(BasemapPrefs.save(null));
+  }
+
   /// The map's key: one row per mark, in the order they are drawn.
   Future<void> _showKey(
       BuildContext context, AppLocalizations l) async {
@@ -1402,19 +1421,36 @@ class _StreetMapViewState extends State<StreetMapView> {
     final List<StoredGeofence> fences =
         geofences?.fences ?? const <StoredGeofence>[];
     final List<MapSource> sources = maps?.sources ?? kBuiltInSources;
+    // A raster source the reader chose and then deleted.
+    //
+    // The preference outlives the source, so `_rasterOverride` could name an id
+    // that is no longer in the catalogue. The old code then fell through
+    // `firstWhere(orElse: tileSource)` to the *raster* OSM source — a basemap
+    // that is not even offered any more — and stayed there on every launch,
+    // because the stale id was never cleared. A deleted source means "no
+    // override", which is the skin's own vector basemap.
+    final bool overrideExists = _rasterOverride != null &&
+        sources.any((MapSource s) => s.id == _rasterOverride);
+    if (_rasterOverride != null && !overrideExists) {
+      // After the frame: this is a build, and clearing it here would be a
+      // setState during build. The drawing decision below is already correct
+      // for this frame, so the cleanup can wait one.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _forgetMissingSource());
+    }
+    final String? rasterId = overrideExists ? _rasterOverride : null;
     final MapSource tileSource = sources.firstWhere(
         (MapSource s) => s.id == _sourceId,
         orElse: () => kOsmStandard);
     // R84 - what is actually drawn: the skin's vector style, or a raster
     // source the user picked over it.
-    final MapSource shownSource = _rasterOverride == null
+    final MapSource shownSource = rasterId == null
         ? tileSource
-        : sources.firstWhere((MapSource s) => s.id == _rasterOverride,
+        : sources.firstWhere((MapSource s) => s.id == rasterId,
             orElse: () => tileSource);
     // R90 — the vector basemap is available on every skin, not only the one
     // whose shape opted in: the style asset is a neutral dark palette, and
     // gating it made "switch the basemap" a dead control on six presets.
-    final bool vectorDrawn = _rasterOverride == null;
+    final bool vectorDrawn = rasterId == null;
     _vectorSkin = vectorDrawn;
 
     // R114 — is the current zoom outside what the downloaded pack holds, and

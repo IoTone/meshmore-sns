@@ -331,12 +331,37 @@ class _DmScreenState extends State<DmScreen> {
     }
     _sentText = t;
     _sentId = null;
+    // Cleared only once a row exists. `sendDirectText` returns null when the
+    // radio is not ready or when the in-flight ceiling is reached, and the text
+    // used to be cleared first: the message vanished from the composer with no
+    // row and no explanation.
     unawaited(mc.sendDirectText(widget.peerPubKeyHex, t).then(
       (ChatMessage? m) {
-        if (m != null) _sentId = m.id;
+        if (!mounted) return;
+        if (m == null) {
+          _restoreComposer(t, key);
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).chatSendNotSent)),
+          );
+          return;
+        }
+        _sentId = m.id;
+        _input.clear();
       },
     ));
-    _input.clear();
+  }
+
+  /// Put a message back in the composer after a send that produced no row.
+  ///
+  /// Only when the field is still empty: a reader who has started typing
+  /// something else must not have it replaced by the message that failed.
+  void _restoreComposer(String text, String? draftKey) {
+    if (_input.text.isNotEmpty) return;
+    setState(() {
+      _input.text = text;
+      _input.selection = TextSelection.collapsed(offset: text.length);
+    });
+    if (draftKey != null) unawaited(DraftStore.save(draftKey, text));
   }
 
   Future<void> _onAction(MeshcoreController mc, ChatMessage m) async {
@@ -519,7 +544,8 @@ class _DmScreenState extends State<DmScreen> {
                             tooltip: waiting ? l.dmWaiting : l.dmSend,
                             onPressed: _input.text.trim().isEmpty ||
                                     !_budget.canSend(_input.text) ||
-                                    waiting
+                                    waiting ||
+                                    !mc.isReady
                                 ? null
                                 : () => _send(mc),
                             icon: const Icon(Icons.send),

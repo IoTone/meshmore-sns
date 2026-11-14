@@ -114,6 +114,7 @@ Uint8List contactMessageFrame({
   required List<int> prefix,
   String text = 'hi',
   int pathLen = 0,
+  int ts = 0,
 }) {
   assert(prefix.length == 6, 'DM prefix is exactly 6 bytes');
   return Uint8List.fromList(<int>[
@@ -121,7 +122,7 @@ Uint8List contactMessageFrame({
     ...prefix,
     pathLen,
     0x00, // txt_type plain
-    0x00, 0x00, 0x00, 0x00, // ts u32 LE
+    ts & 0xFF, (ts >> 8) & 0xFF, (ts >> 16) & 0xFF, (ts >> 24) & 0xFF,
     ...utf8.encode(text),
   ]);
 }
@@ -132,9 +133,11 @@ Uint8List channelMsgFrame({
   int idx = 0,
   String text = 'hi',
   int pathLen = 0x03,
+  int ts = 0,
 }) =>
     Uint8List.fromList(<int>[
-      0x08, idx, pathLen, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x08, idx, pathLen, 0x00,
+      ts & 0xFF, (ts >> 8) & 0xFF, (ts >> 16) & 0xFF, (ts >> 24) & 0xFF,
       ...utf8.encode(text),
     ]);
 

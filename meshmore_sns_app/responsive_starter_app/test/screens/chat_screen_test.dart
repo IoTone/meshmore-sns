@@ -97,6 +97,82 @@ void main() {
     mc.dispose();
   });
 
+  testWidgets('with no radio the thread is replaced by the way to connect',
+      (WidgetTester t) async {
+    // The composer is not shown at all while the link is down, so there is no
+    // box to lose a message from. What the reader needs at that moment is the
+    // way out of the state, and the screen names it instead of offering a send
+    // control that cannot work.
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(_host(mc, TtsController(speaker: FakeTtsSpeaker())));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+    expect(find.byIcon(Icons.send), findsOneWidget,
+        reason: 'a live link has a composer');
+
+    fake.setConnected(false);
+    for (int i = 0; i < 20; i++) {
+      await t.pump(const Duration(milliseconds: 100));
+    }
+    expect(mc.isReady, isFalse, reason: 'the harness did not drop the link');
+    expect(find.byIcon(Icons.send), findsNothing,
+        reason: 'a send that cannot work must not look pressable');
+    expect(find.text('No radio connected'), findsOneWidget);
+    expect(find.text('Connect a radio'), findsOneWidget,
+        reason: 'the offline state names the way out');
+    // The drop starts a reconnect ladder; the harness has to let it go, or the
+    // test ends with a timer pending and fails on teardown rather than on an
+    // assertion.
+    mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
+  testWidgets('a write that throws leaves the row marked failed, not claimed sent',
+      (WidgetTester t) async {
+    // The frame write throws while the link still looks up, which is the case the
+    // app cannot honestly resolve: the bytes may or may not have reached the
+    // radio's buffer. The row says so, and the composer keeps the text so the
+    // reader is not left retyping.
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(_host(mc, TtsController(speaker: FakeTtsSpeaker())));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    await t.enterText(find.byType(TextField), 'this one will fail');
+    await t.pump();
+    fake.failSend = true;
+    await t.tap(find.byIcon(Icons.send));
+    await t.pumpAndSettle();
+
+    final List<ChatMessage> rows = mc.messagesFor(mc.activeChannel);
+    final ChatMessage row =
+        rows.lastWhere((ChatMessage m) => m.text == 'this one will fail');
+    expect(row.delivery, isNot(MessageDelivery.sent),
+        reason: 'a write that threw must not be shown as delivered');
+    expect(find.text('this one will fail'), findsWidgets,
+        reason: 'the words are still on screen');
+    mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
   testWidgets('the public channel hides media and says where it lives',
       (t) async {
     await t.binding.setSurfaceSize(const Size(900, 1600));
