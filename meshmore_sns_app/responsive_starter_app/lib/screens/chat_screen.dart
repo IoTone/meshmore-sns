@@ -27,6 +27,7 @@ import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
 import '../media/media_codec.dart';
 import '../media/media_composer.dart';
+import '../media/media_fetch_service.dart';
 import '../media/media_offer.dart';
 import '../media/mp1.dart';
 import '../media/media_inbox.dart';
@@ -61,6 +62,7 @@ import '../theme/mm_skin.dart';
 import '../theme/mm_tokens.dart';
 import '../tts/tts_controller.dart';
 import '../ui/mm_components.dart';
+import '../ui/mp1_preview.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/clock_model.dart';
 import '../util/share.dart';
@@ -1184,6 +1186,10 @@ class _ChatScreenState extends State<ChatScreen>
           HistoryUnreadableNotice(onRestore: () => _restoreFromExport(mc)),
           HistoryRetentionNotice(dropped: dropped),
 
+          // Photos announced on this channel that nobody has asked for yet.
+          // One preview, one line, one action: the pixels are a tap away and
+          // they will arrive as a direct record, never as a flood.
+          _PhotoAnnouncementStrip(channelIdx: mc.activeChannel),
           // Message list (active channel) + R29 jump-to-newest pill.
           Expanded(
             child: Stack(
@@ -2138,3 +2144,70 @@ class _UnreadBadge extends StatelessWidget {
 
 /// The passphrase a thread export travels with. The store's own key never
 /// leaves the Keystore, so a file that must open years later carries its own.
+
+/// The previews this session heard on one channel, newest first.
+///
+/// A picture on a mesh is announced, not sent: the sender spends one datagram
+/// on a 24x24 palette preview and keeps the pixels for whoever asks. That makes
+/// this strip the door to every photo on the channel, and the only thing that
+/// has to be on screen for the model to work.
+class _PhotoAnnouncementStrip extends StatelessWidget {
+  const _PhotoAnnouncementStrip({required this.channelIdx});
+
+  final int channelIdx;
+
+  @override
+  Widget build(BuildContext context) {
+    final MediaFetchService? fetch = context.watch<MediaFetchService?>();
+    if (fetch == null) return const SizedBox.shrink();
+    final List<PhotoAnnouncement> here = fetch.announcements
+        .where((PhotoAnnouncement a) => a.channelIdx == channelIdx)
+        .toList()
+        .reversed
+        .toList();
+    if (here.isEmpty) return const SizedBox.shrink();
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = context.skin;
+    return SizedBox(
+      height: 72,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: skin.space.rowInset),
+        itemCount: here.length,
+        separatorBuilder: (_, __) => SizedBox(width: skin.space.rowGap),
+        itemBuilder: (BuildContext c, int i) {
+          final PhotoAnnouncement a = here[i];
+          return InkWell(
+            key: ValueKey<String>('photo-announce-${a.id}'),
+            onTap: () => fetch.request(id: a.id, channelIdx: channelIdx),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Mp1PreviewImage(image: a.image, size: 56),
+                SizedBox(width: skin.space.rowGap),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(l.photoAnnounceTitle,
+                        style: TextStyle(
+                            color: skin.color.fg,
+                            fontSize: skin.type.sizeBody)),
+                    Text(
+                      a.upgradeChunks == 0
+                          ? l.photoAnnouncePreviewOnly
+                          : l.photoAnnounceLoad(a.upgradeChunks),
+                      style: TextStyle(
+                          color: skin.color.fgMuted,
+                          fontSize: skin.type.sizeSm),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

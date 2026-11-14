@@ -1,5 +1,6 @@
 import 'media/media_inbox.dart';
 import 'media/media_journal.dart';
+import 'media/media_fetch_service.dart';
 import 'media/media_offer.dart';
 import 'media/photo_source.dart';
 import 'media/media_composer.dart';
@@ -299,6 +300,16 @@ Future<void> startApp() async {
         // App-scoped, because an offer outlives the chat tab that made it and a
         // reader has fifteen minutes to tap the preview.
         Provider<MediaOfferStore>(create: (_) => MediaOfferStore()),
+        // Both halves of "announce, then fetch": previews heard on a channel and
+        // requests for offers this session still holds. It listens from the app,
+        // so a request is answered whichever tab is open.
+        Provider<MediaFetchService>(
+          create: (BuildContext ctx) => MediaFetchService(
+            mc: ctx.read<MeshcoreController>(),
+            offers: ctx.read<MediaOfferStore>(),
+          )..attach(),
+          dispose: (_, MediaFetchService s) => s.dispose(),
+        ),
         Provider<CueService>(
           create: (BuildContext ctx) {
             final ThemeController tc = ctx.read<ThemeController>();

@@ -5072,6 +5072,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'A check-in needs a connected radio and the radio\'s name.';
 
   @override
+  String photoAnnounceLoad(Object n) {
+    return 'Load · $n packets';
+  }
+
+  @override
+  String get photoAnnouncePreviewOnly => 'Preview only';
+
+  @override
+  String get photoAnnounceTitle => 'Photo';
+
+  @override
   String get mediaComposerTitle => 'Send a photo';
 
   @override

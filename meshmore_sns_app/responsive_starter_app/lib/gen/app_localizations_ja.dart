@@ -4870,6 +4870,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get checkinNeedsRadio => 'チェックインには無線の接続と無線の名前が必要です。';
 
   @override
+  String photoAnnounceLoad(Object n) {
+    return '受信 · $n パケット';
+  }
+
+  @override
+  String get photoAnnouncePreviewOnly => 'プレビューのみ';
+
+  @override
+  String get photoAnnounceTitle => '写真';
+
+  @override
   String get mediaComposerTitle => '写真を送る';
 
   @override

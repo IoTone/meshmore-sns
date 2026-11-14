@@ -8554,6 +8554,24 @@ abstract class AppLocalizations {
   /// **'A check-in needs a connected radio and the radio\'s name.'**
   String get checkinNeedsRadio;
 
+  /// No description provided for @photoAnnounceLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load · {n} packets'**
+  String photoAnnounceLoad(Object n);
+
+  /// No description provided for @photoAnnouncePreviewOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only'**
+  String get photoAnnouncePreviewOnly;
+
+  /// No description provided for @photoAnnounceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get photoAnnounceTitle;
+
   /// No description provided for @mediaComposerTitle.
   ///
   /// In en, this message translates to:
