@@ -2355,6 +2355,14 @@
   "geofenceNoMatches": "その名前のフェンスはありません。",
   "geofenceShowAll": "すべて地図で表示",
   "geofenceFocused": "地図から開きました",
+  "geofenceCornerHandle": "角 {n}、ドラッグで移動",
+  "@geofenceCornerHandle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "geofenceCorners": "{n} 角",
   "@geofenceCorners": {
     "placeholders": {

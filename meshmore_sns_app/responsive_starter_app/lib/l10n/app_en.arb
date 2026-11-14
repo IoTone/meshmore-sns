@@ -3429,6 +3429,14 @@
   "geofenceNoMatches": "No fence has that name.",
   "geofenceShowAll": "Show all on the map",
   "geofenceFocused": "Opened from the map",
+  "geofenceCornerHandle": "Corner {n}, drag to move",
+  "@geofenceCornerHandle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "geofenceCorners": "{n} corners",
   "@geofenceCorners": {
     "placeholders": {

@@ -9,6 +9,8 @@ import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
 import 'package:meshmore_sns_app/meshcore/secure/sealed_document.dart';
 
 import 'package:meshmore_sns_app/geofence/geofence_controller.dart';
+import 'package:meshmore_sns_app/geofence/geofence_engine.dart';
+import 'package:meshmore_sns_app/geofence/geofence_store.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/meshcore/own_location.dart';
 
@@ -267,4 +269,82 @@ void main() {
     });
   });
 
+
+  test('a drawn fence is stored with its shape and its derived centre',
+      () async {
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    await g.load();
+    const List<FencePoint> corners = <FencePoint>[
+      FencePoint(39.0, -105.0),
+      FencePoint(39.0, -104.99),
+      FencePoint(39.001, -104.99),
+    ];
+    await g.addPolygonFence(label: 'Yard', polygon: corners);
+    expect(g.fences, hasLength(1));
+    final StoredGeofence f = g.fences.single;
+    expect(f.isPolygon, isTrue);
+    expect(f.polygon, corners);
+    expect(f.label, 'Yard');
+    // The centre is the vertex average and the radius reaches the farthest
+    // corner, so the map's label and "show all" work without knowing the shape.
+    expect(f.latitude, closeTo(39.000333, 0.0005));
+    expect(f.radiusMeters, greaterThan(0));
+
+    // And it survives a reload, which is the point of storing it.
+    final GeofenceController next = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    await next.load();
+    expect(next.fences.single.isPolygon, isTrue);
+    expect(next.fences.single.polygon, corners);
+  });
+
+  test('a drawn fence fires on a crossing like a circle does', () async {
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    await g.load();
+    await g.addPolygonFence(label: 'Yard', polygon: const <FencePoint>[
+      FencePoint(39.0, -105.0),
+      FencePoint(39.0, -104.99),
+      FencePoint(39.001, -104.99),
+      FencePoint(39.001, -105.0),
+    ]);
+    // Inside the square.
+    expect(g.sample(_at(39.0005, -104.995)), hasLength(1));
+    expect(g.isInside(g.fences.single.id), isTrue);
+    // Standing still is not a second crossing.
+    expect(g.sample(_at(39.0005, -104.995)), isEmpty);
+    // Well outside it.
+    expect(g.sample(_at(39.01, -104.995)), hasLength(1));
+    expect(g.isInside(g.fences.single.id), isFalse);
+  });
+
+  test('renaming a drawn fence keeps its shape', () async {
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    await g.load();
+    const List<FencePoint> corners = <FencePoint>[
+      FencePoint(39.0, -105.0),
+      FencePoint(39.0, -104.99),
+      FencePoint(39.001, -104.99),
+    ];
+    await g.addPolygonFence(label: 'Yard', polygon: corners);
+    final String id = g.fences.single.id;
+    await g.updateFence(id: id, label: 'Back yard');
+    expect(g.fences.single.label, 'Back yard');
+    expect(g.fences.single.id, id);
+    expect(g.fences.single.polygon, corners,
+        reason: 'a rename must not turn a drawn fence into a circle');
+  });
+
+  test('a polygon with fewer than three corners is not added', () async {
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    await g.load();
+    await g.addPolygonFence(label: 'Line', polygon: const <FencePoint>[
+      FencePoint(39.0, -105.0),
+      FencePoint(39.0, -104.99),
+    ]);
+    expect(g.fences, isEmpty);
+  });
 }

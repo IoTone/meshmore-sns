@@ -17,6 +17,7 @@ import '../field/relationship.dart';
 import '../meshcore/own_location.dart';
 import '../geofence/geofence_controller.dart';
 import '../geofence/geofence_create_sheet.dart';
+import '../geofence/geofence_engine.dart';
 import '../maps/geofence_render.dart';
 import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
@@ -230,6 +231,13 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// disagree about a flag, and a second overlay becomes one more field here
   /// instead of one more piece of state that has to remember to persist itself.
   MapOverlayPrefs _overlays = MapOverlayPrefs.defaults;
+
+  /// The corners of a fence being drawn, in the order they were tapped.
+  ///
+  /// Empty means not drawing. A fence used to be a circle chosen from a radius
+  /// ladder, which cannot follow a property line or a parking row; drawing one
+  /// is the gesture that makes the shape the reader's.
+  List<LatLng> _draft = const <LatLng>[];
 
   /// The equal-area density overlay, off by default: it is a reading about the
   /// mesh, not a record of it, so it is something to ask for rather than
@@ -629,6 +637,10 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// away, by typing a radius. A chooser is the smallest thing that gives the
   /// fence a gesture without taking the place's away.
   Future<void> _createHere(BuildContext context, LatLng point) async {
+    if (_draft.isNotEmpty) {
+      setState(() => _draft = <LatLng>[..._draft, point]);
+      return;
+    }
     final AppLocalizations l = AppLocalizations.of(context);
     // Captured before the first await: the sheet's own context is gone by the
     // time the fence is saved, and this State is the thing that outlives it.
@@ -656,6 +668,13 @@ class _StreetMapViewState extends State<StreetMapView> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pop(sheet, 'fence'),
             ),
+            ListTile(
+              key: const ValueKey<String>('map-draw-fence'),
+              leading: const Icon(Icons.pentagon_outlined),
+              title: Text(l.geofenceDrawTitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.pop(sheet, 'draw'),
+            ),
           ],
         ),
       ),
@@ -663,6 +682,10 @@ class _StreetMapViewState extends State<StreetMapView> {
     if (!mounted || choice == null) return;
     if (choice == 'place') {
       await _createPlace(this.context, point);
+      return;
+    }
+    if (choice == 'draw') {
+      _startDrawing(point);
       return;
     }
     // The State's own context, not the parameter: the parameter is the caller's
@@ -686,6 +709,71 @@ class _StreetMapViewState extends State<StreetMapView> {
       longitude: point.longitude,
       radiusMeters: made.radiusMeters,
     );
+  }
+
+  /// Begin drawing a fence, with the long-press point as its first corner.
+  void _startDrawing(LatLng first) {
+    setState(() => _draft = <LatLng>[first]);
+    ScaffoldMessenger.maybeOf(context)
+      ?..clearSnackBars()
+      ..showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context).geofenceDrawStarted)));
+  }
+
+  void _cancelDrawing() => setState(() => _draft = const <LatLng>[]);
+
+  /// Move one corner, from a drag on its handle.
+  ///
+  /// The delta is a screen distance, so it is converted through the camera
+  /// rather than by adding degrees: at a high zoom a finger's width is metres,
+  /// and at a low zoom it is kilometres.
+  void _moveCorner(int index, Offset delta) {
+    if (index < 0 || index >= _draft.length) return;
+    final MapCamera cam = _map.camera;
+    final math.Point<double> at = cam.latLngToScreenPoint(_draft[index]);
+    final LatLng moved = cam.pointToLatLng(
+        math.Point<double>(at.x + delta.dx, at.y + delta.dy));
+    setState(() {
+      final List<LatLng> next = <LatLng>[..._draft];
+      next[index] = moved;
+      _draft = next;
+    });
+  }
+
+  /// Finish drawing: name it, then save it.
+  Future<void> _finishDrawing() async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final GeofenceController? fences =
+        Provider.of<GeofenceController?>(context, listen: false);
+    if (_draft.length < 3) {
+      ScaffoldMessenger.maybeOf(context)
+        ?..clearSnackBars()
+        ..showSnackBar(
+            SnackBar(content: Text(l.geofenceDrawNeedThree)));
+      return;
+    }
+    final List<FencePoint> corners = <FencePoint>[
+      for (final LatLng p in _draft) FencePoint(p.latitude, p.longitude),
+    ];
+    final ({String label, double radiusMeters})? made =
+        await showModalBottomSheet<({String label, double radiusMeters})>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext _) => GeofenceCreateSheet(
+        latitude: corners.first.lat,
+        longitude: corners.first.lon,
+        polygon: corners,
+      ),
+    );
+    if (made == null || !mounted || fences == null) return;
+    await fences.addPolygonFence(
+      label: made.label.isEmpty
+          ? l.geofenceDefaultName(fences.fences.length + 1)
+          : made.label,
+      polygon: corners,
+    );
+    if (mounted) setState(() => _draft = const <LatLng>[]);
   }
 
   /// One fence, drawn as an area with a boundary rather than as a line.
@@ -713,6 +801,13 @@ class _StreetMapViewState extends State<StreetMapView> {
   }
 
   void _onMapTap(TapPosition _, LatLng point) {
+    // While a fence is being drawn, every tap is a corner. The density cell
+    // sheet is not reachable in that mode, which is the point: one gesture, one
+    // meaning.
+    if (_draft.isNotEmpty) {
+      setState(() => _draft = <LatLng>[..._draft, point]);
+      return;
+    }
     if (!_showDensity) return;
     for (final HexCell cell in _densityCells) {
       if (hexContains(cell.centre, _hexRadiusMetres, point)) {
@@ -1641,6 +1736,35 @@ class _StreetMapViewState extends State<StreetMapView> {
               // [estimatedPeerReachMeters] from heard RSSI + known
               // distance instead of a flat radius. Drawn before the
               // marker icons so the pins stay on top.
+              // Drawn fences. A polygon is an area with a boundary, so it is a
+              // `Polygon` rather than a circle: the shape is the fence, and
+              // approximating it with a circle would be a different fence.
+              if (fences.any((StoredGeofence f) => f.isPolygon))
+                PolygonLayer<StoredGeofence>(
+                  polygons: <Polygon<StoredGeofence>>[
+                    for (final StoredGeofence f in fences)
+                      if (f.isPolygon)
+                        Polygon<StoredGeofence>(
+                          hitValue: f,
+                          points: <LatLng>[
+                            for (final FencePoint p in f.polygon!)
+                              LatLng(p.lat, p.lon),
+                          ],
+                          color: GeofenceRender.of(
+                            alert: context.skin.color.alert,
+                            inside: geofences?.isInside(f.id) ?? false,
+                          ).fill,
+                          borderColor: GeofenceRender.of(
+                            alert: context.skin.color.alert,
+                            inside: geofences?.isInside(f.id) ?? false,
+                          ).ring,
+                          borderStrokeWidth: GeofenceRender.of(
+                            alert: context.skin.color.alert,
+                            inside: geofences?.isInside(f.id) ?? false,
+                          ).ringWidth,
+                        ),
+                  ],
+                ),
               CircleLayer(
                 circles: <CircleMarker>[
                   if (hasFix)
@@ -1778,6 +1902,57 @@ class _StreetMapViewState extends State<StreetMapView> {
                               ),
                             ),
                           ),
+                        ),
+                      ),
+                  ],
+                ),
+              // The fence being drawn: the outline so far, and a handle per
+              // corner. The handles are above everything else because they are
+              // the only thing a drag can move.
+              if (_draft.length >= 2)
+                PolygonLayer<LatLng>(
+                  polygons: <Polygon<LatLng>>[
+                    Polygon<LatLng>(
+                      points: _draft,
+                      color: context.skin.color.alert.withValues(alpha: .14),
+                      borderColor:
+                          context.skin.color.alert.withValues(alpha: .9),
+                      borderStrokeWidth: 2.4,
+                    ),
+                  ],
+                ),
+              if (_draft.isNotEmpty)
+                MarkerLayer(
+                  markers: <Marker>[
+                    for (int i = 0; i < _draft.length; i++)
+                      Marker(
+                        key: ValueKey<String>('fence-draft-corner-$i'),
+                        point: _draft[i],
+                        width: 44,
+                        height: 44,
+                        // A drag handle is a control, so it says what it is:
+                        // a screen reader that finds an unlabelled gesture area
+                        // has found something it cannot describe.
+                        child: Semantics(
+                          label: l.geofenceCornerHandle(i + 1),
+                          child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onPanUpdate: (DragUpdateDetails d) =>
+                              _moveCorner(i, d.delta),
+                          child: Center(
+                            child: Container(
+                              width: 18,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                color: context.skin.color.base,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: context.skin.color.alert,
+                                    width: 2.5),
+                              ),
+                            ),
+                          ),
+                        ),
                         ),
                       ),
                   ],
@@ -1921,6 +2096,67 @@ class _StreetMapViewState extends State<StreetMapView> {
         // ground colour), so nothing else lifts its bottom column clear of the
         // navigation area. The attribution is a licence obligation and it was
         // being cut in half by the gesture handle.
+        // While a fence is being drawn, the map is in one mode and says so:
+        // how many corners there are, how to add one, and the two ways out.
+        if (_draft.isNotEmpty)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.paddingOf(context).bottom + 72,
+            child: Center(
+              child: Container(
+                key: const ValueKey<String>('fence-draw-bar'),
+                margin: EdgeInsets.symmetric(horizontal: context.skin.space.step(4)),
+                padding: EdgeInsets.symmetric(
+                    horizontal: context.skin.space.step(3),
+                    vertical: context.skin.space.step(2)),
+                decoration: BoxDecoration(
+                  color: context.skin.color.surface,
+                  borderRadius: mmRadius(context, 6),
+                  border: Border.all(color: context.skin.color.alert),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      l.geofenceCorners(_draft.length),
+                      key: const ValueKey<String>('fence-draw-count'),
+                      style: TextStyle(
+                          color: context.skin.color.fg,
+                          fontSize: context.skin.type.sizeBody,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      l.geofenceDrawHint,
+                      style: TextStyle(
+                          color: context.skin.color.fgMuted,
+                          fontSize: context.skin.type.sizeSm),
+                    ),
+                    SizedBox(height: context.skin.space.step(2)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: <Widget>[
+                        MmAction(
+                          key: const ValueKey<String>('fence-draw-cancel'),
+                          label: l.geofenceDrawCancel,
+                          dense: true,
+                          onPressed: _cancelDrawing,
+                        ),
+                        SizedBox(width: context.skin.space.step(2)),
+                        MmAction(
+                          key: const ValueKey<String>('fence-draw-done'),
+                          label: l.geofenceDrawDone,
+                          dense: true,
+                          onPressed: _finishDrawing,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         Positioned(
           left: 0,
           right: 0,

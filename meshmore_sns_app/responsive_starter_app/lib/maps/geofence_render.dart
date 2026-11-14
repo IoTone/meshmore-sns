@@ -1,6 +1,9 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
-import 'dart:ui' show Color;
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+
+import '../geofence/geofence_engine.dart';
 
 /// How a fence is drawn on the map, as data rather than as paint.
 ///
@@ -66,4 +69,124 @@ class GeofenceRender {
       inside: inside,
     );
   }
+}
+
+/// The shape of a fence, drawn small.
+///
+/// The create sheet used to preview a circle with a `Container` and a border,
+/// which was the same paint as the map by coincidence rather than by
+/// construction. A polygon has no such shortcut, so the preview is one widget
+/// that draws either shape from the same [GeofenceRender] the map uses: what the
+/// reader sizes or draws here is what they get there.
+class GeofenceShapePreview extends StatelessWidget {
+  const GeofenceShapePreview({
+    super.key,
+    required this.polygon,
+    required this.inside,
+    required this.size,
+  });
+
+  /// The corners, or null for a circle.
+  final List<FencePoint>? polygon;
+  final bool inside;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final GeofenceRender paint = GeofenceRender.of(
+      alert: Theme.of(context).colorScheme.error,
+      inside: inside,
+    );
+    if (polygon == null || polygon!.length < 3) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: paint.fill,
+          shape: BoxShape.circle,
+          border: Border.all(color: paint.ring, width: paint.ringWidth),
+        ),
+      );
+    }
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _PolygonPreviewPainter(
+          polygon: polygon!,
+          fill: paint.fill,
+          ring: paint.ring,
+          ringWidth: paint.ringWidth,
+        ),
+      ),
+    );
+  }
+}
+
+/// The polygon, fitted to the box with a margin so the boundary is not clipped.
+class _PolygonPreviewPainter extends CustomPainter {
+  _PolygonPreviewPainter({
+    required this.polygon,
+    required this.fill,
+    required this.ring,
+    required this.ringWidth,
+  });
+
+  final List<FencePoint> polygon;
+  final Color fill;
+  final Color ring;
+  final double ringWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    double minLat = polygon.first.lat;
+    double maxLat = polygon.first.lat;
+    double minLon = polygon.first.lon;
+    double maxLon = polygon.first.lon;
+    for (final FencePoint p in polygon) {
+      minLat = math.min(minLat, p.lat);
+      maxLat = math.max(maxLat, p.lat);
+      minLon = math.min(minLon, p.lon);
+      maxLon = math.max(maxLon, p.lon);
+    }
+    final double spanLat = math.max(maxLat - minLat, 1e-9);
+    final double spanLon = math.max(maxLon - minLon, 1e-9);
+    // One scale for both axes, so the preview keeps the shape's proportions
+    // rather than stretching a long thin fence into a square.
+    final double inset = ringWidth + 2;
+    final double usable = math.max(1, math.min(size.width, size.height) - inset * 2);
+    final double scale = usable / math.max(spanLat, spanLon);
+    final double dx = (size.width - spanLon * scale) / 2;
+    final double dy = (size.height - spanLat * scale) / 2;
+
+    final Path path = Path();
+    for (int i = 0; i < polygon.length; i++) {
+      final FencePoint p = polygon[i];
+      final double x = dx + (p.lon - minLon) * scale;
+      // Latitude grows north, the canvas grows down.
+      final double y = dy + (maxLat - p.lat) * scale;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, Paint()..color = fill);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = ringWidth
+        ..strokeJoin = StrokeJoin.round
+        ..color = ring,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _PolygonPreviewPainter old) =>
+      old.polygon != polygon ||
+      old.fill != fill ||
+      old.ring != ring ||
+      old.ringWidth != ringWidth;
 }

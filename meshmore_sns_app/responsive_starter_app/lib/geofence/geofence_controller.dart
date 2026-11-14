@@ -173,6 +173,37 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
+  /// Add a fence the reader drew as a polygon.
+  ///
+  /// The centre and the radius are derived rather than asked for: the centre is
+  /// where the map puts the name, and the radius is the distance to the farthest
+  /// corner, so a circle of it contains the shape. Both are stored so the label
+  /// anchor, the "show all" camera and an older build reading the record all
+  /// keep working without knowing what a polygon is.
+  Future<void> addPolygonFence({
+    required String label,
+    required List<FencePoint> polygon,
+  }) async {
+    if (_fences.length >= GeofenceStore.capacity) return;
+    if (polygon.length < 3) return;
+    final ({double lat, double lon, double radiusMeters}) centre =
+        polygonCentre(polygon);
+    if (centre.radiusMeters <= 0) return;
+    final String id = 'gf${_clock().millisecondsSinceEpoch}';
+    final StoredGeofence fence = StoredGeofence(
+      id: id,
+      label: label,
+      latitude: centre.lat,
+      longitude: centre.lon,
+      radiusMeters: centre.radiusMeters,
+      polygon: List<FencePoint>.unmodifiable(polygon),
+    );
+    _fences.add(fence);
+    _watches[id] = GeofenceWatch(fence.toEngine());
+    await GeofenceStore.save(_fences);
+    notifyListeners();
+  }
+
   /// Change a fence's name or its radius, keeping everything else.
   ///
   /// The id is the fence: it is what its crossings are filed under and what the
@@ -201,6 +232,9 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
       latitude: old.latitude,
       longitude: old.longitude,
       radiusMeters: radius,
+      // A rename must not turn a drawn fence into a circle. The shape is the
+      // fence; only its name and its radius are editable here.
+      polygon: old.polygon,
     );
     if (next.label == old.label && next.radiusMeters == old.radiusMeters) return;
     _fences[at] = next;

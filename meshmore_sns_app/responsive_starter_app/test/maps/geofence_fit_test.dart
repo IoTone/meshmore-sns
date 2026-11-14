@@ -3,6 +3,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:meshmore_sns_app/geofence/geofence_engine.dart';
 import 'package:meshmore_sns_app/geofence/geofence_store.dart';
 import 'package:meshmore_sns_app/maps/geofence_fit.dart';
 
@@ -90,5 +91,56 @@ void main() {
     final ({LatLng centre, double zoom}) tiny = fitGeofences(
         <StoredGeofence>[_fence('a', 39, -105, 1)], viewportPx: 400)!;
     expect(tiny.zoom, lessThanOrEqualTo(17));
+  });
+
+  test('a drawn fence is fitted by its corners, not by a circle round it', () {
+    // A long thin fence: its stored radius is the distance to the farthest
+    // corner, so a circle of it is much wider than the shape. Fitting the
+    // corners is what puts the boundary itself in frame.
+    final StoredGeofence poly = StoredGeofence(
+      id: 'p',
+      label: 'p',
+      latitude: 39.0,
+      longitude: -105.0,
+      radiusMeters: 2000,
+      polygon: const <FencePoint>[
+        FencePoint(39.0, -105.0),
+        FencePoint(39.0, -104.99),
+        FencePoint(39.001, -104.99),
+        FencePoint(39.001, -105.0),
+      ],
+    );
+    final ({LatLng centre, double zoom})? fit =
+        fitGeofences(<StoredGeofence>[poly], viewportPx: 400);
+    expect(fit, isNotNull);
+    // The centre of the corners, not of a 2 km circle around them.
+    expect(fit!.centre.latitude, closeTo(39.0005, 0.0005));
+    expect(fit.centre.longitude, closeTo(-104.995, 0.0005));
+    // A ~90 m shape at 400 px is a street zoom, not a city one.
+    expect(fit.zoom, greaterThan(13));
+  });
+
+  test('a circle and a drawn fence fit together', () {
+    final List<StoredGeofence> fences = <StoredGeofence>[
+      _fence('a', 39.0, -105.0, 250),
+      StoredGeofence(
+        id: 'p',
+        label: 'p',
+        latitude: 39.02,
+        longitude: -105.0,
+        radiusMeters: 300,
+        polygon: const <FencePoint>[
+          FencePoint(39.02, -105.0),
+          FencePoint(39.02, -104.99),
+          FencePoint(39.021, -104.99),
+        ],
+      ),
+    ];
+    final ({LatLng centre, double zoom})? fit =
+        fitGeofences(fences, viewportPx: 400);
+    expect(fit, isNotNull);
+    // Both are inside the frame: the centre sits between them.
+    expect(fit!.centre.latitude, greaterThan(39.0));
+    expect(fit.centre.latitude, lessThan(39.021));
   });
 }

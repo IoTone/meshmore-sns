@@ -8,6 +8,13 @@ import 'geofence_engine.dart';
 import '../meshcore/secure/sealed_document.dart';
 
 /// A fence the user drew: a centre, a radius, and a name to say out loud.
+///
+/// A fence is either a circle or a polygon. The circle is the original shape and
+/// every record written before polygons existed is one, so the polygon is an
+/// optional field rather than a second type: an old record has no `poly` key and
+/// loads as a circle, and a record with one ignores the radius for evaluation
+/// while still carrying a centre and a radius for the map's label and the
+/// "show all" camera.
 final class StoredGeofence {
   const StoredGeofence({
     required this.id,
@@ -15,6 +22,7 @@ final class StoredGeofence {
     required this.latitude,
     required this.longitude,
     required this.radiusMeters,
+    this.polygon,
   });
 
   final String id;
@@ -23,11 +31,17 @@ final class StoredGeofence {
   final double longitude;
   final double radiusMeters;
 
+  /// The corners, in draw order, open. Null for a circle.
+  final List<FencePoint>? polygon;
+
+  bool get isPolygon => polygon != null && polygon!.length >= 3;
+
   Geofence toEngine() => Geofence(
         id: id,
         lat: latitude,
         lon: longitude,
         radiusMeters: radiusMeters,
+        polygon: polygon,
       );
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -36,6 +50,8 @@ final class StoredGeofence {
         'lat': latitude,
         'lon': longitude,
         'radius': radiusMeters,
+        if (polygon != null)
+          'poly': <Object?>[for (final FencePoint p in polygon!) p.toJson()],
       };
 
   static StoredGeofence? fromJson(Object? raw) {
@@ -51,6 +67,20 @@ final class StoredGeofence {
     if (la.abs() > 90 || lo.abs() > 180 || !radius.isFinite || radius <= 0) {
       return null;
     }
+    // A polygon that cannot be a polygon is refused rather than quietly turned
+    // into a circle around its own centre: a two-corner "fence" is a bug in
+    // whatever wrote it, and a circle would be a shape the reader never drew.
+    List<FencePoint>? polygon;
+    final Object? poly = raw['poly'];
+    if (poly != null) {
+      if (poly is! List) return null;
+      final List<FencePoint> points = <FencePoint>[
+        for (final Object? e in poly)
+          if (FencePoint.fromJson(e) case final FencePoint p) p,
+      ];
+      if (points.length < 3 || points.length != poly.length) return null;
+      polygon = List<FencePoint>.unmodifiable(points);
+    }
     final Object? label = raw['label'];
     return StoredGeofence(
       id: id,
@@ -58,6 +88,7 @@ final class StoredGeofence {
       latitude: la,
       longitude: lo,
       radiusMeters: radius,
+      polygon: polygon,
     );
   }
 }

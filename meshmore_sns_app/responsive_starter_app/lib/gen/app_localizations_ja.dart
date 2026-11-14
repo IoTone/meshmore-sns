@@ -4927,6 +4927,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get geofenceFocused => '地図から開きました';
 
   @override
+  String geofenceCornerHandle(int n) {
+    return '角 $n、ドラッグで移動';
+  }
+
+  @override
   String geofenceCorners(int n) {
     return '$n 角';
   }

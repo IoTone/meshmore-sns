@@ -125,6 +125,9 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
         initialRadiusMeters: fence.radiusMeters,
         initialLabel: fence.label,
         editing: true,
+        // A drawn fence is renamed here, not reshaped: the shape is what the
+        // reader drew on the map, and a radius slider cannot express it.
+        polygon: fence.polygon,
       ),
     );
     if (made == null) return;
@@ -375,7 +378,11 @@ class _FenceRow extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Icon(
-            inside ? Icons.place : Icons.place_outlined,
+            // A drawn fence is a shape, not a point, and the row says which it
+            // is before the reader opens it.
+            fence.isPolygon
+                ? (inside ? Icons.pentagon : Icons.pentagon_outlined)
+                : (inside ? Icons.place : Icons.place_outlined),
             size: 20,
             color: inside ? skin.color.accent : skin.color.fgMuted,
           ),
@@ -389,7 +396,11 @@ class _FenceRow extends StatelessWidget {
                     style: TextStyle(
                         color: skin.color.fg, fontSize: skin.type.sizeBody)),
                 Text(
-                  inside ? l.geofenceInsideNow : l.geofenceOutsideNow,
+                  fence.isPolygon
+                      ? '${inside ? l.geofenceInsideNow : l.geofenceOutsideNow}'
+                          ' · ${l.geofenceCorners(fence.polygon!.length)}'
+                      : (inside ? l.geofenceInsideNow : l.geofenceOutsideNow),
+                  key: ValueKey<String>('geofence-shape-${fence.id}'),
                   style: TextStyle(
                       color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
                 ),

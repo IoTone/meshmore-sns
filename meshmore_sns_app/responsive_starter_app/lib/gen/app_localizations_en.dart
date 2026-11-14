@@ -5135,6 +5135,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get geofenceFocused => 'Opened from the map';
 
   @override
+  String geofenceCornerHandle(int n) {
+    return 'Corner $n, drag to move';
+  }
+
+  @override
   String geofenceCorners(int n) {
     return '$n corners';
   }

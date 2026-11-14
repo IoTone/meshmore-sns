@@ -8668,6 +8668,12 @@ abstract class AppLocalizations {
   /// **'Opened from the map'**
   String get geofenceFocused;
 
+  /// No description provided for @geofenceCornerHandle.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner {n}, drag to move'**
+  String geofenceCornerHandle(int n);
+
   /// No description provided for @geofenceCorners.
   ///
   /// In en, this message translates to:

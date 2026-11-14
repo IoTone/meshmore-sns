@@ -9,6 +9,7 @@ import '../maps/geofence_render.dart';
 import '../ui/mm_components.dart';
 import '../util/mm_format.dart';
 import 'geofence_controller.dart';
+import 'geofence_engine.dart';
 
 /// Draw a fence, or change one: a name, a radius, and a preview of the circle.
 ///
@@ -32,6 +33,7 @@ class GeofenceCreateSheet extends StatefulWidget {
     this.initialRadiusMeters = 250,
     this.initialLabel,
     this.editing = false,
+    this.polygon,
   });
 
   final double latitude;
@@ -45,6 +47,15 @@ class GeofenceCreateSheet extends StatefulWidget {
   /// True when this sheet is changing a fence that already exists, which changes
   /// the title and nothing else: the fields are the same fields.
   final bool editing;
+
+  /// The corners of a drawn fence, or null for a circle.
+  ///
+  /// A polygon has no radius to slide, so the sheet shows its shape instead and
+  /// offers the name. Reshaping is not offered here: the shape is what the
+  /// reader drew on the map, and a slider cannot express it.
+  final List<FencePoint>? polygon;
+
+  bool get isPolygon => polygon != null && polygon!.length >= 3;
 
   /// The stops the slider moves through, in metres.
   ///
@@ -102,12 +113,15 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
     final MmSkin skin = context.skin;
     final FormatPrefs? prefs = context.watchFormatPrefs;
     final double metres = GeofenceCreateSheet.stops[_index];
-    final GeofenceRender preview =
-        GeofenceRender.of(alert: skin.color.alert, inside: false);
 
     return SafeArea(
       top: false,
-      child: Padding(
+      // Scrollable, because the sheet is shown with `isScrollControlled` and a
+      // 320 dp phone at 200 % text is taller than the space it gets: a Column
+      // that cannot scroll clips the save button rather than letting the reader
+      // reach it.
+      child: SingleChildScrollView(
+        child: Padding(
         padding: EdgeInsets.fromLTRB(skin.space.screenEdge,
             skin.space.rowInset, skin.space.screenEdge, skin.space.screenEdge),
         child: Column(
@@ -140,20 +154,18 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
             // whether 400 m is a camp or a county.
             Row(
               children: <Widget>[
-                Container(
-                  width: skin.space.step(9),
-                  height: skin.space.step(9),
-                  decoration: BoxDecoration(
-                    color: preview.fill,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: preview.ring, width: preview.ringWidth),
-                  ),
+                GeofenceShapePreview(
+                  key: const ValueKey<String>('geofence-shape-preview'),
+                  polygon: widget.polygon,
+                  inside: false,
+                  size: skin.space.step(9),
                 ),
                 SizedBox(width: skin.space.rowInset),
                 Expanded(
                   child: Text(
-                    MmFormat.distance(metres, prefs: prefs),
+                    widget.isPolygon
+                        ? l.geofenceCorners(widget.polygon!.length)
+                        : MmFormat.distance(metres, prefs: prefs),
                     key: const ValueKey<String>('geofence-radius-value'),
                     style: TextStyle(
                       color: skin.color.fg,
@@ -164,18 +176,36 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
                 ),
               ],
             ),
-            Slider(
-              key: const ValueKey<String>('geofence-radius'),
-              value: _index.toDouble(),
-              min: 0,
-              max: (GeofenceCreateSheet.stops.length - 1).toDouble(),
-              divisions: GeofenceCreateSheet.stops.length - 1,
-              label: MmFormat.distance(metres, prefs: prefs),
-              onChanged: (double v) => setState(() => _index = v.round()),
-            ),
+            if (widget.isPolygon)
+              Padding(
+                padding: EdgeInsets.only(top: skin.space.rowGap),
+                child: Text(
+                  l.geofencePolygonNote,
+                  key: const ValueKey<String>('geofence-polygon-note'),
+                  style: TextStyle(
+                      color: skin.color.fgMuted,
+                      fontSize: skin.type.sizeSm,
+                      height: 1.4),
+                ),
+              )
+            else
+              Slider(
+                key: const ValueKey<String>('geofence-radius'),
+                value: _index.toDouble(),
+                min: 0,
+                max: (GeofenceCreateSheet.stops.length - 1).toDouble(),
+                divisions: GeofenceCreateSheet.stops.length - 1,
+                label: MmFormat.distance(metres, prefs: prefs),
+                onChanged: (double v) => setState(() => _index = v.round()),
+              ),
             SizedBox(height: skin.space.rowGap),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            // A `Wrap`, not a `Row`: at 320 dp and 200 % text the two labels
+            // are wider than the sheet, and a Row clips the second one rather
+            // than putting it on the next line.
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: skin.space.rowGap,
+              runSpacing: skin.space.rowGap,
               children: <Widget>[
                 MmAction(
                   key: const ValueKey<String>('geofence-cancel'),
@@ -183,7 +213,6 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
                   label: l.actionCancel,
                   onPressed: () => Navigator.pop(context),
                 ),
-                SizedBox(width: skin.space.rowGap),
                 MmAction(
                   key: const ValueKey<String>('geofence-save'),
                   icon: Icons.check,
@@ -193,6 +222,7 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

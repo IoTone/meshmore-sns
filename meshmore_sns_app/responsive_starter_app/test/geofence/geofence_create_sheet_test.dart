@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/geofence/geofence_controller.dart';
 import 'package:meshmore_sns_app/geofence/geofence_create_sheet.dart';
+import 'package:meshmore_sns_app/geofence/geofence_engine.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/util/mm_format.dart';
@@ -18,8 +19,9 @@ import 'package:meshmore_sns_app/util/mm_format.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> pump(WidgetTester t, {FormatPrefs? prefs}) async {
-    await t.binding.setSurfaceSize(const Size(420, 900));
+  Future<void> pump(WidgetTester t,
+      {FormatPrefs? prefs, List<FencePoint>? polygon, Size? size}) async {
+    await t.binding.setSurfaceSize(size ?? const Size(420, 900));
     addTearDown(() => t.binding.setSurfaceSize(null));
     final GeofenceController fences =
         GeofenceController(mc: MeshcoreController(), autoTick: false);
@@ -40,8 +42,12 @@ void main() {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          home: const Scaffold(
-            body: GeofenceCreateSheet(latitude: 40, longitude: -105),
+          home: Scaffold(
+            body: GeofenceCreateSheet(
+              latitude: 40,
+              longitude: -105,
+              polygon: polygon,
+            ),
           ),
         ),
       ),
@@ -149,4 +155,41 @@ void main() {
     expect(result?.radiusMeters, 600);
   });
 
+
+  testWidgets('a drawn fence is named, not resized', (WidgetTester t) async {
+    // A polygon has no radius to slide, so the sheet shows its shape and offers
+    // the name. A slider here would be a control that changes nothing.
+    await pump(t, polygon: const <FencePoint>[
+      FencePoint(40.0, -105.0),
+      FencePoint(40.0, -104.99),
+      FencePoint(40.001, -104.99),
+    ]);
+    expect(find.byKey(const ValueKey<String>('geofence-radius')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('geofence-shape-preview')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('geofence-polygon-note')),
+        findsOneWidget);
+    expect(find.text('3 corners'), findsOneWidget);
+    // The name is still the thing being asked for.
+    expect(find.byKey(const ValueKey<String>('geofence-name')), findsOneWidget);
+  });
+
+  testWidgets('the drawn-fence sheet holds a 320 dp phone at 200 % text',
+      (WidgetTester t) async {
+    await t.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    t.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+    await pump(t,
+        size: const Size(320, 640),
+        polygon: const <FencePoint>[
+          FencePoint(40.0, -105.0),
+          FencePoint(40.0, -104.99),
+          FencePoint(40.001, -104.99),
+          FencePoint(40.001, -105.0),
+        ]);
+    expect(t.takeException(), isNull);
+    expect(find.byKey(const ValueKey<String>('geofence-shape-preview')),
+        findsOneWidget);
+  });
 }

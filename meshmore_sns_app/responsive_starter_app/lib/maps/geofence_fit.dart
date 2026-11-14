@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:latlong2/latlong.dart';
 
+import '../geofence/geofence_engine.dart';
 import '../geofence/geofence_store.dart';
 import '../util/geo.dart';
 
@@ -42,6 +43,19 @@ import '../util/geo.dart';
   double west = 180;
   double east = -180;
   for (final StoredGeofence f in fences) {
+    if (f.isPolygon) {
+      // A polygon's extent is its corners, not a circle around its centre: the
+      // stored radius contains the shape, but fitting the corners is what puts
+      // the boundary itself inside the frame rather than the circle that
+      // happens to enclose it.
+      for (final FencePoint p in f.polygon!) {
+        south = math.min(south, p.lat);
+        north = math.max(north, p.lat);
+        west = math.min(west, p.lon);
+        east = math.max(east, p.lon);
+      }
+      continue;
+    }
     final double dLat = _degreesFor(f.radiusMeters);
     final double cos = math.cos(f.latitude * math.pi / 180).abs();
     final double dLon = _degreesFor(f.radiusMeters) / (cos < 0.01 ? 0.01 : cos);
