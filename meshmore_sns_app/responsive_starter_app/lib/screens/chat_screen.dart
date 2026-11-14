@@ -38,7 +38,6 @@ import '../voice/voice_inbox.dart';
 import '../voice/voice_notes_sheet.dart';
 import 'channel_create_sheet.dart';
 import '../voice/voice_playback.dart';
-import '../meshcore/airtime.dart';
 import '../meshcore/block_filter.dart';
 import '../meshcore/block_store.dart';
 import '../meshcore/chat_message.dart';
@@ -108,10 +107,16 @@ class _ChatScreenState extends State<ChatScreen>
   bool _nearWarned = false;
 
   /// The media path for this tab: one codec, one estimate, one receiver.
-  /// Built once so a photo send does not reload the native library per tap.
-  final MediaTransferService _media = MediaTransferService(
+  ///
+  /// `late final` so the estimate can be the radio's own: this was built with
+  /// the flat 4 ms/byte figure, which is calibrated to the USA/Canada preset and
+  /// understates a slow preset by an order of magnitude, so the cost line a
+  /// reader saw before spending the airtime was wrong by that factor. The
+  /// estimator is read once, on the first send, by which time the radio has
+  /// reported its parameters in any normal session.
+  late final MediaTransferService _media = MediaTransferService(
     codec: const AvifMediaCodec(),
-    estimator: const AirtimeEstimator(),
+    estimator: context.read<MeshcoreController>().airtimeEstimator,
     clock: DateTime.now,
   );
 

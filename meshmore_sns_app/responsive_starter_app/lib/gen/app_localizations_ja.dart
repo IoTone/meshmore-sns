@@ -5514,6 +5514,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsAppGroupSound => '表示と音';
 
   @override
+  String get settingsPhotoColorTitle => '写真をカラーで送る';
+
+  @override
+  String get settingsPhotoColorSub => 'オフにするとグレースケールで送信し、データ量は約3分の1になります。';
+
+  @override
   String get settingsAppGroupData => 'データ';
 
   @override

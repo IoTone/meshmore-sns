@@ -57,6 +57,10 @@ abstract interface class MediaCodec {
     required int byteBudget,
     int? maxWidth,
     int? maxHeight,
+    /// Send a grey picture. Default true at the call sites: a mesh photo has one
+    /// budget, and the two channels a colour picture spends are the cheapest
+    /// third of the data to give up.
+    bool grayscale = false,
   });
 
   /// The first frame of an AVIF payload as a picture.
@@ -159,6 +163,7 @@ final class AvifMediaCodec implements MediaCodec {
     required int byteBudget,
     int? maxWidth,
     int? maxHeight,
+    bool grayscale = false,
   }) async {
     if (!avifNativeCapabilities.canEncode) {
       throw const MediaCodecException(
@@ -166,10 +171,13 @@ final class AvifMediaCodec implements MediaCodec {
         'this build has no AVIF encoder',
       );
     }
-    final MediaPhoto fitted = photo.scaledTo(
+    // Scale first, then desaturate: desaturating a 12-megapixel original costs
+    // a full pass over 48 MB for pixels the encoder is about to throw away.
+    final MediaPhoto scaled = photo.scaledTo(
       maxWidth: maxWidth ?? MediaPhoto.floorWidth,
       maxHeight: maxHeight ?? MediaPhoto.floorHeight,
     );
+    final MediaPhoto fitted = grayscale ? scaled.inGrayscale() : scaled;
     EncodedPhoto? smallest;
     for (final (int minQ, int maxQ) in quantiserLadder) {
       final Uint8List bytes;
@@ -287,14 +295,19 @@ final class FakeMediaCodec implements MediaCodec {
   /// reached the encoder rather than only the budget.
   final List<(int?, int?)> ceilings = <(int?, int?)>[];
 
+  /// Whether the last encode was asked for a grey picture.
+  bool lastGrayscale = false;
+
   @override
   Future<EncodedPhoto> encode(
     MediaPhoto photo, {
     required int byteBudget,
     int? maxWidth,
     int? maxHeight,
+    bool grayscale = false,
   }) async {
     encodeCalls++;
+    lastGrayscale = grayscale;
     budgets.add(byteBudget);
     ceilings.add((maxWidth, maxHeight));
     return EncodedPhoto(

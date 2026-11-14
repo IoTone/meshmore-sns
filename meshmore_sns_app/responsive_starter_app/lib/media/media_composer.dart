@@ -13,6 +13,7 @@ import '../ui/mm_components.dart';
 import 'media_chunk.dart';
 import 'media_journal.dart';
 import 'media_photo.dart';
+import 'media_prefs.dart';
 import 'media_send_policy.dart';
 import 'media_sender.dart';
 import 'media_transfer.dart';
@@ -192,10 +193,16 @@ class _MediaComposerState extends State<MediaComposer> {
       _sourceProblem = null;
       _refusal = null;
     });
+    // Grey unless the owner asked for colour: two of the three channels a
+    // colour picture spends are the cheapest third of the data to give up, and
+    // this is the one place that decides it for every send.
+    final bool color = await MediaPrefs.colorPhotos();
+    if (!mounted) return;
     final MediaPreparation outcome = await widget.service.prepare(
       photo,
       channelPsk: widget.channelPsk,
       byteBudget: widget.byteBudget,
+      grayscale: !color,
     );
     if (!mounted) return;
     switch (outcome) {

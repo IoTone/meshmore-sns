@@ -1330,7 +1330,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
 
   /// Whether a frame of [bytes] would fit inside the current window.
   bool canSpendAirtime(int bytes) =>
-      _airtime.quote(_airtimeEstimator.forBytes(bytes)).allowed;
+      _airtime.quote(airtimeEstimator.forBytes(bytes)).allowed;
 
   /// Changes the policy and persists it. The meter keeps its history: what has
   /// already been spent is a fact about the hour, not about the policy.
@@ -1343,7 +1343,12 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
 
   /// The exact time-on-air estimate for the radio that reports it, or the
   /// documented flat figure until the first self-info arrives.
-  AirtimeEstimator get _airtimeEstimator {
+  ///
+  /// Public because the media path needs it too: the photo composer was built
+  /// with the flat 4 ms/byte figure, which is calibrated to the USA/Canada
+  /// preset and understates a slow preset by an order of magnitude, so the cost
+  /// line a reader saw before spending the airtime was wrong.
+  AirtimeEstimator get airtimeEstimator {
     final SelfInfo? si = selfInfo;
     if (si != null) {
       final AirtimeEstimator? exact = loraEstimator(
@@ -1488,7 +1493,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
 
   Future<void> send(Uint8List frame, {bool gated = false}) async {
     final bool ota = frame.isNotEmpty && isOverTheAir(frame[0]);
-    final Duration cost = ota ? _airtimeEstimator.forBytes(frame.length) : Duration.zero;
+    final Duration cost = ota ? airtimeEstimator.forBytes(frame.length) : Duration.zero;
     if (gated && !_airtime.quote(cost).allowed) {
       _airtimeRefusals++;
       notifyListeners();

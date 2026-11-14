@@ -2564,6 +2564,8 @@
   "settingsCelsiusOn": "21 °C",
   "settingsFahrenheitOn": "70 °F",
   "settingsAppGroupSound": "表示と音",
+  "settingsPhotoColorTitle": "写真をカラーで送る",
+  "settingsPhotoColorSub": "オフにするとグレースケールで送信し、データ量は約3分の1になります。",
   "settingsAppGroupData": "データ",
   "settingsAppGroupSystem": "システム",
   "aboutReplayIntro": "初回画面をもう一度表示",

@@ -9628,6 +9628,18 @@ abstract class AppLocalizations {
   /// **'Reading and sound'**
   String get settingsAppGroupSound;
 
+  /// No description provided for @settingsPhotoColorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send photos in colour'**
+  String get settingsPhotoColorTitle;
+
+  /// No description provided for @settingsPhotoColorSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Off sends a grey picture, which is about a third of the data.'**
+  String get settingsPhotoColorSub;
+
   /// No description provided for @settingsAppGroupData.
   ///
   /// In en, this message translates to:

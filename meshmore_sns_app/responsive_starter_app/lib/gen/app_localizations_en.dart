@@ -5761,6 +5761,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppGroupSound => 'Reading and sound';
 
   @override
+  String get settingsPhotoColorTitle => 'Send photos in colour';
+
+  @override
+  String get settingsPhotoColorSub =>
+      'Off sends a grey picture, which is about a third of the data.';
+
+  @override
   String get settingsAppGroupData => 'Data';
 
   @override

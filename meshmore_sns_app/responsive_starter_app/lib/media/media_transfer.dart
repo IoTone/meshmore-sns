@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:meshcore/meshcore.dart';
@@ -488,6 +489,34 @@ final class MediaDownload {
       codec.decode(payload);
 }
 
+/// The encode timings the M1 protocol asks for, recorded on the isolate that
+/// waited for them.
+///
+/// `AvifMediaCodec.encodeMillis` counts encodes that ran in its own isolate,
+/// which is no longer the one a reader waits in, so the service records the
+/// wall time it measured around the offload. Median, not mean: one slow attempt
+/// on a high-entropy picture is not the number the protocol is about.
+abstract final class MediaEncodeTiming {
+  static final List<int> _millis = <int>[];
+
+  static void record(int ms) {
+    _millis.add(ms);
+    if (_millis.length > 32) _millis.removeAt(0);
+  }
+
+  /// Every encode this process waited for, oldest first.
+  static List<int> get samples => List<int>.unmodifiable(_millis);
+
+  /// The median of [samples], or null before the first encode.
+  static int? get medianMillis {
+    if (_millis.isEmpty) return null;
+    final List<int> sorted = List<int>.of(_millis)..sort();
+    return sorted[sorted.length ~/ 2];
+  }
+
+  static void reset() => _millis.clear();
+}
+
 /// Prepares outbound media and owns the inbound direction.
 ///
 /// One object so a surface has one dependency, and so the payload id generator
@@ -527,16 +556,21 @@ final class MediaTransferService {
     required List<int>? channelPsk,
     int? byteBudget,
     MediaSendSize size = MediaSendSize.standard,
+    /// Send a grey picture. On by default: two of the three channels a colour
+    /// photo spends are the cheapest third of the data to give up on a mesh, and
+    /// the setting exists because a picture is sometimes the point.
+    bool grayscale = true,
   }) async {
     final MediaSendRefusal? refusal = MediaSendPolicy(mediaOnPublic: mediaOnPublic)
         .channelRefusalFor(channelPsk: channelPsk);
     if (refusal != null) return MediaRefused(refusal);
 
-    final EncodedPhoto encoded = await codec.encode(
+    final EncodedPhoto encoded = await _encodeOffTheFrame(
       photo,
       byteBudget: byteBudget ?? size.budgetBytes,
       maxWidth: size.maxWidth,
       maxHeight: size.maxHeight,
+      grayscale: grayscale,
     );
     // Every datagram is its own frame on air: the radio wraps each blob in the
     // datagram header and the packet it sends, so the cost is the sum over
@@ -548,6 +582,51 @@ final class MediaTransferService {
       photo: photo,
       withinBudget: encoded.withinBudget,
     );
+  }
+
+  /// Encodes the picture away from the UI isolate when the codec is the real
+  /// AVIF one.
+  ///
+  /// `AvifMediaCodec.encode` is a synchronous FFI call that loops over a
+  /// quantiser ladder: 90 ms typical at speed 5 for a 320x240 picture, and up
+  /// to six attempts when the first does not fit the budget. On the UI isolate
+  /// that is a visibly frozen frame at the moment the composer is deciding what
+  /// a photo would cost.
+  ///
+  /// A fresh codec is built *inside* the isolate rather than captured, because
+  /// an injected codec is usually a test double and a closure over one cannot be
+  /// sent to another isolate. A test's fake therefore keeps running in place,
+  /// and the real encoder is the only thing that moves.
+  ///
+  /// The measurement is taken around the isolate, so it includes the spawn
+  /// (about a millisecond) and stays honest about what the user waited for. The
+  /// codec's own counters live in the child isolate and are not read back.
+  Future<EncodedPhoto> _encodeOffTheFrame(
+    MediaPhoto photo, {
+    required int byteBudget,
+    required int maxWidth,
+    required int maxHeight,
+    bool grayscale = true,
+  }) async {
+    final MediaCodec c = codec;
+    if (c is! AvifMediaCodec) {
+      return c.encode(photo,
+          byteBudget: byteBudget,
+          maxWidth: maxWidth,
+          maxHeight: maxHeight,
+          grayscale: grayscale);
+    }
+    final int speed = c.speed;
+    final Stopwatch watch = Stopwatch()..start();
+    final EncodedPhoto out = await Isolate.run(() => AvifMediaCodec(speed: speed)
+        .encode(photo,
+            byteBudget: byteBudget,
+            maxWidth: maxWidth,
+            maxHeight: maxHeight,
+            grayscale: grayscale));
+    watch.stop();
+    MediaEncodeTiming.record(watch.elapsedMilliseconds);
+    return out;
   }
 
   /// Works out what a recorded note costs before any of it is queued.

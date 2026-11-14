@@ -37,6 +37,38 @@ final class MediaPhoto {
   bool get isWellFormed =>
       width > 0 && height > 0 && rgba.length == width * height * 4;
 
+  /// The same picture in greyscale, by Rec. 601 luma.
+  ///
+  /// A mesh photo has one budget and no colour pipedream: at 320x240 and a 2-4 KB
+  /// target the app is choosing image codecs at about 0.3 bits/pixel, and two of
+  /// the three channels a colour picture spends are gone the moment the picture
+  /// is grey. The encoder still takes RGBA, so the chroma planes become constant
+  /// and cost almost nothing per block, which is where the saving comes from: a
+  /// third of the data is the honest figure for the transport, and the quality
+  /// that third buys at the same byte budget is a sharp grey picture instead of a
+  /// soft colour one.
+  ///
+  /// Rec. 601 weights, because they are the ones a phone camera's own luma uses
+  /// and matching them keeps a grey photo looking like the scene rather than like
+  /// a conversion of it.
+  MediaPhoto inGrayscale() {
+    if (!isWellFormed) {
+      throw ArgumentError.value(<int>[width, height, rgba.length], 'rgba',
+          'not a whole picture');
+    }
+    final Uint8List out = Uint8List(rgba.length);
+    for (int i = 0; i < rgba.length; i += 4) {
+      final int luma = (0.299 * rgba[i] + 0.587 * rgba[i + 1] + 0.114 * rgba[i + 2])
+          .round()
+          .clamp(0, 255);
+      out[i] = luma;
+      out[i + 1] = luma;
+      out[i + 2] = luma;
+      out[i + 3] = rgba[i + 3];
+    }
+    return MediaPhoto(width: width, height: height, rgba: out);
+  }
+
   /// The picture fitted inside [floorWidth] × [floorHeight], aspect preserved.
   ///
   /// Downscale only: a picture already inside the floor comes back unchanged,

@@ -27,7 +27,10 @@ class _FakeCodec implements MediaCodec {
 
   @override
   Future<EncodedPhoto> encode(MediaPhoto photo,
-          {required int byteBudget, int? maxWidth, int? maxHeight}) async =>
+          {required int byteBudget,
+          int? maxWidth,
+          int? maxHeight,
+          bool grayscale = false}) async =>
       EncodedPhoto(
           bytes: Uint8List(4), width: 1, height: 1, byteBudget: 4);
 

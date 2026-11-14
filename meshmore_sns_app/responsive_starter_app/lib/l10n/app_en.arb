@@ -3894,6 +3894,8 @@
   "settingsCelsiusOn": "21 °C",
   "settingsFahrenheitOn": "70 °F",
   "settingsAppGroupSound": "Reading and sound",
+  "settingsPhotoColorTitle": "Send photos in colour",
+  "settingsPhotoColorSub": "Off sends a grey picture, which is about a third of the data.",
   "settingsAppGroupData": "Data",
   "settingsAppGroupSystem": "System",
   "aboutReplayIntro": "Replay the first-run screens",
