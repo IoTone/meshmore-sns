@@ -119,7 +119,10 @@ void main() {
     for (int i = 0; i < 20; i++) {
       await t.pump(const Duration(milliseconds: 100));
     }
-    expect(find.text('NODES NEAR YOU (LAST KNOWN)'), findsOneWidget,
+    // "LAST KNOWN" used to trail this label and the readout clipped it to
+    // "NODES NEAR YOU (LA…" — the parenthetical is gone, and the stale fact is
+    // carried by the status row's LINK LOST line above the block.
+    expect(find.text('NODES NEAR YOU'), findsOneWidget,
         reason: 'no link, so no reachability claim');
 
     // Dispose inside the body: the feed's timer is checked before teardowns.

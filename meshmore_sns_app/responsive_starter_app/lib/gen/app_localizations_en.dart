@@ -39,7 +39,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardPeersInRange => 'NODES IN RANGE';
 
   @override
-  String get dashboardPeersInRangeStale => 'NODES NEAR YOU (LAST KNOWN)';
+  String get dashboardPeersInRangeStale => 'NODES NEAR YOU';
 
   @override
   String dashboardKnownCount(int n) {
