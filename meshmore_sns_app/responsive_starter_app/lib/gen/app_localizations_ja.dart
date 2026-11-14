@@ -6461,7 +6461,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapKeyHeading => '端末が向いている方向';
 
   @override
-  String get mapKeyReach => '相手の推定到達距離';
+  String get mapKeyReach => 'ピアを聞き取れた距離';
 
   @override
   String get mapKeyDensity => 'セルあたりのノード数';

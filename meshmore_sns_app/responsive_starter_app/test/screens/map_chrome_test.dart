@@ -183,7 +183,7 @@ void main() {
       'Client radio',
       'You',
       'Which way the phone points',
-      'Estimated reach of a peer',
+      'How far away we heard a peer',
       // The density field is a hexagon lattice, so the key says cell: it said
       // "square" from the grid it replaced.
       'Nodes per cell',

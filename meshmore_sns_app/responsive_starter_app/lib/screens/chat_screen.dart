@@ -1705,6 +1705,18 @@ class _MessageRowState extends State<_MessageRow> {
                 : _compactSince(AppLocalizations.of(context), sinceLast!),
           );
 
+    // The action button sits in the free space beside the field, on the same
+    // side as the name tag for an incoming message and on the far side for our
+    // own. Long-press still works; this is the visible, accessible path.
+    final Widget actions = IconButton(
+      tooltip: AppLocalizations.of(context).chatMessageActions,
+      iconSize: 16,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      onPressed: _revealThenAct,
+      icon: Icon(Icons.more_vert, color: skin.color.fgMuted),
+    );
+
     final List<Widget> cells = <Widget>[
       Flexible(
         child: ConstrainedBox(
@@ -1713,6 +1725,8 @@ class _MessageRowState extends State<_MessageRow> {
           child: field,
         ),
       ),
+      const SizedBox(width: 4),
+      actions,
       if (tag != null) ...<Widget>[const SizedBox(width: 6), tag],
     ];
 
@@ -1760,15 +1774,37 @@ class _MessageRowState extends State<_MessageRow> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                if (sender != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(sender,
-                        style: TextStyle(
-                            color: senderColor,
-                            fontSize: skin.type.sizeSm,
-                            fontWeight: FontWeight.w700)),
-                  ),
+                // A visible way to act. The log mode has had this button since
+                // R20; the bubble and block modes were long-press only, which
+                // leaves three of eleven presets with no discoverable action and
+                // no accessible alternative to the gesture.
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (sender != null)
+                      Flexible(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Text(sender,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: senderColor,
+                                  fontSize: skin.type.sizeSm,
+                                  fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    IconButton(
+                      tooltip: AppLocalizations.of(context).chatMessageActions,
+                      iconSize: 16,
+                      padding: EdgeInsets.zero,
+                      visualDensity: VisualDensity.compact,
+                      constraints:
+                          const BoxConstraints(minWidth: 48, minHeight: 48),
+                      onPressed: _revealThenAct,
+                      icon: Icon(Icons.more_vert, color: metaColor),
+                    ),
+                  ],
+                ),
                 Text(body,
                     style: TextStyle(
                         color: bodyColor,

@@ -11275,7 +11275,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapKeyReach.
   ///
   /// In en, this message translates to:
-  /// **'Estimated reach of a peer'**
+  /// **'How far away we heard a peer'**
   String get mapKeyReach;
 
   /// No description provided for @mapKeyDensity.

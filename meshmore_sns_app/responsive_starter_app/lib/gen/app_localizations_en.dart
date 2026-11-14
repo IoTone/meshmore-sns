@@ -6746,7 +6746,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapKeyHeading => 'Which way the phone points';
 
   @override
-  String get mapKeyReach => 'Estimated reach of a peer';
+  String get mapKeyReach => 'How far away we heard a peer';
 
   @override
   String get mapKeyDensity => 'Nodes per cell';

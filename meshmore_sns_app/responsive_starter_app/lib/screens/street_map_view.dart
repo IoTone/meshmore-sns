@@ -491,36 +491,38 @@ class _StreetMapViewState extends State<StreetMapView> {
   late final CompassHeading _compass;
   late final bool _ownsCompass;
 
-  /// A peer's reach estimate in metres, from its signal and role.
-  /// The radius of a peer's reach ring, or null when nothing was measured.
+  /// How far away we actually heard this peer, in metres, or null.
   ///
-  /// A ring is a claim about *this peer*, so it needs evidence: a signal
-  /// strength, or at least the distance we heard it from. Without either, the
-  /// honest drawing is no ring — the old fallback drew the *radio's* link-budget
-  /// range, which for the USA/Canada preset is tens of kilometres, so every
-  /// unmeasured peer got a circle far larger than anything the map could show
-  /// and the picture read as a field of huge green bubbles rather than as a
-  /// mesh.
+  /// This used to be an *estimated reach*: the heard RSSI was inverted through a
+  /// log-distance path-loss model and the answer drawn as a circle around the
+  /// peer. Research on 2026-11-14 says that circle is not a fact and cannot be
+  /// made into one:
   ///
-  /// The cap is the second half of the same point: on the ground, with a mast at
-  /// one end and a handset at the other, a few kilometres is the practical
-  /// ceiling whatever the link budget says. A ring beyond that would describe the
-  /// radio rather than the peer, which is the self ring's job.
+  /// - the RSSI of a received packet describes the last hop, not the sender's
+  ///   own reach, and a packet relayed by a repeater carries the repeater's
+  ///   signal (the app's hop count proves it was relayed);
+  /// - inverting it needs a path-loss exponent that varies from 1.58 to 4 in
+  ///   published campaigns, so the same reading implies ranges a factor of two
+  ///   to four apart, and the best-fitting model in the largest field study
+  ///   left about 10 dB of residual;
+  /// - the reading also contains the peer's transmit power, antenna gain and
+  ///   feed loss, none of which the packet carries.
+  ///
+  /// No mainstream client draws a per-node radius for those reasons. Meshtastic
+  /// bands SNR against the preset's demodulation floor and calls RSSI
+  /// display-only, the MeshCore signal tester plots receptions at the position
+  /// where they happened, and MeshCore One draws a neighbour map.
+  ///
+  /// So the ring is the one thing the app can prove: the distance between the
+  /// peer's reported position and ours. With no position on either side there is
+  /// no ring, because there is nothing to draw a ring around.
   static const double kPeerReachCeilingMeters = 5000;
 
   double? _reachMeters(
       DiscoveredNode n, MeshcoreController mc, SelfInfo? si) {
     final double? distance = mc.distanceMetersTo(n.latitude!, n.longitude!);
-    if (n.rssi == null && distance == null) return null;
-    final double meters = estimatedPeerReachMeters(
-      rssiDbm: n.rssi?.toDouble(),
-      distanceMeters: distance,
-      peerType: n.type,
-      ourSpreadingFactor: si?.spreadingFactor ?? 7,
-      ourBandwidthKhz: si?.bandwidthKhz ?? 125.0,
-      ourTxPowerDbm: si?.txPowerDbm ?? 14,
-    );
-    return meters.clamp(200, kPeerReachCeilingMeters);
+    if (distance == null || !distance.isFinite || distance <= 0) return null;
+    return distance.clamp(200, kPeerReachCeilingMeters);
   }
 
   /// R25+3 / R61 — basemap source. Starts on OSM; the picker offers

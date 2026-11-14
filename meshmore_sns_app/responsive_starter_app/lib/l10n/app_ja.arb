@@ -2937,7 +2937,7 @@
   "mapKeyClient": "クライアント無線機",
   "mapKeyYou": "自分",
   "mapKeyHeading": "端末が向いている方向",
-  "mapKeyReach": "相手の推定到達距離",
+  "mapKeyReach": "ピアを聞き取れた距離",
   "mapKeyGeofence": "設定したフェンス",
   "mapKeyTrail": "自分の軌跡",
   "mapKeyMessage": "直前にメッセージを送ったノード",

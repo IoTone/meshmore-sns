@@ -4527,7 +4527,7 @@
   "mapKeyClient": "Client radio",
   "mapKeyYou": "You",
   "mapKeyHeading": "Which way the phone points",
-  "mapKeyReach": "Estimated reach of a peer",
+  "mapKeyReach": "How far away we heard a peer",
   "mapKeyDensity": "Nodes per cell",
   "mapKeyGeofence": "A fence you set",
   "mapKeyTrail": "Your own track",
