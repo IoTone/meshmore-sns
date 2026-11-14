@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../gen/app_localizations.dart';
+import '../legal/shipped_packages.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
 
@@ -47,6 +48,10 @@ class CreditsScreenState extends State<CreditsScreen> {
     final Set<String> seen = <String>{};
     await for (final LicenseEntry entry in LicenseRegistry.licenses) {
       for (final String pkg in entry.packages) {
+        // Only what ships. The registry carries the whole graph, including the
+        // SDK's build-time packages and every AAR a plugin pulls in, which is
+        // right for licensing and wrong for a page a reader looks at.
+        if (!kShippedPackages.contains(pkg)) continue;
         if (!seen.add(pkg)) continue;
         out.add(Credit(
           name: pkg,
