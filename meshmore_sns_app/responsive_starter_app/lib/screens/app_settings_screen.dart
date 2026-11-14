@@ -444,17 +444,9 @@ class AppSettingsScreen extends StatelessWidget {
                 children: <Widget>[_RadioPinBlock(mc: mc)],
               ),
             ),
-            SizedBox(height: context.skin.space.sectionGap),
-            // The terms text is a commitment; this row is how a user reads it
-            // again without having a way to un-agree retroactively.
-            ListTile(
-              leading: const Icon(Icons.privacy_tip_outlined),
-              title: Text(l.termsSettingsRow),
-              subtitle: Text(l.termsSettingsSubtitle,
-                  style: TextStyle(color: cs.onSurfaceVariant)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/settings/terms'),
-            ),
+            // The terms and privacy row is on About, where a reader looks for
+            // what the app is and what it promises. App settings is for things
+            // you change, and this page is read.
           ],
         ),
       ),

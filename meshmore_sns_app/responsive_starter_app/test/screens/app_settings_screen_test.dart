@@ -238,14 +238,15 @@ void main() {
   });
 
   group('terms', () {
-    testWidgets('the privacy text is reachable after it was agreed to',
-        (WidgetTester t) async {
+    testWidgets('the privacy text moved to About, and is not here', (
+      WidgetTester t,
+    ) async {
+      // It is a page you read, not a setting you change, so it lives beside what
+      // the app is. This asserts the move rather than deleting the case: a row
+      // that reappears here would be the same mistake twice.
       final _Host host = await _pump(t);
       final AppLocalizations l = strings(t);
-      await t.ensureVisible(find.text(l.termsSettingsRow));
-      await t.pump();
-      expect(find.text(l.termsSettingsRow), findsOneWidget);
-      expect(find.text(l.termsSettingsSubtitle), findsOneWidget);
+      expect(find.text(l.termsSettingsRow), findsNothing);
       await host.dispose(t);
     });
   });

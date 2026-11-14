@@ -3530,6 +3530,10 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return true;
   }
 
+  /// Reactions heard for a message this window no longer holds.
+  int _reactionsWithoutTarget = 0;
+  int get reactionsWithoutTarget => _reactionsWithoutTarget;
+
   /// Folds a reaction into the message it names.
   ///
   /// Returns false when nothing in this channel matches the hash, which is the
@@ -3600,6 +3604,15 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       final ({String hash, String emoji, String? senderName, bool isOpen})? rx =
           Reactions.parse(cm.text);
       if (rx != null && _applyReaction(cm.channelIdx, null, rx)) {
+        notifyListeners();
+        return;
+      }
+      if (rx != null) {
+        // A reaction whose target is not in this window is not a message: the
+        // line is an emoji and a hash, and showing it as chat text is what a
+        // stock client does and what makes a thread unreadable. It is counted
+        // instead, so the loss is visible in Diagnostics rather than silent.
+        _reactionsWithoutTarget++;
         notifyListeners();
         return;
       }

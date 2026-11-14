@@ -113,14 +113,21 @@ class AboutScreen extends StatelessWidget {
                 style: TextStyle(
                     color: skin.color.fgMuted,
                     fontStyle: FontStyle.italic)),
-            // No "Terms & Conditions" line until U5 actually builds a terms
-            // page: the string said "wired in U5" and was visibly a note to
-            // self on a shipped About page (seen on the device).
+            // The terms and privacy text lives here, beside what the app is,
+            // because that is where a reader looks for it. It was on App
+            // settings, which is a page for things you change.
             SizedBox(height: skin.space.screenEdge),
             // R10 — the only route a defect has to a person who can fix it:
             // there is no crash reporter and no analytics. The issue is
             // assembled on the phone, redacted, and sent only if the user sends
             // it in the tracker.
+            MmAction(
+              key: const ValueKey<String>('about-terms'),
+              icon: Icons.privacy_tip_outlined,
+              label: l.termsSettingsRow,
+              onPressed: () => context.push('/settings/terms'),
+            ),
+            SizedBox(height: skin.space.rowGap),
             MmAction(
               icon: Icons.bug_report_outlined,
               label: l.aboutReportProblem,
