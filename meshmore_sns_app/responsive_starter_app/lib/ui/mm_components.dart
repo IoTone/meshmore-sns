@@ -209,31 +209,31 @@ class MmReadout extends StatelessWidget {
             : null,
       ),
     );
-    // When the two cannot share a line they stop sharing one: the label takes
-    // its own line and the value follows it, right-aligned so the figures still
-    // line up down the panel. Measured with the real painter rather than
-    // guessed, so the switch happens exactly where the label would otherwise
-    // have been truncated.
+    // The columns belong to the panel, not to the text.
+    //
+    // This used to measure the label in the theme's own face and switch to two
+    // lines when it would not fit beside the value. The mono face differs per
+    // preset (Cascadia, JetBrains, Fira, Source Code Pro, Geist) and Studio's
+    // labels use the UI face instead, so the same tile was one line in Studio
+    // and two in Forest: the row height and the value's y-position changed with
+    // the theme, which is the inconsistency the owner reported as values that
+    // do not line up.
+    //
+    // The shape is now a function of the panel's width and the reader's text
+    // scale, both of which are the same in every theme. The label gets a fixed
+    // share of the row and ellipsises, so every value in a panel sits at one x.
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints c) {
-        final TextPainter p = TextPainter(
-          text: TextSpan(text: shown, style: labelStyle),
-          textDirection: Directionality.of(context),
-          maxLines: 1,
-          textScaler: MediaQuery.textScalerOf(context),
-        )..layout();
-        final bool fits = p.width + 8 + _valueMinWidth <= c.maxWidth;
-        p.dispose();
-        if (fits) {
+        final double scale = MediaQuery.textScalerOf(context).scale(1);
+        // Below this the label column would be too narrow to read, and past
+        // 1.3x text a one-line pair truncates the label to initials.
+        final bool oneLine = c.maxWidth >= 200 && scale <= 1.3;
+        if (oneLine) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
-              // Flexible, not fixed: at the accessibility floor a label in caps
-              // is wider than a 320 dp screen on its own, and a fixed child in
-              // a Row cannot give the width back (it overflowed by 96 px on
-              // NERV).
-              Flexible(child: labelText),
+              SizedBox(width: c.maxWidth * _labelShare, child: labelText),
               const SizedBox(width: 8),
               Expanded(child: valueText),
             ],
@@ -247,8 +247,12 @@ class MmReadout extends StatelessWidget {
     );
   }
 
-  /// The narrowest a value is given before the label gives up its line.
-  static const double _valueMinWidth = 56;
+  /// The share of a one-line readout the label column takes.
+  ///
+  /// Fixed, so the value's x-position is the same in every theme and every
+  /// panel of the same width. A label longer than its share ellipsises rather
+  /// than pushing the figure around.
+  static const double _labelShare = 0.45;
 }
 
 /// A technical value made of fields, laid out where its separators are.

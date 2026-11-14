@@ -12,6 +12,7 @@ import '../../meshcore/own_location.dart';
 import '../../maps/compass.dart';
 import '../../maps/radar_scale.dart';
 import '../../theme/mm_skin.dart';
+import '../../ui/mm_components.dart';
 import '../../theme/theme_controller.dart';
 import '../../theme/viz_palette.dart';
 import '../../ui/mm_audio_toggle.dart';
@@ -753,19 +754,15 @@ class _StatusRail extends StatelessWidget {
         spacing: 16,
         runSpacing: 6,
         children: <Widget>[
+          // A readout, not a sentence. These were `'label value'` in one
+          // RichText with a single space between them, so every figure sat one
+          // space after its own label and the column of values was ragged. A
+          // fixed cell width plus MmReadout puts every value on the same x, the
+          // same way the other dashboards do it.
           for (final ({String k, String v}) c in cells)
-            RichText(
-              text: TextSpan(
-                style: TextStyle(
-                    fontFamily: skin.type.monoFamily, fontSize: skin.type.sizeBody),
-                children: <TextSpan>[
-                  TextSpan(
-                      text: '${c.k} ',
-                      style: TextStyle(
-                          color: skin.color.fgMuted, fontSize: skin.type.sizeMicro)),
-                  TextSpan(text: c.v, style: TextStyle(color: skin.color.fg)),
-                ],
-              ),
+            SizedBox(
+              width: 168,
+              child: MmReadout(label: c.k, value: c.v),
             ),
           // Own pubkey — needed by anyone who wants to add you as a
           // contact before their DMs can route.

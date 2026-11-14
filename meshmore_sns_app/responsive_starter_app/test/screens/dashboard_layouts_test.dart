@@ -13,6 +13,7 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboards/dashboard_host.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
+import 'package:meshmore_sns_app/ui/mm_components.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 import 'package:meshmore_sns_app/util/prefs.dart';
 
@@ -63,8 +64,13 @@ Finder _numeral(AppLocalizations l, int peers, int known) =>
     find.text('$peers');
 Finder _seenOfKnown(AppLocalizations l, int peers, int known) =>
     find.text('$peers/$known');
-Finder _railCell(AppLocalizations l, int peers, int known) =>
-    find.textContaining('${l.dashPeers} $peers', findRichText: true);
+/// The hyperlocal footer is a readout now, not a sentence: the label and the
+/// figure are two Texts in one MmReadout, so the pair is found as a pair.
+Finder _railCell(AppLocalizations l, int peers, int known) => find.byWidgetPredicate(
+      (Widget w) =>
+          w is MmReadout && w.label == l.dashPeers && w.value == '$peers',
+      description: 'MmReadout "${l.dashPeers} $peers"',
+    );
 
 const List<_Layout> _layouts = <_Layout>[
   _Layout(name: 'nerv', preset: MmThemePreset.nerv, peers: _numeral),
