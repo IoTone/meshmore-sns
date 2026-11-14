@@ -810,3 +810,10 @@ const int kAutoAddSensor = 0x10;
 /// `autoadd_max_hops` is clamped to 64 by the firmware
 /// (`MyMesh.cpp:1981-1987`); the encoder refuses a larger value.
 const int kAutoAddMaxHops = 64;
+
+/// The largest record `CMD_SEND_RAW_DATA` can carry.
+///
+/// The firmware copies the payload into `Packet::payload`, which is
+/// `MAX_PACKET_PAYLOAD` = 184 bytes (`MeshCore.h:20`), and refuses anything
+/// larger with `ERR_CODE_TABLE_FULL` (`Mesh.cpp:589-600`).
+const int kRawDataMaxPayload = 184;

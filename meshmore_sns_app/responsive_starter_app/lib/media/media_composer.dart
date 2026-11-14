@@ -410,6 +410,7 @@ class _MediaComposerState extends State<MediaComposer> {
           MediaSendRefusal.mediaOffOnPublic => l.mediaOffOnPublic,
           MediaSendRefusal.payloadUnusable => l.mediaPayloadUnusable,
           MediaSendRefusal.channelUnknown => l.mediaChannelUnknown,
+          MediaSendRefusal.fullPictureOnChannel => l.mediaFullPictureOnChannel,
         },
       );
 

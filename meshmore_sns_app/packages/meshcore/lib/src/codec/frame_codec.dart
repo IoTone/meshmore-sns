@@ -242,6 +242,64 @@ abstract final class MeshcoreFrameCodec {
         .build();
   }
 
+  /// `CMD_SEND_RAW_DATA` (0x19): a raw record to one contact, over a path.
+  ///
+  /// `19 [pathLen] [path] [payload]`, where the firmware reads `pathLen` as a
+  /// signed byte and **refuses a flood**: `path_len >= 0` is required and a
+  /// negative one answers `ERR_CODE_UNSUPPORTED_CMD` (`MyMesh.cpp:1519-1533`).
+  /// That refusal is the reason this frame is the only honest way to send a
+  /// picture that must never be broadcast: the firmware will not flood it even
+  /// if a caller asks.
+  ///
+  /// The payload is the record itself, up to `MAX_PACKET_PAYLOAD` (184 bytes,
+  /// `MeshCore.h:20`), and the firmware wraps it in a `PAYLOAD_TYPE_RAW_CUSTOM`
+  /// packet (`Mesh.cpp:589-600`). There is no data-type field on this frame, so
+  /// a caller that needs one carries it inside the payload.
+  static Uint8List sendRawData({
+    required List<int> path,
+    required List<int> payload,
+  }) {
+    if (path.isEmpty) {
+      throw const ChannelDataException(
+        ChannelDataRefusal.invalidPathLen,
+        field: 'path',
+        actual: 0,
+        maximum: kMaxPathSize,
+      );
+    }
+    final PathLen packed = PathLen(path.length);
+    if (!packed.isValid) {
+      throw ChannelDataException(
+        ChannelDataRefusal.invalidPathLen,
+        field: 'path',
+        actual: path.length,
+        maximum: kMaxPathSize,
+      );
+    }
+    if (payload.length < 4) {
+      throw ChannelDataException(
+        ChannelDataRefusal.blobTooLongForDatagram,
+        field: 'payload',
+        actual: payload.length,
+        maximum: kRawDataMaxPayload,
+      );
+    }
+    if (payload.length > kRawDataMaxPayload) {
+      throw ChannelDataException(
+        ChannelDataRefusal.blobTooLongForDatagram,
+        field: 'payload',
+        actual: payload.length,
+        maximum: kRawDataMaxPayload,
+      );
+    }
+    return (FrameBuilder()
+          ..u8(MeshcoreCommand.sendRawData.code)
+          ..u8(path.length)
+          ..raw(path)
+          ..raw(payload))
+        .build();
+  }
+
   /// `CMD_REMOVE_CONTACT` (0x0F): remove a contact by 32-byte public key.
   static Uint8List removeContact(Uint8List publicKey) {
     return (FrameBuilder()

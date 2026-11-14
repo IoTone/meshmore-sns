@@ -613,6 +613,7 @@ class _VoiceComposerState extends State<VoiceComposer> {
           MediaSendRefusal.mediaOffOnPublic => l.mediaOffOnPublic,
           MediaSendRefusal.payloadUnusable => l.mediaPayloadUnusable,
           MediaSendRefusal.channelUnknown => l.mediaChannelUnknown,
+          MediaSendRefusal.fullPictureOnChannel => l.mediaFullPictureOnChannel,
         },
       );
 

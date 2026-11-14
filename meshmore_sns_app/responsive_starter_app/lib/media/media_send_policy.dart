@@ -14,6 +14,13 @@ enum MediaSendRefusal {
 
   /// The channel is not known, so nothing can be said about who would see it.
   channelUnknown,
+
+  /// A full picture was offered to a channel. A picture is announced with a
+  /// one-datagram preview and then sent to one person who asked for it, over a
+  /// direct record. A channel datagram is flooded to every radio in range, and
+  /// five to twenty of them is everyone's airtime spent on a picture most of
+  /// them did not ask for.
+  fullPictureOnChannel,
 }
 
 /// The send-path gate for media on a channel.
@@ -55,8 +62,12 @@ final class MediaSendPolicy {
   MediaSendRefusal? refusalFor({
     required List<int>? channelPsk,
     required int payloadBytes,
+    /// True for a full picture, which may never travel on a channel. A preview
+    /// is one datagram and is the announcement, so it is not this.
+    bool fullPicture = false,
   }) {
     if (payloadBytes <= 0) return MediaSendRefusal.payloadUnusable;
+    if (fullPicture) return MediaSendRefusal.fullPictureOnChannel;
     return channelRefusalFor(channelPsk: channelPsk);
   }
 }

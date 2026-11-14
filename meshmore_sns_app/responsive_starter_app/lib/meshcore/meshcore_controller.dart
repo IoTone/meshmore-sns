@@ -1602,6 +1602,67 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return result;
   }
 
+  /// Send a raw record to one contact over a known path (`0x19`).
+  ///
+  /// This is the only frame that cannot be flooded: the firmware requires a
+  /// path and answers `ERR_CODE_UNSUPPORTED_CMD` for a flood
+  /// (`MyMesh.cpp:1519-1533`). That is exactly what a picture needs, because a
+  /// photo must never be broadcast to a channel. A caller with no path has no
+  /// way to send, which is the honest answer rather than a flood.
+  ///
+  /// Serialised with the channel datagrams: the radio's answer carries no tag,
+  /// so two in flight could not be told apart.
+  Future<ChannelDataSendResult> sendRawData({
+    required List<int> path,
+    required List<int> payload,
+  }) {
+    final Future<ChannelDataSendResult> result =
+        _channelDataTail.then((_) => _sendRawData(path: path, payload: payload));
+    _channelDataTail = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
+  }
+
+  Future<ChannelDataSendResult> _sendRawData({
+    required List<int> path,
+    required List<int> payload,
+  }) async {
+    if (!isReady) {
+      return const ChannelDataSendResult(ChannelDataSendStatus.notReady);
+    }
+    final Uint8List frame;
+    try {
+      frame = MeshcoreFrameCodec.sendRawData(path: path, payload: payload);
+    } on ChannelDataException catch (e) {
+      return ChannelDataSendResult(
+        ChannelDataSendStatus.refusedLocally,
+        refusal: e.refusal,
+      );
+    }
+    final Completer<MeshcoreInbound> answer = Completer<MeshcoreInbound>();
+    _channelDataAnswer = answer;
+    _registerMarker(_channelDataMarker, CommandAnswer.ok);
+    try {
+      await send(frame, gated: true);
+      final MeshcoreInbound reply = await answer.future
+          .timeout(_channelDataTimeoutOverride ?? _channelDataTimeout);
+      if (reply is OkFrame) {
+        return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
+      }
+      return ChannelDataSendResult(
+        ChannelDataSendStatus.refusedByRadio,
+        errorCode: reply is ErrorFrame ? reply.code : null,
+      );
+    } on TimeoutException {
+      return const ChannelDataSendResult(ChannelDataSendStatus.noAnswer);
+    } catch (_) {
+      // A throw from the link is the link being gone, which the caller reads
+      // the same way as no answer: the record may or may not have gone out.
+      return const ChannelDataSendResult(ChannelDataSendStatus.noAnswer);
+    } finally {
+      _channelDataAnswer = null;
+    }
+  }
+
   Future<ChannelDataSendResult> _sendChannelData({
     required int channelIdx,
     required int dataType,

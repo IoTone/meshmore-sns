@@ -300,6 +300,8 @@
   "aboutVersion": "v{version}",
   "aboutReportProblem": "問題を報告",
   "aboutReportProblemSub": "アプリとラジオの情報を入れた状態で課題トラッカーを開きます。そこで送信するまで何も送られません。",
+  "creditsTitle": "クレジット",
+  "creditsIntro": "このアプリを構成するすべてのものを1つの一覧にしています。各行にコンポーネント名、ライセンス、出典を記載しています。",
   "aboutLicensesButton": "オープンソースライセンスと権利表示",
   "aboutAttributions": "MeshCore ドキュメント（MIT）、OpenStreetMap 地図データ（ODbL）、Saira・JetBrains Mono フォント（OFL）を含みます。",
   "@aboutVersion": {
@@ -2359,6 +2361,7 @@
   "mediaSend": "送信",
   "mediaRetrySend": "再試行",
   "mediaClose": "閉じる",
+  "mediaFullPictureOnChannel": "写真は小さなプレビューで通知され、希望した1人にのみ送信されます。チャンネルにブロードキャストされることはありません。",
   "mediaOffOnPublic": "パブリックチャンネルではメディアは送信できません。プライベートなチャンネルで送ってください。",
   "mediaPayloadUnusable": "送信する内容がありません。",
   "mediaChannelUnknown": "チャンネルが選択されていないため、送信先がありません。",

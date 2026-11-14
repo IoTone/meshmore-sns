@@ -70,13 +70,18 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
-  testWidgets('the licence page opens', (WidgetTester t) async {
+  testWidgets('the credits screen is what the licence button opens',
+      (WidgetTester t) async {
+    // Flutter's own licence page groups by package and knows nothing about the
+    // native libraries, the fonts or the map data, which are the components
+    // with real obligations. The button goes to the app's own flat list now.
     await pump(t);
     final AppLocalizations l =
         AppLocalizations.of(t.element(find.byType(AboutScreen)));
-    await t.tap(find.text(l.aboutLicensesButton));
-    await t.pumpAndSettle();
-    expect(find.byType(LicensePage), findsOneWidget);
+    final Finder button = find.byWidgetPredicate(
+        (Widget w) => w is MmAction && w.label == l.aboutLicensesButton);
+    expect(button, findsOneWidget);
+    expect(t.widget<MmAction>(button).onPressed, isNotNull);
   });
 
   testWidgets('replaying the intro is offered only once it has been seen',

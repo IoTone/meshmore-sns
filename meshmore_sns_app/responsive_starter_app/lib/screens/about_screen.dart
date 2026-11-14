@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -143,17 +144,14 @@ class AboutScreen extends StatelessWidget {
                   : null,
             ),
             SizedBox(height: skin.space.rowGap),
+            // The app's own credits screen, not Flutter's licence page: that
+            // page groups by package and knows nothing about the native
+            // libraries, the fonts or the map data, which are the components
+            // with real obligations.
             MmAction(
               icon: Icons.description_outlined,
               label: l.aboutLicensesButton,
-              onPressed: () => showLicensePage(
-                context: context,
-                applicationName: l.appName,
-                applicationVersion: l.aboutVersion(app.getAppVersion()),
-                // The licence is the legal line now that the copyright notice
-                // is gone; the page still carries the attributions below.
-                applicationLegalese: l.aboutLicense,
-              ),
+              onPressed: () => context.push('/settings/credits'),
             ),
             SizedBox(height: skin.space.rowGap),
             Text(l.aboutAttributions,

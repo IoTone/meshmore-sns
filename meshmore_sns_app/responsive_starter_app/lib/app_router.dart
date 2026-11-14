@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'screens/app_settings_screen.dart';
 import 'screens/places_screen.dart';
 import 'screens/about_screen.dart';
+import 'screens/credits_screen.dart';
 import 'screens/docs_hub_screen.dart';
 import 'screens/battery_screen.dart';
 import 'screens/blocked_keys_screen.dart';
@@ -179,6 +180,10 @@ final GoRouter appRouter = GoRouter(
     // R85/R86 - the information page and the docs hub are static content,
     // so they live under Settings as peers instead of owning two of the
     // six views.
+    GoRoute(
+      path: '/settings/credits',
+      builder: (_, __) => const CreditsScreen(),
+    ),
     GoRoute(
       path: '/settings/about',
       builder: (_, __) => const AboutScreen(),

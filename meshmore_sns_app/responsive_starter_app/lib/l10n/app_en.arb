@@ -329,6 +329,8 @@
   "aboutVersion": "v{version}",
   "aboutReportProblem": "Report a problem",
   "aboutReportProblemSub": "Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.",
+  "creditsTitle": "Credits",
+  "creditsIntro": "Everything this app is built out of, in one list. Each row names the component, its licence and where it comes from.",
   "aboutLicensesButton": "Open-source licenses & attributions",
   "aboutAttributions": "Includes MeshCore documentation (MIT), OpenStreetMap map data (ODbL), and the Saira & JetBrains Mono fonts (OFL).",
   "@aboutVersion": {
@@ -3433,6 +3435,7 @@
   "@mediaRetrySend": {},
   "mediaClose": "Close",
   "@mediaClose": {},
+  "mediaFullPictureOnChannel": "A picture is announced with one small preview and then sent to one person who asks for it. It is never broadcast to a channel.",
   "mediaOffOnPublic": "Media stays off on the Public channel. Send it on a private channel instead.",
   "@mediaOffOnPublic": {},
   "mediaPayloadUnusable": "There is nothing to send.",

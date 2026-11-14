@@ -644,6 +644,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.';
 
   @override
+  String get creditsTitle => 'Credits';
+
+  @override
+  String get creditsIntro =>
+      'Everything this app is built out of, in one list. Each row names the component, its licence and where it comes from.';
+
+  @override
   String get aboutLicensesButton => 'Open-source licenses & attributions';
 
   @override
@@ -5131,6 +5138,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaClose => 'Close';
+
+  @override
+  String get mediaFullPictureOnChannel =>
+      'A picture is announced with one small preview and then sent to one person who asks for it. It is never broadcast to a channel.';
 
   @override
   String get mediaOffOnPublic =>

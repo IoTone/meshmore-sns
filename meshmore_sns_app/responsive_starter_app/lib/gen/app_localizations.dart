@@ -1196,6 +1196,18 @@ abstract class AppLocalizations {
   /// **'Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.'**
   String get aboutReportProblemSub;
 
+  /// No description provided for @creditsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Credits'**
+  String get creditsTitle;
+
+  /// No description provided for @creditsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything this app is built out of, in one list. Each row names the component, its licence and where it comes from.'**
+  String get creditsIntro;
+
   /// No description provided for @aboutLicensesButton.
   ///
   /// In en, this message translates to:
@@ -8649,6 +8661,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close'**
   String get mediaClose;
+
+  /// No description provided for @mediaFullPictureOnChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'A picture is announced with one small preview and then sent to one person who asks for it. It is never broadcast to a channel.'**
+  String get mediaFullPictureOnChannel;
 
   /// No description provided for @mediaOffOnPublic.
   ///

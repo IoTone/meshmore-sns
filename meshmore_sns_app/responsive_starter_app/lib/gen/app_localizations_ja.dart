@@ -614,6 +614,13 @@ class AppLocalizationsJa extends AppLocalizations {
       'アプリとラジオの情報を入れた状態で課題トラッカーを開きます。そこで送信するまで何も送られません。';
 
   @override
+  String get creditsTitle => 'クレジット';
+
+  @override
+  String get creditsIntro =>
+      'このアプリを構成するすべてのものを1つの一覧にしています。各行にコンポーネント名、ライセンス、出典を記載しています。';
+
+  @override
   String get aboutLicensesButton => 'オープンソースライセンスと権利表示';
 
   @override
@@ -4925,6 +4932,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mediaClose => '閉じる';
+
+  @override
+  String get mediaFullPictureOnChannel =>
+      '写真は小さなプレビューで通知され、希望した1人にのみ送信されます。チャンネルにブロードキャストされることはありません。';
 
   @override
   String get mediaOffOnPublic =>
