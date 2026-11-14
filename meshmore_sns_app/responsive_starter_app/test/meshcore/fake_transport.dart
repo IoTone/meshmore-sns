@@ -17,6 +17,11 @@ class FakeBackgroundKeepalive implements BackgroundKeepalive {
   Future<void> stop() async => stops++;
   @override
   Future<bool> get isRunning async => starts > stops;
+
+  /// A fake stands in for a platform that has a service, so the controller's
+  /// watchdog runs in the tests that exercise it.
+  @override
+  bool get supported => true;
 }
 
 /// Programmable in-memory [MeshcoreTransport] for hardware-free tests.

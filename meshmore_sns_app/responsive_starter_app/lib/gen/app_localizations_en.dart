@@ -481,6 +481,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsBackgroundTitle => 'Stay connected in background';
 
   @override
+  String get settingsBackgroundNotRunning =>
+      'On, but the service is not running. Open the app again to restart it.';
+
+  @override
   String get settingsBackgroundOn =>
       'Messages arrive while the app is closed. After a phone restart, open the app to reconnect.';
 
@@ -3796,9 +3800,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Viewed tiles only: the server forbids bulk download';
 
   @override
-  String get mapsSourcePick => 'Basemap';
-
-  @override
   String get packStateDownloading => 'Downloading';
 
   @override
@@ -5251,6 +5252,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geofenceDrawStarted => 'Drawing a fence.';
+
+  @override
+  String get geofenceDeleteConfirmTitle => 'Delete this fence?';
+
+  @override
+  String get geofenceDeleteConfirmBody =>
+      'Its crossings go with it. The area itself is not changed.';
+
+  @override
+  String get geofenceClearLogConfirmTitle => 'Clear the crossing log?';
+
+  @override
+  String get geofenceClearLogConfirmBody =>
+      'Every recorded crossing is deleted. The fences stay.';
 
   @override
   String get geofenceTitle => 'Geofences';

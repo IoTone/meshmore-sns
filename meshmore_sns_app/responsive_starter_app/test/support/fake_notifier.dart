@@ -22,6 +22,16 @@ class FakeNotifier implements Notifier {
   @override
   Future<void> showDigest(MessageDigest d) async => digests.add(d);
 
+  /// How many times the batch line was dropped, so a test can prove a new
+  /// catch-up window is allowed to alert again.
+  int digestClears = 0;
+
+  @override
+  Future<void> clearDigest() async {
+    digestClears++;
+    digests.clear();
+  }
+
   @override
   Future<void> cancelFor(String payload) async => cancelled.add(payload);
 
@@ -38,5 +48,6 @@ class FakeNotifier implements Notifier {
     shown.clear();
     cancelled.clear();
     digests.clear();
+    digestClears = 0;
   }
 }

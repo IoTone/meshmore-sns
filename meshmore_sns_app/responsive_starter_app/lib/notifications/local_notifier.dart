@@ -281,6 +281,20 @@ class LocalNotifier implements Notifier {
     _digestPayload = d.payload;
   }
 
+  /// Drop the batch entry so the next burst can alert again.
+  ///
+  /// The digest is one id with `onlyAlertOnce: true`, which is what makes a
+  /// burst one sound instead of twelve. The cost was that every burst after the
+  /// first rewrote the same entry silently until the user opened the thread it
+  /// pointed at, so a reader who never opened that thread got one audible
+  /// digest and then nothing. Clearing it when a new catch-up window opens
+  /// keeps "one sound per burst" and removes "silent forever".
+  @override
+  Future<void> clearDigest() async {
+    _digestPayload = '';
+    await _plugin.cancel(id: digestId);
+  }
+
   /// Two bundles ship, so anything but Japanese is English.
   AppLocalizations get _strings {
     final Locale device = WidgetsBinding.instance.platformDispatcher.locale;

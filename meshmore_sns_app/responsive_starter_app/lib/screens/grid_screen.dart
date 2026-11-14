@@ -141,10 +141,15 @@ class GridScreen extends StatefulWidget {
   /// for its read marks.
   final bool? isCurrent;
 
-  /// The selected view, held for the life of the process: it survives
-  /// leaving and re-entering the tab (the PageView disposes the state),
-  /// but every app launch starts back on the radar (issue #4). Kept
-  /// out of [GridPrefsStore] deliberately for that reason.
+  /// The selected view, held for the life of the process so it survives
+  /// leaving and re-entering the tab (the PageView disposes the state), and
+  /// written to [GridPrefsStore] so it also survives a restart.
+  ///
+  /// It used to be session-only, on the reasoning that every launch should open
+  /// on the radar. The owner asked for the opposite on 2026-11-14: a reader who
+  /// works in the mesh tree or the heat map should come back to it. A fresh
+  /// install still opens on the radar, because that is what an absent
+  /// preference means.
   static _GridViewMode _sessionMode = _GridViewMode.radial;
 
   /// R109 — the name this tab takes in [shellDragClaim] while its Swipe ⇄ Pan
@@ -350,6 +355,17 @@ class _GridScreenState extends State<GridScreen>
           _scaleIndex = p.scaleIndex;
         }
         _interval = Duration(seconds: p.intervalSec.clamp(1, 600));
+        // The view and the legend come back with the scale and the cadence.
+        // An unknown name (a view that was removed) falls back to the radar
+        // rather than to a blank screen.
+        final _GridViewMode? saved = _GridViewMode.values
+            .where((_GridViewMode m) => m.name == p.mode)
+            .firstOrNull;
+        if (saved != null) {
+          _viewMode = saved;
+          GridScreen._sessionMode = saved;
+        }
+        _legendVisible = p.legendVisible;
         // The dial's revolution follows the interval that was just restored,
         // and the poll timer is retimed with it so the two cannot disagree.
         _tick
@@ -370,6 +386,8 @@ class _GridScreenState extends State<GridScreen>
     GridPrefsStore.save(GridPrefs(
       scaleIndex: _scaleIndex,
       intervalSec: _interval.inSeconds,
+      mode: _viewMode.name,
+      legendVisible: _legendVisible,
     ));
   }
 
@@ -378,6 +396,7 @@ class _GridScreenState extends State<GridScreen>
     GridScreen._sessionMode = m;
     _publishDragClaim();
     _syncCompassToView();
+    _savePrefs();
   }
 
   /// Run the magnetometer (and the quarter-turn click) only while a view that
@@ -977,8 +996,10 @@ class _GridScreenState extends State<GridScreen>
                     icon: Icon(_legendVisible
                         ? Icons.legend_toggle
                         : Icons.legend_toggle_outlined),
-                    onPressed: () =>
-                        setState(() => _legendVisible = !_legendVisible),
+                    onPressed: () {
+                      setState(() => _legendVisible = !_legendVisible);
+                      _savePrefs();
+                    },
                   ),
               ],
             ),

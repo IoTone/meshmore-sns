@@ -136,6 +136,20 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
         raised.add(GeofenceAlert(fence: fence, event: e, at: now));
       }
     }
+    // The inside state is part of the fence now, so a restart resumes where the
+    // reader actually is. Written whenever it changed, not only on a crossing:
+    // a fence that was entered before the app closed and left while it was
+    // closed is a leave the next sample reports, and the state has to match.
+    bool stateChanged = false;
+    for (int i = 0; i < _fences.length; i++) {
+      final StoredGeofence f = _fences[i];
+      final bool now = _watches[f.id]?.isInside ?? false;
+      if (now != f.inside) {
+        _fences[i] = f.copyWith(inside: now);
+        stateChanged = true;
+      }
+    }
+    if (stateChanged) unawaited(GeofenceStore.save(_fences));
     if (raised.isEmpty) return const <GeofenceAlert>[];
     _alerts.addAll(raised);
     if (_alerts.length > alertCapacity) {
@@ -285,7 +299,8 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
       ..clear()
       ..addEntries(<MapEntry<String, GeofenceWatch>>[
         for (final StoredGeofence f in _fences)
-          MapEntry<String, GeofenceWatch>(f.id, GeofenceWatch(f.toEngine())),
+          MapEntry<String, GeofenceWatch>(
+              f.id, GeofenceWatch(f.toEngine(), inside: f.inside)),
       ]);
   }
 }

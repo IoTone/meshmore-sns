@@ -118,6 +118,7 @@ class NotificationService {
     required this.channelName,
     this.isBlocked,
     NotificationEffects effects = const SilentNotificationEffects(),
+    this.catchUpMinGap = const Duration(seconds: 20),
   }) : _effects = effects;
 
   /// One notification per inbound message, never per transport event.
@@ -293,11 +294,41 @@ class NotificationService {
   /// from then on a message is announced on its own — which is what "only when
   /// already connected" means: connected *and* caught up.
   void onLinkReady() {
+    // A reconnect is not automatically a backlog. The BLE link flaps, and
+    // treating every flap as a queue meant ordinary traffic arriving just after
+    // a reconnect was counted into a silent digest instead of announced. Only
+    // an absence long enough to have queued something counts.
+    final DateTime now = DateTime.now();
+    final DateTime? down = _linkDownAt;
+    _linkDownAt = null;
+    final bool wasAway = down != null && now.difference(down) >= catchUpMinGap;
+    if (!wasAway) {
+      _catchingUp = false;
+      return;
+    }
     _catchingUp = true;
     _catchUpCount = 0;
     _catchUpIdleTimer?.cancel();
     _catchUpMaxTimer?.cancel();
     _catchUpMaxTimer = Timer(catchUpMax, _flushCatchUp);
+    // A new window may alert: the previous digest is dropped so its
+    // `onlyAlertOnce` cannot silence this burst.
+    unawaited(notifier.clearDigest());
+  }
+
+  /// When the link last left ready, so a reconnect can tell a flap from an
+  /// absence.
+  DateTime? _linkDownAt;
+
+  /// The shortest absence that counts as a backlog. Below this the link merely
+  /// blinked, and the messages are ordinary traffic. Injectable so a test can
+  /// exercise the window without waiting twenty seconds.
+  final Duration catchUpMinGap;
+
+  /// Called when the link leaves ready.
+  void onLinkDown() {
+    _linkDownAt = DateTime.now();
+    _catchingUp = false;
   }
 
   /// Whether a queue is being counted right now. Read by tests and by anything

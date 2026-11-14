@@ -39,6 +39,13 @@ abstract interface class Notifier {
   /// place instead of adding another entry.
   Future<void> showDigest(MessageDigest d);
 
+  /// Drops the batch line so the next burst can alert again.
+  ///
+  /// The digest is one id with `onlyAlertOnce`, which is what makes a burst one
+  /// sound. Without this, every burst after the first rewrote that entry
+  /// silently until the user opened the thread it pointed at.
+  Future<void> clearDigest();
+
   /// Removes the notification a thread may still be showing.
   Future<void> cancelFor(String payload);
 

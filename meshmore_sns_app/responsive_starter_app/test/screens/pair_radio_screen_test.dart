@@ -209,9 +209,9 @@ void main() {
     expect(transport.sent, isNotEmpty,
         reason: 'the flow must open the radio it was asked to open');
     transport.emit(selfInfoFrame());
-    await _pumpUntil(t, find.text('Radio connected'));
+    await _pumpUntil(t, find.text('MeshCore radio connected'));
 
-    expect(find.text('Radio connected'), findsOneWidget);
+    expect(find.text('MeshCore radio connected'), findsOneWidget);
     expect(find.textContaining('answered'), findsOneWidget,
         reason: 'the confirmation names the radio that answered, so the user '
             'knows which one they got');

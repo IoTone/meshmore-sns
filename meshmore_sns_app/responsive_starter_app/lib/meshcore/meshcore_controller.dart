@@ -201,7 +201,10 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         unawaited(requestTuningParams());
         // Keep the process alive in the background so the link +
         // drain survive Doze (Android only; no-op elsewhere).
-        if (_bgKeepaliveEnabled) unawaited(_startKeepalive());
+        if (_bgKeepaliveEnabled) {
+          unawaited(_startKeepalive());
+          _syncKeepaliveWatchdog();
+        }
         // R33 — if the user has a saved default channel slot,
         // switch to it now. The device persists its own active
         // slot too; this preference wins on app launch so a
@@ -443,11 +446,67 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// enabled (R17 / U8). No-op on non-Android.
   bool get backgroundKeepaliveEnabled => _bgKeepaliveEnabled;
 
+  /// Whether the keep-alive service is actually running, as opposed to being
+  /// switched on. The settings row used to say "on" whenever the preference was
+  /// on and no Dart exception had been recorded, which is not the same thing:
+  /// the plugin can start and immediately stop the service natively (a refused
+  /// `startForeground` on Android 14+) and still return success.
+  bool _keepaliveRunning = false;
+  bool get keepaliveRunning => _keepaliveRunning;
+
+  /// Re-checks the service and restarts it if it is gone.
+  ///
+  /// The start used to happen exactly once, on the `ready` edge, with no retry:
+  /// Android 12+ refuses a foreground-service start from the background, and
+  /// this app auto-connects before the first frame, so that one attempt could
+  /// land while the activity was not yet resumed. One refusal then left the
+  /// session unprotected until the next launch, and the only trace was a
+  /// subtitle in App settings.
+  Timer? _keepaliveWatchdog;
+
+  void _syncKeepaliveWatchdog() {
+    final bool want = _bgKeepaliveEnabled && isReady && _keepalive.supported;
+    if (!want) {
+      _keepaliveWatchdog?.cancel();
+      _keepaliveWatchdog = null;
+      return;
+    }
+    _keepaliveWatchdog ??= Timer.periodic(const Duration(seconds: 60), (_) {
+      unawaited(_ensureKeepalive());
+    });
+  }
+
+  Future<void> _ensureKeepalive() async {
+    if (!_bgKeepaliveEnabled || !isReady) return;
+    try {
+      final bool running = await _keepalive.isRunning;
+      if (!running) {
+        await _keepalive.start();
+      }
+      final bool now = await _keepalive.isRunning;
+      if (now != _keepaliveRunning || (now && _keepaliveFailure != null)) {
+        _keepaliveRunning = now;
+        // A service that is running is the answer to the refusal that was
+        // recorded earlier, so the failure clears with it.
+        if (now) _keepaliveFailure = null;
+        notifyListeners();
+      }
+    } catch (error) {
+      final String message = AppErrors.firstLine(error);
+      AppErrors.record(error, StackTrace.current, where: 'keepalive');
+      if (_keepaliveFailure != message) {
+        _keepaliveFailure = message;
+        notifyListeners();
+      }
+    }
+  }
+
   /// Starts the keep-alive service, recording a refusal instead of letting it
   /// escape as an unhandled error.
   Future<void> _startKeepalive() async {
     try {
       await _keepalive.start();
+      _keepaliveRunning = await _keepalive.isRunning;
       if (_keepaliveFailure != null) {
         _keepaliveFailure = null;
         notifyListeners();
@@ -468,8 +527,12 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     await BackgroundKeepalivePrefs.setEnabled(v);
     if (v && isReady) {
       await _startKeepalive();
+      _syncKeepaliveWatchdog();
     } else if (!v) {
+      _keepaliveWatchdog?.cancel();
+      _keepaliveWatchdog = null;
       await _keepalive.stop();
+      _keepaliveRunning = false;
     }
   }
 
@@ -6224,8 +6287,11 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     if (_manualDisconnect) return; // user chose to stay disconnected
     // A refused service start is retryable once the app is in the foreground,
     // which is the only place Android allows it.
-    if (_bgKeepaliveEnabled && _keepaliveFailure != null && isReady) {
-      unawaited(_startKeepalive());
+    if (_bgKeepaliveEnabled && isReady) {
+      // Every resume is a chance Android will allow the start, and a chance to
+      // notice the service died while the app was away.
+      unawaited(_ensureKeepalive());
+      _syncKeepaliveWatchdog();
     }
     if (isReady) {
       _drainStart(backlog: true); // buffered while backgrounded
@@ -6629,6 +6695,12 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     _battHistorySaveTimer?.cancel();
     _telemPollTimer?.cancel();
     _meshbookSaveTimer?.cancel();
+    // The keep-alive watchdog is a periodic timer, so it must not outlive the
+    // controller: a test that connects and disposes would otherwise leave a
+    // pending timer behind, and a real app would keep waking for a link that is
+    // gone.
+    _keepaliveWatchdog?.cancel();
+    _keepaliveWatchdog = null;
     // The contact table has its own debounce, so closing the app inside the
     // three-second window must still write it: a restart would otherwise ask
     // the radio only for changes since a token describing a table that was

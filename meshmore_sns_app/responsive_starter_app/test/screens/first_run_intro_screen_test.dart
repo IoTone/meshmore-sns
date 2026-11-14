@@ -113,7 +113,7 @@ void main() {
     // The offline path is demo mode by name now, not a skip: the label the
     // screen renders is `firstRunSkip`, and the state it records is what makes
     // the launch stop reaching for a paired radio.
-    await t.tap(find.text('Explore in demo mode (no radio)'));
+    await t.tap(find.text('Explore in demo mode (no MeshCore radio)'));
     await t.pumpAndSettle();
 
     expect(fr.done, isTrue);
@@ -129,7 +129,7 @@ void main() {
     final _CountingController mc = _CountingController();
     await t.pumpWidget(_host(fr, perms, mc: mc));
 
-    await t.tap(find.text('Explore in demo mode (no radio)'));
+    await t.tap(find.text('Explore in demo mode (no MeshCore radio)'));
     await t.pumpAndSettle();
 
     expect(mc.disconnects, 1,

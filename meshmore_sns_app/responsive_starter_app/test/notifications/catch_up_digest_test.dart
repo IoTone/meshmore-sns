@@ -75,6 +75,9 @@ void main() {
       ownPubKeyHex: () => 'aabbccdd',
       peerDisplayName: (String key) => 'Bea',
       channelName: (int slot) => slot == 0 ? 'Public' : 'CH $slot',
+      // A test cannot wait out a real absence, and the rule under test is the
+      // window's behaviour, not its length.
+      catchUpMinGap: Duration.zero,
     )
       ..effects = effects
       ..catchUpIdle = const Duration(milliseconds: 30)
@@ -102,6 +105,7 @@ void main() {
       Future<void>.delayed(const Duration(milliseconds: 80));
 
   test('a catch-up queue becomes one line with a count', () async {
+    service.onLinkDown();
     service.onLinkReady();
     for (int i = 0; i < 12; i++) {
       await say(i);
@@ -117,6 +121,7 @@ void main() {
   });
 
   test('the queue is one cue, not one per message', () async {
+    service.onLinkDown();
     service.onLinkReady();
     for (int i = 0; i < 6; i++) {
       await say(i);
@@ -128,6 +133,7 @@ void main() {
 
   test('a message after the queue has settled is announced on its own',
       () async {
+    service.onLinkDown();
     service.onLinkReady();
     await say(1);
     await settle();
@@ -141,6 +147,7 @@ void main() {
   });
 
   test('nothing queued means no line at all', () async {
+    service.onLinkDown();
     service.onLinkReady();
     await settle();
     expect(notifier.digests, isEmpty);
@@ -148,6 +155,7 @@ void main() {
   });
 
   test('a direct message in the queue lands in the queue line', () async {
+    service.onLinkDown();
     service.onLinkReady();
     direct.add(ChatMessage(
       id: 'd1',
@@ -164,6 +172,7 @@ void main() {
   });
 
   test('an SOS in the queue is still its own loud entry', () async {
+    service.onLinkDown();
     service.onLinkReady();
     await say(1);
     channel.add(ChatMessage(
@@ -180,12 +189,14 @@ void main() {
   });
 
   test('a second connect opens a fresh window', () async {
+    service.onLinkDown();
     service.onLinkReady();
     await say(1);
     await settle();
     expect(notifier.digests.last.count, 1);
 
     // The link dropped and came back: the next queue counts from one again.
+    service.onLinkDown();
     service.onLinkReady();
     await say(2);
     await settle();
@@ -195,6 +206,7 @@ void main() {
 
   test('the longest window ends even if messages keep coming', () async {
     service.catchUpMax = const Duration(milliseconds: 60);
+    service.onLinkDown();
     service.onLinkReady();
     for (int i = 0; i < 5; i++) {
       await say(i);

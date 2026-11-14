@@ -19,6 +19,7 @@ import '../places/place_create_sheet.dart';
 import '../places/place_wiring.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
+import '../ui/mm_confirm.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/mm_format.dart';
 
@@ -268,7 +269,20 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
                   inside: fences.isInside(f.id),
                   focused: f.id == _focused,
                   onEdit: () => _edit(fences, f),
-                  onDelete: () => fences.removeFence(f.id),
+                  // Deleting a fence takes its crossings with it, and the same
+                  // app asks before it resets a channel or restarts a radio.
+                  // This was one tap with no question.
+                  onDelete: () async {
+                    final bool ok = await mmConfirm(
+                      context,
+                      title: l.geofenceDeleteConfirmTitle,
+                      body: l.geofenceDeleteConfirmBody,
+                      cancelLabel: l.actionCancel,
+                      confirmLabel: l.geofenceDelete,
+                      destructive: true,
+                    );
+                    if (ok) await fences.removeFence(f.id);
+                  },
                   // A fence and a place are the same fact twice: a centre, a
                   // name, and how much ground it covers. A fence the crew should
                   // also see as a pin is one tap from being one.
@@ -292,7 +306,17 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
                     key: const ValueKey<String>('geofence-clear-log'),
                     label: l.geofenceClearLog,
                     dense: true,
-                    onPressed: () => fences.clearAlerts(),
+                    onPressed: () async {
+                      final bool ok = await mmConfirm(
+                        context,
+                        title: l.geofenceClearLogConfirmTitle,
+                        body: l.geofenceClearLogConfirmBody,
+                        cancelLabel: l.actionCancel,
+                        confirmLabel: l.geofenceClearLog,
+                        destructive: true,
+                      );
+                      if (ok) await fences.clearAlerts();
+                    },
                   ),
                 ],
               ),

@@ -18,6 +18,14 @@ abstract class BackgroundKeepalive {
   Future<void> start();
   Future<void> stop();
   Future<bool> get isRunning;
+
+  /// Whether this platform has a service to keep alive at all.
+  ///
+  /// The no-op implementation answers false, which is what stops the
+  /// controller's watchdog from running a periodic timer on iOS, on the web and
+  /// in a widget test, where there is nothing to watch and a pending timer is a
+  /// test failure.
+  bool get supported;
 }
 
 /// Default everywhere except a real Android device.
@@ -29,6 +37,9 @@ class NoopBackgroundKeepalive implements BackgroundKeepalive {
   Future<void> stop() async {}
   @override
   Future<bool> get isRunning async => false;
+
+  @override
+  bool get supported => false;
 }
 
 /// Selects the Android foreground-service impl on Android, else no-op.
@@ -113,4 +124,7 @@ class ForegroundServiceKeepalive implements BackgroundKeepalive {
 
   @override
   Future<bool> get isRunning => FlutterForegroundTask.isRunningService;
+
+  @override
+  bool get supported => true;
 }

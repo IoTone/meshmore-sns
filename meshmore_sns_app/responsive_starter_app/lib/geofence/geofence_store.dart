@@ -23,6 +23,7 @@ final class StoredGeofence {
     required this.longitude,
     required this.radiusMeters,
     this.polygon,
+    this.inside = false,
   });
 
   final String id;
@@ -34,7 +35,26 @@ final class StoredGeofence {
   /// The corners, in draw order, open. Null for a circle.
   final List<FencePoint>? polygon;
 
+  /// Whether the reader was inside this fence at the last sample.
+  ///
+  /// Persisted because the alternative is a lie: every watch used to start
+  /// outside, so opening the app while standing in a fence fired an "entered"
+  /// alert and wrote a crossing that never happened. The copy promises once on
+  /// entry and once on exit, and this is what makes that true across a restart.
+  final bool inside;
+
   bool get isPolygon => polygon != null && polygon!.length >= 3;
+
+  /// The same fence with a new inside state, for the sample loop.
+  StoredGeofence copyWith({bool? inside}) => StoredGeofence(
+        id: id,
+        label: label,
+        latitude: latitude,
+        longitude: longitude,
+        radiusMeters: radiusMeters,
+        polygon: polygon,
+        inside: inside ?? this.inside,
+      );
 
   Geofence toEngine() => Geofence(
         id: id,
@@ -50,6 +70,7 @@ final class StoredGeofence {
         'lat': latitude,
         'lon': longitude,
         'radius': radiusMeters,
+        if (inside) 'in': true,
         if (polygon != null)
           'poly': <Object?>[for (final FencePoint p in polygon!) p.toJson()],
       };
@@ -89,6 +110,7 @@ final class StoredGeofence {
       longitude: lo,
       radiusMeters: radius,
       polygon: polygon,
+      inside: raw['in'] == true,
     );
   }
 }

@@ -16,6 +16,7 @@ import '../meshcore/message_heat.dart';
 import '../meshcore/own_location.dart';
 import '../sns/sns_frame.dart';
 import '../theme/mm_skin.dart';
+import '../theme/theme_controller.dart';
 import '../theme/viz_palette.dart';
 import '../ui/mm_shape.dart';
 
@@ -93,12 +94,29 @@ class _SnsCellsViewState extends State<SnsCellsView>
   @override
   void initState() {
     super.initState();
-    // One repaint per second, not one per frame. The heat decays with a
-    // fifteen-minute time constant and the toasts fade over seconds, so sixty
-    // rebuilds a second bought nothing a reader can see — while each of those
-    // rebuilds re-walked every heat cell twice and copied the ping log. This was
-    // the most expensive screen in the app and the change is invisible.
+    // The clock runs at frame rate, the *data* at one hertz.
+    //
+    // This view used to repaint once a second, on the reasoning that the heat
+    // decays over fifteen minutes and a second is invisible. It is not: the
+    // painter also draws a CRT sweep on a 3.2 s loop and fades a toast over
+    // 3.5 s, and both of those were being advanced in one-second steps, which
+    // the owner reported as "the wave is like one FPS". The expensive part was
+    // never the clock, it was re-walking every heat cell twice per rebuild, so
+    // the heat maps are cached and recomputed once a second while the painter
+    // gets a fresh `nowMs` every frame.
     _ticker = Ticker(_onTick)..start();
+  }
+
+  /// The heat maps, recomputed at most once a second.
+  Map<String, double> _heat = const <String, double>{};
+  Map<String, int> _heatCounts = const <String, int>{};
+  int _heatSecond = -1;
+
+  void _refreshHeat(MeshcoreController mc, int second) {
+    if (second == _heatSecond) return;
+    _heatSecond = second;
+    _heat = mc.messageHeatScores();
+    _heatCounts = mc.messageHeatCounts();
   }
 
   void _resetView() => _transform.value = Matrix4.identity();
@@ -109,11 +127,14 @@ class _SnsCellsViewState extends State<SnsCellsView>
 
   void _onTick(Duration _) {
     if (!mounted) return;
-    final int second =
-        DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    if (second == _lastPaintSecond) return;
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    final int second = nowMs ~/ 1000;
+    // Reduce-motion removes the sweep and the fades, so the frame clock buys
+    // nothing there and the view goes back to one repaint a second.
+    final bool still = context.read<ThemeController>().reduceMotion;
+    if (still && second == _lastPaintSecond) return;
     _lastPaintSecond = second;
-    setState(() => _nowMs = second * 1000);
+    setState(() => _nowMs = nowMs);
   }
 
   @override
@@ -187,8 +208,9 @@ class _SnsCellsViewState extends State<SnsCellsView>
 
     // R55 — painter colours follow the active skin (was hardcoded hex).
     final VizPalette viz = VizPalette.of(context.skin);
-    final Map<String, double> heat = mc.messageHeatScores();
-    final Map<String, int> heatCounts = mc.messageHeatCounts();
+    _refreshHeat(mc, DateTime.now().millisecondsSinceEpoch ~/ 1000);
+    final Map<String, double> heat = _heat;
+    final Map<String, int> heatCounts = _heatCounts;
     // Nothing has been overheard in this window. The painter would draw an
     // empty grid under the legend, which reads as a broken view rather than as
     // a quiet channel — the same defect the other views fixed with a notice.

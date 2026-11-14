@@ -208,7 +208,14 @@ class AppSettingsScreen extends StatelessWidget {
                     ? l.settingsBackgroundOff
                     : mc.keepaliveFailure != null
                         ? l.settingsBackgroundFailed
-                        : l.settingsBackgroundOn,
+                        // "On" is a preference; the service is a fact. The row
+                        // used to say on whenever the switch was on and no Dart
+                        // exception had been recorded, which is not the same
+                        // thing: the plugin can start and immediately stop the
+                        // service natively and still return success.
+                        : !mc.keepaliveRunning
+                            ? l.settingsBackgroundNotRunning
+                            : l.settingsBackgroundOn,
                 style: TextStyle(color: cs.onSurfaceVariant),
               ),
               secondary: Icon(mc.backgroundKeepaliveEnabled

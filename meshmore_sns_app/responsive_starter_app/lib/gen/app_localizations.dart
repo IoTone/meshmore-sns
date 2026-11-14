@@ -920,6 +920,12 @@ abstract class AppLocalizations {
   /// **'Stay connected in background'**
   String get settingsBackgroundTitle;
 
+  /// No description provided for @settingsBackgroundNotRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'On, but the service is not running. Open the app again to restart it.'**
+  String get settingsBackgroundNotRunning;
+
   /// No description provided for @settingsBackgroundOn.
   ///
   /// In en, this message translates to:
@@ -6464,12 +6470,6 @@ abstract class AppLocalizations {
   /// **'Viewed tiles only: the server forbids bulk download'**
   String get mapsSourceViewOnly;
 
-  /// No description provided for @mapsSourcePick.
-  ///
-  /// In en, this message translates to:
-  /// **'Basemap'**
-  String get mapsSourcePick;
-
   /// No description provided for @packStateDownloading.
   ///
   /// In en, this message translates to:
@@ -8841,6 +8841,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drawing a fence.'**
   String get geofenceDrawStarted;
+
+  /// No description provided for @geofenceDeleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this fence?'**
+  String get geofenceDeleteConfirmTitle;
+
+  /// No description provided for @geofenceDeleteConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Its crossings go with it. The area itself is not changed.'**
+  String get geofenceDeleteConfirmBody;
+
+  /// No description provided for @geofenceClearLogConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear the crossing log?'**
+  String get geofenceClearLogConfirmTitle;
+
+  /// No description provided for @geofenceClearLogConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every recorded crossing is deleted. The fences stay.'**
+  String get geofenceClearLogConfirmBody;
 
   /// No description provided for @geofenceTitle.
   ///

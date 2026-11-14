@@ -460,6 +460,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsBackgroundTitle => 'バックグラウンドで接続を維持';
 
   @override
+  String get settingsBackgroundNotRunning =>
+      'オンですが、サービスが動作していません。アプリを開き直すと再開します。';
+
+  @override
   String get settingsBackgroundOn =>
       'アプリを閉じていてもメッセージが届きます。端末の再起動後はアプリを開いて再接続してください。';
 
@@ -3641,9 +3645,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapsSourceViewOnly => '閲覧したタイルのみ保存(サーバーが一括取得を禁止)';
 
   @override
-  String get mapsSourcePick => 'ベースマップ';
-
-  @override
   String get packStateDownloading => 'ダウンロード中';
 
   @override
@@ -5030,6 +5031,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get geofenceDrawStarted => 'フェンスを描いています。';
+
+  @override
+  String get geofenceDeleteConfirmTitle => 'このフェンスを削除しますか？';
+
+  @override
+  String get geofenceDeleteConfirmBody => '通過記録も一緒に削除されます。エリア自体は変わりません。';
+
+  @override
+  String get geofenceClearLogConfirmTitle => '通過記録を消去しますか？';
+
+  @override
+  String get geofenceClearLogConfirmBody => '記録された通過はすべて削除されます。フェンスは残ります。';
 
   @override
   String get geofenceTitle => 'ジオフェンス';

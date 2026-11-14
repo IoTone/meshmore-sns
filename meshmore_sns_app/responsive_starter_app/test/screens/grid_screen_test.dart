@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
@@ -160,7 +161,7 @@ void main() {
     mc.dispose();
   });
 
-  testWidgets('the chosen view outlives the widget, not the session',
+  testWidgets('the chosen view outlives the widget and the session',
       (WidgetTester t) async {
     // Tall enough that the whole view menu is on screen.
     await t.binding.setSurfaceSize(const Size(800, 1600));
@@ -185,12 +186,25 @@ void main() {
     expect(find.text('Weather'), findsOneWidget);
     expect(find.text('Radar'), findsNothing);
 
-    // A fresh launch starts on the radar again.
+    // A restart comes back to the same view: the choice is a preference now,
+    // not session state (owner, 2026-11-14).
     await t.pumpWidget(const SizedBox());
     GridScreen.resetSession();
     await t.pumpWidget(_host(mc));
     await t.pump();
-    expect(find.text('Radar'), findsOneWidget);
+    await t.pump(const Duration(milliseconds: 200));
+    expect(find.text('Weather'), findsOneWidget,
+        reason: 'the view is remembered across a restart');
+
+    // A fresh install has no saved view, so it opens on the radar.
+    await t.pumpWidget(const SizedBox());
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    GridScreen.resetSession();
+    await t.pumpWidget(_host(mc));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 200));
+    expect(find.text('Radar'), findsOneWidget,
+        reason: 'nothing saved means the default view');
     await t.pumpWidget(const SizedBox());
     mc.dispose();
   });

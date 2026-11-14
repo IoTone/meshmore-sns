@@ -235,7 +235,13 @@ Future<void> startApp() async {
     final MeshcoreConnectionState now = controller.state;
     if (now != lastLinkState) {
       lastLinkState = now;
-      if (now == MeshcoreConnectionState.ready) notifications.onLinkReady();
+      if (now == MeshcoreConnectionState.ready) {
+        notifications.onLinkReady();
+      } else {
+        // The service needs the other edge too: a reconnect is only a backlog
+        // if the link was actually away, and a flap is not.
+        notifications.onLinkDown();
+      }
     }
   });
   notifier.onTap = (String payload) {

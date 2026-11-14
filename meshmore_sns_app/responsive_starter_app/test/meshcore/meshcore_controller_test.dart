@@ -2386,17 +2386,29 @@ class _RefusingKeepalive implements BackgroundKeepalive {
   int stops = 0;
   bool refuse = true;
 
+  /// What the OS would say. A refused start leaves nothing running, which is
+  /// the whole point of the retry: the old model claimed "running" because a
+  /// start had been *attempted*, so the retry could never fire.
+  bool running = false;
+
   @override
   Future<void> start() async {
     starts++;
     if (refuse) {
       throw StateError('ForegroundServiceStartNotAllowedException');
     }
+    running = true;
   }
 
   @override
-  Future<void> stop() async => stops++;
+  Future<void> stop() async {
+    stops++;
+    running = false;
+  }
 
   @override
-  Future<bool> get isRunning async => starts > stops && !refuse;
+  Future<bool> get isRunning async => running;
+
+  @override
+  bool get supported => true;
 }

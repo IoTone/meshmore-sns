@@ -218,11 +218,11 @@ enum GeofenceEvent { entered, left, unchanged, noPosition }
 /// (two sessions, two devices) without the second overwriting the first's
 /// inside/outside state.
 final class GeofenceWatch {
-  GeofenceWatch(this.fence);
+  GeofenceWatch(this.fence, {bool inside = false}) : _inside = inside;
 
   Geofence fence;
 
-  bool _inside = false;
+  bool _inside;
   int _entries = 0;
 
   bool get isInside => _inside;
