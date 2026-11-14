@@ -173,3 +173,46 @@ other radio on the mesh sees, so the name and the role have to be confirmed firs
 than guessed. Flashing also needs a decision this register cannot make: whether the Wio
 stays a companion (the app talks to it) and the Heltec stays a repeater, or both become
 companions for testing.
+
+---
+
+## 9. Notifications with the app closed — audit (2026-11-14)
+
+The question: do notifications arrive when the app is closed or sitting in the background
+behind the persistent notification? What the code says, and what is left to prove on a
+device.
+
+**What exists (proven by reading):**
+
+| piece | where | state |
+|---|---|---|
+| `POST_NOTIFICATIONS` permission | `AndroidManifest.xml:52`; requested once at notifier init `local_notifier.dart:211` | present; a denial is non-fatal and Settings says what will not appear |
+| Notification channels | `local_notifier.dart:195-207`, importance high, one per class | present; a deleted or quieted channel is reported as `NotifierHealth.missingChannel` / `quiet` and shown as a row in App settings |
+| Foreground service | `AndroidManifest.xml:128-130`, type `connectedDevice` | declared; started when the link reaches ready and the setting is on (`meshcore_controller.dart:204`) |
+| Keep-alive state in the UI | `app_settings_screen.dart:206-220` | three states shown: off / failed / on |
+| Where delivery happens | `NotificationService` posts from the **main isolate**; the service handler is deliberately empty (`background_keepalive.dart:56-64`) | by design: the service keeps the *process* alive so the main isolate keeps draining the radio |
+
+**The three ways "no notifications" happens, and whether each is a defect:**
+
+1. **After a phone reboot, nothing runs until the app is opened.** `autoRunOnBoot: false`
+   (`background_keepalive.dart:75`). This is a recorded decision, not an oversight — register
+   row R-04. Changing it means starting a foreground service from `BOOT_COMPLETED`, which
+   Android 15+ restricts per service type; it is a decision with a platform risk attached.
+2. **The OEM kills the service anyway.** Motorola/Android 16 battery management can stop a
+   foreground service that is not on the battery-optimisation exemption list. **Not
+   proven either way on this handset** — it needs the app running with the screen off for an
+   hour and a message sent to it. The app cannot currently *show* the exemption state, which
+   is the one piece of this that would be worth adding: `PowerManager.isIgnoringBattery
+   Optimizations` is one platform call and would turn "I get no notifications" into a row
+   saying why.
+3. **The process is swept away (task removed).** No `android:stopWithTask` override, so the
+   default applies; whether `flutter_foreground_task` stops the service on task removal
+   depends on its own `onTaskRemoved`. **Unverified**, and the same device test would settle
+   it.
+
+**The device test that settles 2 and 3** (one sitting): turn the screen off, leave the app in
+the background, send a channel message from another node after five minutes and after thirty,
+and record whether a notification appears and whether `dumpsys activity services` still lists
+`com.pravera.flutter_foreground_task.service.ForegroundService`. If the service is gone, the
+exemption row is the fix; if it is running and the message is not delivered, the fault is in
+the drain, not the service.
