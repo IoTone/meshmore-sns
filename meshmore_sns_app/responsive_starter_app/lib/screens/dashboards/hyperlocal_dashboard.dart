@@ -12,7 +12,6 @@ import '../../meshcore/own_location.dart';
 import '../../maps/compass.dart';
 import '../../maps/radar_scale.dart';
 import '../../theme/mm_skin.dart';
-import '../../ui/mm_components.dart';
 import '../../theme/theme_controller.dart';
 import '../../theme/viz_palette.dart';
 import '../../ui/mm_audio_toggle.dart';
@@ -754,16 +753,42 @@ class _StatusRail extends StatelessWidget {
         spacing: 16,
         runSpacing: 6,
         children: <Widget>[
-          // A readout, not a sentence. These were `'label value'` in one
+          // A table, not a sentence. These were `'label value'` in one
           // RichText with a single space between them, so every figure sat one
           // space after its own label and the column of values was ragged. A
-          // fixed cell width plus MmReadout puts every value on the same x, the
-          // same way the other dashboards do it.
-          for (final ({String k, String v}) c in cells)
-            SizedBox(
-              width: 168,
-              child: MmReadout(label: c.k, value: c.v),
-            ),
+          // table with an intrinsic label column and a flexible value column
+          // puts every value on the panel's right edge, which is the rule the
+          // other dashboards follow, and it needs no width of its own.
+          Table(
+            columnWidths: const <int, TableColumnWidth>{
+              0: IntrinsicColumnWidth(),
+              1: FlexColumnWidth(),
+            },
+            children: <TableRow>[
+              for (final ({String k, String v}) c in cells)
+                TableRow(children: <Widget>[
+                  Padding(
+                    padding: EdgeInsets.only(right: skin.space.rowGap),
+                    child: Text(
+                      c.k,
+                      style: TextStyle(
+                          fontFamily: skin.type.wordsMono,
+                          color: skin.color.fgMuted,
+                          fontSize: skin.type.sizeMicro,
+                          letterSpacing: 1),
+                    ),
+                  ),
+                  Text(
+                    c.v,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                        fontFamily: skin.type.monoFamily,
+                        color: skin.color.fg,
+                        fontSize: skin.type.sizeBody),
+                  ),
+                ]),
+            ],
+          ),
           // Own pubkey — needed by anyone who wants to add you as a
           // contact before their DMs can route.
           MyPubkeyLine(
