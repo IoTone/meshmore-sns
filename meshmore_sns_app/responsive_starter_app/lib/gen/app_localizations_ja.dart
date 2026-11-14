@@ -2291,6 +2291,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelCreateNoSlot => 'この無線機のチャンネル枠はすべて使用中です。先にチャンネル画面で空けてください。';
 
   @override
+  String channelCreateExists(String name) {
+    return '$name というチャンネルはすでにあります。';
+  }
+
+  @override
   String get channelCreateAction => '作成';
 
   @override

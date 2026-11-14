@@ -1397,6 +1397,7 @@
   "channelCreatePublicBody": "電波の届く範囲でパブリックチャンネルを使う全員が読めます。公開前提のときだけ選んでください。",
   "channelCreateSlotNote": "スロット {slot}（空いている最初の枠）に作成します。",
   "channelCreateNoSlot": "この無線機のチャンネル枠はすべて使用中です。先にチャンネル画面で空けてください。",
+  "channelCreateExists": "{name} というチャンネルはすでにあります。",
   "channelCreateAction": "作成",
   "channelsEmpty": "— 未設定 —",
   "channelsSlotLabel": "チャンネル {idx}",

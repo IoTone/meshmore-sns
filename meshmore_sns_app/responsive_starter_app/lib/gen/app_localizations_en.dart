@@ -2399,6 +2399,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Every channel slot on this radio is in use. Free one on the channels screen first.';
 
   @override
+  String channelCreateExists(String name) {
+    return 'There is already a channel called $name.';
+  }
+
+  @override
   String get channelCreateAction => 'Create';
 
   @override

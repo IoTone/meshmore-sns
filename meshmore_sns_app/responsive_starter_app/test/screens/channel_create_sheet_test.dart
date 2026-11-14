@@ -199,6 +199,32 @@ void main() {
     mc.dispose();
   });
 
+  testWidgets('a name already in the list is refused before the tap',
+      (WidgetTester t) async {
+    // Two channels with one name and one derived key are the same conversation
+    // split across two rows, and nothing on screen says which row is which.
+    await t.binding.setSurfaceSize(const Size(420, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await _ready(fake);
+    await t.pumpWidget(_host(mc));
+    fake.emit(channelInfoFrame(idx: 0, name: 'Public'));
+    fake.emit(channelInfoFrame(idx: 1, name: '#basecamp'));
+    await t.pumpAndSettle();
+    await _open(t, mc);
+
+    // "basecamp" and "#basecamp" are one name, in the form the key uses.
+    await t.enterText(
+        find.byKey(const ValueKey<String>('channel-create-name')), 'basecamp');
+    await t.pump();
+    final AppLocalizations l =
+        AppLocalizations.of(t.element(find.byType(ChannelCreateSheet)));
+    expect(find.text(l.channelCreateExists('#basecamp')), findsOneWidget);
+    expect(MmActionProbe(find.byKey(const ValueKey<String>('channel-create-save')))
+        .enabled(t), isFalse);
+    mc.dispose();
+  });
+
   testWidgets('the sheet holds a 320 dp phone at 200 % text',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(320, 640));

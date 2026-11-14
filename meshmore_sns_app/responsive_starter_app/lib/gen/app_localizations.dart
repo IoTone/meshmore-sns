@@ -4040,6 +4040,12 @@ abstract class AppLocalizations {
   /// **'Every channel slot on this radio is in use. Free one on the channels screen first.'**
   String get channelCreateNoSlot;
 
+  /// No description provided for @channelCreateExists.
+  ///
+  /// In en, this message translates to:
+  /// **'There is already a channel called {name}.'**
+  String channelCreateExists(String name);
+
   /// No description provided for @channelCreateAction.
   ///
   /// In en, this message translates to:

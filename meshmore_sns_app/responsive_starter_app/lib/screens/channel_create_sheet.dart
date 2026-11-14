@@ -85,6 +85,22 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
     return MeshcoreChannelCrypto.channelPskFromHashtag(raw);
   }
 
+  /// Whether this name is already a channel on this radio.
+  ///
+  /// Compared in the same canonical form the key is derived from, so "basecamp"
+  /// and "#basecamp" are one name rather than two. A second channel with the
+  /// same name and the same derived key is not a second conversation: it is the
+  /// same conversation with its messages split across two rows, and the reader
+  /// has no way to tell which one they are reading.
+  bool get _nameTaken {
+    final String wanted = _storedName.toLowerCase();
+    if (wanted.isEmpty) return false;
+    for (final MapEntry<int, String> e in widget.controller.channels) {
+      if (e.value.trim().toLowerCase() == wanted) return true;
+    }
+    return false;
+  }
+
   /// The name the radio will be told, which is the canonical form of what was
   /// typed. A channel whose name reads `basecamp` while its key is
   /// sha256("#basecamp") is a channel nobody can find again by typing the name
@@ -106,6 +122,10 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
     final String name = _storedName;
     if (name.isEmpty || name == '#') {
       setState(() => _error = l.channelsErrorName);
+      return;
+    }
+    if (_nameTaken) {
+      setState(() => _error = l.channelCreateExists(name));
       return;
     }
     final List<int>? psk = _psk;
@@ -134,7 +154,13 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
     final int? slot = _slot;
     final bool ready =
         widget.controller.state == MeshcoreConnectionState.ready;
-    final bool canCreate = ready && slot != null && !_busy;
+    // The refusal is shown as the field's own error before the tap, so the
+    // button never looks broken: a name already in the list is a correction to
+    // make, not a failure to explain afterwards.
+    final String? fieldError = _error ??
+        (_nameTaken ? l.channelCreateExists(_storedName) : null);
+    final bool canCreate =
+        ready && slot != null && !_busy && !_nameTaken;
 
     return Padding(
       // The keyboard: this sheet's whole job is a text field.
@@ -168,7 +194,7 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
                 labelText: l.channelsName,
                 hintText: l.channelCreateNameHint,
                 isDense: true,
-                errorText: _error,
+                errorText: fieldError,
               ),
             ),
             SizedBox(height: skin.space.step(3)),

@@ -191,6 +191,10 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('chat-new-channel')),
         findsOneWidget);
+    // And one tap from the strip: an overflow menu is where a reader looks last,
+    // and the strip is the one place that lists channels.
+    expect(find.byKey(const ValueKey<String>('chat-new-channel-chip')),
+        findsOneWidget);
     await t.tap(find.byKey(const ValueKey<String>('chat-new-channel')));
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('channel-create-sheet')),

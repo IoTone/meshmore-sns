@@ -800,10 +800,19 @@ class _ChatScreenState extends State<ChatScreen>
           // hide the strip under it. Header + strip was 108 dp for that.
           SizedBox(
             height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: Row(
               children: <Widget>[
+                // Only the channels scroll. The three controls at the end are
+                // fixed: they used to be the last children of this list, so a
+                // reader with enough channels could not reach "more" without
+                // scrolling the strip sideways, and adding the create chip was
+                // enough to push them off a 390 dp screen entirely.
+                Expanded(
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    children: <Widget>[
                 for (final MapEntry<int, String> ch in channels)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -837,6 +846,30 @@ class _ChatScreenState extends State<ChatScreen>
                       ),
                     ),
                   ),
+                // A channel can be made from the strip itself.
+                //
+                // The overflow menu had the row, and an overflow is where a
+                // reader looks last: the strip is the one place that lists
+                // channels, so the way to make one belongs at the end of that
+                // list, where the eye already is when it runs out of names. One
+                // tap, and no menu between the intent and the sheet.
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Semantics(
+                    button: true,
+                    label: l.channelCreateTitle,
+                    excludeSemantics: true,
+                    child: ActionChip(
+                      key: const ValueKey<String>('chat-new-channel-chip'),
+                      avatar: const Icon(Icons.add, size: 16),
+                      label: Text(l.channelCreateTitle),
+                      onPressed: () => _createChannel(mc),
+                    ),
+                  ),
+                ),
+                  ],
+                  ),
+                ),
                 // One overflow for everything that is not a channel. The
                 // strip answers "which channel", so search, export and manage
                 // live behind one control at its end instead of competing with

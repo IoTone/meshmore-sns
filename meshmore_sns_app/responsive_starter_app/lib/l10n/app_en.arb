@@ -1479,6 +1479,14 @@
   "channelCreatePublicBody": "Everyone within radio range on the public channel can read it. Use this only for a channel meant to be open.",
   "channelCreateSlotNote": "Goes in slot {slot}, the first one nothing is using.",
   "channelCreateNoSlot": "Every channel slot on this radio is in use. Free one on the channels screen first.",
+  "channelCreateExists": "There is already a channel called {name}.",
+  "@channelCreateExists": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "channelCreateAction": "Create",
   "channelsEmpty": "— empty —",
   "channelsSlotLabel": "channel {idx}",
