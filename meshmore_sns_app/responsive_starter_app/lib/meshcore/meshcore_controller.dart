@@ -4041,6 +4041,19 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// "in range" is correct even when SET_DEVICE_TIME was rejected.
   int _deviceClockOffsetSec = 0;
 
+  /// The radio's own clock as it last reported it, or null before it answers.
+  int? _lastDeviceUnix;
+
+  /// Whether the radio's clock has never been set.
+  ///
+  /// A MeshCore radio with no battery-backed clock boots to a fixed early date,
+  /// and every time it reports is then wrong. This is the signal the dashboard's
+  /// degraded banner needs and did not have: it hardcoded "clock is fine", so a
+  /// radio whose clock never moved reported times nobody could trust and said
+  /// nothing about it.
+  bool get radioClockUnset =>
+      _lastDeviceUnix != null && _lastDeviceUnix! < 946684800;
+
   void _requestDeviceTime() {
     unawaited(
         send(MeshcoreFrameCodec.getDeviceTime()).catchError((_) {}));
@@ -4055,6 +4068,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   void _trackDeviceClock(MeshcoreInbound f) {
     if (f is! CurrentTimeFrame || f.unixSeconds <= 0) return;
     final int phoneNow = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    _lastDeviceUnix = f.unixSeconds;
     _deviceClockOffsetSec = phoneNow - f.unixSeconds;
     // The device is a couple of seconds behind: offer the phone's clock. A
     // device that is ahead is left alone, because the firmware would refuse.

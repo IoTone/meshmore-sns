@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/degraded_state.dart';
 import '../../meshcore/meshcore_controller.dart';
+import '../../maps/maps_controller.dart';
 import '../../theme/mm_skin.dart';
 import '../../ui/degraded_banner.dart';
 import '../../util/prefs.dart';
@@ -33,6 +34,10 @@ class DashboardDegradedBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MeshcoreController mc = context.watch<MeshcoreController>();
+    // The map's own reachability, so "map offline" can actually be said. A null
+    // answer (no fetch yet) is not an outage.
+    final bool mapReachable = context.select<MapsController?, bool>(
+        (MapsController? m) => m?.lastFetchOk != false);
     final double inset = context.skin.space.padScreen.top;
     return ValueListenableBuilder<bool>(
       valueListenable: Prefs.writeFailed,
@@ -41,9 +46,14 @@ class DashboardDegradedBanner extends StatelessWidget {
           radioPaired: mc.state != MeshcoreConnectionState.disconnected,
           radioAnswering: mc.state == MeshcoreConnectionState.ready,
           storageFull: writesFailed,
+          // Location stays out of this banner on purpose: having no fix is a
+          // choice as often as a fault, and the screens that need a fix say so
+          // where the reader is. The other two were hardcoded "fine", so the
+          // banner could never say "map offline" or "clock never set" — states
+          // DegradedMode names and nothing observed.
           hasLocation: true,
-          mapReachable: true,
-          clockUnset: false,
+          mapReachable: mapReachable,
+          clockUnset: mc.radioClockUnset,
           // The battery is the radio's own reading, fetched by the stats tool.
           // Diagnostics shows it with its source (`RadioHealthBlock`); the
           // dashboard does not read stats just to draw a banner, so it passes
