@@ -40,6 +40,48 @@ class AssetAudioPack implements AudioPack {
   /// for seconds and shouldn't dominate. Lower gain per the field brief.
   static const double _loopVolume = 0.45;
 
+  // One-shot cues are *sonification*, not media: they must not take audio
+  // focus (a cue that interrupts the owner's podcast for 100 ms is a
+  // nuisance, and a denied focus request is a cue that never plays), and on
+  // iOS an ambient session keeps the Ring/Silent switch authoritative.
+  static final AudioContext _cueContext = AudioContext(
+    android: AudioContextAndroid(
+      isSpeakerphoneOn: false,
+      audioMode: AndroidAudioMode.normal,
+      stayAwake: false,
+      contentType: AndroidContentType.sonification,
+      usageType: AndroidUsageType.assistanceSonification,
+      audioFocus: AndroidAudioFocus.none,
+    ),
+    // Ambient mixes with anything already playing and obeys the Ring/Silent
+    // switch, which is the iOS way of saying "this is a UI sound".
+    iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
+  );
+
+  /// Latency, not politeness: a 100 ms cue that spends 40 ms opening a
+  /// MediaPlayer arrives late enough to feel detached from the tap. Low-latency
+  /// mode reuses the one player for every cue, and `ReleaseMode.stop` keeps the
+  /// loaded buffer between plays instead of tearing it down (the default
+  /// release mode does exactly that, which is how two quick swipes lost the
+  /// first cue).
+  bool _ready = false;
+
+  Future<void> _ensureReady() async {
+    if (_ready) return;
+    try {
+      await _player.setAudioContext(_cueContext);
+      await _player.setPlayerMode(PlayerMode.lowLatency);
+      await _player.setReleaseMode(ReleaseMode.stop);
+      await _loopPlayer.setAudioContext(_cueContext);
+      await _loopPlayer.setReleaseMode(ReleaseMode.loop);
+      _ready = true;
+    } catch (_) {
+      // Older platform / no audio service: leave the defaults in place and
+      // let `play` fail into the fallback below.
+      _ready = true;
+    }
+  }
+
   /// Compose the asset path the same way the synth script lays it out.
   /// Visible for the unit test (and for anyone reading the call site).
   static String assetPathFor(MmThemePreset preset, CueKind kind) =>
@@ -49,12 +91,14 @@ class AssetAudioPack implements AudioPack {
   Future<void> play(CueKind kind) async {
     final MmThemePreset p = theme.preset;
     final String path = assetPathFor(p, kind);
+    final double volume = theme.cueVolume;
     try {
+      await _ensureReady();
       // `AssetSource` paths are rooted at `assets/` by audioplayers
       // convention; passing `audio/seele/messageIn.wav` resolves to
       // `assets/audio/seele/messageIn.wav` in the bundle.
-      await _player.stop();
-      await _player.play(AssetSource(path));
+      await _player.play(AssetSource(path),
+          volume: volume, mode: PlayerMode.lowLatency);
     } catch (_) {
       // Asset missing / platform error → graceful degrade so the cue
       // is never silently lost, just less themed.
@@ -66,9 +110,10 @@ class AssetAudioPack implements AudioPack {
   Future<void> startLoop(CueKind kind) async {
     final String path = assetPathFor(theme.preset, kind);
     try {
+      await _ensureReady();
       await _loopPlayer.stop();
       await _loopPlayer.setReleaseMode(ReleaseMode.loop);
-      await _loopPlayer.setVolume(_loopVolume);
+      await _loopPlayer.setVolume(_loopVolume * theme.cueVolume);
       await _loopPlayer.play(AssetSource(path));
     } catch (_) {
       // Asset missing / platform error — the scan just runs silent.

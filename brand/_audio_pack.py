@@ -613,14 +613,81 @@ CUES = {
 
 _GEIGER_GAPS = [0.03, 0.075, 0.04, 0.095, 0.05, 0.065, 0.085]
 
+# ---------------------------------------------------------------- loudness
+#
+# Audibility floor. Measured on the handset 2026-11-14: a cue was 30-150 ms
+# long and peaked at -10 to -15 dBFS, so at a media volume of 3/15 (about
+# -14 dB) the effective peak was -24 dBFS and nobody heard it. The owner's
+# report was "the themes have no sound", and the files were the reason, not
+# the wiring: `AssetAudioPack` was reaching them and the player was running.
+#
+# Every cue is now held to two floors:
+#   * a minimum duration per kind, reached by time-stretching the motif (a
+#     30 ms blip becomes a 90 ms blip, it does not become a different note);
+#   * a peak target, so the pack is audible at a normal phone volume without
+#     the player having to invent gain.
+#
+# The scan drone is the exception: it loops for seconds, so it is normalised
+# to a lower peak on purpose.
+TARGET_PEAK_DB = -1.5
+DRONE_PEAK_DB = -6.0
 
-def _synth_score(th, cue):
+# The shortest a cue may be, in seconds. These are perception floors, not
+# taste: below roughly 80 ms a phone speaker does not resolve a tone as a
+# sound, and below ~300 ms a two-note phrase collapses into one click.
+MIN_DUR = {
+    "navNext": 0.10,
+    "navPrev": 0.10,
+    "send": 0.13,
+    "advert": 0.30,
+    "messageIn": 0.40,
+    "dmIn": 0.45,
+    "discovery": 0.45,
+    "linkUp": 0.32,
+    "linkDown": 0.32,
+    "boot": 0.55,
+    "alert": 0.90,
+    "taskOk": 0.40,
+    "taskError": 0.35,
+    "scanStart": 1.00,
+    "sig1": 0.45,
+    "sig2": 0.45,
+    "sig3": 0.45,
+    "sig4": 0.45,
+    "sig5": 0.45,
+}
+
+
+def _natural_duration(cue):
+    """How long this cue is before any stretch, in seconds."""
+    kind = cue.get("kind", "score")
+    if kind == "sweep":
+        return cue["dur"] * cue.get("repeat", 1)
+    if kind == "hum":
+        return cue["dur"]
+    if kind == "ticks":
+        count = cue["count"]
+        return (sum(_GEIGER_GAPS[:count]) + 0.008 * count)
+    return sum(d for _, d in cue["score"])
+
+
+def _normalize(samples, target_db):
+    """Scale to a peak target. Silence stays silence."""
+    peak = max((abs(s) for s in samples), default=0)
+    if peak == 0:
+        return samples
+    gain = (10 ** (target_db / 20.0)) * 32767.0 / peak
+    return [int(max(-32767, min(32767, s * gain))) for s in samples]
+
+
+def _synth_score(th, cue, scale=1.0):
     """Tonal motif — a sequence of (freq_ratio, dur) notes in the
     theme's timbre. The default cue shape."""
     base, timbre, decay = th["base"], th["timbre"], th["decay"]
     stutter = th.get("stutter", False)
     samples = []
     for ratio, dur in cue["score"]:
+        dur = dur * scale
         n = int(SR * dur)
         f = base * ratio
         for i in range(n):
@@ -633,14 +700,14 @@ def _synth_score(th, cue):
     return samples
 
 
-def _synth_sweep(th, cue):
+def _synth_sweep(th, cue, scale=1.0):
     """A glissando — frequency glides start→end (exponential), with
     phase accumulation so the pitch bends cleanly. `saw=True` uses a
     raw (gritty) sawtooth for the descending-klaxon character; `repeat`
     wails it N times. Used for NERV's alert / link-lost."""
     base, decay = th["base"], th["decay"]
     start, end = base * cue["start"], base * cue["end"]
-    dur, amp = cue["dur"], cue["amp"]
+    dur, amp = cue["dur"] * scale, cue["amp"]
     repeat, use_saw = cue.get("repeat", 1), cue.get("saw", False)
     samples = []
     for _ in range(repeat):
@@ -660,13 +727,13 @@ def _synth_sweep(th, cue):
     return samples
 
 
-def _synth_hum(th, cue):
+def _synth_hum(th, cue, scale=1.0):
     """A sustained hum — a held tone in the theme's timbre with a soft
     linear attack/release (no exp decay, so it actually *sustains*) and a
     slow vibrato. Used for the "scanning…" drone."""
     base = th["base"]
     f = base * cue.get("ratio", 0.5)
-    dur, amp = cue["dur"], cue["amp"]
+    dur, amp = cue["dur"] * scale, cue["amp"]
     depth, vrate = cue.get("vib_depth", 0.012), cue.get("vib_rate", 6.0)
     # Attack/release fade the clip ends to zero so it loops click-free
     # (the player repeats this WAV for the whole scan window). Keep them
@@ -694,7 +761,7 @@ def _synth_hum(th, cue):
     return samples
 
 
-def _synth_ticks(th, cue):
+def _synth_ticks(th, cue, scale=1.0):
     """Geiger-counter ticks — a run of very short, sharp high square
     clicks at irregular (deterministic) spacing. Used for NERV's node
     discovery ("a node decayed into view")."""
@@ -705,7 +772,8 @@ def _synth_ticks(th, cue):
     cn = int(SR * click)
     samples = []
     for c in range(count):
-        samples.extend([0] * int(SR * _GEIGER_GAPS[c % len(_GEIGER_GAPS)]))
+        samples.extend(
+            [0] * int(SR * _GEIGER_GAPS[c % len(_GEIGER_GAPS)] * scale))
         for i in range(cn):
             t = i / SR
             s = _square(f, t, harmonics=8) * math.exp(-40 * t / click)
@@ -719,20 +787,27 @@ def _synth_one(theme_key, cue_key):
     # Control set); otherwise the shared motif applies.
     cue = th.get("cues", {}).get(cue_key, CUES[cue_key])
     kind = cue.get("kind", "score")
+    # Stretch the motif to the kind's perception floor. A cue already longer
+    # than the floor is left exactly as written, so a theme's pacing survives.
+    floor = MIN_DUR.get(cue_key, 0.0)
+    natural = _natural_duration(cue)
+    scale = max(1.0, floor / natural) if natural > 0 else 1.0
     if kind == "sweep":
-        samples = _synth_sweep(th, cue)
+        samples = _synth_sweep(th, cue, scale)
     elif kind == "ticks":
-        samples = _synth_ticks(th, cue)
+        samples = _synth_ticks(th, cue, scale)
     elif kind == "hum":
-        samples = _synth_hum(th, cue)
+        samples = _synth_hum(th, cue, scale)
     else:
-        samples = _synth_score(th, cue)
+        samples = _synth_score(th, cue, scale)
     # Small fade-out at the very end (8 ms) to avoid clicks.
     fade_n = int(SR * 0.008)
     for i in range(max(0, len(samples) - fade_n), len(samples)):
         k = (len(samples) - i) / fade_n
         samples[i] = int(samples[i] * k)
-    return samples
+    # Peak-normalise last, so the fade cannot push a clipped cue over.
+    target = DRONE_PEAK_DB if kind == "hum" else TARGET_PEAK_DB
+    return _normalize(samples, target)
 
 
 def _write_wav(path, samples):

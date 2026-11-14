@@ -694,6 +694,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'On by default; augmentation only';
 
   @override
+  String get personalizationCueVolume => 'Cue volume';
+
+  @override
+  String personalizationCueVolumeSubtitle(Object percent) {
+    return '$percent % of the phone\'s media volume';
+  }
+
+  @override
+  String get personalizationCuePreview => 'Hear this theme';
+
+  @override
   String get dashboardAudioMute => 'Mute alert sounds';
 
   @override

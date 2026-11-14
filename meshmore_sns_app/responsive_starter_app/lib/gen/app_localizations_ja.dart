@@ -659,6 +659,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get personalizationAudioMasterEnabled => '既定で ON; 補助としてのみ';
 
   @override
+  String get personalizationCueVolume => '通知音の音量';
+
+  @override
+  String personalizationCueVolumeSubtitle(Object percent) {
+    return 'スマートフォンのメディア音量の $percent %';
+  }
+
+  @override
+  String get personalizationCuePreview => 'このテーマの音を聞く';
+
+  @override
   String get dashboardAudioMute => 'アラート音をミュート';
 
   @override

@@ -1286,6 +1286,24 @@ abstract class AppLocalizations {
   /// **'On by default; augmentation only'**
   String get personalizationAudioMasterEnabled;
 
+  /// No description provided for @personalizationCueVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Cue volume'**
+  String get personalizationCueVolume;
+
+  /// No description provided for @personalizationCueVolumeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent} % of the phone\'s media volume'**
+  String personalizationCueVolumeSubtitle(Object percent);
+
+  /// No description provided for @personalizationCuePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Hear this theme'**
+  String get personalizationCuePreview;
+
   /// No description provided for @dashboardAudioMute.
   ///
   /// In en, this message translates to:

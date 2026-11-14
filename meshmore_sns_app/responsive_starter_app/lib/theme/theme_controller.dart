@@ -20,6 +20,7 @@ class ThemeController extends ChangeNotifier {
   static const String _kReduceMotion = 'mm.reduceMotion';
   static const String _kAudioMaster = 'mm.audioMaster';
   static const String _kVisualHapticOnly = 'mm.visualHapticOnly';
+  static const String _kCueVolume = 'mm.cueVolume';
 
   // STUDIO is the default a fresh install opens on: the quiet, sans-face,
   // square-control skin. The technical presets (SEELE, NERV, AG-HUD, RECON,
@@ -32,12 +33,20 @@ class ThemeController extends ChangeNotifier {
   // available from the dashboard (was off by default pre-R12 revision).
   bool _visualHapticOnly = false;
 
+  /// How loud a cue plays, 0-1, on top of the phone's own media volume. One
+  /// on a fresh install: the packs are normalised to a -1.5 dBFS peak, and a
+  /// cue is worth hearing without the owner hunting for a slider. It exists
+  /// because the media volume is not ours to set — the phone's own 3/15 is a
+  /// choice about *everything* that plays, so the app needs its own trim.
+  double _cueVolume = 1.0;
+
   MmThemePreset get preset => _preset;
   double get fontScale => _fontScale;
   bool get highContrast => _highContrast;
   bool get reduceMotion => _reduceMotion;
   bool get audioMaster => _audioMaster;
   bool get visualHapticOnly => _visualHapticOnly;
+  double get cueVolume => _cueVolume;
 
   MmTokens get tokens => kMmPresets[_preset]!;
 
@@ -60,6 +69,7 @@ class ThemeController extends ChangeNotifier {
     _reduceMotion = Prefs.readBool(p, _kReduceMotion);
     _audioMaster = Prefs.readBool(p, _kAudioMaster, fallback: true);
     _visualHapticOnly = Prefs.readBool(p, _kVisualHapticOnly);
+    _cueVolume = Prefs.readDouble(p, _kCueVolume, fallback: 1.0).clamp(0.0, 1.0);
     notifyListeners();
   }
 
@@ -112,5 +122,13 @@ class ThemeController extends ChangeNotifier {
       await Prefs.setBool(p, _kVisualHapticOnly, v);
       if (v) await Prefs.setBool(p, _kAudioMaster, false);
     });
+  }
+
+  Future<void> setCueVolume(double v) async {
+    final double c = v.clamp(0.0, 1.0);
+    if (c == _cueVolume) return;
+    _cueVolume = c;
+    notifyListeners();
+    await _save((SharedPreferences p) => Prefs.setDouble(p, _kCueVolume, c));
   }
 }

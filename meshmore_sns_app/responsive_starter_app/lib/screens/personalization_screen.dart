@@ -1,12 +1,16 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../cue/cue_service.dart';
 import '../theme/mm_tokens.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_collapse_controller.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_collapsible.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
@@ -83,7 +87,14 @@ class PersonalizationScreen extends StatelessWidget {
                     opacity: tc.highContrast ? 0.55 : 1.0,
                     child: ListTile(
                       dense: true,
-                      onTap: () => tc.setPreset(p),
+                      onTap: () {
+                        // A theme is a sound as well as a colour, so picking one
+                        // plays it. The cue is the pack's own `discovery` — the
+                        // sound a theme's neighbours make when they arrive —
+                        // which is the shortest honest sample of the pack.
+                        tc.setPreset(p);
+                        _playSample(context, CueKind.discovery);
+                      },
                       leading: Icon(
                         tc.preset == p
                             ? Icons.radio_button_checked
@@ -158,6 +169,58 @@ class PersonalizationScreen extends StatelessWidget {
                   value: tc.audioMaster,
                   onChanged: tc.visualHapticOnly ? null : tc.setAudioMaster,
                 ),
+                // The trim, because the phone's own media volume is a choice
+                // about everything that plays and cannot be ours to set. The
+                // packs are normalised to a -1.5 dBFS peak, so 100 % is sane.
+                ListTile(
+                  dense: true,
+                  enabled: tc.audioMaster && !tc.visualHapticOnly,
+                  title: Text(l.personalizationCueVolume),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Slider(
+                        min: 0,
+                        max: 1,
+                        divisions: 10,
+                        value: tc.cueVolume,
+                        label: '${(tc.cueVolume * 100).round()}%',
+                        onChanged: tc.audioMaster && !tc.visualHapticOnly
+                            ? tc.setCueVolume
+                            : null,
+                      ),
+                      Text(
+                        l.personalizationCueVolumeSubtitle(
+                            '${(tc.cueVolume * 100).round()}'),
+                        style: TextStyle(
+                            fontSize: context.skin.type.sizeSm,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                // Every pack is written for its own theme, and the only way to
+                // judge one is to hear it in the place it can be changed.
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                      context.skin.space.screenEdge,
+                      0,
+                      context.skin.space.screenEdge,
+                      context.skin.space.rowGap),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: MmAction(
+                      key: const ValueKey<String>('cue-preview'),
+                      icon: Icons.volume_up,
+                      label: l.personalizationCuePreview,
+                      onPressed: tc.audioMaster && !tc.visualHapticOnly
+                          ? () => _playSample(context, CueKind.alert)
+                          : null,
+                    ),
+                  ),
+                ),
               ],
             ),
           ],
@@ -167,8 +230,7 @@ class PersonalizationScreen extends StatelessWidget {
   }
 }
 
-class _Swatches extends StatelessWidget {
-  const _Swatches(this.t);
+class _Swatches extends StatelessWidget {  const _Swatches(this.t);
   final MmTokens t;
   @override
   Widget build(BuildContext context) {
@@ -192,4 +254,18 @@ class _Swatches extends StatelessWidget {
       children: <Widget>[dot(t.base), dot(t.accent), dot(t.alert)],
     );
   }
+}
+
+/// Play one cue of the active pack.
+///
+/// Guarded like `MmAudioToggle`: a widget test pumps this screen without the
+/// audio stack above it, and a preview is not worth a ProviderNotFound.
+void _playSample(BuildContext context, CueKind kind) {
+  CueService? cue;
+  try {
+    cue = context.read<CueService>();
+  } on ProviderNotFoundException {
+    cue = null;
+  }
+  unawaited(cue?.play(kind) ?? Future<void>.value());
 }
