@@ -302,9 +302,12 @@ class _GridScreenState extends State<GridScreen>
   /// see — the one accessibility setting in this app that cost more battery than
   /// the animation it replaces.
   void _syncTickToMotion(bool still) {
-    if (still && _tick.isAnimating) {
+    // Two reasons to stand still: reduce-motion removes the animation, and a
+    // paused dial is not polling. Both used to leave the sweep running.
+    final bool standStill = still || !_live;
+    if (standStill && _tick.isAnimating) {
       _tick.stop();
-    } else if (!still && !_tick.isAnimating && _live) {
+    } else if (!standStill && !_tick.isAnimating) {
       _tick.repeat();
     }
   }
@@ -334,6 +337,9 @@ class _GridScreenState extends State<GridScreen>
     // The view mode is remembered for the session, the drag claim is not: it
     // is published from the mode that is showing.
     _publishDragClaim();
+    // The sensors are not free: a report view that draws no bearing does not
+    // need the magnetometer running behind it.
+    _syncCompassToView();
     // Restore last-used grid preferences (scale / orientation / refresh)
     // so they don't reset when re-opening the grid. The view itself is
     // session state — see [GridScreen._sessionMode].
@@ -371,6 +377,19 @@ class _GridScreenState extends State<GridScreen>
     setState(() => _viewMode = m);
     GridScreen._sessionMode = m;
     _publishDragClaim();
+    _syncCompassToView();
+  }
+
+  /// Run the magnetometer (and the quarter-turn click) only while a view that
+  /// draws a bearing is showing. The compass is app-scoped and shared, so this
+  /// only ever stops an instance this screen owns.
+  void _syncCompassToView() {
+    if (!_ownsCompass) return;
+    if (_usesHeading) {
+      _compass.start();
+    } else {
+      _compass.stop();
+    }
   }
 
   /// Tells the shell whether this tab owns horizontal drags right now.
@@ -416,6 +435,32 @@ class _GridScreenState extends State<GridScreen>
   /// snapshot in time) and the range scale on the two views that use it.
   /// "Play" over a map meant "freeze the picture", which is not transport.
   bool get _hasTransport => _viewMode == _GridViewMode.radial;
+
+  /// Views that draw a bearing, and therefore the only ones a compass line
+  /// belongs on. The radar and the mesh tree both place peers by heading; the
+  /// reports (altitude, weather) and the cell grid do not.
+  bool get _usesHeading =>
+      _viewMode == _GridViewMode.radial || _viewMode == _GridViewMode.tree;
+
+  /// What the compass has to say about itself, or null when it has nothing to
+  /// add to the view's own purpose line.
+  ///
+  /// A dial that cannot point says why, because a phone near a magnet otherwise
+  /// simply does nothing when it is turned. A dial that points but has never
+  /// been turned is right about which way it moved and not yet about which way
+  /// is north, and the model has always known that (`calibratedCircle` plus the
+  /// platform's own accuracy verdict) while nothing said it.
+  String? _compassLine(AppLocalizations l) {
+    if (!_usesHeading) return null;
+    if (_compass.disturbed && !_compass.hasHeading) return l.gridCompassDisturbed;
+    if (_compass.hasHeading && !_compass.calibratedCircle) {
+      return l.gridCompassCalibrating;
+    }
+    if (_compass.hasHeading && _compass.needsCalibration) {
+      return l.gridCompassLowAccuracy;
+    }
+    return null;
+  }
 
   /// Whether the view plots nodes, and therefore whether a node count means
   /// anything above it. A weather report over "3 in mesh · 2 known" was three
@@ -594,7 +639,18 @@ class _GridScreenState extends State<GridScreen>
     if (_live) {
       _refreshSnapshot(); // immediate snap on Play
       _startRefresh();
+      // The sweep is the poll made visible: one revolution per interval. Play
+      // puts it back on the clock, unless reduce-motion removed it entirely.
+      if (!context.read<ThemeController>().reduceMotion && !_tick.isAnimating) {
+        _tick
+          ..duration = _interval
+          ..repeat();
+      }
     } else {
+      // Pause stops the timer AND the sweep. It used to stop only the timer, so
+      // the line kept coming round every interval with a frozen picture behind
+      // it, which reads as a refresh spinner that ignores the pause button.
+      _tick.stop();
       // Pause taps: re-capture current state so the frozen view
       // matches what the user sees at the moment of pause.
       _refreshSnapshot();
@@ -842,24 +898,7 @@ class _GridScreenState extends State<GridScreen>
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
             child: Text(
-              // A dial that cannot point says why, in the line it already uses
-              // to explain itself. Without this, a phone near a magnet simply
-              // does nothing when it is turned, which reads as a broken compass
-              // rather than as an unusable field.
-              _compass.disturbed && !_compass.hasHeading &&
-                      (_viewMode == _GridViewMode.radial ||
-                          _viewMode == _GridViewMode.tree)
-                  ? l.gridCompassDisturbed
-                  // A dial that points but has never been turned is right about
-                  // which way it moved and not yet about which way is north.
-                  // The model has always known this (`calibratedCircle`, and the
-                  // platform's own accuracy verdict); nothing said it, so an
-                  // uncalibrated dial looked exactly like a calibrated one.
-                  : _compass.hasHeading && !_compass.calibratedCircle
-                      ? l.gridCompassCalibrating
-                      : _compass.hasHeading && _compass.needsCalibration
-                          ? l.gridCompassLowAccuracy
-                          : _purposeFor(_viewMode, l),
+              _purposeFor(_viewMode, l),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -944,6 +983,27 @@ class _GridScreenState extends State<GridScreen>
               ],
             ),
           ),
+          // The compass line belongs to the views that draw a bearing, and it
+          // belongs under the header rather than above it: the header says which
+          // view this is, and this says what the view's own instrument is doing.
+          // It used to sit above the picker and to appear on every view, so a
+          // weather report could open with "Turn the phone right round once to
+          // calibrate" about a dial that view does not draw.
+          if (_usesHeading && _compassLine(l) != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _compassLine(l)!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeSm),
+                ),
+              ),
+            ),
           // Counts for every view. They used to be printed inside the radar
           // branch only, and the play state rode along in the same sentence
           // even though the transport now says it.

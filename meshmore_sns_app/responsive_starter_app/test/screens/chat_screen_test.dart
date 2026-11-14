@@ -125,8 +125,8 @@ void main() {
     expect(mc.isReady, isFalse, reason: 'the harness did not drop the link');
     expect(find.byIcon(Icons.send), findsNothing,
         reason: 'a send that cannot work must not look pressable');
-    expect(find.text('No radio connected'), findsOneWidget);
-    expect(find.text('Connect a radio'), findsOneWidget,
+    expect(find.text('No MeshCore radio connected'), findsOneWidget);
+    expect(find.text('Connect a MeshCore radio'), findsOneWidget,
         reason: 'the offline state names the way out');
     // The drop starts a reconnect ladder; the harness has to let it go, or the
     // test ends with a timer pending and fails on teardown rather than on an

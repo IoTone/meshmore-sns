@@ -133,7 +133,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get botFromBot => 'ボット';
 
   @override
-  String get dashboardRadio => 'ラジオ';
+  String get dashboardRadio => 'LoRa 無線機';
 
   @override
   String get dashForestCanopy => '樹冠';
@@ -255,7 +255,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get linkChipOffline => 'オフライン';
 
   @override
-  String get linkChipConnect => '無線機に接続';
+  String get linkChipConnect => 'MeshCore 無線機に接続';
 
   @override
   String linkChipSemantics(String state) {
@@ -366,10 +366,10 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceMgrPairNew => '新しいラジオをペアリング';
+  String get deviceMgrPairNew => '新しい MeshCore 無線機をペアリング';
 
   @override
-  String get pairTitle => 'ラジオをペアリング';
+  String get pairTitle => 'MeshCore 無線機をペアリング';
 
   @override
   String pairStepOf(int step, int total) {
@@ -404,7 +404,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pairRetry => '再試行';
 
   @override
-  String get pairScanTitle => 'ラジオを検索中';
+  String get pairScanTitle => 'MeshCore 無線機を探しています';
 
   @override
   String get pairScanBody =>
@@ -434,7 +434,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'ラジオに PIN が表示されたら、求められたときにスマートフォンへ入力してください。画面のないラジオは 123456 です。';
 
   @override
-  String get pairConfirmTitle => 'ラジオに接続しました';
+  String get pairConfirmTitle => 'MeshCore 無線機に接続しました';
 
   @override
   String pairConfirmBody(String name) {
@@ -448,10 +448,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pairConfirmFirmware => 'ファームウェア';
 
   @override
-  String get pairConfirmUse => 'このラジオを使う';
+  String get pairConfirmUse => 'この MeshCore 無線機を使う';
 
   @override
-  String get pairChooseAnother => '別のラジオを選ぶ';
+  String get pairChooseAnother => '別の MeshCore 無線機を選ぶ';
 
   @override
   String get settingsHeading => 'アプリ設定';
@@ -580,9 +580,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get termsSettingsSubtitle => '保存されるもの、端末外に出るもの、各権限が必要な理由';
 
   @override
-  String get aboutCopyright => 'Copyright (c) 2026 IoTone, Inc.';
-
-  @override
   String get aboutSubtitleEn => '(Socialrobot Network Service)';
 
   @override
@@ -590,6 +587,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get aboutDescription => 'MeshCore コンパニオンクライアント。';
+
+  @override
+  String get aboutProjectSite => 'プロジェクトのサイト';
 
   @override
   String get aboutLicense => 'MIT (X11) ライセンスで提供。';
@@ -679,10 +679,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get demoBanner => 'デモ';
 
   @override
-  String get demoTooltip => 'デモモード — 無線なし。コンパニオンに接続せずにチャンネル・設定・ドキュメントを試せます。';
+  String get demoTooltip =>
+      'デモモード — MeshCore 無線機なし。コンパニオンなしでチャンネル・設定・ドキュメントを試せます。';
 
   @override
-  String get demoModeRow => '無線なし';
+  String get demoModeRow => 'MeshCore 無線機なし';
 
   @override
   String get demoModeSubtitle => 'オフラインでアプリを試せます';
@@ -717,7 +718,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get firstRunGrant => 'Bluetooth を許可';
 
   @override
-  String get firstRunSkip => 'デモモードで試す（無線なし）';
+  String get firstRunSkip => 'デモモードで試す（MeshCore 無線機なし）';
 
   @override
   String get firstRunDeniedTransient =>
@@ -839,7 +840,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get nodesStatusOffline => '未接続 — 「無線機に接続」を開いてください';
+  String get nodesStatusOffline => '未接続 — 「MeshCore 無線機に接続」を開いてください';
 
   @override
   String get nodesFarBadge => '遠距離';
@@ -851,7 +852,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesEmptyReady => 'ノードはまだありません。ノードが自分を知らせると表示されます。';
 
   @override
-  String get nodesEmptyOffline => 'ラジオを接続して周辺ノードを発見してください。';
+  String get nodesEmptyOffline => '近くのノードを見つけるには MeshCore 無線機に接続してください。';
 
   @override
   String get nodesFavTooltip => 'お気に入りに追加';
@@ -1232,7 +1233,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubDevice => 'デバイス設定';
 
   @override
-  String get settingsGroupRadio => '無線';
+  String get settingsGroupRadio => 'LORA 無線機';
 
   @override
   String get settingsGroupApp => 'アプリ';
@@ -1259,7 +1260,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubChannels => 'チャンネル';
 
   @override
-  String get settingsHubDiagnostics => '無線機の接続';
+  String get settingsHubDiagnostics => 'MeshCore 無線機の接続';
 
   @override
   String get bootStarting => '起動中';
@@ -1277,7 +1278,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bootReady => 'メッシュ オンライン';
 
   @override
-  String get bootOffline => 'オフライン — 「無線機に接続」を開いてください';
+  String get bootOffline => 'オフライン — 「MeshCore 無線機に接続」を開いてください';
 
   @override
   String get bootSkip => 'スキップ';
@@ -1652,7 +1653,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailRemoveDeviceContactDone => '無線機の連絡先から削除しました。';
 
   @override
-  String get deviceContactsTitle => '無線機の連絡先';
+  String get deviceContactsTitle => 'MeshCore 無線機の連絡先';
 
   @override
   String get deviceContactsRefresh => '更新';
@@ -2268,7 +2269,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'チャンネル 0 は共有のパブリックです。非公開にするには、どのラジオでも同じ番号・名前・鍵にします。';
 
   @override
-  String get channelsOfflineHint => 'チャンネルを編集するにはラジオを接続 (診断)。';
+  String get channelsOfflineHint => 'チャンネルを編集するには MeshCore 無線機に接続してください（診断）。';
 
   @override
   String get channelCreateCreated => 'チャンネルを作成しました。';
@@ -2716,7 +2717,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get closeSheet => '閉じる';
 
   @override
-  String get deviceRadioParams => '無線';
+  String get deviceRadioParams => 'LoRa 無線機';
 
   @override
   String get deviceIdentityAdvert => '識別とアドバート';
@@ -2795,7 +2796,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRadioRevertFailed => '元に戻せませんでした — 無線機は直前の値のままです。';
 
   @override
-  String get radioHealthTitle => '無線の状態';
+  String get radioHealthTitle => 'MeshCore 無線機の状態';
 
   @override
   String get radioHealthRead => '取得';
@@ -2844,7 +2845,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceApplyRadio => 'ラジオパラメータを適用';
 
   @override
-  String get deviceConnectFirst => 'まずラジオに接続してください (診断 & 接続)。';
+  String get deviceConnectFirst => '先に MeshCore 無線機に接続してください（診断と接続）。';
 
   @override
   String get deviceAdvertName => 'アドバート名';
@@ -2938,7 +2939,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get connectionDiagnosticsExplainer => '生フレーム、フィクスチャ、テストコマンド。';
 
   @override
-  String get diagnosticsTitle => '無線機の診断';
+  String get diagnosticsTitle => 'MeshCore 無線機の診断';
 
   @override
   String get diagnosticsRawFrameLog => 'RAW フレームログ (新しい順)';
@@ -3126,7 +3127,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toolsTitle => 'ツール';
 
   @override
-  String get toolsOffline => '未接続 — ツールには無線機が必要です。「無線機に接続」を開いてください';
+  String get toolsOffline =>
+      '未接続 — ツールには MeshCore 無線機が必要です。「MeshCore 無線機に接続」を開いてください';
 
   @override
   String get toolsRunning => '実行中';
@@ -3173,7 +3175,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toolsChoose => '選択…';
 
   @override
-  String get toolStatsName => '無線統計';
+  String get toolStatsName => 'MeshCore 無線機の統計';
 
   @override
   String get toolStatsSub => 'ノイズフロア・エアタイム・パケット数';
@@ -3246,7 +3248,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get statsAuto => '自動 (5 秒ごと)';
 
   @override
-  String get statsSectionRadio => '無線';
+  String get statsSectionRadio => 'LoRa 無線機';
 
   @override
   String get statsSectionPackets => 'パケット';
@@ -4038,7 +4040,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnosticsSectionDeveloper => '開発者向け';
 
   @override
-  String get diagnosticsPairRadio => '無線をペアリング';
+  String get diagnosticsPairRadio => 'MeshCore 無線機をペアリング';
 
   @override
   String get diagnosticsForgetConfirmTitle => 'この無線のペアリングを解除しますか？';
@@ -5500,7 +5502,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aboutReplayIntro => '初回画面をもう一度表示';
 
   @override
-  String get toolsGroupDiagnostics => '無線の診断';
+  String get toolsGroupDiagnostics => 'MeshCore 無線機の診断';
 
   @override
   String nodeMarkerSemantics(String name) {
@@ -5659,10 +5661,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get weatherOpenTelemetrySettings => 'ノードのテレメトリを有効にする';
 
   @override
-  String get chatNoRadio => '無線機が接続されていません';
+  String get chatNoRadio => 'MeshCore 無線機が接続されていません';
 
   @override
-  String get chatConnectRadio => '無線機を接続';
+  String get chatConnectRadio => 'MeshCore 無線機に接続';
 
   @override
   String get chatConnecting => '接続中…';
@@ -6417,10 +6419,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get elevationEmpty => 'まだ誰も高度を報告していません。センサーを持つ相手に問い合わせるか、広告を待ってください。';
 
   @override
-  String get mapOverlaysTitle => 'マップに表示するもの';
+  String get mapOverlaysTitle => 'レイヤー';
 
   @override
-  String get connectTitle => '無線機に接続';
+  String get connectTitle => 'MeshCore 無線機に接続';
 
   @override
   String get mapKeyTitle => '地図の凡例';

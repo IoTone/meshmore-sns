@@ -113,6 +113,20 @@ void main() {
 
     // The sheet is already open (above); switching the layer on is one tap, and
     // the sheet is dismissed afterwards so the map itself can be tapped.
+    // The sheet lists the basemap sources first now, so at 200 % text on a
+    // 320 dp phone the density switch is below the fold. A reader scrolls; the
+    // test does the same rather than pretending the row is on screen.
+    await t.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('map-density-toggle')),
+      120,
+      scrollable: find.descendant(
+        of: find.byKey(const ValueKey<String>('map-overlays-sheet')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await t.ensureVisible(
+        find.byKey(const ValueKey<String>('map-density-toggle')));
+    await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey<String>('map-density-toggle')));
     await t.pump();
     await t.pump(const Duration(milliseconds: 300));
@@ -202,6 +216,20 @@ void main() {
     // the density layer opens the sheet first — which is also the shortest
     // statement of what a reader does.
     await t.tap(find.byKey(const ValueKey<String>('map-overlays-button')));
+    await t.pumpAndSettle();
+    // The sheet lists the basemap sources first now, so at 200 % text on a
+    // 320 dp phone the density switch is below the fold. A reader scrolls; the
+    // test does the same rather than pretending the row is on screen.
+    await t.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('map-density-toggle')),
+      120,
+      scrollable: find.descendant(
+        of: find.byKey(const ValueKey<String>('map-overlays-sheet')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await t.ensureVisible(
+        find.byKey(const ValueKey<String>('map-density-toggle')));
     await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey<String>('map-density-toggle')));
     await t.pump();

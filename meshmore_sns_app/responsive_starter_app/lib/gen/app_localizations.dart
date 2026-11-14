@@ -323,7 +323,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardRadio.
   ///
   /// In en, this message translates to:
-  /// **'RADIO'**
+  /// **'LoRa radio'**
   String get dashboardRadio;
 
   /// No description provided for @dashForestCanopy.
@@ -563,7 +563,7 @@ abstract class AppLocalizations {
   /// No description provided for @linkChipConnect.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio'**
+  /// **'Connect a MeshCore radio'**
   String get linkChipConnect;
 
   /// No description provided for @linkChipSemantics.
@@ -761,13 +761,13 @@ abstract class AppLocalizations {
   /// No description provided for @deviceMgrPairNew.
   ///
   /// In en, this message translates to:
-  /// **'Pair a new radio'**
+  /// **'Pair a new MeshCore radio'**
   String get deviceMgrPairNew;
 
   /// No description provided for @pairTitle.
   ///
   /// In en, this message translates to:
-  /// **'Pair a radio'**
+  /// **'Pair a MeshCore radio'**
   String get pairTitle;
 
   /// No description provided for @pairStepOf.
@@ -827,7 +827,7 @@ abstract class AppLocalizations {
   /// No description provided for @pairScanTitle.
   ///
   /// In en, this message translates to:
-  /// **'Looking for radios'**
+  /// **'Looking for MeshCore radios'**
   String get pairScanTitle;
 
   /// No description provided for @pairScanBody.
@@ -875,7 +875,7 @@ abstract class AppLocalizations {
   /// No description provided for @pairConfirmTitle.
   ///
   /// In en, this message translates to:
-  /// **'Radio connected'**
+  /// **'MeshCore radio connected'**
   String get pairConfirmTitle;
 
   /// No description provided for @pairConfirmBody.
@@ -899,13 +899,13 @@ abstract class AppLocalizations {
   /// No description provided for @pairConfirmUse.
   ///
   /// In en, this message translates to:
-  /// **'Use this radio'**
+  /// **'Use this MeshCore radio'**
   String get pairConfirmUse;
 
   /// No description provided for @pairChooseAnother.
   ///
   /// In en, this message translates to:
-  /// **'Choose another radio'**
+  /// **'Choose another MeshCore radio'**
   String get pairChooseAnother;
 
   /// No description provided for @settingsHeading.
@@ -1136,12 +1136,6 @@ abstract class AppLocalizations {
   /// **'What is stored, what leaves the device, and why each permission is asked for'**
   String get termsSettingsSubtitle;
 
-  /// No description provided for @aboutCopyright.
-  ///
-  /// In en, this message translates to:
-  /// **'Copyright (c) 2026 IoTone, Inc.'**
-  String get aboutCopyright;
-
   /// No description provided for @aboutSubtitleEn.
   ///
   /// In en, this message translates to:
@@ -1159,6 +1153,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A MeshCore companion client.'**
   String get aboutDescription;
+
+  /// No description provided for @aboutProjectSite.
+  ///
+  /// In en, this message translates to:
+  /// **'The project site'**
+  String get aboutProjectSite;
 
   /// No description provided for @aboutLicense.
   ///
@@ -1325,13 +1325,13 @@ abstract class AppLocalizations {
   /// No description provided for @demoTooltip.
   ///
   /// In en, this message translates to:
-  /// **'Demo mode — no radio. Explore channels, settings and docs without a companion.'**
+  /// **'Demo mode — no MeshCore radio. Explore channels, settings and docs without a companion.'**
   String get demoTooltip;
 
   /// No description provided for @demoModeRow.
   ///
   /// In en, this message translates to:
-  /// **'No radio'**
+  /// **'No MeshCore radio'**
   String get demoModeRow;
 
   /// No description provided for @demoModeSubtitle.
@@ -1397,7 +1397,7 @@ abstract class AppLocalizations {
   /// No description provided for @firstRunSkip.
   ///
   /// In en, this message translates to:
-  /// **'Explore in demo mode (no radio)'**
+  /// **'Explore in demo mode (no MeshCore radio)'**
   String get firstRunSkip;
 
   /// No description provided for @firstRunDeniedTransient.
@@ -1619,7 +1619,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesStatusOffline.
   ///
   /// In en, this message translates to:
-  /// **'Not connected — open Connect a radio'**
+  /// **'Not connected — open Connect a MeshCore radio'**
   String get nodesStatusOffline;
 
   /// No description provided for @nodesFarBadge.
@@ -1643,7 +1643,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesEmptyOffline.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio to discover nearby nodes.'**
+  /// **'Connect a MeshCore radio to discover nearby nodes.'**
   String get nodesEmptyOffline;
 
   /// No description provided for @nodesFavTooltip.
@@ -2309,7 +2309,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsGroupRadio.
   ///
   /// In en, this message translates to:
-  /// **'RADIO'**
+  /// **'LORA RADIO'**
   String get settingsGroupRadio;
 
   /// No description provided for @settingsGroupApp.
@@ -2363,7 +2363,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHubDiagnostics.
   ///
   /// In en, this message translates to:
-  /// **'Radio connection'**
+  /// **'MeshCore radio connection'**
   String get settingsHubDiagnostics;
 
   /// No description provided for @bootStarting.
@@ -2399,7 +2399,7 @@ abstract class AppLocalizations {
   /// No description provided for @bootOffline.
   ///
   /// In en, this message translates to:
-  /// **'OFFLINE — open Connect a radio'**
+  /// **'OFFLINE — open Connect a MeshCore radio'**
   String get bootOffline;
 
   /// No description provided for @bootSkip.
@@ -2987,7 +2987,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Radio contacts'**
+  /// **'MeshCore radio contacts'**
   String get deviceContactsTitle;
 
   /// No description provided for @deviceContactsRefresh.
@@ -4001,7 +4001,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsOfflineHint.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio (Diagnostics) to edit channels.'**
+  /// **'Connect a MeshCore radio (Diagnostics) to edit channels.'**
   String get channelsOfflineHint;
 
   /// No description provided for @channelCreateCreated.
@@ -4811,7 +4811,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioParams.
   ///
   /// In en, this message translates to:
-  /// **'Radio'**
+  /// **'LoRa radio'**
   String get deviceRadioParams;
 
   /// No description provided for @deviceIdentityAdvert.
@@ -4949,7 +4949,7 @@ abstract class AppLocalizations {
   /// No description provided for @radioHealthTitle.
   ///
   /// In en, this message translates to:
-  /// **'Radio health'**
+  /// **'MeshCore radio health'**
   String get radioHealthTitle;
 
   /// No description provided for @radioHealthRead.
@@ -5027,7 +5027,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceConnectFirst.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio first (Diagnostics & connect).'**
+  /// **'Connect a MeshCore radio first (Diagnostics & connect).'**
   String get deviceConnectFirst;
 
   /// No description provided for @deviceAdvertName.
@@ -5207,7 +5207,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Radio diagnostics'**
+  /// **'MeshCore radio diagnostics'**
   String get diagnosticsTitle;
 
   /// No description provided for @diagnosticsRawFrameLog.
@@ -5549,7 +5549,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolsOffline.
   ///
   /// In en, this message translates to:
-  /// **'Not connected — the tools need the radio. Open Connect a radio'**
+  /// **'Not connected — the tools need the MeshCore radio. Open Connect a MeshCore radio'**
   String get toolsOffline;
 
   /// No description provided for @toolsRunning.
@@ -5627,7 +5627,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolStatsName.
   ///
   /// In en, this message translates to:
-  /// **'Radio stats'**
+  /// **'MeshCore radio stats'**
   String get toolStatsName;
 
   /// No description provided for @toolStatsSub.
@@ -5771,7 +5771,7 @@ abstract class AppLocalizations {
   /// No description provided for @statsSectionRadio.
   ///
   /// In en, this message translates to:
-  /// **'RADIO'**
+  /// **'LoRa radio'**
   String get statsSectionRadio;
 
   /// No description provided for @statsSectionPackets.
@@ -7164,7 +7164,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsPairRadio.
   ///
   /// In en, this message translates to:
-  /// **'Pair a radio'**
+  /// **'Pair a MeshCore radio'**
   String get diagnosticsPairRadio;
 
   /// No description provided for @diagnosticsForgetConfirmTitle.
@@ -9613,7 +9613,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolsGroupDiagnostics.
   ///
   /// In en, this message translates to:
-  /// **'Radio diagnostics'**
+  /// **'MeshCore radio diagnostics'**
   String get toolsGroupDiagnostics;
 
   /// No description provided for @nodeMarkerSemantics.
@@ -9913,13 +9913,13 @@ abstract class AppLocalizations {
   /// No description provided for @chatNoRadio.
   ///
   /// In en, this message translates to:
-  /// **'No radio connected'**
+  /// **'No MeshCore radio connected'**
   String get chatNoRadio;
 
   /// No description provided for @chatConnectRadio.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio'**
+  /// **'Connect a MeshCore radio'**
   String get chatConnectRadio;
 
   /// No description provided for @chatConnecting.
@@ -11197,13 +11197,13 @@ abstract class AppLocalizations {
   /// No description provided for @mapOverlaysTitle.
   ///
   /// In en, this message translates to:
-  /// **'What the map shows'**
+  /// **'Layers'**
   String get mapOverlaysTitle;
 
   /// No description provided for @connectTitle.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio'**
+  /// **'Connect a MeshCore radio'**
   String get connectTitle;
 
   /// No description provided for @mapKeyTitle.

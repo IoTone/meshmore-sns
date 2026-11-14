@@ -212,7 +212,7 @@ void main() {
     await t.tap(find.byTooltip('Settings'));
     await t.pumpAndSettle();
     for (final String g in <String>[
-      'RADIO',
+      'LORA RADIO',
       'LOCATION',
       'APP',
       'CONNECTION',
@@ -221,7 +221,7 @@ void main() {
       expect(find.text(g), findsOneWidget, reason: 'group label $g');
     }
     double y(String s) => t.getTopLeft(find.text(s)).dy;
-    expect(y('RADIO'), lessThan(y('LOCATION')));
+    expect(y('LORA RADIO'), lessThan(y('LOCATION')));
     expect(y('LOCATION'), lessThan(y('APP')));
     expect(y('APP'), lessThan(y('CONNECTION')));
     expect(y('CONNECTION'), lessThan(y('ABOUT')));
@@ -247,7 +247,8 @@ void main() {
     // Networks and Firmware are in the RADIO group: below its label and above
     // the APP label that follows it.
     for (final String row in <String>['Networks', 'Firmware']) {
-      expect(y(row), greaterThan(y('RADIO')), reason: '$row belongs under RADIO');
+      expect(y(row), greaterThan(y('LORA RADIO')),
+          reason: '$row belongs under LORA RADIO');
       expect(y(row), lessThan(y('APP')),
           reason: '$row drifted past the APP group');
     }
@@ -260,7 +261,7 @@ void main() {
       'App settings',
       'Appearance & accessibility',
       'Offline maps',
-      'Radio connection',
+      'MeshCore radio connection',
       'Tools',
     ]) {
       expect(find.text(row), findsOneWidget, reason: '$row is listed once');

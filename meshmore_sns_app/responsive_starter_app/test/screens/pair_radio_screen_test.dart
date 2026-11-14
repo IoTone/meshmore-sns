@@ -165,8 +165,8 @@ void main() {
     // The user walks to the OS and switches it on; the flow must not make
     // them come back to a button that may already be off screen.
     scanner.adapterChanged(AdapterState.on);
-    await _pumpUntil(t, find.text('Looking for radios'));
-    expect(find.text('Looking for radios'), findsOneWidget);
+    await _pumpUntil(t, find.text('Looking for MeshCore radios'));
+    expect(find.text('Looking for MeshCore radios'), findsOneWidget);
     expect(scanner.scanCount, 1);
   });
 
@@ -174,7 +174,7 @@ void main() {
       (WidgetTester t) async {
     final _FakeScanner scanner = _FakeScanner();
     await _pumpScreen(t, scanner);
-    await _pumpUntil(t, find.text('Looking for radios'));
+    await _pumpUntil(t, find.text('Looking for MeshCore radios'));
 
     scanner.hear(const <PairHit>[]);
     scanner.finishScan();
@@ -192,7 +192,7 @@ void main() {
         FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl =
         await _pumpScreen(t, scanner, transport: transport);
-    await _pumpUntil(t, find.text('Looking for radios'));
+    await _pumpUntil(t, find.text('Looking for MeshCore radios'));
 
     scanner.hear(const <PairHit>[
       PairHit(remoteId: 'AA:BB:CC', name: 'MeshCore-Ridge', rssi: -61),
@@ -232,7 +232,7 @@ void main() {
     final _FakeScanner scanner = _FakeScanner();
     final MeshcoreController ctrl =
         await _pumpScreen(t, scanner, openFailures: <int>[1]);
-    await _pumpUntil(t, find.text('Looking for radios'));
+    await _pumpUntil(t, find.text('Looking for MeshCore radios'));
 
     scanner.hear(const <PairHit>[
       PairHit(remoteId: 'AA:BB:CC', name: 'MeshCore-Ridge', rssi: -61),
@@ -258,7 +258,7 @@ void main() {
   testWidgets('leaving mid-scan stops the scan', (WidgetTester t) async {
     final _FakeScanner scanner = _FakeScanner();
     await _pumpScreen(t, scanner);
-    await _pumpUntil(t, find.text('Looking for radios'));
+    await _pumpUntil(t, find.text('Looking for MeshCore radios'));
     expect(scanner.scanCount, 1);
     expect(scanner.stops, 0);
 

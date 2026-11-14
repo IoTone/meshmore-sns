@@ -13,6 +13,7 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/screens/about_screen.dart';
+import 'package:meshmore_sns_app/ui/mm_components.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
 
 import '../meshcore/fake_transport.dart';
@@ -83,9 +84,13 @@ void main() {
     await pump(t, introDone: false);
     final AppLocalizations l =
         AppLocalizations.of(t.element(find.byType(AboutScreen)));
-    final Finder replay = find.widgetWithText(OutlinedButton, l.aboutReplayIntro);
+    // An action on this page is an MmAction now, not a Material outlined
+    // button: one family per screen, which is the rule the 2026-11-14 audit
+    // produced, and this page was carrying three Material buttons.
+    final Finder replay = find.byWidgetPredicate(
+        (Widget w) => w is MmAction && w.label == l.aboutReplayIntro);
     expect(replay, findsOneWidget);
-    expect(t.widget<OutlinedButton>(replay).onPressed, isNull,
+    expect(t.widget<MmAction>(replay).onPressed, isNull,
         reason: 'an intro that has not been seen cannot be replayed');
   });
 
@@ -94,7 +99,8 @@ void main() {
     await pump(t);
     final AppLocalizations l =
         AppLocalizations.of(t.element(find.byType(AboutScreen)));
-    final Finder replay = find.widgetWithText(OutlinedButton, l.aboutReplayIntro);
-    expect(t.widget<OutlinedButton>(replay).onPressed, isNotNull);
+    final Finder replay = find.byWidgetPredicate(
+        (Widget w) => w is MmAction && w.label == l.aboutReplayIntro);
+    expect(t.widget<MmAction>(replay).onPressed, isNotNull);
   });
 }

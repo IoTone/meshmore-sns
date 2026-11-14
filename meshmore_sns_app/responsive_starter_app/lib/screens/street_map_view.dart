@@ -110,11 +110,14 @@ class StreetMapView extends StatefulWidget {
   static const double controlCell = 48;
   static const double controlsInset = 12;
 
-  /// How many cells the column draws today: zoom in, zoom out, recentre,
-  /// basemap, overlays, report a place. Pinned by
-  /// `test/screens/map_chrome_test.dart` so a new control has to update this
-  /// rather than silently misplacing whatever is placed beside the column.
-  static const int controlCount = 6;
+  /// How many cells the column draws today: layers, zoom in, zoom out,
+  /// recentre, report a place. Pinned by `test/screens/map_chrome_test.dart` so
+  /// a new control has to update this rather than silently misplacing whatever
+  /// is placed beside the column.
+  ///
+  /// The basemap cell is gone: the ground is the first section of the layers
+  /// sheet now, because "what the map shows" was two menus.
+  static const int controlCount = 5;
 
   /// Bottom edge of the column when the host adds [extras] controls.
   static double controlsBottomFor(int extras) =>
@@ -1094,28 +1097,13 @@ class _StreetMapViewState extends State<StreetMapView> {
     });
   }
 
-  /// The basemap picker: the app's one pick-one-of-N sheet, with each source's
-  /// own attribution under it so the choice and the credit are read together.
-  Future<void> _pickBasemap(
-    BuildContext context,
-    AppLocalizations l,
-    List<MapSource> sources, {
-    required String current,
-  }) async {
-    final String? id = await showMmPicker<String>(
-      context: context,
-      title: l.mapsSourcePick,
-      current: current,
-      items: <MmPickerItem<String>>[
-        for (final MapSource s in sources)
-          MmPickerItem<String>.option(
-            s.id,
-            s.name,
-            detail: s.attribution.isEmpty ? null : s.attribution,
-          ),
-      ],
-    );
-    if (id == null || !mounted) return;
+  /// Choose the basemap, from the one place the map's own appearance is set.
+  ///
+  /// This used to be a second control in the map's column with its own sheet,
+  /// so "what the map shows" was two menus: one for the ground and one for
+  /// everything drawn on it. The owner asked for one, and the ground is the
+  /// first thing a layer panel lists.
+  void _applySourceId(String id) {
     setState(() {
       if (id == kOsmVector.id) {
         _rasterOverride = null;
@@ -1276,8 +1264,9 @@ class _StreetMapViewState extends State<StreetMapView> {
     BuildContext context,
     AppLocalizations l,
     MapsController? maps,
-    List<MapSource> sources,
-  ) async {
+    List<MapSource> sources, {
+    required String currentSourceId,
+  }) async {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -1303,6 +1292,39 @@ class _StreetMapViewState extends State<StreetMapView> {
                           letterSpacing: 1.4,
                           fontWeight: FontWeight.w600)),
                 ),
+                // The ground first: a layer panel that lists what is drawn on
+                // the map and not what the map is drawn on is half a panel.
+                // Each source carries its own attribution, so the choice and
+                // the credit are read together.
+                for (final MapSource src in sources)
+                  ListTile(
+                    key: ValueKey<String>('map-basemap-${src.id}'),
+                    dense: true,
+                    leading: Icon(
+                      src.id == currentSourceId
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: src.id == currentSourceId
+                          ? skin.color.accent
+                          : skin.color.fgMuted,
+                    ),
+                    title: Text(src.name,
+                        style: TextStyle(
+                            color: skin.color.fg,
+                            fontSize: skin.type.sizeBody)),
+                    subtitle: src.attribution.isEmpty
+                        ? null
+                        : Text(src.attribution,
+                            style: TextStyle(
+                                color: skin.color.fgMuted,
+                                fontSize: skin.type.sizeSm)),
+                    onTap: () {
+                      _applySourceId(src.id);
+                      setSheet(() {});
+                      setState(() {});
+                    },
+                  ),
+                Divider(color: cs.outlineVariant, height: 16),
                 SwitchListTile(
                   key: const ValueKey<String>('map-density-toggle'),
                   value: _showDensity,
@@ -2501,7 +2523,9 @@ class _StreetMapViewState extends State<StreetMapView> {
                   icon: Icon(_anyOverlayShown(maps)
                       ? Icons.layers
                       : Icons.layers_outlined),
-                  onPressed: () => _showOverlays(context, l, maps, sources),
+                  onPressed: () => _showOverlays(context, l, maps, sources,
+                      currentSourceId:
+                          vectorDrawn ? kOsmVector.id : shownSource.id),
                 ),
                 IconButton(
                   tooltip: l.gridZoomTighter,
@@ -2538,27 +2562,6 @@ class _StreetMapViewState extends State<StreetMapView> {
                       _askForFix();
                     }
                   },
-                ),
-                // R25+3 / R61 — basemap picker.
-                //
-                // A `PopupMenuButton`, until the owner read it on the device:
-                // a bare list floating over the map with no title, no tick and
-                // the skin's type and shape nowhere in it, which is the one
-                // shape R104 removed from the grid's pickers. It is the app's
-                // own picker now — a sheet with the source named, the current
-                // one ticked and an attribution line, because a picker that
-                // names a source without its credit is a licensing gap as well
-                // as a plain-looking menu.
-                IconButton(
-                  key: const ValueKey<String>('map-basemap-picker'),
-                  tooltip: l.mapsSourcePick,
-                  iconSize: 18,
-                  constraints: const BoxConstraints(
-                      minWidth: StreetMapView.controlCell,
-                      minHeight: StreetMapView.controlCell),
-                  icon: const Icon(Icons.map),
-                  onPressed: () => _pickBasemap(context, l, sources,
-                      current: vectorDrawn ? kOsmVector.id : shownSource.id),
                 ),
                 // Reporting a place is a control in this column, not a panel
                 // on the left: a labelled box at the bottom left overlapped the

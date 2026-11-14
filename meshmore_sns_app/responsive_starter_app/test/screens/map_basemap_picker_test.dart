@@ -10,6 +10,7 @@ import 'package:provider/single_child_widget.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
+import 'package:meshmore_sns_app/maps/basemap.dart';
 import 'package:meshmore_sns_app/maps/map_fetch.dart';
 import 'package:meshmore_sns_app/maps/map_source.dart';
 import 'package:meshmore_sns_app/maps/maps_controller.dart';
@@ -92,9 +93,12 @@ Future<void> _pump(WidgetTester t, MmThemePreset preset) async {
 /// `itemBuilder`. It is the app's one pick-one-of-N sheet now, so a test drives
 /// the sheet: the same path a thumb takes, and the same rows a reader sees.
 Future<void> _open(WidgetTester t) async {
-  final IconButton button = t.widget<IconButton>(
-      find.byKey(const ValueKey<String>('map-basemap-picker')));
-  button.onPressed!();
+  // The basemap is a row in the map's one appearance sheet now, not a control
+  // of its own: "what the map shows" was two menus, one for the ground and one
+  // for everything drawn on it. A test drives the same two taps a thumb does.
+  final IconButton layers = t.widget<IconButton>(
+      find.byKey(const ValueKey<String>('map-overlays-button')));
+  layers.onPressed!();
   await t.pump();
   await t.pump(const Duration(milliseconds: 400));
 }
@@ -125,14 +129,28 @@ Future<void> _settle(WidgetTester t) async {
   await t.pump(const Duration(seconds: 30));
 }
 
+/// The map's own credit line, as opposed to the same words in the layers sheet.
+///
+/// The sheet names every source with its attribution under it, which is the
+/// point of the sheet; a whole-tree text search therefore finds the credit two
+/// or three times and says nothing about what the map is drawing.
+Finder _credit(WidgetTester t, String text) => find.descendant(
+      of: find.byType(MapAttribution),
+      matching: find.text(text),
+    );
+
 /// Choose a source by its name, through the sheet's own row.
 Future<void> _select(WidgetTester t, MapSource source) async {
   await _open(t);
   // Two USGS entries can share a display name, so the tap targets the row the
-  // picker built for this source id.
-  await t.tap(find.byKey(ValueKey<String>('mm-picker-${source.id}')));
+  // layers sheet built for this source id. The basemap is a section of that one
+  // sheet now, not a picker of its own.
+  await t.tap(find.byKey(ValueKey<String>('map-basemap-${source.id}')));
   await t.pump();
   await t.pump(const Duration(milliseconds: 500));
+  // The sheet stays open on purpose (a second layer is one more tap), so a test
+  // that wants to look at the map closes it the way a reader does.
+  await _close(t);
 }
 
 void main() {
@@ -142,7 +160,7 @@ void main() {
     expect(find.byType(VectorBasemapLayer), findsOneWidget);
     // vector_map_tiles builds its own TileLayer internally, so the signal
     // for "raster is drawn" is the credit line, not the widget type.
-    expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
+    expect(_credit(t, '© OpenStreetMap contributors'), findsOneWidget);
 
     // The vector basemap must be an offered choice, not an implicit one.
     final List<String> names = await _names(t);
@@ -150,14 +168,14 @@ void main() {
     // Each source names itself and its credit under it: the sheet carries the
     // attribution as its own muted line, which is two of them on screen while
     // the map is drawing the same credit.
-    expect(find.text(kOsmVector.attribution), findsOneWidget);
+    expect(_credit(t, kOsmVector.attribution), findsOneWidget);
     expect(names.length, kBuiltInSources.length,
         reason: 'every built-in source, vector included');
 
     await _select(t, kUsgsImagery);
     expect(find.byType(VectorBasemapLayer), findsNothing,
         reason: 'a raster pick must actually draw raster');
-    expect(find.text(kUsgsImagery.attribution), findsOneWidget,
+    expect(_credit(t, kUsgsImagery.attribution), findsOneWidget,
         reason: 'the credit follows what is drawn');
     await _settle(t);
   });
@@ -170,7 +188,7 @@ void main() {
 
     await _select(t, kOsmVector);
     expect(find.byType(VectorBasemapLayer), findsOneWidget);
-    expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
+    expect(_credit(t, '© OpenStreetMap contributors'), findsOneWidget);
     await _settle(t);
   });
 

@@ -639,7 +639,12 @@ class CompassHeading extends ChangeNotifier {
     final AppLifecycleState? life = WidgetsBinding.instance.lifecycleState;
     if (life != null && life != AppLifecycleState.resumed) return;
     if (!_cardinal.update(h)) return;
-    unawaited(HapticFeedback.selectionClick());
+    // `selectionClick` is Android's CLOCK_TICK, which several handsets (this
+    // owner's included, reported 2026-11-14) do not implement, so the quarter
+    // turn was silent with the setting on. `lightImpact` maps to
+    // CONTEXT_CLICK/ LONG_PRESS, which those devices do honour, and a 90° mark
+    // deserves a pulse you can feel in a pocket rather than a tick you cannot.
+    unawaited(HapticFeedback.lightImpact());
   }
 
   void _touch() {
@@ -751,6 +756,33 @@ class CompassHeading extends ChangeNotifier {
       heading == null
           ? bearingDegrees % 360
           : (bearingDegrees - heading) % 360;
+
+  /// Stop listening without forgetting what was learned.
+  ///
+  /// A bearing is only useful while something draws it, and the magnetometer and
+  /// the fused rotation vector are the most expensive sensors the app subscribes
+  /// to. A view that draws no bearing switches the sensor off; the calibration
+  /// this instance accumulated stays, so coming back does not start from the
+  /// first raw guess. `start()` resumes exactly where `stop()` left off.
+  void stop() {
+    if (!_started) return;
+    _started = false;
+    _platformSub?.cancel();
+    _platformSub = null;
+    _magSub?.cancel();
+    _magSub = null;
+    _accSub?.cancel();
+    _accSub = null;
+    _gyroSub?.cancel();
+    _gyroSub = null;
+    _stale?.cancel();
+    _stale = null;
+    // A heading nobody is reading goes stale anyway; nulling it here means a
+    // resumed dial does not draw a bearing from before the pause.
+    _heading = null;
+    _cardinal.reset();
+    notifyListeners();
+  }
 
   @override
   void dispose() {

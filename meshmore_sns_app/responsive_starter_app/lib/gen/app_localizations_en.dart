@@ -153,7 +153,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get botFromBot => 'bot';
 
   @override
-  String get dashboardRadio => 'RADIO';
+  String get dashboardRadio => 'LoRa radio';
 
   @override
   String get dashForestCanopy => 'Canopy';
@@ -276,7 +276,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get linkChipOffline => 'OFFLINE';
 
   @override
-  String get linkChipConnect => 'Connect a radio';
+  String get linkChipConnect => 'Connect a MeshCore radio';
 
   @override
   String linkChipSemantics(String state) {
@@ -387,10 +387,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deviceMgrPairNew => 'Pair a new radio';
+  String get deviceMgrPairNew => 'Pair a new MeshCore radio';
 
   @override
-  String get pairTitle => 'Pair a radio';
+  String get pairTitle => 'Pair a MeshCore radio';
 
   @override
   String pairStepOf(int step, int total) {
@@ -425,7 +425,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pairRetry => 'Try again';
 
   @override
-  String get pairScanTitle => 'Looking for radios';
+  String get pairScanTitle => 'Looking for MeshCore radios';
 
   @override
   String get pairScanBody =>
@@ -455,7 +455,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.';
 
   @override
-  String get pairConfirmTitle => 'Radio connected';
+  String get pairConfirmTitle => 'MeshCore radio connected';
 
   @override
   String pairConfirmBody(String name) {
@@ -469,10 +469,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pairConfirmFirmware => 'Firmware';
 
   @override
-  String get pairConfirmUse => 'Use this radio';
+  String get pairConfirmUse => 'Use this MeshCore radio';
 
   @override
-  String get pairChooseAnother => 'Choose another radio';
+  String get pairChooseAnother => 'Choose another MeshCore radio';
 
   @override
   String get settingsHeading => 'App settings';
@@ -610,9 +610,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'What is stored, what leaves the device, and why each permission is asked for';
 
   @override
-  String get aboutCopyright => 'Copyright (c) 2026 IoTone, Inc.';
-
-  @override
   String get aboutSubtitleEn => '(Socialrobot Network Service)';
 
   @override
@@ -620,6 +617,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutDescription => 'A MeshCore companion client.';
+
+  @override
+  String get aboutProjectSite => 'The project site';
 
   @override
   String get aboutLicense => 'Licensed under the MIT (X11) License.';
@@ -715,10 +715,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demoTooltip =>
-      'Demo mode — no radio. Explore channels, settings and docs without a companion.';
+      'Demo mode — no MeshCore radio. Explore channels, settings and docs without a companion.';
 
   @override
-  String get demoModeRow => 'No radio';
+  String get demoModeRow => 'No MeshCore radio';
 
   @override
   String get demoModeSubtitle => 'Explore the app offline';
@@ -754,7 +754,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firstRunGrant => 'Allow Bluetooth';
 
   @override
-  String get firstRunSkip => 'Explore in demo mode (no radio)';
+  String get firstRunSkip => 'Explore in demo mode (no MeshCore radio)';
 
   @override
   String get firstRunDeniedTransient =>
@@ -885,7 +885,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get nodesStatusOffline => 'Not connected — open Connect a radio';
+  String get nodesStatusOffline =>
+      'Not connected — open Connect a MeshCore radio';
 
   @override
   String get nodesFarBadge => 'FAR';
@@ -898,7 +899,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'No nodes yet. A node appears once it announces itself.';
 
   @override
-  String get nodesEmptyOffline => 'Connect a radio to discover nearby nodes.';
+  String get nodesEmptyOffline =>
+      'Connect a MeshCore radio to discover nearby nodes.';
 
   @override
   String get nodesFavTooltip => 'Add to favourites';
@@ -1297,7 +1299,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubDevice => 'Device configuration';
 
   @override
-  String get settingsGroupRadio => 'RADIO';
+  String get settingsGroupRadio => 'LORA RADIO';
 
   @override
   String get settingsGroupApp => 'APP';
@@ -1324,7 +1326,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubChannels => 'Channels';
 
   @override
-  String get settingsHubDiagnostics => 'Radio connection';
+  String get settingsHubDiagnostics => 'MeshCore radio connection';
 
   @override
   String get bootStarting => 'STARTING';
@@ -1342,7 +1344,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bootReady => 'MESH ONLINE';
 
   @override
-  String get bootOffline => 'OFFLINE — open Connect a radio';
+  String get bootOffline => 'OFFLINE — open Connect a MeshCore radio';
 
   @override
   String get bootSkip => 'SKIP';
@@ -1739,7 +1741,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Removed from your radio\'s contacts.';
 
   @override
-  String get deviceContactsTitle => 'Radio contacts';
+  String get deviceContactsTitle => 'MeshCore radio contacts';
 
   @override
   String get deviceContactsRefresh => 'Refresh';
@@ -2374,7 +2376,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsOfflineHint =>
-      'Connect a radio (Diagnostics) to edit channels.';
+      'Connect a MeshCore radio (Diagnostics) to edit channels.';
 
   @override
   String get channelCreateCreated => 'Channel created.';
@@ -2837,7 +2839,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get closeSheet => 'Close';
 
   @override
-  String get deviceRadioParams => 'Radio';
+  String get deviceRadioParams => 'LoRa radio';
 
   @override
   String get deviceIdentityAdvert => 'Identity and advert';
@@ -2918,7 +2920,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Undo did not apply — the radio kept its last values.';
 
   @override
-  String get radioHealthTitle => 'Radio health';
+  String get radioHealthTitle => 'MeshCore radio health';
 
   @override
   String get radioHealthRead => 'Read';
@@ -2968,7 +2970,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceConnectFirst =>
-      'Connect a radio first (Diagnostics & connect).';
+      'Connect a MeshCore radio first (Diagnostics & connect).';
 
   @override
   String get deviceAdvertName => 'Advert name';
@@ -3069,7 +3071,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Raw frames, fixtures and test commands.';
 
   @override
-  String get diagnosticsTitle => 'Radio diagnostics';
+  String get diagnosticsTitle => 'MeshCore radio diagnostics';
 
   @override
   String get diagnosticsRawFrameLog => 'RAW FRAME LOG (newest first)';
@@ -3266,7 +3268,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get toolsOffline =>
-      'Not connected — the tools need the radio. Open Connect a radio';
+      'Not connected — the tools need the MeshCore radio. Open Connect a MeshCore radio';
 
   @override
   String get toolsRunning => 'RUNNING';
@@ -3313,7 +3315,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toolsChoose => 'Choose…';
 
   @override
-  String get toolStatsName => 'Radio stats';
+  String get toolStatsName => 'MeshCore radio stats';
 
   @override
   String get toolStatsSub => 'Noise floor, airtime, packet counters';
@@ -3389,7 +3391,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsAuto => 'Auto (every 5 s)';
 
   @override
-  String get statsSectionRadio => 'RADIO';
+  String get statsSectionRadio => 'LoRa radio';
 
   @override
   String get statsSectionPackets => 'PACKETS';
@@ -4205,7 +4207,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsSectionDeveloper => 'Developer';
 
   @override
-  String get diagnosticsPairRadio => 'Pair a radio';
+  String get diagnosticsPairRadio => 'Pair a MeshCore radio';
 
   @override
   String get diagnosticsForgetConfirmTitle => 'Forget this radio?';
@@ -5744,7 +5746,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutReplayIntro => 'Replay the first-run screens';
 
   @override
-  String get toolsGroupDiagnostics => 'Radio diagnostics';
+  String get toolsGroupDiagnostics => 'MeshCore radio diagnostics';
 
   @override
   String nodeMarkerSemantics(String name) {
@@ -5910,10 +5912,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weatherOpenTelemetrySettings => 'Turn on node telemetry';
 
   @override
-  String get chatNoRadio => 'No radio connected';
+  String get chatNoRadio => 'No MeshCore radio connected';
 
   @override
-  String get chatConnectRadio => 'Connect a radio';
+  String get chatConnectRadio => 'Connect a MeshCore radio';
 
   @override
   String get chatConnecting => 'Connecting…';
@@ -6699,10 +6701,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.';
 
   @override
-  String get mapOverlaysTitle => 'What the map shows';
+  String get mapOverlaysTitle => 'Layers';
 
   @override
-  String get connectTitle => 'Connect a radio';
+  String get connectTitle => 'Connect a MeshCore radio';
 
   @override
   String get mapKeyTitle => 'Map key';

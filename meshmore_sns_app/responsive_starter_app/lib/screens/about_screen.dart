@@ -13,6 +13,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../perms/first_run_controller.dart';
 import '../theme/mm_skin.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 
 /// R85 - the information page. It used to be its own top-level view; the
@@ -38,6 +39,19 @@ class AboutScreen extends StatelessWidget {
       mtu: mc.mtu,
     );
     await launchUrl(report.toUri(), mode: LaunchMode.externalApplication);
+  }
+
+  /// The project's own page for this app.
+  ///
+  /// The owner's ruling of 2026-11-06 replaced the copyright notice with a door
+  /// to the project, and this is that door. The URL is the app's page on the
+  /// Offline SNS site rather than its root, because the root describes four
+  /// projects and this screen is about one of them.
+  static final Uri _projectSite =
+      Uri.parse('https://offlinesns.pages.dev/en/tboc/meshmore-sns/#/');
+
+  Future<void> _openProjectSite(BuildContext context) async {
+    await launchUrl(_projectSite, mode: LaunchMode.externalApplication);
   }
 
   @override
@@ -75,11 +89,22 @@ class AboutScreen extends StatelessWidget {
                 style: TextStyle(fontSize: skin.type.sizeBody, color: skin.color.fgMuted)),
             const SizedBox(height: 20),
             Text(
+              // The copyright line is gone by the owner's ruling of
+              // 2026-11-06: an About page that opens with a corporate notice
+              // and no door to the project is a dead end. The licence stays,
+              // because it is a fact about what the user may do with the app,
+              // and the project site below is the door.
               '${l.aboutDescription}\n'
-              '${l.aboutCopyright}\n'
               '${l.aboutLicense}',
               textAlign: TextAlign.center,
               style: TextStyle(color: skin.color.fgMuted, height: 1.5),
+            ),
+            SizedBox(height: skin.space.rowGap),
+            MmAction(
+              key: const ValueKey<String>('about-project-site'),
+              icon: Icons.public,
+              label: l.aboutProjectSite,
+              onPressed: () => _openProjectSite(context),
             ),
             SizedBox(height: skin.space.screenEdge),
             Text(l.aboutMadeWith,
@@ -95,10 +120,10 @@ class AboutScreen extends StatelessWidget {
             // there is no crash reporter and no analytics. The issue is
             // assembled on the phone, redacted, and sent only if the user sends
             // it in the tracker.
-            OutlinedButton.icon(
+            MmAction(
+              icon: Icons.bug_report_outlined,
+              label: l.aboutReportProblem,
               onPressed: () => _reportProblem(context),
-              icon: const Icon(Icons.bug_report_outlined, size: 18),
-              label: Text(l.aboutReportProblem),
             ),
             const SizedBox(height: 4),
             Text(
@@ -110,23 +135,25 @@ class AboutScreen extends StatelessWidget {
             SizedBox(height: skin.space.rowGap),
             // Moved out of App settings: replaying the first-run screens is a
             // support action, not a setting.
-            OutlinedButton.icon(
+            MmAction(
+              icon: Icons.refresh,
+              label: l.aboutReplayIntro,
               onPressed: context.watch<FirstRunController>().done
                   ? () => context.read<FirstRunController>().reset()
                   : null,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: Text(l.aboutReplayIntro),
             ),
             SizedBox(height: skin.space.rowGap),
-            OutlinedButton.icon(
+            MmAction(
+              icon: Icons.description_outlined,
+              label: l.aboutLicensesButton,
               onPressed: () => showLicensePage(
                 context: context,
                 applicationName: l.appName,
                 applicationVersion: l.aboutVersion(app.getAppVersion()),
-                applicationLegalese: l.aboutCopyright,
+                // The licence is the legal line now that the copyright notice
+                // is gone; the page still carries the attributions below.
+                applicationLegalese: l.aboutLicense,
               ),
-              icon: const Icon(Icons.description_outlined, size: 18),
-              label: Text(l.aboutLicensesButton),
             ),
             SizedBox(height: skin.space.rowGap),
             Text(l.aboutAttributions,
