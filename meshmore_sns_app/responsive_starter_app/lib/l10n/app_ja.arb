@@ -2609,7 +2609,7 @@
   "fujiUnknownShort": "縞 · 標高なし",
   "chatSpeechOffAction": "読み上げはアプリ設定でオフです",
   "nodeDetailAltitudeNotReported": "報告されません",
-  "gridCompassCalibrating": "較正のため、端末を一度ぐるりと回してください。",
+  "gridCompassCalibrating": "較正のため、端末を何度か裏返してください。",
   "gridCompassLowAccuracy": "端末の方位精度が低い状態です。一度ぐるりと回してください。",
   "gridCompassDisturbed": "方位が取れません — ここは磁場が強すぎます。磁石から離し、平らに置いて一度ぐるりと回してください。",
   "gridPurposeRadial": "各ノードまでの距離と、最後に聞こえた時刻。",

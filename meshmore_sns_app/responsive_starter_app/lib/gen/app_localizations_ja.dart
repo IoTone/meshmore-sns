@@ -5661,7 +5661,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailAltitudeNotReported => '報告されません';
 
   @override
-  String get gridCompassCalibrating => '較正のため、端末を一度ぐるりと回してください。';
+  String get gridCompassCalibrating => '較正のため、端末を何度か裏返してください。';
 
   @override
   String get gridCompassLowAccuracy => '端末の方位精度が低い状態です。一度ぐるりと回してください。';

@@ -654,6 +654,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       );
     }
     return MaterialApp.router(
+      // The banner is on the *router* branch too. The four splash, intro, terms
+      // and guard branches got this in the first pass and the one that actually
+      // renders the app did not, which is why the owner kept seeing DEBUG.
+      debugShowCheckedModeBanner: false,
       title: 'Meshmore SNS',
       theme: tc.theme,
       locale: lc.locale,

@@ -632,6 +632,23 @@ _GEIGER_GAPS = [0.03, 0.075, 0.04, 0.095, 0.05, 0.065, 0.085]
 TARGET_PEAK_DB = -1.5
 DRONE_PEAK_DB = -6.0
 
+# Per-theme loudness trim, applied after the peak normalisation.
+#
+# A peak-normalised pack is not an equally *audible* pack. The low-register
+# themes are a sine near G3-A3 with a fast decay: at the same peak they read as
+# far quieter than a bright triangle at E5, because the ear is least sensitive
+# in the low hundreds of hertz and a 100 ms decayed blip spends most of its life
+# near zero. The owner's report was exactly that — "the forest sound is super
+# muted and subtle" — so the quiet-in-the-ear packs get makeup gain and the
+# bright ones are left alone. Soft clipping keeps the peak legal afterwards.
+THEME_GAIN_DB = {
+    "forest": 7.0,
+    "seele": 5.0,
+    "umber": 5.0,
+    "recon": 4.0,
+    "studio": 2.0,
+}
+
 # The shortest a cue may be, in seconds. These are perception floors, not
 # taste: below roughly 80 ms a phone speaker does not resolve a tone as a
 # sound, and below ~300 ms a two-note phrase collapses into one click.
@@ -805,9 +822,27 @@ def _synth_one(theme_key, cue_key):
     for i in range(max(0, len(samples) - fade_n), len(samples)):
         k = (len(samples) - i) / fade_n
         samples[i] = int(samples[i] * k)
-    # Peak-normalise last, so the fade cannot push a clipped cue over.
+    # Peak-normalise, then the theme's own makeup gain, then soft-clip so a
+    # boosted cue cannot exceed full scale. The clip is a tanh, which rounds the
+    # peaks instead of squaring them off, so a boosted cue keeps its shape.
     target = DRONE_PEAK_DB if kind == "hum" else TARGET_PEAK_DB
-    return _normalize(samples, target)
+    out = _normalize(samples, target)
+    # The drone is exempt: it loops for the whole scan window, so makeup gain
+    # there would put a continuous tone under everything.
+    gain_db = 0.0 if kind == "hum" else THEME_GAIN_DB.get(theme_key, 0.0)
+    if gain_db:
+        g = 10 ** (gain_db / 20.0)
+        ceiling = 32767.0
+        out = [_soft_clip(v * g, ceiling) for v in out]
+    return out
+
+
+def _soft_clip(v, ceiling):
+    """tanh limiting: linear below ~70 % of the ceiling, rounded above it."""
+    x = v / ceiling
+    if -0.7 < x < 0.7:
+        return int(v)
+    return int(ceiling * math.tanh(x))
 
 
 def _write_wav(path, samples):

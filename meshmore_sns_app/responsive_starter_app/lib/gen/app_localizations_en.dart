@@ -5910,7 +5910,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridCompassCalibrating =>
-      'Turn the phone right round once to calibrate.';
+      'Flip the phone end over end a few times to calibrate.';
 
   @override
   String get gridCompassLowAccuracy =>

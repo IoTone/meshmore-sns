@@ -50,7 +50,16 @@ class AssetAudioPack implements AudioPack {
       audioMode: AndroidAudioMode.normal,
       stayAwake: false,
       contentType: AndroidContentType.sonification,
-      usageType: AndroidUsageType.assistanceSonification,
+      // USAGE_MEDIA, not USAGE_ASSISTANCE_SONIFICATION, and the difference is
+      // audible rather than academic: Android routes sonification to the
+      // *system* stream, so a phone with touch sounds off — which is most of
+      // them — plays a cue nobody hears. Media routing is the stream the volume
+      // keys and the user's own expectation are about.
+      //
+      // The reason this was changed in the first place was audio focus, and
+      // that is a separate knob: `audioFocus: none` is what keeps a cue from
+      // interrupting whatever else is playing.
+      usageType: AndroidUsageType.media,
       audioFocus: AndroidAudioFocus.none,
     ),
     // Ambient mixes with anything already playing and obeys the Ring/Silent
@@ -58,19 +67,27 @@ class AssetAudioPack implements AudioPack {
     iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
   );
 
-  /// Latency, not politeness: a 100 ms cue that spends 40 ms opening a
-  /// MediaPlayer arrives late enough to feel detached from the tap. Low-latency
-  /// mode reuses the one player for every cue, and `ReleaseMode.stop` keeps the
-  /// loaded buffer between plays instead of tearing it down (the default
-  /// release mode does exactly that, which is how two quick swipes lost the
-  /// first cue).
+  /// One prepared MediaPlayer, reused. `ReleaseMode.stop` keeps the loaded
+  /// buffer between plays instead of tearing it down (the default release mode
+  /// does exactly that, which is how two quick swipes lost the first cue).
+  ///
+  /// `PlayerMode.lowLatency` is deliberately **not** used, and this is the
+  /// reason. In that mode audioplayers drives a `SoundPool`, which loads a
+  /// source asynchronously (`audioplayers_android/.../SoundPoolPlayer.kt:93-140`
+  /// sets `prepared = false` and calls `soundPool.load`), while
+  /// `WrappedPlayer.play()` starts only when the player is already prepared
+  /// (`WrappedPlayer.kt:211-220`). Every cue is a different WAV, so every cue
+  /// needs a fresh load, and a `play()` issued straight after `setSource` is
+  /// dropped in silence with no exception — no cue, no fallback, nothing in the
+  /// log. A MediaPlayer's `setSource` resolves after it is prepared, so the
+  /// sequence below is deterministic.
   bool _ready = false;
 
   Future<void> _ensureReady() async {
     if (_ready) return;
     try {
       await _player.setAudioContext(_cueContext);
-      await _player.setPlayerMode(PlayerMode.lowLatency);
+      await _player.setPlayerMode(PlayerMode.mediaPlayer);
       await _player.setReleaseMode(ReleaseMode.stop);
       await _loopPlayer.setAudioContext(_cueContext);
       await _loopPlayer.setReleaseMode(ReleaseMode.loop);
@@ -97,8 +114,14 @@ class AssetAudioPack implements AudioPack {
       // `AssetSource` paths are rooted at `assets/` by audioplayers
       // convention; passing `audio/seele/messageIn.wav` resolves to
       // `assets/audio/seele/messageIn.wav` in the bundle.
-      await _player.play(AssetSource(path),
-          volume: volume, mode: PlayerMode.lowLatency);
+      //
+      // Three explicit steps rather than `play(...)`: `setSource` is the call
+      // that resolves once the file is prepared, so `resume` cannot overtake
+      // it. `play()` with a mode argument takes the same path but leaves the
+      // ordering implicit, which is what made a silent drop possible.
+      await _player.setVolume(volume);
+      await _player.setSource(AssetSource(path));
+      await _player.resume();
     } catch (_) {
       // Asset missing / platform error → graceful degrade so the cue
       // is never silently lost, just less themed.

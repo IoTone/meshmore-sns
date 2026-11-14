@@ -3974,7 +3974,7 @@
   "fujiUnknownShort": "Striped · no altitude",
   "chatSpeechOffAction": "Speech is off in App settings",
   "nodeDetailAltitudeNotReported": "not reported",
-  "gridCompassCalibrating": "Turn the phone right round once to calibrate.",
+  "gridCompassCalibrating": "Flip the phone end over end a few times to calibrate.",
   "gridCompassLowAccuracy": "The phone reports a weak compass here. Turn it right round once.",
   "gridCompassDisturbed": "No heading — the magnetic field here is too strong. Lay the phone flat, away from magnets, and turn it right round once.",
   "gridPurposeRadial": "How far each node is, and how long ago it was heard.",

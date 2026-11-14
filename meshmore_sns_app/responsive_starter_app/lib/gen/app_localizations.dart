@@ -9901,7 +9901,7 @@ abstract class AppLocalizations {
   /// No description provided for @gridCompassCalibrating.
   ///
   /// In en, this message translates to:
-  /// **'Turn the phone right round once to calibrate.'**
+  /// **'Flip the phone end over end a few times to calibrate.'**
   String get gridCompassCalibrating;
 
   /// No description provided for @gridCompassLowAccuracy.
