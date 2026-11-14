@@ -228,6 +228,27 @@ void main() {
     mc.dispose();
   });
 
+  testWidgets('the screen has a verb for what it is for', (t) async {
+    // Every other door on this screen is a numbered slot with "Set" on it,
+    // which asks a reader to understand what a slot is before they can make a
+    // channel. The add action asks for a name.
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await _ready(fake);
+    await t.pumpWidget(_host(mc));
+    fake.emit(channelInfoFrame(idx: 0, name: 'Public'));
+    await t.pumpAndSettle();
+    final IconButton add =
+        t.widget<IconButton>(find.byKey(const ValueKey<String>('channels-new')));
+    expect(add.onPressed, isNotNull, reason: 'the radio is ready and a slot is free');
+    await t.tap(find.byKey(const ValueKey<String>('channels-new')));
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('channel-create-sheet')),
+        findsOneWidget);
+    mc.dispose();
+  });
+
   testWidgets('W2 the channel screen takes its text sizes from the ladder',
       (t) async {
     // Fourteen size literals became roles here: the two help blocks are
