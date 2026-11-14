@@ -31,11 +31,26 @@ void main() {
   });
 
   group('records fit one raw frame and carry enough to place them', () {
-    test('a record is one frame at most', () {
-      final Uint8List slice = Uint8List(MediaFetchCodec.sliceBytes);
-      final Uint8List rec =
-          MediaFetchCodec.encode(id: 9, index: 0, total: 1, slice: slice);
-      expect(rec.length, 184, reason: 'MAX_PACKET_PAYLOAD is the cap');
+    test('a record is one channel datagram at most', () {
+      final List<Uint8List> records = MediaFetchCodec.split(
+          id: 9, payload: Uint8List(MediaFetchCodec.sliceBytes));
+      expect(records.single.length, lessThanOrEqualTo(163),
+          reason: 'the same record has to fit a channel datagram and a raw '
+              'record, so it is sized for the smaller of the two');
+    });
+
+    test('the framing is MeshPix\'s chunk packet', () {
+      final List<Uint8List> records = MediaFetchCodec.split(
+          id: 0x1234, payload: Uint8List(400));
+      expect(records.length, greaterThan(1));
+      expect(records.first[0], 0x4D, reason: "'M'");
+      expect(records.first[1], 0x50, reason: "'P'");
+      expect(records.first[2], 1, reason: 'version');
+      expect(records.first[3] & 0x07, 1, reason: 'chunk kind');
+      expect(records.first[4], 0x34, reason: 'transfer id low');
+      expect(records.first[5], 0x12, reason: 'transfer id high');
+      expect(records.first[6], 0, reason: 'sequence number');
+      expect(records.first[7], records.length, reason: 'total');
     });
 
     test('splitting a payload produces records that reassemble exactly', () {

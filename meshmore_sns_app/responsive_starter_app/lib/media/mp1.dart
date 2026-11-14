@@ -452,3 +452,89 @@ Mp1DecodeResult decodeMp1Preview(Uint8List bytes) {
     return const Mp1DecodeResult.failed(Mp1Problem.truncated);
   }
 }
+
+/// One chunk of a full picture, in MeshPix's own framing.
+///
+/// A preview is one datagram and a full picture is several, so MP1 has a second
+/// packet kind for the pieces: the same six-byte header with `kind` = 1, then
+/// `seq` and `total`, then the slice. The body is the raw picture bytes, not
+/// palette indices, so the receiver reassembles and then decodes.
+///
+/// Using their framing rather than an app-private one is the whole point of
+/// implementing MP1 at all: a MeshPix reader can reassemble our picture and we
+/// can reassemble theirs. The slice is capped at 155 bytes, which is what fits
+/// a 163-byte channel datagram; a raw record has more room (184), and staying at
+/// 155 keeps one record valid on either frame.
+const int kMp1ChunkMaxSlice = kMp1MaxPayload - 8;
+
+/// Splits [payload] into chunk packets for [transferId].
+List<Uint8List> encodeMp1Chunks({
+  required int transferId,
+  required Uint8List payload,
+  int maxPayload = kMp1MaxPayload,
+}) {
+  final int total = (payload.length + (maxPayload - 8) - 1) ~/ (maxPayload - 8);
+  if (total == 0 || total > 0xFF) {
+    throw ArgumentError.value(payload.length, 'payload',
+        'an upgrade is 1..255 chunks at $maxPayload bytes');
+  }
+  final int sliceSize = maxPayload - 8;
+  return <Uint8List>[
+    for (int seq = 0; seq < total; seq++)
+      _chunkBytes(
+        transferId: transferId,
+        seq: seq,
+        total: total,
+        slice: Uint8List.sublistView(
+          payload,
+          seq * sliceSize,
+          (seq + 1) * sliceSize > payload.length
+              ? payload.length
+              : (seq + 1) * sliceSize,
+        ),
+      ),
+  ];
+}
+
+Uint8List _chunkBytes({
+  required int transferId,
+  required int seq,
+  required int total,
+  required Uint8List slice,
+}) {
+  // kind chunk (1), raw body (0), two bits per pixel, not dithered. The bit
+  // depth is meaningless for a raw slice and is set to what MeshPix writes, so
+  // the header compares equal byte for byte.
+  final int flags = 1 | (0 << 3) | (0 << 5) | (0 << 6);
+  final Uint8List out = Uint8List(8 + slice.length);
+  out[0] = _kMagic0;
+  out[1] = _kMagic1;
+  out[2] = _kVersion;
+  out[3] = flags;
+  out[4] = transferId & 0xFF;
+  out[5] = (transferId >> 8) & 0xFF;
+  out[6] = seq;
+  out[7] = total;
+  out.setRange(8, out.length, slice);
+  return out;
+}
+
+/// Reads one chunk packet, or null when the bytes are not one.
+({int transferId, int seq, int total, Uint8List slice})? decodeMp1Chunk(
+    Uint8List bytes) {
+  if (bytes.length <= 8) return null;
+  if (bytes[0] != _kMagic0 || bytes[1] != _kMagic1 || bytes[2] != _kVersion) {
+    return null;
+  }
+  if ((bytes[3] & 0x07) != 1) return null;
+  final int transferId = bytes[4] | (bytes[5] << 8);
+  final int seq = bytes[6];
+  final int total = bytes[7];
+  if (total == 0 || seq >= total) return null;
+  return (
+    transferId: transferId,
+    seq: seq,
+    total: total,
+    slice: Uint8List.sublistView(bytes, 8),
+  );
+}

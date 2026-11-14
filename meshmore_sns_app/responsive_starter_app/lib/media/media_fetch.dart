@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 import 'dart:typed_data';
 
+import 'mp1.dart';
+
 /// The seam between an announcement and the pixels, for both ends.
 ///
 /// One rule decides everything here: **pixels are never broadcast**. The
@@ -57,91 +59,33 @@ abstract final class MediaFetchRequest {
   }
 }
 
-/// One record of a picture in flight.
+/// One record of a picture in flight, in MeshPix's chunk framing.
 ///
-/// `0x19` is a frame rather than a data type, so each record carries its own
-/// seven-byte header: `'M','F'`, version, the chunk index, the offer id (2
-/// bytes) and how many chunks there are. That is enough for the receiver to place a chunk
-/// without holding the rest, and enough to ask for the missing indices rather
-/// than the whole picture again.
+/// A raw record has no data type, so the record carries its own header — and it
+/// carries **MeshPix's**, not an app-private one: the same six bytes a preview
+/// carries, with kind = chunk, then `seq` and `total`, then the slice. Their
+/// reader can reassemble our picture and we can reassemble theirs, which is the
+/// only reason to implement MP1 at all.
+///
+/// A slice is at most 155 bytes, which is what fits a 163-byte channel
+/// datagram. A raw record has more room (184 bytes), and staying at 155 keeps
+/// one record valid on either frame.
 abstract final class MediaFetchCodec {
-  static const int _magic0 = 0x4D; // 'M'
-  static const int _magic1 = 0x46; // 'F'
-  static const int _version = 1;
-  static const int headerBytes = 7;
+  /// The largest slice one record carries.
+  static const int sliceBytes = kMp1ChunkMaxSlice;
 
-  /// The largest slice one raw record can carry, after its own header.
-  ///
-  /// `CMD_SEND_RAW_DATA` carries at most 184 bytes (`MAX_PACKET_PAYLOAD`), so a
-  /// slice is 177.
-  static const int sliceBytes = 184 - headerBytes;
-
-  static Uint8List encode({
+  static List<Uint8List> split({
     required int id,
-    required int index,
-    required int total,
-    required Uint8List slice,
-  }) {
-    if (slice.length > sliceBytes) {
-      throw ArgumentError.value(
-          slice.length, 'slice', 'a raw record carries at most $sliceBytes');
-    }
-    if (index < 0 || index > 0xFF || total < 1 || total > 0xFF) {
-      throw ArgumentError('index/total out of range');
-    }
-    final Uint8List out = Uint8List(headerBytes + slice.length);
-    out[0] = _magic0;
-    out[1] = _magic1;
-    out[2] = _version;
-    out[3] = index;
-    out[4] = id & 0xFF;
-    out[5] = (id >> 8) & 0xFF;
-    out[6] = total;
-    out.setRange(headerBytes, out.length, slice);
-    return out;
-  }
+    required Uint8List payload,
+  }) =>
+      encodeMp1Chunks(transferId: id, payload: payload);
 
-  /// A record, or null when the bytes are not one.
   static ({int id, int index, int total, Uint8List slice})? decode(
       Uint8List bytes) {
-    if (bytes.length <= headerBytes) return null;
-    if (bytes[0] != _magic0 || bytes[1] != _magic1 || bytes[2] != _version) {
-      return null;
-    }
-    final int index = bytes[3];
-    final int id = bytes[4] | (bytes[5] << 8);
-    final int total = bytes[6];
-    if (total == 0 || index >= total) return null;
-    return (
-      id: id,
-      index: index,
-      total: total,
-      slice: Uint8List.sublistView(bytes, headerBytes),
-    );
-  }
-
-  /// Splits [payload] into records of at most [sliceBytes], with headers.
-  static List<Uint8List> split({required int id, required Uint8List payload}) {
-    final int total = (payload.length + sliceBytes - 1) ~/ sliceBytes;
-    if (total == 0 || total > 0xFF) {
-      throw ArgumentError.value(
-          payload.length, 'payload', 'a record set is 1..255 chunks');
-    }
-    return <Uint8List>[
-      for (int i = 0; i < total; i++)
-        encode(
-          id: id,
-          index: i,
-          total: total,
-          slice: Uint8List.sublistView(
-            payload,
-            i * sliceBytes,
-            (i + 1) * sliceBytes > payload.length
-                ? payload.length
-                : (i + 1) * sliceBytes,
-          ),
-        ),
-    ];
+    final ({int transferId, int seq, int total, Uint8List slice})? c =
+        decodeMp1Chunk(bytes);
+    if (c == null) return null;
+    return (id: c.transferId, index: c.seq, total: c.total, slice: c.slice);
   }
 }
 
