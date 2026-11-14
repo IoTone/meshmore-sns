@@ -19,6 +19,33 @@ Rules for this file:
 
 ---
 
+## 0. Merged audit findings (2026-11-14)
+
+The three audits that finished (`notes/instrument-modes-audit.md`,
+`notes/media-audit.md`, and the messaging pass folded into the commits) are merged here.
+What they found and what happened to it:
+
+| finding | evidence | resolution |
+|---|---|---|
+| **The tree collapses to a circle when most peers are one hop or unresolved.** Not a layout bug: the view is force-directed, and depth comes from the route the radio advertises, so a mesh where every route is unlearned is a ring — which is what the owner saw. | `lib/screens/mesh_tree_view.dart:20-29`; `lib/meshcore/mesh_radial_layout.dart:8-30` | **Partly fixed.** Since `topology_hop.dart` keeps a hop that names nothing, a route through an unknown repeater now draws at its real depth. A peer whose route the radio never learned (flood or advert-only) still floats on the `?` ring, because no layout can invent a depth. |
+| **The hop filter counted path bytes, not hops** — a three-byte, two-hop peer read as six and was skipped by the poller, which is also why weather could look empty. | `lib/meshcore/mesh_graph.dart` (fixed) | **Fixed**, with three cases in `test/meshcore/mesh_graph_hop_count_test.dart`. |
+| **`MeshGraph.fromController` is O(n²) per rebuild** — the prefix map is rebuilt per peer, and the tree rebuilds on every controller notification. With 400 contacts that is ~160 000 map insertions several times a second. | `lib/meshcore/meshcore_controller.dart:1779-1815`; `lib/screens/mesh_tree_view.dart:370-374` | **Open.** Plausible contributor to "periodically stops responding". Fix is memoising the graph on a signature; not done because it needs a device to confirm freshness. |
+| **The weather summary counts a different set than it averages** — a node with humidity and no temperature is counted in "N reporting" and absent from min/avg/max. | `lib/screens/weather_view.dart:110-117` | **Open** (S, honesty). |
+| **A received photo was reassembled and dropped** — nothing claimed an image. | `lib/media/media_inbox.dart` completed payloads, no consumer | **Fixed**: `lib/media/photo_inbox.dart` + `received_photos_sheet.dart`. |
+| **A DM refused by the airtime meter said only "send failed".** | `lib/meshcore/meshcore_controller.dart` | **Fixed**: names the budget as the cause. |
+| **A write that threw was marked "not sent".** The bytes may have reached the radio's buffer. | same | **Fixed**: uncertain, not failed. |
+| **Inbound rows were stamped with arrival time**, so a radio's queued backlog drained looking like it arrived in one second. | same | **Fixed**, with a window that only trusts a believable sender clock. |
+| **`send` and `scanStart` were in all eleven packs and played by nothing.** | `rg -n "CueKind.send" lib/` was empty | **Fixed**, with `test/cue/cue_coverage_test.dart` failing if a cue ever becomes unreachable again. |
+| **The periodic "crashes" are ANRs, not crashes.** `dumpsys dropbox` holds three `data_app_anr` entries for this package and six `data_app_crash` entries belonging to `io.ldmux.mobile`. Two traces: the main thread executing Dart for five seconds, and a broadcast to `RadioLeaseReceiver` overrunning its window. | device `dumpsys dropbox`, 2026-11-13 | **Instrumented and partly fixed**: `AppErrors` now persists to prefs and is shown in the developer console; the GeoJSON parse and the city gazetteer moved off the UI isolate; the receiver answers on a four-second timeout. The remaining attribution needs the new error rows read after the next freeze. |
+
+Also outstanding from this stretch, and honest to record: the **verbosity, map and Bluetooth
+audit children were killed by their own time limit** before writing their notes. Their code
+changes are committed (copy shortened, basemap fallback, lifecycle test) but their reasoning
+is not, so those three audits owe a write-up rather than being considered complete.
+
+
+---
+
 ## 1. Ranked table
 
 | id | area | what is missing | evidence | size | type |
