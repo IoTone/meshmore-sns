@@ -343,6 +343,127 @@ THEMES = {
                 vib_rate=11.0, attack=0.02, release=0.06, amp=0.18),
         },
     ),
+    # ---------------------------------------------------------------
+    # The five presets that used to borrow Hyperlocal's pack.
+    #
+    # R63 aliased them because no audio existed for them, which left the
+    # promise half-kept: the theme changed colour and kept somebody else's
+    # sounds. Each has a signature now, written to the same rules the six
+    # older packs follow — a base note, a waveshape and an envelope that
+    # match what the theme looks like, with cue overrides only where the
+    # shared motif would say the wrong thing.
+    # ---------------------------------------------------------------
+    "studio": dict(  # clean, square, monochrome — nothing decorative
+        base=392.00,                      # G4
+        timbre=lambda f, t: 0.96 * _sine(f, t),
+        decay=9.0,
+        cues={
+            "messageIn": dict(score=[(1.0, 0.06)], amp=0.30),
+            "dmIn": dict(score=[(1.0, 0.05), (1.0, 0.06)], amp=0.36),
+            "discovery": dict(score=[(1.5, 0.04)], amp=0.26),
+            "advert": dict(score=[(1.0, 0.03)], amp=0.16),
+            "send": dict(score=[(1.5, 0.03)], amp=0.22),
+            "boot": dict(score=[(1.0, 0.06), (1.0, 0.09)], amp=0.34),
+            "navNext": dict(score=[(1.5, 0.03)], amp=0.20),
+            "navPrev": dict(score=[(1.0, 0.03)], amp=0.20),
+            "linkUp": dict(score=[(1.0, 0.05), (1.5, 0.07)], amp=0.36),
+            "linkDown": dict(score=[(1.5, 0.05), (1.0, 0.08)], amp=0.36),
+            "alert": dict(score=[(1.0, 0.10), (1.0, 0.10), (1.0, 0.14)],
+                          amp=0.55),
+            "taskOk": dict(score=[(1.5, 0.05)], amp=0.32),
+            "taskError": dict(score=[(0.75, 0.09)], amp=0.36),
+        },
+    ),
+    "forest": dict(  # dark pine, one green — woody, low, unhurried
+        base=196.00,                      # G3
+        timbre=lambda f, t: 0.80 * _sine(f, t) + 0.20 * _sine(f * 1.5, t),
+        decay=4.2,
+        cues={
+            "messageIn": dict(score=[(1.0, 0.20)], amp=0.34),
+            "dmIn": dict(score=[(1.0, 0.16), (1.5, 0.24)], amp=0.44),
+            "discovery": dict(score=[(1.5, 0.12), (2.0, 0.18)], amp=0.38),
+            "advert": dict(score=[(0.75, 0.22)], amp=0.20),
+            "send": dict(score=[(1.5, 0.10)], amp=0.30),
+            "boot": dict(score=[(0.5, 0.22), (0.75, 0.22), (1.0, 0.30)],
+                         amp=0.46),
+            "navNext": dict(score=[(1.0, 0.10)], amp=0.24),
+            "navPrev": dict(score=[(0.75, 0.10)], amp=0.24),
+            "linkUp": dict(score=[(0.75, 0.18), (1.0, 0.26)], amp=0.46),
+            "linkDown": dict(score=[(1.0, 0.18), (0.75, 0.30)], amp=0.46),
+            "alert": dict(score=[(1.0, 0.30), (0.5, 0.36)], amp=0.66),
+            "taskOk": dict(score=[(1.0, 0.16), (1.5, 0.22)], amp=0.42),
+            "taskError": dict(score=[(1.0, 0.18), (0.75, 0.26)], amp=0.46),
+        },
+    ),
+    "air": dict(  # white page, blue — bright, glassy, very short
+        base=659.25,                      # E5
+        timbre=lambda f, t: 0.88 * _sine(f, t) + 0.12 * _sine(f * 2, t),
+        decay=11.0,
+        cues={
+            "messageIn": dict(score=[(1.0, 0.07)], amp=0.30),
+            "dmIn": dict(score=[(1.0, 0.05), (1.5, 0.07)], amp=0.36),
+            "discovery": dict(score=[(1.5, 0.04), (2.0, 0.06)], amp=0.30),
+            "advert": dict(score=[(2.0, 0.05)], amp=0.18),
+            "send": dict(score=[(1.5, 0.04)], amp=0.24),
+            "boot": dict(score=[(1.0, 0.05), (1.5, 0.05), (2.0, 0.10)],
+                         amp=0.34),
+            "navNext": dict(score=[(2.0, 0.03)], amp=0.20),
+            "navPrev": dict(score=[(1.5, 0.03)], amp=0.20),
+            "linkUp": dict(score=[(1.5, 0.05), (2.0, 0.09)], amp=0.38),
+            "linkDown": dict(score=[(2.0, 0.05), (1.5, 0.09)], amp=0.38),
+            "alert": dict(score=[(1.5, 0.09), (2.0, 0.09), (3.0, 0.14)],
+                          amp=0.56),
+            "taskOk": dict(score=[(2.0, 0.06)], amp=0.32),
+            "taskError": dict(score=[(1.0, 0.09)], amp=0.36),
+        },
+    ),
+    "daybreak": dict(  # white page, vermilion — warm, rising, unhurried
+        base=329.63,                      # E4
+        timbre=lambda f, t: 0.72 * _triangle(f, t) + 0.28 * _sine(f, t),
+        decay=6.0,
+        cues={
+            "messageIn": dict(score=[(1.0, 0.11)], amp=0.34),
+            "dmIn": dict(score=[(1.0, 0.09), (4 / 3, 0.13)], amp=0.42),
+            "discovery": dict(score=[(1.0, 0.07), (1.5, 0.10)], amp=0.36),
+            "advert": dict(score=[(1.5, 0.09)], amp=0.20),
+            "send": dict(score=[(4 / 3, 0.06)], amp=0.28),
+            "boot": dict(score=[(0.75, 0.10), (1.0, 0.10), (4 / 3, 0.16)],
+                         amp=0.44),
+            "navNext": dict(score=[(1.0, 0.05), (4 / 3, 0.06)], amp=0.24),
+            "navPrev": dict(score=[(4 / 3, 0.05), (1.0, 0.06)], amp=0.24),
+            "linkUp": dict(score=[(1.0, 0.09), (1.5, 0.09), (2.0, 0.13)],
+                           amp=0.46),
+            "linkDown": dict(score=[(1.5, 0.09), (1.0, 0.13)], amp=0.46),
+            "alert": dict(score=[(1.0, 0.14), (4 / 3, 0.18),
+                                 (1.0, 0.14), (4 / 3, 0.20)], amp=0.60),
+            "taskOk": dict(score=[(1.5, 0.09), (2.0, 0.12)], amp=0.40),
+            "taskError": dict(score=[(0.75, 0.12), (0.5, 0.16)], amp=0.44),
+        },
+    ),
+    "umber": dict(  # gruvbox browns — warm, rounded, relaxed
+        base=261.63,                      # C4
+        timbre=lambda f, t: 0.55 * _saw(f, t, harmonics=3)
+                            + 0.45 * _sine(f, t),
+        decay=5.0,
+        cues={
+            "messageIn": dict(score=[(1.0, 0.13)], amp=0.34),
+            "dmIn": dict(score=[(1.0, 0.10), (1.5, 0.15)], amp=0.44),
+            "discovery": dict(score=[(1.0, 0.08), (4 / 3, 0.12)], amp=0.36),
+            "advert": dict(score=[(0.75, 0.12)], amp=0.20),
+            "send": dict(score=[(1.5, 0.06)], amp=0.28),
+            "boot": dict(score=[(0.5, 0.12), (0.75, 0.12), (1.0, 0.18)],
+                         amp=0.44),
+            "navNext": dict(score=[(1.0, 0.05), (1.5, 0.06)], amp=0.24),
+            "navPrev": dict(score=[(1.5, 0.05), (1.0, 0.06)], amp=0.24),
+            "linkUp": dict(score=[(0.75, 0.11), (1.0, 0.11), (1.5, 0.15)],
+                           amp=0.46),
+            "linkDown": dict(score=[(1.5, 0.11), (1.0, 0.15)], amp=0.46),
+            "alert": dict(score=[(1.0, 0.16), (9 / 8, 0.20),
+                                 (1.0, 0.16), (9 / 8, 0.22)], amp=0.62),
+            "taskOk": dict(score=[(1.5, 0.10), (2.0, 0.14)], amp=0.40),
+            "taskError": dict(score=[(1.0, 0.12), (0.75, 0.18)], amp=0.44),
+        },
+    ),
 }
 
 # ---------------------------------------------------------------- envelopes

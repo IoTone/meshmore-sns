@@ -15,7 +15,7 @@ import 'cue_service.dart';
 /// service (or restarting the app).
 ///
 /// Asset shape — `assets/audio/<preset.audioPackKey>/<CueKind.name>.wav`.
-/// Six preset folders × fourteen CueKinds = 84 files (every theme has a
+/// Eleven preset folders × nineteen cues = 209 files (every theme has its own
 /// full bespoke set — none fall through to a generic motif); if a file is
 /// missing at runtime (asset bundling slipped, etc.) we silently fall back
 /// to the system click via [SystemSoundAudioPack].

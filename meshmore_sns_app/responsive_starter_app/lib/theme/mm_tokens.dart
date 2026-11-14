@@ -57,25 +57,16 @@ extension MmThemePresetX on MmThemePreset {
 
   /// Asset-folder slug for the R12 per-theme audio pack. Used by
   /// `AssetAudioPack` to resolve `assets/audio/<key>/<cue>.wav`.
-  /// Also matches the slugs used in `brand/_audio_pack.py` and in
-  /// the per-theme grid mockups (`brand/_grid_mockup.py`).
-  String get audioPackKey => switch (this) {
-        MmThemePreset.nerv => 'nerv',
-        MmThemePreset.agHud => 'aghud',
-        MmThemePreset.hyperlocal => 'hyperlocal',
-        MmThemePreset.seele => 'seele',
-        MmThemePreset.drPop => 'drpop',
-        MmThemePreset.recon => 'recon',
-        // R63 — deliberately ALIASES the Hyperlocal pack (the calmest
-        // existing one). No studio audio exists and synthesising it is
-        // out of scope; see `assets/audio/` and the R63 spec entry.
-        MmThemePreset.studio => 'hyperlocal',
-        // Same reason again: these four change colour, not the cue set.
-        MmThemePreset.forest => 'hyperlocal',
-        MmThemePreset.air => 'hyperlocal',
-        MmThemePreset.daybreak => 'hyperlocal',
-        MmThemePreset.umber => 'hyperlocal',
-      };
+  ///
+  /// Every preset has its own folder now, so the slug is the preset's name.
+  /// It used to be a switch in which five presets returned `'hyperlocal'` — the
+  /// calmest existing pack — because no audio existed for them: the theme changed
+  /// colour and kept somebody else's sounds, which is half of what a theme
+  /// promises. Studio, Forest, Air, Daybreak and Umber are synthesised in
+  /// `brand/_audio_pack.py` with their own base note, waveshape and envelope, and
+  /// `theme_integration_test.dart` fails if a preset points at a folder that is
+  /// not its own.
+  String get audioPackKey => name.toLowerCase();
 }
 
 /// Preset-independent semantic colour contract. Every preset supplies

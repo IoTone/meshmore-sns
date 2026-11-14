@@ -36,30 +36,17 @@ void main() {
               reason: 'duplicate asset path for $p/$k: $s');
         }
       }
-      // R63 — Studio deliberately ALIASES the Hyperlocal pack (no studio
-      // audio exists), and every preset added since does the same for the
-      // same reason (a skin changes colour, not the cue set). Uniqueness is
-      // therefore per distinct audioPackKey, not per preset. Any other
-      // duplicate is still a bug.
+      // One pack per preset. This used to allow five aliases onto the
+      // Hyperlocal pack because no audio existed for those themes; each has its
+      // own synthesised pack now, so the path is unique per preset and a preset
+      // that points somewhere else is a bug.
       final Set<String> keys = <String>{
         for (final MmThemePreset p in MmThemePreset.values) p.audioPackKey,
       };
-      // Five aliases: Studio and the four LDMUX looks borrow the calm pack.
-      expect(keys.length, MmThemePreset.values.length - 5,
-          reason: 'five aliases (studio, forest, air, daybreak, umber -> '
-              'hyperlocal)');
-      for (final MmThemePreset p in <MmThemePreset>[
-        MmThemePreset.studio,
-        MmThemePreset.forest,
-        MmThemePreset.air,
-        MmThemePreset.daybreak,
-        MmThemePreset.umber,
-      ]) {
-        expect(p.audioPackKey, MmThemePreset.hyperlocal.audioPackKey,
-            reason: '$p');
-      }
-      expect(seen.length, 6 * CueKind.values.length,
-          reason: '6 distinct packs × 7 cues = 42 unique paths');
+      expect(keys.length, MmThemePreset.values.length,
+          reason: 'two presets resolve to the same audio folder');
+      expect(seen.length, MmThemePreset.values.length * CueKind.values.length,
+          reason: 'one path per preset per cue');
     });
   });
 

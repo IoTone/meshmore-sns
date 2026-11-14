@@ -51,14 +51,15 @@ void main() {
   /// Presets whose sound is knowingly another preset's pack. Every entry is a
   /// debt: the theme changes colour and not the cue set, so two themes sound
   /// identical and the reader cannot tell them apart with the phone in a pocket.
+  /// Presets that have no sound pack of their own and play another theme's.
+  ///
+  /// Empty, and it should stay empty: a theme that changes colour but keeps
+  /// somebody else's sounds is half a theme. The map existed so the borrowing
+  /// was declared rather than accidental, and it did its job — it is what
+  /// showed that Studio, Forest, Air, Daybreak and Umber were all playing
+  /// Hyperlocal's cues.
   const Map<MmThemePreset, MmThemePreset> borrowingSound =
-      <MmThemePreset, MmThemePreset>{
-    MmThemePreset.forest: MmThemePreset.hyperlocal,
-    MmThemePreset.air: MmThemePreset.hyperlocal,
-    MmThemePreset.daybreak: MmThemePreset.hyperlocal,
-    MmThemePreset.umber: MmThemePreset.hyperlocal,
-    MmThemePreset.studio: MmThemePreset.hyperlocal,
-  };
+      <MmThemePreset, MmThemePreset>{};
 
   test('every preset is accounted for on the layout axis', () {
     final Set<MmThemePreset> covered = <MmThemePreset>{

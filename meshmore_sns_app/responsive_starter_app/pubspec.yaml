@@ -182,12 +182,22 @@ flutter:
       - assets/maps/studio_dark.json
       # R84 — the shipped offline pack list (empty until a host publishes one).
       - assets/maps/packs.json
+      # One pack per preset: eleven themes, nineteen cues each. This list is
+      # per-folder because a Flutter asset directory is not recursive, so a
+      # preset whose folder is missing here loads nothing and falls back to the
+      # system sound — which is how Forest, Air, Daybreak, Umber and Studio
+      # spent their whole existence borrowing Hyperlocal's cues.
       - assets/audio/seele/
       - assets/audio/nerv/
       - assets/audio/aghud/
       - assets/audio/hyperlocal/
       - assets/audio/drpop/
       - assets/audio/recon/
+      - assets/audio/studio/
+      - assets/audio/forest/
+      - assets/audio/air/
+      - assets/audio/daybreak/
+      - assets/audio/umber/
       # R25 Stage 2 — packed GeoNames cities15000 dataset (~33 k cities,
       # ~810 KB). CC-BY 4.0 (attribute geonames.org in About). Read by the
       # chat's "looks like a place" line via `lib/sns/city_gazetteer.dart`,
