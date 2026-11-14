@@ -132,11 +132,16 @@ class CreditsScreenState extends State<CreditsScreen> {
           initialChildSize: .8,
           builder: (BuildContext c2, ScrollController scroll) => ListView(
             controller: scroll,
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.skin.space.screenEdge),
             children: <Widget>[
-              Text(credit.name,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w700)),
+              Builder(builder: (BuildContext c) {
+                final MmSkin skin = c.skin;
+                return Text(credit.name,
+                    style: TextStyle(
+                        color: skin.color.fg,
+                        fontSize: skin.type.sizeLg,
+                        fontWeight: FontWeight.w700));
+              }),
               const SizedBox(height: 8),
               Text(credit.licence),
               const SizedBox(height: 12),
