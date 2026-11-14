@@ -437,6 +437,35 @@ saw as one frame a second. The grid remembers its view and its legend across a r
 part of the stored fence, so opening the app inside a fence no longer fires an entry that never happened, and deleting
 a fence or clearing its log asks first.
 
+### Media: what the other clients do, and the AEIC decision
+
+Read on 2026-11-14 from the checkouts in `~/Documents/mesh-research` and the
+firmware in `~/Documents/meshcore-fw-alerts`.
+
+| client | frame | data type | channel or direct |
+| --- | --- | --- | --- |
+| MeshCore Open | `CMD_SEND_CHANNEL_DATA` | `0xAE1C` | **channel, flooded** (`meshcore_connector.dart:5126`) |
+| MeshPix | preview `0x3E`, upgrade `0x19` | `0xFF50` | preview on the channel, upgrade **DM only** |
+| meshcore-sar | `IE4:` text + `0x19` | dev band | envelope in chat, pixels **on demand** |
+| this app | preview `0x3E`, records `0x19` | `0xFF50` + MP1 chunk framing | preview one datagram, pixels **direct only** |
+
+The firmware decides it: `CMD_SEND_RAW_DATA` requires a path and answers
+`ERR_CODE_UNSUPPORTED_CMD` for a flood (`MyMesh.cpp:1519-1533`), so a direct
+record cannot be broadcast even by mistake. `CMD_SEND_CHANNEL_DATA` accepts `0xFF`
+and floods.
+
+**AEIC, decided 2026-11-14: recognised, not implemented.** MeshCore Open's image
+codec is three ONNX graphs (835 MB decoder, 64 MB send-side entropy, 58 MB
+decode-side entropy) with measured peaks of 0.35 GiB for the entropy graph and
+2.16 GiB for the decoder, driven through `flutter_onnxruntime` in a worker
+isolate (`image_codec_backend.dart:21-60`). It buys a 512x512 picture in a few
+kilobytes, and it costs a 872 MB download and a 2 GiB allocation on a phone that
+also runs a 350-contact mesh app. The models are not bundled by that project and
+are not hosted by this one, so shipping it needs a model host before it needs
+code. What this app does in the meantime: it recognises `0xAE1C` and counts it as
+a picture in a codec this build does not carry, rather than dropping it as an
+unknown datagram.
+
 ### Still open after this pass
 
 | Item | State |

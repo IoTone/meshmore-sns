@@ -51,6 +51,15 @@ const int kMp1DataType = 0xFF50;
 /// MeshPix's data type for its channel catch-up and receipts.
 const int kMp1CatchUpDataType = 0xFF51;
 
+/// MeshCore Open's data type for an AEIC picture (a neural codec).
+///
+/// This app recognises the type and says so, and cannot decode it: AEIC is three
+/// ONNX graphs totalling about 872 MB, with a 2.16 GiB peak decode, and the
+/// models are not bundled or hosted by this project. Recognising the type is
+/// still worth doing — a picture from a MeshCore Open user is then reported as a
+/// picture this build cannot read, rather than as an unknown datagram.
+const int kAeicDataType = 0xAE1C;
+
 const int _kMagic0 = 0x4D; // 'M'
 const int _kMagic1 = 0x50; // 'P'
 const int _kVersion = 1;

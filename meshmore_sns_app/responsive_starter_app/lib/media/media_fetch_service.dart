@@ -69,6 +69,14 @@ final class MediaFetchService {
   final List<StreamSubscription<Object?>> _subs =
       <StreamSubscription<Object?>>[];
 
+  /// Datagrams that are a picture in a codec this build does not carry.
+  ///
+  /// AEIC is MeshCore Open's neural codec: about 872 MB of ONNX graphs and a
+  /// 2.16 GiB peak decode, which this app does not ship. Counting them is
+  /// honest: the alternative is a silent drop that looks like an unknown type.
+  int _foreignPictures = 0;
+  int get foreignPictures => _foreignPictures;
+
   /// Previews heard this session, newest last, bounded to sixteen.
   List<PhotoAnnouncement> get announcements =>
       List<PhotoAnnouncement>.unmodifiable(_held);
@@ -91,6 +99,10 @@ final class MediaFetchService {
   }
 
   void _onDatagram(ChannelDatagram d) {
+    if (d.dataType == kAeicDataType) {
+      _foreignPictures++;
+      return;
+    }
     if (d.dataType != kMp1DataType) return;
     final Mp1DecodeResult out = decodeMp1Preview(d.blob);
     final Mp1Image? image = out.image;
