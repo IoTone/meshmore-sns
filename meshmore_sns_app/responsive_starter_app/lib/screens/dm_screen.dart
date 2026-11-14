@@ -15,6 +15,7 @@ import '../chat/composer_field.dart';
 import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
 import '../chat/studio_message_row.dart';
+import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
 import '../bot/bot_guards.dart';
 import '../bot/bot_tag.dart';
@@ -340,11 +341,15 @@ class _DmScreenState extends State<DmScreen> {
         if (!mounted) return;
         if (m == null) {
           _restoreComposer(t, key);
+          context.cue?.play(CueKind.taskError);
           ScaffoldMessenger.maybeOf(context)?.showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context).chatSendNotSent)),
           );
           return;
         }
+        // Same tick as a channel send: the pack carries one "that went" sound,
+        // and a DM that leaves should sound like a message leaving.
+        context.cue?.play(CueKind.send);
         _sentId = m.id;
         _input.clear();
       },

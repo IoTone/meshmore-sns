@@ -21,6 +21,7 @@ import '../geofence/geofence_engine.dart';
 import '../maps/geofence_render.dart';
 import '../geofence/geofence_store.dart';
 import '../maps/basemap.dart';
+import '../cue/cue_service.dart';
 import '../maps/density_overlay.dart';
 import '../maps/hex_field.dart';
 import '../maps/message_bubble.dart';
@@ -710,6 +711,9 @@ class _StreetMapViewState extends State<StreetMapView> {
       ),
     );
     if (made == null || !mounted || fences == null) return;
+    // The State's own context, not the parameter: the parameter is the caller's
+    // and cannot be trusted across the await that just happened.
+    final CueService? cue = this.context.cue;
     await fences.addFence(
       label: made.label.isEmpty
           ? l.geofenceDefaultName(fences.fences.length + 1)
@@ -718,6 +722,10 @@ class _StreetMapViewState extends State<StreetMapView> {
       longitude: point.longitude,
       radiusMeters: made.radiusMeters,
     );
+    // Silence after a save reads as a save that failed. `taskOk` is the pack's
+    // "a thing worked" tone; there is no fence-specific cue and inventing one
+    // would mean nineteen new files per theme for one action.
+    cue?.play(CueKind.taskOk);
   }
 
   /// Begin drawing a fence, with the long-press point as its first corner.
@@ -776,12 +784,14 @@ class _StreetMapViewState extends State<StreetMapView> {
       ),
     );
     if (made == null || !mounted || fences == null) return;
+    final CueService? cue = context.cue;
     await fences.addPolygonFence(
       label: made.label.isEmpty
           ? l.geofenceDefaultName(fences.fences.length + 1)
           : made.label,
       polygon: corners,
     );
+    cue?.play(CueKind.taskOk);
     if (mounted) setState(() => _draft = const <LatLng>[]);
   }
 

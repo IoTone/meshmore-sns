@@ -20,6 +20,7 @@ import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_shape.dart';
+import '../cue/cue_service.dart';
 import '../ui/mm_confirm.dart';
 import 'channel_create_sheet.dart';
 
@@ -130,6 +131,7 @@ class ChannelsScreen extends StatelessWidget {
                         ..clearSnackBars()
                         ..showSnackBar(
                             SnackBar(content: Text(l.channelCreateCreated)));
+                      context.cue?.play(CueKind.taskOk);
                     }
                   }
                 : null,

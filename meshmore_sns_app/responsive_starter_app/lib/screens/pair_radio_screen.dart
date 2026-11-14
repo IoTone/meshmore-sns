@@ -7,6 +7,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../cue/cue_service.dart';
 import '../meshcore/failure.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/pair_scanner.dart';
@@ -145,7 +146,15 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
   }
 
   Future<void> _startScan() async {
+    // Captured before the cancel below, which is an await: using `context`
+    // after it is the async-gap lint, and the reviewer is right.
+    final CueService? cue = mounted ? context.cue : null;
     await _scanSub?.cancel();
+    // The scanning drone the packs have always carried: a held low tone that
+    // loops for the whole window, which is what tells a reader the phone is
+    // still looking when the list is empty. Silent until now because nothing
+    // called `startScanHum`.
+    unawaited(cue?.startScanHum() ?? Future<void>.value());
     setState(() {
       _scanning = true;
       _hits.clear();
@@ -163,6 +172,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
       },
       onError: (Object e) {
         if (!mounted) return;
+        context.cue?.stopScanHum();
         setState(() {
           _scanning = false;
           _failure = Failure.from(e);
@@ -170,6 +180,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
       },
       onDone: () {
         if (!mounted) return;
+        context.cue?.stopScanHum();
         setState(() => _scanning = false);
       },
     );

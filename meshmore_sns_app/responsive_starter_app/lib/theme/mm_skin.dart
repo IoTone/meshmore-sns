@@ -3,6 +3,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
+import '../cue/cue_service.dart';
 import 'mm_tokens.dart';
 import 'theme_controller.dart';
 
@@ -542,5 +543,22 @@ extension MmSkinContext on BuildContext {
       // No ThemeController above us — default skin.
     }
     return mmSkinFor(preset);
+  }
+}
+
+/// The app's cue service, or null where one is not provided.
+///
+/// A control that makes a sound must not be a control that cannot be built:
+/// every harness, every reduced app and every test would need the provider
+/// before the widget rendered. A nullable `read` still throws when nothing is
+/// registered — the trap `MediaInbox` fell into — so the lookup is tolerant here,
+/// once, and callers just call `play`.
+extension MmCueContext on BuildContext {
+  CueService? get cue {
+    try {
+      return Provider.of<CueService?>(this, listen: false);
+    } on ProviderNotFoundException {
+      return null;
+    }
   }
 }

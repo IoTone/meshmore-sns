@@ -23,6 +23,7 @@ import '../chat/place_suggestion_line.dart';
 import '../chat/studio_message_row.dart';
 import '../chat/history_unreadable_notice.dart';
 import '../chat/export_passphrase_dialog.dart';
+import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
 import '../media/media_codec.dart';
 import '../media/media_composer.dart';
@@ -642,11 +643,16 @@ class _ChatScreenState extends State<ChatScreen>
         if (!mounted) return;
         if (sent == null) {
           _restoreComposer(t, key);
+          context.cue?.play(CueKind.taskError);
           ScaffoldMessenger.maybeOf(context)?.showSnackBar(
             SnackBar(content: Text(AppLocalizations.of(context).chatSendNotSent)),
           );
           return;
         }
+        // The one cue every pack has carried since it was written and nothing
+        // played: a short "that went" tick, distinct from the arrival sounds so
+        // a sender hears their own message leave and nobody else's.
+        context.cue?.play(CueKind.send);
         _input.clear();
         _nearWarned = false;
       },
