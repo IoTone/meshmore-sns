@@ -13,6 +13,7 @@ import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/device_config_screen.dart';
 import 'package:meshmore_sns_app/theme/mm_skin.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
+import 'package:meshmore_sns_app/ui/mm_components.dart';
 
 import '../meshcore/fake_transport.dart';
 import 'package:meshcore/meshcore.dart';
@@ -362,8 +363,15 @@ void main() {
     await t.pumpAndSettle();
 
     Text find1(String s) => t.widget<Text>(find.text(s));
-    expect(find1('CHANNELS').style?.fontSize, type.sizeBody);
-    expect(find1('CHANNELS').style?.fontSize, 12);
+    // CHANNELS is a section header now, not a hand-rolled letter-spaced Text,
+    // so it answers to the shared section-label role: the small ladder step and
+    // the skin's own tracking. The point of the assertion is unchanged — the
+    // size is a role, never a literal — but a literal is exactly what the old
+    // 12 was, so the role is what gets asserted here.
+    expect(find1('CHANNELS').style?.fontSize, mmSectionLabelStyle(
+        mmSkinFor(MmThemePreset.seele)).fontSize);
+    expect(find1('CHANNELS').style?.letterSpacing,
+        mmSectionLabelStyle(mmSkinFor(MmThemePreset.seele)).letterSpacing);
     expect(find1('Path hash size').style?.fontSize, type.sizeBody);
     expect(find1('Path hash size').style?.fontSize, 12);
 

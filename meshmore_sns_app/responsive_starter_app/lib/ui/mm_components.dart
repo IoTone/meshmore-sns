@@ -701,6 +701,7 @@ class MmAction extends StatelessWidget {
     this.icon,
     this.dense = false,
     this.compact = false,
+    this.primary = false,
   });
 
   final String label;
@@ -717,11 +718,24 @@ class MmAction extends StatelessWidget {
   /// under every message that names a place made the thread read as a form.
   final bool compact;
 
+  /// The group's own write, in the same family as its neighbours.
+  ///
+  /// A screen used to say its main action with Material's `FilledButton` and
+  /// everything else with [MmAction], which put a stadium next to a rectangle
+  /// in one row: two shape languages, and on the light presets two corner
+  /// treatments, for actions that differ only in how much they matter. The
+  /// emphasis is the fill, so this variant fills with the accent and keeps
+  /// every other metric of the family — the 48 dp floor, the 12/8 padding,
+  /// the skin's own corner [MmShape], the wrapping label.
+  final bool primary;
+
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
     final bool on = onPressed != null;
-    final Color fg = on ? skin.color.fg : skin.color.fgDisabled;
+    final Color fg = primary
+        ? (on ? skin.color.onAccent : skin.color.fgDisabled)
+        : (on ? skin.color.fg : skin.color.fgDisabled);
     // A control that is off keeps its outline. The border used to be the rule
     // at half strength, which on a paper ground composites to 1.4:1 and makes
     // the control dissolve into the page: "off" then reads as "not a control"
@@ -731,7 +745,9 @@ class MmAction extends StatelessWidget {
     final OutlinedBorder border = mmShapeBorder(
       skin.shape,
       side: BorderSide(
-          color: on ? skin.color.line : skin.color.fgDisabled,
+          color: primary
+              ? (on ? skin.color.accent : skin.color.fgDisabled)
+              : (on ? skin.color.line : skin.color.fgDisabled),
           width: skin.shape.borderWidth),
     );
     return Semantics(
@@ -748,9 +764,13 @@ class MmAction extends StatelessWidget {
                 horizontal: compact ? 8 : 12,
                 vertical: dense || compact ? 6 : 8),
             decoration: ShapeDecoration(
-              color: on
-                  ? skin.color.surfaceAlt
-                  : skin.color.surfaceAlt.withValues(alpha: .7),
+              color: primary
+                  ? (on
+                      ? skin.color.accent
+                      : skin.color.accent.withValues(alpha: .35))
+                  : (on
+                      ? skin.color.surfaceAlt
+                      : skin.color.surfaceAlt.withValues(alpha: .7)),
               shape: border,
             ),
             // The label wraps rather than overflowing. At the 200 % text
@@ -780,6 +800,45 @@ class MmAction extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Where a group's actions sit: one row, one shape, one place.
+///
+/// The audit of 2026-11-14 found the same commit act hosted eight ways across
+/// the screens — right-aligned under a field, right of a field inside a `Row`,
+/// left-aligned, `Wrap(spaceBetween)` at the end of a section, a stretched
+/// `Column`, a full-width body button, dialog `actions`, and one floating
+/// action button. A user cannot learn a rule from eight examples, and the same
+/// action looked like a different act depending on where it was reached from.
+///
+/// This is the host for anything that belongs to a group: start-aligned so the
+/// eye finds it under the fields it commits, ladder spacing so the gaps agree
+/// with the rest of the block, and a `Wrap` so it stacks instead of overflowing
+/// at 320 dp with 200 % text — the case the `spaceBetween` rows existed for.
+class MmActionRow extends StatelessWidget {
+  const MmActionRow({
+    super.key,
+    required this.children,
+    this.alignment = WrapAlignment.start,
+  });
+
+  final List<Widget> children;
+
+  /// `spaceBetween` is for the one case where a row holds a destructive action
+  /// at the far end from the constructive ones, and it is not the default.
+  final WrapAlignment alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    final MmSpace space = context.skin.space;
+    return Wrap(
+      alignment: alignment,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: space.rowGap,
+      runSpacing: space.rowGap,
+      children: children,
     );
   }
 }

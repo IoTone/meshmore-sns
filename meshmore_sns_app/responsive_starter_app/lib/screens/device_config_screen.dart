@@ -92,6 +92,16 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
   RadioOperatingPoint? _armed;
   bool _pathHashLoaded = false;
 
+  /// The advert location policy the form is *staging*.
+  ///
+  /// It used to write to the radio the instant a segment was tapped, in the
+  /// same section whose name and coordinates both waited behind their own
+  /// button. One section, two commit models, and no way to tell which control
+  /// was the one that had already gone out. It stages now and travels with the
+  /// coordinates, because "where this radio says it is" is one decision.
+  int _advertPolicy = 0;
+  bool _advertPolicyLoaded = false;
+
   @override
   void dispose() {
     for (final TextEditingController c in <TextEditingController>[
@@ -162,6 +172,14 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     final String n = _name.text.trim();
     if (n.isEmpty) {
       _toast(l.deviceToastNameEmpty);
+      return;
+    }
+    // R25+3, applied to every write on this screen: a control that is on says
+    // what is missing when it cannot act. A disabled button with no reason is
+    // the complaint that produced the policy; applying it to one button out of
+    // three was the inconsistency that followed.
+    if (!mc.isReady) {
+      _toast(l.deviceConnectFirst);
       return;
     }
     try {
@@ -236,7 +254,13 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     _toast(l.deviceToastGotPhoneLoc);
   }
 
-  Future<void> _applyLocation(MeshcoreController mc) async {
+  /// One write for "where this radio says it is": the policy and the pair.
+  ///
+  /// The policy is only meaningful together with a position ("share the live
+  /// fix" and "advertise the pinned pair" say nothing on their own), and the
+  /// radio already takes each as its own command, so this sends both and
+  /// reports the first refusal rather than half-applying in silence.
+  Future<void> _applyAdvert(MeshcoreController mc) async {
     final AppLocalizations l = AppLocalizations.of(context);
     final double? la = double.tryParse(_lat.text.trim());
     final double? lo = double.tryParse(_lon.text.trim());
@@ -244,8 +268,13 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
       _toast(l.deviceToastInvalidLatLon);
       return;
     }
+    if (!mc.isReady) {
+      _toast(l.deviceConnectFirst);
+      return;
+    }
     try {
       await mc.setAdvertLatLon(latitude: la, longitude: lo);
+      await mc.setAdvertLocPolicy(_advertPolicy);
       _toast(l.deviceToastAdvertLocSet);
     } catch (e) {
       _toast(l.deviceToastSendFailed('$e'));
@@ -704,13 +733,13 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                   );
                 }),
                 const SizedBox(height: 12),
-                // Wrap, not Row+Spacer: two buttons on one line while they
-                // fit (same left/right placement), stacking instead of
-                // overflowing by 8.5 px at 320dp with 2.0x text.
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  runSpacing: 8,
+                // One host for the group's actions, and the write is the same
+                // control as its neighbours with a filled ground (MmAction
+                // .primary). The row used to place a Material filled pill
+                // beside two MmAction rectangles with `spaceBetween`, so the
+                // same three acts had two shapes and the primary one moved
+                // whenever the undo action appeared.
+                MmActionRow(
                   children: <Widget>[
                     if (si != null)
                       MmAction(
@@ -722,14 +751,13 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                         label: l.deviceRadioRevert,
                         onPressed: () => _revertRadio(mc),
                       ),
-                    FilledButton.icon(
-                      icon: const Icon(Icons.send),
-                      label: Text(l.deviceApplyRadio),
-                      // R25+3 — always tappable. _applyRadio handles the
-                      // not-ready case explicitly so a user with the form
-                      // already populated (e.g. via Suggest-from-location
-                      // while offline) gets actionable feedback instead
-                      // of a dead button.
+                    MmAction(
+                      primary: true,
+                      icon: Icons.send,
+                      label: l.deviceApplyRadio,
+                      // Always tappable, and it says why when it cannot send:
+                      // a user who filled the form from a preset while offline
+                      // gets an instruction instead of a dead control.
                       onPressed: () => _applyRadio(mc),
                     ),
                   ],
@@ -767,14 +795,18 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                   decoration: InputDecoration(
                       labelText: l.deviceAdvertName, isDense: true),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: MmAction(
-                    dense: true,
-                    icon: Icons.badge_outlined,
-                    label: l.deviceSetName,
-                    onPressed: ready ? () => _applyName(mc) : null,
-                  ),
+                // The name has one action, in the row every other group on
+                // this screen ends with. It used to float right, dense, under
+                // a full-width field, on top of the field's own counter.
+                MmActionRow(
+                  children: <Widget>[
+                    MmAction(
+                      primary: true,
+                      icon: Icons.badge_outlined,
+                      label: l.deviceSetName,
+                      onPressed: () => _applyName(mc),
+                    ),
+                  ],
                 ),
                 // Advert location SOURCE — the segment values are the FIRMWARE's
                 // policy integers, they are NOT the visual order of our labels.
@@ -797,7 +829,16 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 const SizedBox(height: 4),
                 Builder(builder: (BuildContext _) {
                   final SelfInfo? si = mc.selfInfo;
-                  final int current = si?.advertLocPolicy ?? 0;
+                  if (!_advertPolicyLoaded && si != null) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted && !_advertPolicyLoaded) {
+                        setState(() {
+                          _advertPolicy = si.advertLocPolicy;
+                          _advertPolicyLoaded = true;
+                        });
+                      }
+                    });
+                  }
                   return SegmentedButton<int>(
                     segments: <ButtonSegment<int>>[
                       ButtonSegment<int>(
@@ -813,20 +854,13 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                           label: Text(advertPolicyLabel(l, 2)),
                           icon: const Icon(Icons.push_pin_outlined, size: 16)),
                     ],
-                    selected: <int>{current},
+                    selected: <int>{_advertPolicy},
                     showSelectedIcon: false,
-                    onSelectionChanged: ready && si != null
-                        ? (Set<int> next) async {
-                            final int v = next.first;
-                            if (v == current) return;
-                            try {
-                              await mc.setAdvertLocPolicy(v);
-                              _toast(advertPolicyLabel(l, v));
-                            } catch (e) {
-                              _toast(l.deviceToastSendFailed('$e'));
-                            }
-                          }
-                        : null,
+                    // Staged, not sent: it goes out with the coordinates in
+                    // one write. Picking a segment used to transmit before the
+                    // user had finished the sentence the section was about.
+                    onSelectionChanged: (Set<int> next) =>
+                        setState(() => _advertPolicy = next.first),
                   );
                 }),
                 // R38 — on-board GPS module (separate from advert policy
@@ -883,35 +917,36 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                   deviceValue: si?.longitude,
                   unsavedLabel: l.deviceLocUnsaved,
                 ),
-                // R22 / U13 — populate-the-field actions (no broadcast).
-                Row(
+                // R22 / U13 — populate-the-field actions (no broadcast), in
+                // the same family and the same row style as everything else
+                // on the screen. They were two Material outlined pills whose
+                // labels wrapped to two lines, which is what made a 48 dp row
+                // of actions look like a different kind of object.
+                MmActionRow(
                   children: <Widget>[
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.smartphone, size: 16),
-                        label: Text(l.deviceUsePhoneLocation),
-                        onPressed: () => _usePhoneLocation(mc),
-                      ),
+                    MmAction(
+                      icon: Icons.smartphone,
+                      label: l.deviceUsePhoneLocation,
+                      onPressed: () => _usePhoneLocation(mc),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.developer_board, size: 16),
-                        label: Text(l.deviceReadDeviceLocation),
-                        onPressed: () => _readDeviceLocation(mc),
-                      ),
+                    MmAction(
+                      icon: Icons.developer_board,
+                      label: l.deviceReadDeviceLocation,
+                      onPressed: () => _readDeviceLocation(mc),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: MmAction(
-                    dense: true,
-                    icon: Icons.my_location,
-                    label: l.deviceSetAdvertLocation,
-                    onPressed: ready ? () => _applyLocation(mc) : null,
-                  ),
+                const SizedBox(height: 8),
+                // One write for the pair and the policy above it.
+                MmActionRow(
+                  children: <Widget>[
+                    MmAction(
+                      primary: true,
+                      icon: Icons.my_location,
+                      label: l.deviceSetAdvertLocation,
+                      onPressed: () => _applyAdvert(mc),
+                    ),
+                  ],
                 ),
                 Text(
                   l.deviceAdvertPropagatesHint,
@@ -921,10 +956,10 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
             ),
             const Divider(height: 28),
 
-            // CHANNELS → dedicated screen
-            Text(l.deviceChannelsSection,
-                style: TextStyle(
-                    color: cs.primary, fontSize: context.skin.type.sizeBody, letterSpacing: 3)),
+            // CHANNELS → dedicated screen. A section header is a section
+            // header: this one was a bare letter-spaced Text while every other
+            // group on the page used MmCollapsibleSection's title.
+            MmSectionHeader(l.deviceChannelsSection),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.tag),
