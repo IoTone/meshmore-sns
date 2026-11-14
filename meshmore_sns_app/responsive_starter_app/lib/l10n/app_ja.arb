@@ -2971,6 +2971,7 @@
   "mapDensityCellSize": "セル: {size} あたりのノード数",
   "actionReplyMention": "{name} に返信",
   "actionQuote": "このメッセージを引用",
+  "actionReact": "リアクション",
   "actionReplyNoName": "返信",
   "chatActionsNoRadio": "無線が未接続です。返信や引用は入力欄に保持され、接続後に使えます。"
 }

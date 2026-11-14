@@ -4607,6 +4607,7 @@
     }
   },
   "actionQuote": "Quote this message",
+  "actionReact": "React",
   "actionReplyNoName": "Reply",
   "chatActionsNoRadio": "No radio: a reply or quote waits in the box until one is connected."
 }

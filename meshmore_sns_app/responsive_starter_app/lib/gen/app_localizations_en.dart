@@ -6861,6 +6861,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionQuote => 'Quote this message';
 
   @override
+  String get actionReact => 'React';
+
+  @override
   String get actionReplyNoName => 'Reply';
 
   @override

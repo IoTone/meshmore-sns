@@ -42,7 +42,9 @@ class ChatMessage {
     this.expectedAck,
     this.failReason,
     this.failCause,
+    Map<String, List<String?>>? reactions,
   })  : id = id ?? _genId(),
+        reactions = reactions ?? <String, List<String?>>{},
         at = at ?? DateTime.now();
 
   /// Monotonic-ish per-process id so per-message actions (R20:
@@ -58,7 +60,15 @@ class ChatMessage {
   }
 
   final int channelIdx;
-  final String text;
+  String text;
+
+  /// Reactions on this message: emoji to the senders who chose it.
+  ///
+  /// A reaction is a text line naming another message by hash, so it is folded
+  /// into the message it names rather than appended to the thread. The sender
+  /// is null for a channel reaction that named nobody and for MeshCore Open's
+  /// shorthand, which does not carry one.
+  final Map<String, List<String?>> reactions;
 
   /// For **DMs (1:1 P2P)**: the peer's pubkey hex (64 chars) when we
   /// can resolve it from the fabric, or the 12-hex pubkey prefix
@@ -127,6 +137,11 @@ class ChatMessage {
         // the channel is 0 in that case, which is where a failed send on the
         // public channel belongs.
         if (failCause != null) 'x': failCause!.name,
+        if (reactions.isNotEmpty)
+          'e': <String, List<String?>>{
+            for (final MapEntry<String, List<String?>> e in reactions.entries)
+              e.key: e.value,
+          },
       };
 
   /// Reads a persisted cause name. An unknown name (a row written by a newer
@@ -177,6 +192,17 @@ class ChatMessage {
       delivery: delivery,
       expectedAck: (j['k'] as num?)?.toInt(),
       failReason: reason,
+      reactions: switch (j['e']) {
+        final Map<Object?, Object?> m => <String, List<String?>>{
+            for (final MapEntry<Object?, Object?> e in m.entries)
+              if (e.key is String && e.value is List)
+                e.key! as String: <String?>[
+                  for (final Object? who in e.value! as List)
+                    who is String ? who : null,
+                ],
+          },
+        _ => null,
+      },
       // `x` is the current key; a legacy row has the cause in `c` and no channel
       // index, which is why the channel above falls back to 0.
       failCause: switch (j['x'] ?? j['c']) {

@@ -389,6 +389,10 @@ class _DmScreenState extends State<DmScreen> {
       case ChatAction.copy:
         await copyMessageToClipboard(context, m);
         break;
+      case ChatAction.react:
+        final String? emoji = await pickReaction(context);
+        if (emoji != null && mounted) await mc.reactTo(m, emoji);
+        break;
       case ChatAction.forward:
         await forwardMessage(context, mc, m);
         break;

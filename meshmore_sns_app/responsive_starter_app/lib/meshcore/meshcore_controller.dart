@@ -3,6 +3,7 @@
 import 'radio_lease.dart';
 import 'dart:async';
 
+import '../chat/reactions.dart';
 import '../util/mesh_log.dart';
 import '../util/prefs.dart';
 import 'dart:convert';
@@ -3489,6 +3490,87 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     }
   }
 
+  /// Reacts to one message with [emoji], in MeshCore One's format.
+  ///
+  /// A channel reaction names the sender, because a channel line carries no key
+  /// and the hash is salted with it. A direct reaction does not, because the
+  /// envelope already says who sent it. The row is updated locally as well, so
+  /// the reactor sees the reaction without waiting for its own line to come
+  /// back from the mesh.
+  Future<bool> reactTo(ChatMessage target, String emoji) async {
+    if (!isReady) return false;
+    final bool dm = target.peerPubKeyHex != null;
+    final String hash = Reactions.hashFor(
+      timestampSeconds: target.at.millisecondsSinceEpoch ~/ 1000,
+      text: target.text,
+    );
+    final String? own = selfInfo?.name;
+    final String line = dm
+        ? Reactions.encodeDirect(emoji: emoji, hash: hash)
+        : Reactions.encodeChannel(
+            senderName: own == null || own.isEmpty ? '?' : own,
+            emoji: emoji,
+            hash: hash,
+          );
+    final bool sent = dm
+        ? await sendDirectText(target.peerPubKeyHex!, line) != null
+        : await sendChannelTextTo(target.channelIdx, line) != null;
+    if (!sent) return false;
+    final List<String?> who = target.reactions.putIfAbsent(emoji, () => <String?>[]);
+    if (!who.contains(own)) who.add(own);
+    _persistChat();
+    _invalidateMessagesCache(target.channelIdx);
+    notifyListeners();
+    return true;
+  }
+
+  /// Folds a reaction into the message it names.
+  ///
+  /// Returns false when nothing in this channel matches the hash, which is the
+  /// common case for a client that did not hold the original message: the line
+  /// is then kept as an ordinary message rather than swallowed.
+  bool _applyReaction(
+    int channelIdx,
+    String? peerHex,
+    ({String hash, String emoji, String? senderName, bool isOpen}) rx,
+  ) {
+    for (int i = _messages.length - 1; i >= 0; i--) {
+      final ChatMessage m = _messages[i];
+      if (m.channelIdx != channelIdx) continue;
+      if ((m.peerPubKeyHex ?? '') != (peerHex ?? '')) continue;
+      final String hash = Reactions.hashFor(
+        timestampSeconds: m.at.millisecondsSinceEpoch ~/ 1000,
+        text: m.text,
+      );
+      if (hash != rx.hash) continue;
+      // The hash names the text and the second. In a channel the sender is
+      // carried beside it, so two people who typed the same words at the same
+      // second are told apart here rather than colliding.
+      if (peerHex == null &&
+          rx.senderName != null &&
+          rx.senderName != _senderNameOf(m)) {
+        continue;
+      }
+      final List<String?> who = m.reactions.putIfAbsent(rx.emoji, () => <String?>[]);
+      final String? tag = rx.senderName;
+      if (!who.contains(tag)) who.add(tag);
+      _persistChat();
+      _invalidateMessagesCache(m.channelIdx);
+      return true;
+    }
+    return false;
+  }
+
+  /// The name this app shows for a channel message's sender, which is the salt
+  /// MeshCore One's hash uses.
+  ///
+  /// A channel message carries no key, so the only handle on the sender is the
+  /// name its own text starts with (`Name: body`), which is exactly what the
+  /// chat row displays. Our own rows are salted with our own name, because that
+  /// is what the other clients will read off the line we send.
+  String? _senderNameOf(ChatMessage m) =>
+      m.outgoing ? selfInfo?.name : parseChannelSenderName(m.text);
+
   void _ingestChat(MeshcoreInbound f) {
     if (f is ChannelMessageFrame) {
       final ChannelMessage cm = f.message;
@@ -3504,6 +3586,16 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       if (!_channels.containsKey(cm.channelIdx)) {
         _channels[cm.channelIdx] = 'CH ${cm.channelIdx}';
         _invalidateChannelsCache();
+      }
+      // A reaction names another message by hash, and is folded into it rather
+      // than appended: a thread of one-emoji lines is not what a reader wants.
+      // The hash is salted with the sender's name in a channel, which is what
+      // the line itself carries (`@[name]emoji\nhash`).
+      final ({String hash, String emoji, String? senderName, bool isOpen})? rx =
+          Reactions.parse(cm.text);
+      if (rx != null && _applyReaction(cm.channelIdx, null, rx)) {
+        notifyListeners();
+        return;
       }
       final ChatMessage m = ChatMessage(
         channelIdx: cm.channelIdx,

@@ -703,6 +703,10 @@ class _ChatScreenState extends State<ChatScreen>
       case ChatAction.copy:
         await copyMessageToClipboard(context, m);
         break;
+      case ChatAction.react:
+        final String? emoji = await pickReaction(context);
+        if (emoji != null && mounted) await mc.reactTo(m, emoji);
+        break;
       case ChatAction.forward:
         await forwardMessage(context, mc, m);
         break;
@@ -1523,12 +1527,14 @@ class _MessageRowState extends State<_MessageRow> {
     // does not rebuild the list.
     final String? suggested = context.select<MeshcoreController, String?>(
         (MeshcoreController mc) => mc.placeSuggestionFor(m));
-    if (suggested == null) return row;
+    final Widget? chips = m.reactions.isEmpty ? null : _ReactionChips(m.reactions);
+    if (suggested == null && chips == null) return row;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         row,
-        PlaceSuggestionLine(message: m, name: suggested),
+        if (chips != null) chips,
+        if (suggested != null) PlaceSuggestionLine(message: m, name: suggested),
       ],
     );
   }
@@ -2216,6 +2222,49 @@ class _PhotoAnnouncementStrip extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// The reactions on one message, under the row it belongs to.
+///
+/// A count rather than a list of names: on a 320 dp row three names is not a
+/// chip, it is a paragraph, and the sheet that opens on tap is where the names
+/// belong. The sender is null for MeshCore Open's shorthand, which carries no
+/// identity, so the count is all the information there is.
+class _ReactionChips extends StatelessWidget {
+  const _ReactionChips(this.reactions);
+
+  final Map<String, List<String?>> reactions;
+
+  @override
+  Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
+    return Padding(
+      padding: EdgeInsets.only(left: skin.space.rowInset, top: skin.space.rowGap),
+      child: Wrap(
+        spacing: skin.space.rowGap,
+        runSpacing: skin.space.insideText,
+        children: <Widget>[
+          for (final MapEntry<String, List<String?>> e in reactions.entries)
+            Container(
+              key: ValueKey<String>('reaction-${e.key}'),
+              padding: EdgeInsets.symmetric(
+                  horizontal: skin.space.labelToControl,
+                  vertical: skin.space.insideText),
+              decoration: ShapeDecoration(
+                color: skin.color.surfaceAlt,
+                shape: mmShapeBorder(skin.shape,
+                    side: BorderSide(color: skin.color.line)),
+              ),
+              child: Text(
+                e.value.length > 1 ? '${e.key} ${e.value.length}' : e.key,
+                style: TextStyle(
+                    color: skin.color.fg, fontSize: skin.type.sizeBody),
+              ),
+            ),
+        ],
       ),
     );
   }

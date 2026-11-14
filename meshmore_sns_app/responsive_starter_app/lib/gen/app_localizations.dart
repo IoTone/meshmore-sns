@@ -11428,6 +11428,12 @@ abstract class AppLocalizations {
   /// **'Quote this message'**
   String get actionQuote;
 
+  /// No description provided for @actionReact.
+  ///
+  /// In en, this message translates to:
+  /// **'React'**
+  String get actionReact;
+
   /// No description provided for @actionReplyNoName.
   ///
   /// In en, this message translates to:

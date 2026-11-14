@@ -6574,6 +6574,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionQuote => 'このメッセージを引用';
 
   @override
+  String get actionReact => 'リアクション';
+
+  @override
   String get actionReplyNoName => '返信';
 
   @override

@@ -14,6 +14,7 @@ import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
+import 'reactions.dart';
 import '../screens/delivery_status_icon.dart';
 // The conversation picker is a widget library rather than a screen, and a
 // forward is the same question a tool asks: which conversation?
@@ -42,6 +43,9 @@ import 'draft_store.dart';
 /// "reply to this person" addresses them, "quote this message" puts their
 /// words in the box. A reader who wants one does not always want the other.
 enum ChatAction {
+  /// React with an emoji. The sheet closes with [ChatAction.react] and the
+  /// caller opens the palette, because a picker inside a menu is two scrolls.
+  react,
   replyMention,
   quote,
   copy,
@@ -137,6 +141,19 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
               onTap: () => Navigator.pop(ctx, ChatAction.retry),
             trailing: const Icon(Icons.chevron_right, size: 18),
             ),
+          // A reaction is the cheapest answer there is on a mesh: one short
+          // line, and every client that speaks MeshCore One's format folds it
+          // into the row it names instead of adding a message.
+          ListTile(
+            key: const ValueKey<String>('chat-action-react'),
+            leading: const Icon(Icons.emoji_emotions_outlined),
+            title: Text(l.actionReact),
+            enabled: canCompose,
+            onTap: canCompose
+                ? () => Navigator.pop(ctx, ChatAction.react)
+                : null,
+            trailing: const Icon(Icons.chevron_right, size: 18),
+          ),
           // Two answers, because they are different questions: address the
           // person (the MeshCore reply) or put their words in the box.
           ListTile(
@@ -331,3 +348,51 @@ Future<bool> confirmDeleteMessage(BuildContext context, ChatMessage m) {
 
 /// The reason shown under Retry: the catalogue's translated sentence when the
 /// row carries a cause, the older stored sentence otherwise (APP-N2).
+
+/// Asks for one emoji from the fixed palette.
+///
+/// A grid of eight rather than a full emoji picker: a reaction on a mesh is a
+/// gesture, the whole line has a byte budget, and eight is what fits a sheet on
+/// a 320 dp phone without a scroll. The same eight in both threads, so a reader
+/// learns them once.
+Future<String?> pickReaction(BuildContext context) async {
+  final AppLocalizations l = AppLocalizations.of(context);
+  return showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (BuildContext ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Text(l.actionReact,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: <Widget>[
+                for (final String emoji in Reactions.palette)
+                  InkWell(
+                    key: ValueKey<String>('react-$emoji'),
+                    onTap: () => Navigator.pop(ctx, emoji),
+                    child: SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: Center(
+                        child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
