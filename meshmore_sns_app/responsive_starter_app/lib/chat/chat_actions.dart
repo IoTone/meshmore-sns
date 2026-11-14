@@ -14,6 +14,7 @@ import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
+import '../theme/mm_skin.dart';
 import 'reactions.dart';
 import '../screens/delivery_status_icon.dart';
 // The conversation picker is a widget library rather than a screen, and a
@@ -357,6 +358,7 @@ Future<bool> confirmDeleteMessage(BuildContext context, ChatMessage m) {
 /// learns them once.
 Future<String?> pickReaction(BuildContext context) async {
   final AppLocalizations l = AppLocalizations.of(context);
+  final MmSkin skin = context.skin;
   return showModalBottomSheet<String>(
     context: context,
     showDragHandle: true,
@@ -366,12 +368,17 @@ Future<String?> pickReaction(BuildContext context) async {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            padding: EdgeInsets.fromLTRB(skin.space.screenEdge, 0,
+                skin.space.screenEdge, skin.space.rowGap),
             child: Text(l.actionReact,
-                style: const TextStyle(fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    color: skin.color.fg,
+                    fontSize: skin.type.sizeBodyLg,
+                    fontWeight: FontWeight.w600)),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            padding: EdgeInsets.fromLTRB(
+                skin.space.rowInset, 0, skin.space.rowInset, skin.space.rowInset),
             child: Wrap(
               spacing: 4,
               runSpacing: 4,
@@ -381,10 +388,13 @@ Future<String?> pickReaction(BuildContext context) async {
                     key: ValueKey<String>('react-$emoji'),
                     onTap: () => Navigator.pop(ctx, emoji),
                     child: SizedBox(
-                      width: 56,
-                      height: 56,
+                      // The tap floor, not a smaller target: a reaction is a
+                      // one-thumb gesture.
+                      width: kMinInteractiveDimension,
+                      height: kMinInteractiveDimension,
                       child: Center(
-                        child: Text(emoji, style: const TextStyle(fontSize: 28)),
+                        child: Text(emoji,
+                            style: TextStyle(fontSize: skin.type.size(24))),
                       ),
                     ),
                   ),
