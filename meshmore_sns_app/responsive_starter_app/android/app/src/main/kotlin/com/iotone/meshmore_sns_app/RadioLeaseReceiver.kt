@@ -3,6 +3,8 @@ package com.iotone.meshmore_sns_app
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
@@ -50,6 +52,16 @@ class RadioLeaseReceiver : BroadcastReceiver() {
          * expires.
          */
         private const val HOLD_TTL_MS = 15L * 60L * 1000L
+
+        /**
+         * How long to wait for the Dart side to acknowledge a yield before
+         * answering anyway.
+         *
+         * A broadcast receiver's budget is five seconds. Four leaves the
+         * requester its grant and the system its window, and the flag is already
+         * written, so an unanswered yield cannot leave the radio held.
+         */
+        private const val LEASE_ANSWER_TIMEOUT_MS = 4_000L
 
         /**
          * True while another app holds the radio, as last recorded.
@@ -117,18 +129,30 @@ class RadioLeaseReceiver : BroadcastReceiver() {
                 val requester = intent.getStringExtra("requested_by")
                 // Answer only after the flag is set, so a requester that connects the instant it
                 // hears the answer cannot race a link that is still up.
+                //
+                // **The answer cannot wait on a busy app.** A broadcast receiver has five seconds
+                // to finish, and this one finished only when Dart answered. Measured on the device,
+                // 2026-11-13: three ANRs whose subject is exactly this intent, while the app's main
+                // isolate was stalled on a frame. The flag is already written by then, so the
+                // contract holds without the answer: the requester may connect, and the next launch
+                // reads the flag. Waiting past the system's window turns a busy app into a crash
+                // dialog, which is the one outcome that costs the operator something.
+                var finished = false
                 val done: () -> Unit = {
-                    if (requester != null) {
-                        runCatching {
-                            context.sendBroadcast(
-                                Intent(ACTION_GRANTED)
-                                    .setPackage(requester)
-                                    .putExtra("granted_by", context.packageName)
-                            )
+                    if (!finished) {
+                        finished = true
+                        if (requester != null) {
+                            runCatching {
+                                context.sendBroadcast(
+                                    Intent(ACTION_GRANTED)
+                                        .setPackage(requester)
+                                        .putExtra("granted_by", context.packageName)
+                                )
+                            }
                         }
+                        runCatching { pending.finish() }
+                        Unit
                     }
-                    runCatching { pending.finish() }
-                    Unit
                 }
                 val ch = channel
                 if (ch == null) {
@@ -136,6 +160,15 @@ class RadioLeaseReceiver : BroadcastReceiver() {
                     done()
                     return
                 }
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (!finished) {
+                        android.util.Log.w(
+                            "MeshmoreLease",
+                            "yield unanswered after ${LEASE_ANSWER_TIMEOUT_MS}ms; answering on the flag"
+                        )
+                        done()
+                    }
+                }, LEASE_ANSWER_TIMEOUT_MS)
                 ch.invokeMethod("yield", null, object : MethodChannel.Result {
                     override fun success(result: Any?) { done() }
                     override fun error(code: String, message: String?, details: Any?) { done() }

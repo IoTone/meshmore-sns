@@ -328,10 +328,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               // reader in the field will not find. Same rule as SOS: the control
               // opens the screen, and the commitment still takes a deliberate
               // action there.
+              // A check-in is one message with a deadline, so the glyph is a
+              // check — not `where_to_vote`, which Material draws as a map pin
+              // with a tick in it. Beside a red SOS, a pin reads "somewhere on
+              // the map", which is the one thing this button does not do.
               IconButton(
                 key: const ValueKey<String>('checkin-entry'),
                 tooltip: l.checkinTitle,
-                icon: const Icon(Icons.where_to_vote_outlined),
+                icon: const Icon(Icons.check_circle_outline),
                 onPressed: () => context.push('/checkin'),
               ),
               const DemoChip(),

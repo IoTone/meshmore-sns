@@ -637,10 +637,12 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// away, by typing a radius. A chooser is the smallest thing that gives the
   /// fence a gesture without taking the place's away.
   Future<void> _createHere(BuildContext context, LatLng point) async {
-    if (_draft.isNotEmpty) {
-      setState(() => _draft = <LatLng>[..._draft, point]);
-      return;
-    }
+    // While a fence is being drawn, one gesture means one thing: a **tap** adds
+    // a corner (`_onMapTap`). This handler used to add one too, so a reader who
+    // tapped, saw nothing they expected, and then held the map to look around
+    // got a second corner a finger's width away — and the outline joined the pair
+    // into the zigzag that made the whole shape look wrong.
+    if (_draft.isNotEmpty) return;
     final AppLocalizations l = AppLocalizations.of(context);
     // Captured before the first await: the sheet's own context is gone by the
     // time the fence is saved, and this State is the thing that outlives it.
@@ -805,6 +807,14 @@ class _StreetMapViewState extends State<StreetMapView> {
     // sheet is not reachable in that mode, which is the point: one gesture, one
     // meaning.
     if (_draft.isNotEmpty) {
+      // Two corners a few pixels apart are one corner with a shaky finger: the
+      // outline draws a spike between them and the count claims a corner nobody
+      // meant to place. The test is in screen pixels, because that is what the
+      // hand moved.
+      final MapCamera cam = _map.camera;
+      final math.Point<double> here = cam.latLngToScreenPoint(point);
+      final math.Point<double> last = cam.latLngToScreenPoint(_draft.last);
+      if ((here.x - last.x).abs() < 10 && (here.y - last.y).abs() < 10) return;
       setState(() => _draft = <LatLng>[..._draft, point]);
       return;
     }
@@ -1934,8 +1944,14 @@ class _StreetMapViewState extends State<StreetMapView> {
                       Marker(
                         key: ValueKey<String>('fence-draft-corner-$i'),
                         point: _draft[i],
-                        width: 44,
-                        height: 44,
+                        // The dot was 18 dp on a 44 dp target: it could be
+                        // tapped but it could not be *seen*, so on a street map
+                        // full of labels a reader could not find the corner
+                        // their own finger had just placed. The dot is the size
+                        // of a fingertip's centre now and carries its order, so
+                        // the outline reads as a sequence rather than a scatter.
+                        width: 48,
+                        height: 48,
                         // A drag handle is a control, so it says what it is:
                         // a screen reader that finds an unlabelled gesture area
                         // has found something it cannot describe.
@@ -1947,14 +1963,24 @@ class _StreetMapViewState extends State<StreetMapView> {
                               _moveCorner(i, d.delta),
                           child: Center(
                             child: Container(
-                              width: 18,
-                              height: 18,
+                              width: 26,
+                              height: 26,
+                              alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: context.skin.color.base,
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                     color: context.skin.color.alert,
                                     width: 2.5),
+                              ),
+                              child: Text(
+                                '${i + 1}',
+                                style: TextStyle(
+                                  color: context.skin.color.alert,
+                                  fontSize: context.skin.type.size(11),
+                                  fontWeight: FontWeight.w700,
+                                  height: 1,
+                                ),
                               ),
                             ),
                           ),

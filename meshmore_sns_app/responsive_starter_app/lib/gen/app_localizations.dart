@@ -7155,6 +7155,30 @@ abstract class AppLocalizations {
   /// **'The send failed: {error}'**
   String diagnosticsSendFailed(String error);
 
+  /// No description provided for @diagnosticsSectionErrors.
+  ///
+  /// In en, this message translates to:
+  /// **'Failures in the app itself'**
+  String get diagnosticsSectionErrors;
+
+  /// No description provided for @diagnosticsErrorsCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} this run'**
+  String diagnosticsErrorsCurrent(int count);
+
+  /// No description provided for @diagnosticsErrorsPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in the previous run'**
+  String diagnosticsErrorsPrevious(int count);
+
+  /// No description provided for @diagnosticsErrorsNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None recorded.'**
+  String get diagnosticsErrorsNone;
+
   /// No description provided for @diagnosticsSectionM6.
   ///
   /// In en, this message translates to:

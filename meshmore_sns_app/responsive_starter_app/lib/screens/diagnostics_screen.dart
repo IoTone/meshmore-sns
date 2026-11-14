@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
 
+import '../app/app_errors.dart';
 import '../bot/bot_controller.dart';
 import '../bot/bot_guards.dart';
 import '../bot/responder.dart';
@@ -20,6 +21,7 @@ import '../ui/mm_components.dart';
 import '../ui/radio_connection_facts.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
+import '../ui/app_errors_list.dart';
 import '../ui/mm_scaffold.dart';
 import '../theme/mm_skin.dart';
 import 'diagnostics_redaction.dart';
@@ -587,6 +589,18 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                       ],
                     ),
                   ),
+                // The app's own failures, current run and previous one.
+                //
+                // `AppErrors` has collected the last twenty throws since it was
+                // written and nothing read them: the records were held in memory
+                // for "the Diagnostics developer section" that did not exist. A
+                // periodic freeze therefore left no trace anywhere — the process
+                // died, and with it the only account of what had thrown. The list
+                // is written to prefs on every error and read back at launch, so a
+                // run that ended badly is still readable here.
+                section(l.diagnosticsSectionErrors),
+                AppErrorsList(errors: AppErrors.previous, previous: true),
+                AppErrorsList(errors: AppErrors.records, previous: false),
                 // R59 — soak evidence. Per-scope counters aggregated here so a
                 // run can be read and exported without opening each sheet.
                 const _BotSoakPanel(),

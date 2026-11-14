@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -1452,8 +1453,14 @@ class MapsController extends ChangeNotifier with SafeNotifier {
     // Still checked, because a fake fetcher in a test has no cap and a caller
     // may pass one larger than the budget check below.
     if (b.length > maxLayerBytes) return LayerRefusal.tooLarge;
-    final GeoShapes? shapes =
-        parseGeoJson(utf8.decode(b, allowMalformed: true));
+    // **Off the UI isolate.** A layer may be ten megabytes, and decoding ten
+    // megabytes of JSON plus walking every feature is seconds of work. Run on the
+    // main isolate it is a frozen map and, measured on the handset on 2026-11-13,
+    // three "not responding" dialogs whose trace showed the main thread executing
+    // Dart for five seconds straight. `Isolate.run` copies the text in and the
+    // shapes out, both plain values, so nothing crosses that cannot.
+    final GeoShapes? shapes = await Isolate.run(
+        () => parseGeoJson(utf8.decode(b, allowMalformed: true)));
     if (shapes == null) return LayerRefusal.notGeoJson;
     if (shapes.count == 0) return LayerRefusal.empty;
     if (pinnedBytes - l.bytes + b.length > budgetBytes) {
@@ -1502,7 +1509,11 @@ class MapsController extends ChangeNotifier with SafeNotifier {
     if (hit != null) return hit;
     await ready;
     try {
-      final GeoShapes? s = parseGeoJson(await _layerFile(l.id).readAsString());
+      // Same reason as `_downloadLayer`: a saved layer is the same size on the
+      // way in as it was on the way down, so reopening a map after a restart hit
+      // the same stall.
+      final String text = await _layerFile(l.id).readAsString();
+      final GeoShapes? s = await Isolate.run(() => parseGeoJson(text));
       if (s != null) _shapes[l.id] = s;
       return s;
     } catch (_) {

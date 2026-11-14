@@ -1,9 +1,12 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// What the app does when something throws and there is nowhere to report it.
 ///
@@ -28,6 +31,26 @@ final class AppErrorRecord {
 
   @override
   String toString() => '$where ${at.toIso8601String()} $message';
+
+  Map<String, Object?> toJson() => <String, Object?>{
+        'where': where,
+        'message': message,
+        'at': at.toIso8601String(),
+      };
+
+  /// A record read back from disk. A row that cannot be read is dropped rather
+  /// than thrown: the file exists to explain a failure, so it must not become
+  /// one when it is malformed.
+  static AppErrorRecord? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final Object? where = raw['where'];
+    final Object? message = raw['message'];
+    final Object? at = raw['at'];
+    if (where is! String || message is! String || at is! String) return null;
+    final DateTime? when = DateTime.tryParse(at);
+    if (when == null) return null;
+    return AppErrorRecord(where, message, when);
+  }
 }
 
 final class AppErrors {
@@ -36,11 +59,32 @@ final class AppErrors {
   /// Enough to recognise a repeating failure without keeping a log in memory.
   static const int capacity = 20;
 
+  /// Where the last few records survive the process.
+  ///
+  /// The list used to live only in memory, so a periodic freeze or a crash left
+  /// nothing behind: the app died, the records died with it, and the next launch
+  /// had no idea anything had gone wrong. A field report of "it keeps crashing"
+  /// could not be answered from the app itself. The records are written on every
+  /// error, and read back at launch into the same list the Diagnostics console
+  /// shows, so the previous run's failures are still there to read.
+  static const String _prefsKey = 'mm.appErrors.v1';
+
   static final List<AppErrorRecord> _records = <AppErrorRecord>[];
 
   /// Newest last. Read by the Diagnostics developer section.
   static List<AppErrorRecord> get records =>
       List<AppErrorRecord>.unmodifiable(_records);
+
+  /// Errors read back from the previous run, newest last. Held apart from
+  /// [records] so the console can say which run each line came from: a row from
+  /// a run that ended badly is evidence, and a row from this run is a symptom.
+  static final List<AppErrorRecord> _previous = <AppErrorRecord>[];
+
+  static List<AppErrorRecord> get previous =>
+      List<AppErrorRecord>.unmodifiable(_previous);
+
+  static bool _persistQueued = false;
+  static Future<void>? _pendingWrite;
 
   static void record(Object error, StackTrace? stack,
       {String where = 'async'}) {
@@ -49,6 +93,48 @@ final class AppErrors {
     if (kDebugMode) {
       debugPrint('[app] $where error: $error');
       if (stack != null) debugPrint(stack.toString());
+    }
+    // Fire and forget: the caller is usually an error path that must not wait on
+    // a disk write, and losing one row to a process death is the case the row
+    // exists to explain.
+    _persistQueued = true;
+    _pendingWrite = _persist();
+    unawaited(_pendingWrite!);
+  }
+
+  static Future<void> _persist() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          _prefsKey, jsonEncode(<Object?>[for (final r in _records) r.toJson()]));
+    } catch (_) {
+      // A store that cannot be written is not worth a second failure on the
+      // error path.
+    } finally {
+      _persistQueued = false;
+    }
+  }
+
+  /// Read the previous run's records, and clear them so the next launch reads
+  /// this run's instead of the same rows forever.
+  ///
+  /// Called once at launch. Records written during this run go to the same key,
+  /// so the file always describes the most recent run that got as far as writing.
+  static Future<void> loadPrevious() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? raw = prefs.getString(_prefsKey);
+      if (raw == null) return;
+      final Object? decoded = jsonDecode(raw);
+      if (decoded is! List) return;
+      _previous
+        ..clear()
+        ..addAll(<AppErrorRecord>[
+          for (final Object? row in decoded)
+            if (AppErrorRecord.fromJson(row) case final AppErrorRecord r) r,
+        ]);
+    } catch (_) {
+      // A malformed file explains nothing; it must not stop a launch.
     }
   }
 
@@ -61,7 +147,20 @@ final class AppErrors {
   }
 
   @visibleForTesting
-  static void clear() => _records.clear();
+  static void clear() {
+    _records.clear();
+    _previous.clear();
+    _persistQueued = false;
+  }
+
+  /// Whether a write is still queued. Tests read this instead of sleeping.
+  @visibleForTesting
+  static bool get persistQueued => _persistQueued;
+
+  /// The write in flight, if any. A test awaits this rather than polling a flag
+  /// that could clear between the last byte and the assertion.
+  @visibleForTesting
+  static Future<void>? get pendingWrite => _pendingWrite;
 
   /// Installs the three sinks: framework errors, uncaught async errors, and the
   /// widget shown in place of a failed build.

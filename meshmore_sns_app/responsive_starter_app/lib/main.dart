@@ -84,6 +84,11 @@ Future<void> main() async {
   // decision, so the framework error sink, the async sink and the failed-build
   // panel are the whole of the app's crash story.
   AppErrors.install();
+  // Read what the previous run left behind before anything can overwrite it.
+  // A periodic freeze used to leave no account of itself: the records lived in
+  // memory only, so the process died and took the reason with it. This is the
+  // line that makes the next launch able to say what happened last time.
+  await AppErrors.loadPrevious();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // Attribute the bundled non-code assets (docs, GeoNames, Natural

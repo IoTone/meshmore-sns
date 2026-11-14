@@ -2732,6 +2732,24 @@
       }
     }
   },
+  "diagnosticsSectionErrors": "Failures in the app itself",
+  "diagnosticsErrorsCurrent": "{count} this run",
+  "@diagnosticsErrorsCurrent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosticsErrorsPrevious": "{count} in the previous run",
+  "@diagnosticsErrorsPrevious": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosticsErrorsNone": "None recorded.",
   "diagnosticsSectionM6": "Channel-tail evidence",
   "diagnosticsResolveTail": "Resolve channel-tail",
   "diagnosticsExportFixture": "Export fixture",

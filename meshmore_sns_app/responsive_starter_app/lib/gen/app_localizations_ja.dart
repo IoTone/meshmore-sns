@@ -4036,6 +4036,22 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get diagnosticsSectionErrors => 'アプリ自体の失敗';
+
+  @override
+  String diagnosticsErrorsCurrent(int count) {
+    return '今回の実行で $count 件';
+  }
+
+  @override
+  String diagnosticsErrorsPrevious(int count) {
+    return '前回の実行で $count 件';
+  }
+
+  @override
+  String get diagnosticsErrorsNone => '記録はありません。';
+
+  @override
   String get diagnosticsSectionM6 => 'チャンネル末尾の証跡';
 
   @override

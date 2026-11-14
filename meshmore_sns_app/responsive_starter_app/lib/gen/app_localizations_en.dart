@@ -4204,6 +4204,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get diagnosticsSectionErrors => 'Failures in the app itself';
+
+  @override
+  String diagnosticsErrorsCurrent(int count) {
+    return '$count this run';
+  }
+
+  @override
+  String diagnosticsErrorsPrevious(int count) {
+    return '$count in the previous run';
+  }
+
+  @override
+  String get diagnosticsErrorsNone => 'None recorded.';
+
+  @override
   String get diagnosticsSectionM6 => 'Channel-tail evidence';
 
   @override

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+import 'dart:isolate';
 
 import '../util/mesh_log.dart';
 import 'dart:convert';
@@ -83,6 +84,15 @@ class CityLookup {
     final ByteData raw = await rootBundle.load(_assetPath);
     final Uint8List bytes = raw.buffer.asUint8List(
         raw.offsetInBytes, raw.lengthInBytes);
+    // **Off the UI isolate.** 33 000 rows, a string per row and two index maps,
+    // built in one synchronous pass: it ran on whatever isolate called `load`,
+    // which at launch is the main one, and it competed with the first frames. The
+    // bytes are copied across and the three plain collections come back.
+    return Isolate.run(() => _parse(bytes));
+  }
+
+  /// The parse itself, pure and sendable: no asset, no context, no side effects.
+  static CityLookup _parse(Uint8List bytes) {
     final ByteData view = ByteData.sublistView(bytes);
     if (view.getUint32(0, Endian.little) != _magic) {
       throw const FormatException(

@@ -79,7 +79,7 @@ class ToolsHubScreen extends StatelessWidget {
               padding: EdgeInsets.only(bottom: skin.space.rowGap),
               child: MmListRow(
                 key: const ValueKey<String>('tools-checkin'),
-                leading: Icon(Icons.schedule_send, color: skin.color.accent),
+                leading: Icon(Icons.check_circle_outline, color: skin.color.accent),
                 title: Text(l.checkinTitle),
                 subtitle: Text(l.checkinOneMessage,
                     style: TextStyle(
