@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'dart:typed_data';
 
+import '../meshcore/chat_message.dart';
 import '../meshcore/meshcore_controller.dart';
 import 'place.dart';
 import 'place_codec.dart';
@@ -25,7 +26,10 @@ abstract interface class PlaceSender {
   /// device reports is keyed even though it travels as channel text.
   Uint8List? get reporterKey;
 
-  Future<void> sendPlaceText(String text);
+  /// Puts the line on the air. Returns false when the radio did not take it,
+  /// which is not the same as "nobody heard it": a channel send is a broadcast
+  /// and the only answer is the radio's own OK.
+  Future<bool> sendPlaceText(String text);
 }
 
 /// [PlaceSender] over the app's live controller.
@@ -44,9 +48,13 @@ final class ChannelPlaceSender implements PlaceSender {
   Uint8List? get reporterKey => _controller.selfInfo?.publicKey;
 
   @override
-  Future<void> sendPlaceText(String text) async {
+  Future<bool> sendPlaceText(String text) async {
     final int idx = channelIdx ?? _controller.activeChannel;
-    await _controller.sendChannelTextTo(idx, text);
+    final ChatMessage? row = await _controller.sendChannelTextTo(idx, text);
+    // A null row means nothing was sent (not ready). A row marked failed means
+    // the radio refused it, or the airtime budget did. Either way the place did
+    // not go out, and the composer must not say it did.
+    return row != null && row.delivery != MessageDelivery.failed;
   }
 }
 
@@ -64,6 +72,10 @@ enum PlaceComposeRefusal {
 
   /// No radio identity yet, so the place would not know who reported it.
   identity,
+
+  /// The radio did not take the line: not connected, a refused capability, or
+  /// the airtime budget. The place is not on the air.
+  radio,
 }
 
 /// What the composer did.
@@ -183,7 +195,14 @@ final class PlaceComposer {
       return PlaceComposeResult.refused(PlaceComposeRefusal.budget,
           allowedAt: decision.allowedAt);
     }
-    await _sender.sendPlaceText(text);
+    final bool went = await _sender.sendPlaceText(text);
+    if (!went) {
+      // The budget was spent on a line that never left, so it is given back:
+      // charging the reader for a refusal would make a dead radio cost them
+      // their next report too.
+      _budget.refund();
+      return const PlaceComposeResult.refused(PlaceComposeRefusal.radio);
+    }
     _store.upsert(place);
     _store.markSeen(id);
     return PlaceComposeResult.sent(place);

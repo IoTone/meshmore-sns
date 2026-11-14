@@ -1,3 +1,6 @@
+> **Historical. This is the operating plan of 2026-11-05 and its toolchain measurements from that day.**
+> The record for build order is `meshmore-master-plan.md` section 9.6, and for state `meshmore-feature-register.md`. See `docs/INDEX.md` for the role of every document.
+
 # MeshMore — execution plan (how the work is driven)
 
 Written 2026-11-05 as the supervisor's operating document. `meshmore-feature-register.md` is the feature list and

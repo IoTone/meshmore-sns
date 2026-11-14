@@ -1,3 +1,6 @@
+> **Historical. This is a 2026-10-26 investigation, kept for its firmware evidence.**
+> The record for radio settings is `meshmore-sns-radio-config.md`, and for the protocol `meshmore-sns-protocol-coverage.md`. See `docs/INDEX.md` for the role of every document.
+
 # Private mesh, radio parameters, haptics storm, header structure, transport selector
 
 Written 2026-10-26. Evidence only: every claim cites `path:line` or is marked

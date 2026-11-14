@@ -4474,6 +4474,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placePrecision1000 => 'About 1 km';
 
   @override
+  String get placeRadioRefused =>
+      'The radio did not take it, so the place is not on the air.';
+
+  @override
+  String placeGoesTo(Object channel) {
+    return 'Goes to $channel';
+  }
+
+  @override
   String get placeSent => 'Place tagged. It expires on its own.';
 
   @override

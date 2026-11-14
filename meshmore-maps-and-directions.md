@@ -1,3 +1,6 @@
+> **Historical. This is the 2026-11-04 map and directions design, written before the feature specs existed.**
+> The record for places is `meshmore-places-spec.md`, and for the map `meshmore-sns-maps-spec.md`. See `docs/INDEX.md` for the role of every document.
+
 # MeshMore — maps, social places and directions, 2026-11-04
 
 Scope: the map subsystem as built, the "social map" (shared pins, places, meeting points), and

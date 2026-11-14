@@ -2921,6 +2921,8 @@
   "placePrecisionExact": "Exact",
   "placePrecision100": "About 100 m",
   "placePrecision1000": "About 1 km",
+  "placeRadioRefused": "The radio did not take it, so the place is not on the air.",
+  "placeGoesTo": "Goes to {channel}",
   "placeSent": "Place tagged. It expires on its own.",
   "placeBudgetRefused": "You have sent {n} in the last hour. The next one can go at {time}.",
   "@placeBudgetRefused": {

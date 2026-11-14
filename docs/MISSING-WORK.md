@@ -13,9 +13,9 @@ Rules for this file:
   built; it is listed so nobody re-litigates it by accident.
 - Sizes are the work, not the importance: **S** is an afternoon, **M** is a day or two,
   **L** is a wave with its own tests.
-- Five audits were running in parallel when this was written (verbosity, messaging,
-  instruments, media, map). Their findings are **not** folded in here yet; this is the
-  standing list, and it should be merged with theirs rather than replaced.
+- The audits of 2026-11-14 (instruments, media, airtime, bottom edge, messaging) are folded
+  into §0. A later audit that is not merged here is named in its own row rather than left
+  implied.
 
 ---
 
@@ -210,6 +210,15 @@ device.
    depends on its own `onTaskRemoved`. **Unverified**, and the same device test would settle
    it.
 
+**Code defects found on 2026-11-14 and fixed** (`6feb9a69`): the keep-alive was started once
+per ready edge with no retry, so one refusal left the session unprotected
+(`meshcore_controller.dart:465` is the watchdog now); the catch-up digest reused one id with
+`onlyAlertOnce`, so every burst after the first was silent (`local_notifier.dart:293` clears
+it); a reconnect was treated as a backlog even when the link had only blinked
+(`notification_service.dart:304`); and the open-thread suppression read a cached foreground
+flag that a missed lifecycle event could leave true (`notification_focus.dart`). What is left
+here is the platform question, not the app's.
+
 **The device test that settles 2 and 3** (one sitting): turn the screen off, leave the app in
 the background, send a channel message from another node after five minutes and after thirty,
 and record whether a notification appears and whether `dumpsys activity services` still lists
@@ -232,3 +241,33 @@ rather than reasoned about.
 | Sound | Investigated as a defect report ("the themes have no sound") and it was the files, not the wiring: 30-150 ms cues peaking at -10 to -15 dBFS, inaudible at a media volume of 3/15. Regenerated to a perception floor per cue and a -1.5 dBFS peak, played as sonification without audio focus, at a new persisted `cueVolume`. Recorded in the register §11 |
 | Device configuration UX | Rebuilt on `MmAction.primary` and `MmActionRow`, one family and one placement, with the advert policy staged and sent with the coordinates. Recorded in the register §11 |
 
+---
+
+## 11. The second 2026-11-14 pass
+
+Four reports, four defects, each traced to a line before anything was changed.
+
+| Report | What was wrong | Where it is fixed |
+| --- | --- | --- |
+| "The themes have no sound" | The files, not the wiring: 30-150 ms cues peaking at -10 to -15 dBFS, inaudible at a media volume of 3/15 | `brand/_audio_pack.py` floors and peak target, all 209 files regenerated, `test/cue/cue_pack_loudness_test.dart` |
+| "Set name and Set advert location are weirdly placed" | Four button families and three placements in one scroll view, two enabled policies, two commit models in one section | `MmAction.primary` and `MmActionRow`, `test/screens/device_config_actions_test.dart`, `test/ui/action_family_guard_test.dart` |
+| "The wave is like one FPS" | The heat view repainted once a second, and its CRT sweep and toast fades were advanced in one-second steps | `lib/screens/sns_cells_view.dart` frame clock with the heat maps cached at one hertz |
+| "I never get notifications" | The keep-alive started once with no retry, the digest silenced every burst after the first, a flap counted as a backlog, and the open-thread check read a stale flag | `meshcore_controller.dart:465`, `local_notifier.dart:293`, `notification_service.dart:304`, `notification_focus.dart` |
+
+Also in this pass: the map's basemap folded into the Layers sheet, the compass line moved under
+the header and gated to the views that draw a bearing, pause stopping the sweep, the
+quarter-turn click using `lightImpact`, the grid remembering its view and legend across a
+restart, a geofence's inside state persisted so a launch inside a fence does not fire an entry,
+and confirmations on fence delete and log clear.
+
+Still open, with what would close each:
+
+| Item | What closes it |
+| --- | --- |
+| The 5 and 30 minute screen-off notification test | The device steps in §9. The app-side defects are fixed, so this now measures the platform |
+| Rename the Heltec to `h0` | One field in Device configuration with the app pointed at that radio |
+| Duty-cycle cutoff toggle and the time left in the hour | A switch and a line over `MeshcoreController.airtimeRemaining` (`meshcore_controller.dart:1323`) |
+| Geofence cue and OS notification | `CueKind.geofenceEnter`/`geofenceExit` with their assets, and a notification class for a crossing (`meshmore-sns-geofence-tracking.md:110-116`) |
+| A place's destination channel | A channel field on `Place` and a line in the create sheet naming the slot the report will use |
+| Radio rename across a power cycle | A firmware answer: whether the Wio's NVS write or the firmware's prefs write drops the name |
+| A blocked peer can still be messaged | `BlockStore` is read by the UI only (`lib/chat/block_actions.dart:28`, `chat_actions.dart:176`), never by the send path in `meshcore_controller.dart`. The decision the execution plan calls "block vs queue at send time" is still open, so the composer neither refuses nor warns |

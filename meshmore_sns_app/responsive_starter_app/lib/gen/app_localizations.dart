@@ -7618,6 +7618,18 @@ abstract class AppLocalizations {
   /// **'About 1 km'**
   String get placePrecision1000;
 
+  /// No description provided for @placeRadioRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The radio did not take it, so the place is not on the air.'**
+  String get placeRadioRefused;
+
+  /// No description provided for @placeGoesTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Goes to {channel}'**
+  String placeGoesTo(Object channel);
+
   /// No description provided for @placeSent.
   ///
   /// In en, this message translates to:

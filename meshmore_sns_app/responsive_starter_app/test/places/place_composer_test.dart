@@ -23,8 +23,15 @@ final class _FakeSender implements PlaceSender {
   @override
   Uint8List? get reporterKey => key;
 
+  /// Whether the fake radio takes the line. A test sets this to model a
+  /// refusal, which must not be reported as a sent place.
+  bool accepts = true;
+
   @override
-  Future<void> sendPlaceText(String text) async => sent.add(text);
+  Future<bool> sendPlaceText(String text) async {
+    sent.add(text);
+    return accepts;
+  }
 }
 
 void main() {

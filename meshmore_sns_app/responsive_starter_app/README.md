@@ -1,3 +1,6 @@
+> **Historical. This is the Flutter template readme that came with the starter app.**
+> The record for the app is `meshmore_sns_app/README.md` and `meshmore-app-spec.md`. See `docs/INDEX.md` for the role of every document.
+
 # responsive_starter_app
 
 The Meshmore SNS Flutter app. The name is inherited from the starter template

@@ -4301,6 +4301,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placePrecision1000 => '約1 km';
 
   @override
+  String get placeRadioRefused => '無線機が受け付けなかったため、この場所は送信されていません。';
+
+  @override
+  String placeGoesTo(Object channel) {
+    return '送信先: $channel';
+  }
+
+  @override
   String get placeSent => 'タグ付けしました。期限が来ると自動で消えます。';
 
   @override

@@ -1,3 +1,6 @@
+> **Historical. This is research into XR, TUI and web UX practice, not a project document.**
+> The record for this app is `meshmore-sns-UX-spec.md`. See `docs/INDEX.md` for the role of every document.
+
 # UX Best Practices — XR, TUI, and Web
 
 *Lessons learned and patterns established during RobotARme development.*

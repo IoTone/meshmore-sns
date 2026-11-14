@@ -8,6 +8,10 @@ plan and the scope of record decides the argument.
 
 Status: **planned, not started.** Nothing here has been implemented in this pass. No research was run for it.
 
+> **Correction, 2026-11-14.** That sentence describes the 2026-11-04 pass, not the tree. Most of M1 to M7 is built:
+> the register's sections 1 to 10 carry the state of each row, and `meshmore_sns_app/STATUS.md` carries the measured
+> numbers. Read this document for the plan and the reasoning, and the register for what is actually there.
+
 ---
 
 > **Entry point:** `meshmore-feature-register.md` holds the single feature list, the document authority order and the

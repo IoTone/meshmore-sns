@@ -2161,6 +2161,8 @@
   "placePrecisionExact": "正確",
   "placePrecision100": "約100 m",
   "placePrecision1000": "約1 km",
+  "placeRadioRefused": "無線機が受け付けなかったため、この場所は送信されていません。",
+  "placeGoesTo": "送信先: {channel}",
   "placeSent": "タグ付けしました。期限が来ると自動で消えます。",
   "placeBudgetRefused": "直近1時間に {n} 件送信しました。次は {time} に送れます。",
   "placeNoIdentity": "先に無線機に接続してください。場所はあなたの名前でタグ付けされます。",

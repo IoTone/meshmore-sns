@@ -32,10 +32,6 @@ void main() {
   /// Counts are constructor invocations, so a comment naming a family does not
   /// count (no `(` directly after the name).
   const Map<String, int> baseline = <String, int>{
-    // Cancel beside a filled confirm, and a Play Store row: the dialog row is
-    // the one place a Material pair is still the right answer, and About's
-    // three are store badges, not actions in the app.
-    'lib/screens/about_screen.dart': 3,
     // Save / reset / generate / copy / share, most of them inside dialogs.
     'lib/screens/channels_screen.dart': 5,
     // Disconnect / reconnect / forget in one row.

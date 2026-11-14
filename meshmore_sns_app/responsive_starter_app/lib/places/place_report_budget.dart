@@ -41,6 +41,15 @@ final class PlaceReportBudget {
   /// Spends one when the budget allows it.
   PlaceReportDecision take() => _decide(_pruned(), wantToSend: true);
 
+  /// Gives back the most recent spend.
+  ///
+  /// Used when the line never left: the budget is charged before the send so a
+  /// refusal cannot be raced, and a send the radio did not take must not cost
+  /// the reader their next report as well.
+  void refund() {
+    if (_sent.isNotEmpty) _sent.removeLast();
+  }
+
   /// Forgets the history (a new reporter, or a test).
   void reset() => _sent.clear();
 

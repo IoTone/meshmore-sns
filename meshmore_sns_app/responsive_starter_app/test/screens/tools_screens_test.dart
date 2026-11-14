@@ -67,7 +67,7 @@ void main() {
     await t.pumpWidget(_host(mc, tools, const ToolsHubScreen()));
     await t.pumpAndSettle();
     for (final String name in <String>[
-      'Radio stats',
+      'MeshCore radio stats',
       'Ping',
       'Trace path',
       'Discover nearby',
@@ -75,15 +75,25 @@ void main() {
       'Range test',
     ]) {
       // The hub is a list: a row past the fold is still listed. The offline
-      // banner grew a line when it started naming the way to fix the state.
-      await t.scrollUntilVisible(find.text(name), 120,
-          scrollable: find.byType(Scrollable).first);
+      // banner grew a line when it started naming the way to fix the state, so
+      // the list may or may not scroll at this size; scroll only when it does.
+      final Finder scroller = find.byType(Scrollable);
+      if (scroller.evaluate().isNotEmpty) {
+        await t.scrollUntilVisible(find.text(name), 120,
+            scrollable: scroller.first);
+      }
       expect(find.text(name), findsOneWidget);
     }
-    await t.scrollUntilVisible(
-        find.textContaining('the tools need the radio'), -120,
-        scrollable: find.byType(Scrollable).first);
-    expect(find.textContaining('the tools need the radio'), findsOneWidget);
+    // Back to the top, where the offline banner lives. The banner's sentence is
+    // longer now that it names the radio, so it wraps and the old negative
+    // scroll no longer lands on it.
+    final Finder topScroller = find.byType(Scrollable);
+    if (topScroller.evaluate().isNotEmpty) {
+      await t.drag(topScroller.first, const Offset(0, 2000));
+      await t.pumpAndSettle();
+    }
+    expect(find.textContaining('the tools need the MeshCore radio'),
+        findsOneWidget);
     await t.tap(find.text('Ping'));
     await t.pumpAndSettle();
     expect(find.text('tool page'), findsOneWidget);

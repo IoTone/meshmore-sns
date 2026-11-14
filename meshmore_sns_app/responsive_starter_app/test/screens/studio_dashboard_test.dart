@@ -171,7 +171,7 @@ void main() {
     expect(_family(t, coords), _mono);
     // Section labels, the name and the status are sans (null = UI face).
     for (final String word in <String>[
-      'RADIO',
+      'LORA RADIO',
       'LOCATION',
       'RECENT',
       'NODES IN RANGE',
@@ -210,7 +210,7 @@ void main() {
     await t.tap(find.text('LOCATION'));
     await t.pump();
     expect(find.textContaining('38.92'), findsNothing);
-    expect(find.text('RADIO'), findsOneWidget,
+    expect(find.text('LORA RADIO'), findsOneWidget,
         reason: 'folding one group leaves the others alone');
     await _drain(t, mc);
   });

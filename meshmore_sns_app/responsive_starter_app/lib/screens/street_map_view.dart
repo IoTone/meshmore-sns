@@ -894,6 +894,12 @@ class _StreetMapViewState extends State<StreetMapView> {
     if (!_showDensity) return;
     for (final HexCell cell in _densityCells) {
       if (hexContains(cell.centre, _hexRadiusMetres, point)) {
+        // A cell with nothing in it is not a thing to open. The sheet used to
+        // appear for any hexagon under the finger, titled "0 nodes" over an
+        // empty list, which reads as a broken tap rather than as an empty
+        // cell. A tap on empty ground does nothing, and so does a tap on an
+        // empty cell.
+        if (cell.points.isEmpty) return;
         final MeshcoreController mc =
             Provider.of<MeshcoreController>(context, listen: false);
         _showDensityCell(context, mc, cell);
@@ -993,6 +999,9 @@ class _StreetMapViewState extends State<StreetMapView> {
 
   Future<void> _showDensityCell(
       BuildContext ctx, MeshcoreController mc, HexCell cell) {
+    // Belt and braces: the tap path already refuses an empty cell, and this is
+    // the one place that would otherwise draw a sheet about nothing.
+    if (cell.points.isEmpty) return Future<void>.value();
     final Map<String, DiscoveredNode> byKey = <String, DiscoveredNode>{
       for (final DiscoveredNode n in mc.nodes) n.pubKeyHex: n,
     };

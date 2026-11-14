@@ -1,3 +1,6 @@
+> **Historical. This is research into Android XR glasses UX practice, not a project document.**
+> The record for the XR client is `meshmore-xr/MeshmoreXR-design-brief.md`. See `docs/INDEX.md` for the role of every document.
+
 # Android XR Glasses — UX Best Practices (field-learned)
 
 Practical, hard-won guidance for building UX on **Android XR optical see-through

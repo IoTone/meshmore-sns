@@ -108,8 +108,14 @@ void main() {
   testWidgets('the row at the bottom opens the console', (WidgetTester t) async {
     final (MeshcoreController ctrl, FakeMeshcoreTransport fake, GoRouter _) =
         await pump(t);
-    await t.ensureVisible(
-        find.byKey(const ValueKey<String>('connection-diagnostics-row')));
+    // The title is longer now ("MeshCore radio connection"), so at 200 % text
+    // the row is below the fold and a lazy list has not built it. A reader
+    // scrolls, and so does the test.
+    await t.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('connection-diagnostics-row')),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
     await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey<String>('connection-diagnostics-row')));
     await t.pumpAndSettle();
@@ -177,8 +183,14 @@ void main() {
     expect(t.takeException(), isNull);
     // The facts are still readable at the floor rather than clipped to nothing.
     expect(find.textContaining('State:'), findsOneWidget);
-    await t.ensureVisible(
-        find.byKey(const ValueKey<String>('connection-diagnostics-row')));
+    // The title is longer now ("MeshCore radio connection"), so at 200 % text
+    // the row is below the fold and a lazy list has not built it. A reader
+    // scrolls, and so does the test.
+    await t.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('connection-diagnostics-row')),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
     await t.pumpAndSettle();
     expect(t.takeException(), isNull);
     ctrl.dispose();

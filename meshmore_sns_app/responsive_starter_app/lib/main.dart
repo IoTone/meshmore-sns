@@ -573,6 +573,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // first frame.
     if (!fr.loaded || !_minSplashElapsed) {
       return MaterialApp(
+        // The debug ribbon is a build artefact, not part of the app: the
+        // owner reads it as a defect on the handset, and a debug build is
+        // what he runs.
+        debugShowCheckedModeBanner: false,
         theme: tc.theme,
         locale: lc.locale,
         supportedLocales: LocaleController.supported,
@@ -582,6 +586,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
     if (!fr.done) {
       return MaterialApp(
+        // The debug ribbon is a build artefact, not part of the app: the
+        // owner reads it as a defect on the handset, and a debug build is
+        // what he runs.
+        debugShowCheckedModeBanner: false,
         title: 'Meshmore SNS',
         theme: tc.theme,
         locale: lc.locale,
@@ -595,6 +603,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // none, so changed wording is read before the app opens again.
     if (!terms.loaded) {
       return MaterialApp(
+        // The debug ribbon is a build artefact, not part of the app: the
+        // owner reads it as a defect on the handset, and a debug build is
+        // what he runs.
+        debugShowCheckedModeBanner: false,
         theme: tc.theme,
         locale: lc.locale,
         supportedLocales: LocaleController.supported,
@@ -604,6 +616,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
     if (!terms.accepted) {
       return MaterialApp(
+        // The debug ribbon is a build artefact, not part of the app: the
+        // owner reads it as a defect on the handset, and a debug build is
+        // what he runs.
+        debugShowCheckedModeBanner: false,
         title: 'Meshmore SNS',
         theme: tc.theme,
         locale: lc.locale,

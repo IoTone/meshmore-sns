@@ -1,3 +1,6 @@
+> **Historical. This is the audit of the two-app gateway architecture, which was withdrawn on 2026-11-05 (D10.1).**
+> The record for what the app is now is `meshmore-scope-of-record.md` and `meshmore-app-spec.md`. See `docs/INDEX.md` for the role of every document.
+
 # Audit of the two-app architecture of record (2026-10-24) — gateway findings moot
 
 > **Status 2026-11-05:** the design this audits is withdrawn (D10.1,

@@ -3,9 +3,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
+import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_components.dart';
 import 'place.dart';
 import 'place_codec.dart';
@@ -126,6 +128,12 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(
           SnackBar(content: Text(l.placeCoordinatesRefused)),
         );
+      case PlaceComposeRefusal.radio:
+        // The radio did not take the line. Saying "Place tagged" here was the
+        // sheet claiming a send that never happened.
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(content: Text(l.placeRadioRefused)),
+        );
     }
   }
 
@@ -158,6 +166,25 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
               fontWeight: FontWeight.w700,
             ),
           ),
+          // Where it goes. A place is ordinary channel text, so it lands on
+          // whichever channel is active, and every MeshCore client on that
+          // channel can read it. The sheet used to say none of that, so a
+          // report dropped while #cos was open went to #cos and the reader had
+          // no way to know.
+          Builder(builder: (BuildContext c) {
+            final MeshcoreController? mc =
+                c.read<MeshcoreController?>();
+            if (mc == null) return const SizedBox.shrink();
+            return Padding(
+              padding: EdgeInsets.only(top: skin.space.step(2)),
+              child: Text(
+                l.placeGoesTo(mc.activeChannelName),
+                key: const ValueKey<String>('place-goes-to'),
+                style: TextStyle(
+                    color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
+              ),
+            );
+          }),
           SizedBox(height: skin.space.step(3)),
           TextField(
             key: const ValueKey<String>('place-label'),

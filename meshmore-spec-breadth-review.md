@@ -1,3 +1,6 @@
+> **Historical. This is the 2026-11-04 review of what the specification set was missing, and the gaps it closed then.**
+> The record for the requirements is `meshmore-app-spec.md`, and for the list `meshmore-feature-register.md`. See `docs/INDEX.md` for the role of every document.
+
 # Specification breadth review
 
 Written 2026-11-04. This is not a feature list and not an audit of the app's screens. It asks one question: **if

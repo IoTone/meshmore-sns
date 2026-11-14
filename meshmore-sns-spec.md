@@ -1,3 +1,6 @@
+> **Historical. This is R1 to R113 and the change record, kept for the reasoning behind each requirement.**
+> The record for requirements is `meshmore-app-spec.md`, and for state `meshmore-feature-register.md`. See `docs/INDEX.md` for the role of every document.
+
 # Overview
 
 Meshmore SNS is a mobile client built in Flutter, and used to communicate on the Meshcore network.

@@ -1,3 +1,6 @@
+> **Historical. This is the evidence trail of what existed on 2026-11-04, not a statement about the tree today.**
+> The record for what exists now is `meshmore-feature-register.md` and `meshmore_sns_app/STATUS.md`. See `docs/INDEX.md` for the role of every document.
+
 # MeshMore — critical audit of what exists, 2026-11-04
 
 Evidence base: `meshmore_sns_app/` (Flutter app + three pure-Dart packages), `meshmore-xr/` (Kotlin/Compose),
