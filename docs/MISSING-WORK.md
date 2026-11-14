@@ -216,3 +216,19 @@ and record whether a notification appears and whether `dumpsys activity services
 `com.pravera.flutter_foreground_task.service.ForegroundService`. If the service is gone, the
 exemption row is the fix; if it is running and the message is not delivered, the fault is in
 the drain, not the service.
+
+---
+
+## 10. What the 2026-11-14 device session did, and what it could not finish
+
+The phone was attached (`ZD222W34LJ`), one radio at a time was enumerable, and the app was walked on the handset
+rather than reasoned about.
+
+| Step | Result |
+| --- | --- |
+| Rename the connected radio to `m0` | Done in Device configuration, read back as `m0` on a fresh screen entry. **It reverted to `WIOld` after the radio power-cycled**, which matches the firmware's own path: the write lands in `_prefs.node_name` and calls `savePrefs()` (`examples/companion_radio/MyMesh.cpp:1219-1225`), and it reads back correctly in the same session. Whether the Wio's NVS write failed or the firmware's prefs write does not cover the name is not settled |
+| Flash the Heltec as a BLE companion | Done: `heltec_v4_companion_radio_ble` from `~/Documents/meshcore-fw-alerts` (upstream `meshcore-dev/MeshCore`, detached at `685a869`), build 39 s, upload 33 s, and the host BLE scan sees `MeshCore-HELTEC-BASE` advertising at `F8:5B:1B:BE:C5:3D`. The node name survived from the earlier flash and is still one field from `h0` |
+| Notification with the app closed, 5 and 30 minutes | **Not run.** The steps stayed in §9. Two facts were established on the way: `Stay connected in background` is on, and at 10:46 the app was running with no `ForegroundService` record in `dumpsys activity services`, so the test's first question is whether the service starts on a fresh link |
+| Sound | Investigated as a defect report ("the themes have no sound") and it was the files, not the wiring: 30-150 ms cues peaking at -10 to -15 dBFS, inaudible at a media volume of 3/15. Regenerated to a perception floor per cue and a -1.5 dBFS peak, played as sonification without audio focus, at a new persisted `cueVolume`. Recorded in the register §11 |
+| Device configuration UX | Rebuilt on `MmAction.primary` and `MmActionRow`, one family and one placement, with the advert policy staged and sent with the coordinates. Recorded in the register §11 |
+

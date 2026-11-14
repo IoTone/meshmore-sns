@@ -351,5 +351,78 @@ is a named gap, not a silent one.
 
 ---
 
+## 11. The 2026-11-14 pass: what the audit found, and what changed
+
+The owner reported three things in one sitting — the Device configuration screen is "irregularly done", the themes
+have "no sound", and the app should name the radio specifically. Each was checked against the tree before anything
+was touched, and each turned out to be a real defect with a measurement behind it.
+
+### The action-shape inconsistency (UX)
+
+The complaint was exact. `lib/screens/device_config_screen.dart` carried **four button families in one scroll view**
+in three placements: a Material filled pill for Apply radio params, two Material outlined pills for the location
+helpers, and dense right-aligned `MmAction`s floating under full-width fields for Set name and Set advert location.
+Two enabled policies sat beside each other (disabled when not ready for two of the three writes, enabled-with-a-toast
+for the third, the R25+3 decision) so the same act behaved differently depending on which field it belonged to. The
+advert-source `SegmentedButton` wrote to the radio the moment it was tapped while the name and the coordinates waited
+behind their own buttons: two commit models inside one section.
+
+**Fixed 2026-11-14.** `MmAction` gained `primary` (the group's own write in the same family, filled with the accent,
+keeping the 48 dp floor, the padding and the skin's corner shape) and `MmActionRow` became the one host for a group's
+actions — start-aligned under the fields it commits, ladder spacing, wrapping rather than overflowing. The advert
+source stages in `_advertPolicy` and travels with the coordinates in one write (`_applyAdvert`, 0x0E then 0x26). All
+three writes stay tappable and name the missing MeshCore radio instead of going grey. The hand-rolled `CHANNELS`
+header became an `MmSectionHeader`. `test/screens/device_config_actions_test.dart` holds the shape, and
+`test/ui/action_family_guard_test.dart` is the ratchet: per-file baselines of Material action families across
+`lib/screens`, checked in both directions, with Device configuration asserted at zero and no baseline entry.
+Twenty files still hold 55 sites, each named with what it is.
+
+### "The themes have no sound" (R12)
+
+They had sound. `AssetAudioPack` reached the assets, `audioplayers` fired, and the shell asked for a cue on every view
+change (`home_shell.dart:234`). The **files** were the defect. Measured on the handset: a cue was 30-150 ms long and
+peaked at -10 to -15 dBFS, so at the phone's media volume of 3/15 (about -14 dB) the audible peak sat near -24 dBFS.
+
+**Fixed 2026-11-14.** `brand/_audio_pack.py` now holds every cue to a perception floor per kind (reached by
+time-stretching the motif, so a 30 ms blip becomes a 90 ms blip rather than a different note) and a peak target of
+-1.5 dBFS, lower for the looping scan drone. All 209 files regenerated: every cue at its floor or longer, peak
+-1.5 dBFS, RMS about -15.9 dBFS, 8 to 13 dB above where it was. `AssetAudioPack` also lost two defects that cost cues
+outright: it played through `USAGE_MEDIA` and took audio focus (so a cue interrupted whatever was playing, and a
+denied focus request was a cue that never played) and it called `stop()` before every play on a player in the default
+release mode (tearing down the buffer between cues, so two quick swipes lost the first). It is sonification with no
+focus, low-latency with `ReleaseMode.stop`, and it plays at `ThemeController.cueVolume` — a new persisted control in
+Personalisation beside the master switch, with a "Hear this theme" action. Picking a theme now plays that theme's own
+discovery cue. `test/cue/cue_pack_loudness_test.dart` parses all 209 WAVs and fails on a cue shorter than its floor, a
+peak under -4.4 dBFS, an RMS under -22 dBFS, or a drone over -4.2 dBFS.
+
+### What the hardware actually is, 2026-11-14
+
+| unit | state |
+| --- | --- |
+| Seeed Wio Tracker L1 Pro | companion, renamed `m0` from the app's Device configuration. **The rename does not survive a radio power cycle on this firmware** (1.17.1): it is written with `CMD_SET_ADVERT_NAME` → `savePrefs()` (`examples/companion_radio/MyMesh.cpp:1219-1225`) and reads back correctly in the same session, then reverts. Open: whether that is the Wio's NVS write or a firmware prefs bug |
+| Heltec WiFi LoRa 32 V4 | flashed 2026-11-14 from `meshcore-fw-alerts` (upstream `meshcore-dev/MeshCore`, detached at `685a869`) with `heltec_v4_companion_radio_ble`, so it is a BLE companion now and both apps can use a radio. It advertises as `MeshCore-HELTEC-BASE`; its node name was stored by an earlier flash and is still one field away from `h0` |
+
+### Still open after this pass
+
+| Item | State |
+| --- | --- |
+| Notification with the app closed, 5 and 30 minutes | **Not run.** The steps are in `docs/MISSING-WORK.md` §9. At 10:46 the app was running with no `ForegroundService` record, so the first thing the test proves is whether the service starts on a fresh link |
+| Rename the Heltec to `h0` | One field in Device configuration, needs the app pointed at that radio rather than at `m0` |
+| Duty-cycle cutoff toggle with the time left in the hour | **Not built** (owner ruling 2026-11-06, register §9). `MeshcoreController.airtimeRemaining` exists, so it is a switch and a line |
+| "LoRa radio" / "MeshCore radio" naming | In progress on a branch at the time of writing: the ARB keys, the About site link, and a guard test |
+| Radio rename persistence | Above: the write succeeds and does not survive a power cycle on 1.17.1 |
+
+### Documented corrections
+
+Ten rows in this register and in `meshmore-sns-UX-spec.md` were stale against the tree when the 2026-11-14 sweep read
+them. The ones this pass verified directly: Fira Mono is bundled and used by two presets (`pubspec.yaml:243`,
+`lib/theme/mm_skin.dart:394,425`), so the open decision at row 296 is closed; the repeater CLI console is called
+(`diagnostics_screen.dart:100`), so row 93's "no code under `lib/` calls it" is wrong; the OTA gate is read by
+`firmware_screen.dart:83`, so row 336 is wrong; the Settings export entry exists (`app_settings_screen.dart:400`), so
+row 67 is wrong; the crash guard resolves Japanese (`boot_guard.dart:80-86`), so row 347 is wrong; and every
+`IconButton` in `lib/screens` carries a tooltip, so row 214's icon-only claim is wrong.
+
+---
+
 *This register is the list. If a feature is missing here, it is missing from the plan — say so rather than starting a
 new document.*
