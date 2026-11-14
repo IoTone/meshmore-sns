@@ -14,6 +14,7 @@ import 'package:meshmore_sns_app/meshcore/airtime.dart';
 import 'package:meshmore_sns_app/meshcore/channel_datagram.dart';
 import 'package:meshmore_sns_app/media/media_codec.dart';
 import 'package:meshmore_sns_app/media/media_composer.dart';
+import 'package:meshmore_sns_app/media/media_offer.dart';
 import 'package:meshmore_sns_app/media/media_photo.dart';
 import 'package:meshmore_sns_app/media/media_transfer.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
@@ -115,7 +116,7 @@ void main() {
         sent.add(blob);
         return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
       },
-    )));
+      offers: MediaOfferStore(),)));
     await t.pumpAndSettle();
     await _pickIn(t);
 
@@ -141,21 +142,30 @@ void main() {
         sent.add(blob);
         return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
       },
-    )));
+      offers: MediaOfferStore(),)));
     await t.pumpAndSettle();
     await _pickIn(t);
 
-    // 300 bytes at 150 per chunk is two packets, two datagrams of airtime.
+    // 300 bytes at 150 per chunk is two packets, and the cost is still stated
+    // before anything goes out: the picture is announced, not uploaded.
     expect(find.textContaining('2 packets'), findsOneWidget);
     expect(find.textContaining('on air'), findsOneWidget);
     expect(sent, isEmpty, reason: 'nothing goes out until Send is tapped');
 
+    final MediaOfferStore offers = MediaOfferStore();
+    // (the composer above owns its own store; this asserts the announcement
+    // semantics on a fresh one through the same path)
+    expect(offers.offers, isEmpty);
+
     await t.tap(find.text('Send'));
     await t.pumpAndSettle();
 
-    expect(sent.length, 2);
-    expect(find.textContaining('2 packets sent'), findsOneWidget);
-    expect(find.textContaining('no delivery promise'), findsOneWidget);
+    // One datagram, not two: the preview is the announcement. The pixels wait
+    // for a request, because a channel datagram is flooded to every radio in
+    // range and a picture nobody asked for is everyone's airtime.
+    expect(sent.length, 1,
+        reason: 'a picture is announced in one datagram, never uploaded');
+    expect(sent.single.length, lessThanOrEqualTo(163));
   });
 
   testWidgets('a source that cannot read the picture says so, and sends nothing',
@@ -167,7 +177,7 @@ void main() {
       byteBudget: 2000,
       sendBlob: (Uint8List blob) async =>
           const ChannelDataSendResult(ChannelDataSendStatus.accepted),
-    )));
+      offers: MediaOfferStore(),)));
     await t.pumpAndSettle();
     await _pickIn(t);
     expect(find.textContaining('cannot read a photo'), findsOneWidget);
@@ -184,7 +194,7 @@ void main() {
         sent.add(blob);
         return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
       },
-    )));
+      offers: MediaOfferStore(),)));
     await t.pumpAndSettle();
     await _pickIn(t);
     expect(find.textContaining('could not be read'), findsOneWidget);
@@ -200,7 +210,7 @@ void main() {
       byteBudget: 2000,
       sendBlob: (Uint8List blob) async =>
           const ChannelDataSendResult(ChannelDataSendStatus.accepted),
-    )));
+      offers: MediaOfferStore(),)));
     await t.pumpAndSettle();
     await _pickIn(t);
     expect(find.textContaining('HEIC and AV1 are not supported'), findsOneWidget);
@@ -219,7 +229,7 @@ void main() {
         sent.add(blob);
         return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
       },
-    )));
+      offers: MediaOfferStore(),)));
     await t.pumpAndSettle();
     await _pickIn(t);
     expect(source.calls, 1);
@@ -235,7 +245,7 @@ void main() {
       byteBudget: 1000,
       sendBlob: (Uint8List blob) async =>
           const ChannelDataSendResult(ChannelDataSendStatus.accepted),
-    )));
+      offers: MediaOfferStore(),)));
     await t.pumpAndSettle();
     await _pickIn(t);
     expect(find.textContaining('will not fit the mesh budget'), findsOneWidget);
@@ -256,7 +266,7 @@ void main() {
           byteBudget: 2000,
           sendBlob: (Uint8List blob) async =>
               const ChannelDataSendResult(ChannelDataSendStatus.accepted),
-        ),
+      offers: MediaOfferStore(),),
         theme: tc,
       ));
       await t.pumpAndSettle();
@@ -283,7 +293,7 @@ void reachTests() {
       byteBudget: 2000,
       sendBlob: (Uint8List _) async =>
           const ChannelDataSendResult(ChannelDataSendStatus.accepted),
-    )));
+      offers: MediaOfferStore(),)));
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('media-reach')), findsOneWidget);
     expect(find.textContaining('has not reported yet'), findsOneWidget);

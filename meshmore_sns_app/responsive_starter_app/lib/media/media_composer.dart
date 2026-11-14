@@ -7,12 +7,15 @@ import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../meshcore/airtime_meter.dart';
 import '../meshcore/channel_datagram.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import 'media_chunk.dart';
 import 'media_journal.dart';
+import 'media_offer.dart';
 import 'media_photo.dart';
+import 'mp1.dart';
 import 'media_prefs.dart';
 import 'media_send_policy.dart';
 import 'media_sender.dart';
@@ -100,6 +103,7 @@ class MediaComposer extends StatefulWidget {
     required this.channelPsk,
     required this.byteBudget,
     required this.sendBlob,
+    required this.offers,
   });
 
   final MediaTransferService service;
@@ -113,8 +117,16 @@ class MediaComposer extends StatefulWidget {
   /// could not reach it rather than failing silently.
   final int byteBudget;
 
-  /// The radio call for one datagram.
+  /// The radio call for the one preview datagram.
+  ///
+  /// A picture is announced, not uploaded: this is the only thing that reaches
+  /// the channel, and it is one datagram. The pixels wait in [offers] until
+  /// somebody asks for them, and then travel as a direct record the firmware
+  /// will not flood.
   final Future<ChannelDataSendResult> Function(Uint8List blob) sendBlob;
+
+  /// Where the full payload waits to be served, with a TTL.
+  final MediaOfferStore offers;
 
   /// Opens the composer; resolves to true when a picture was sent.
   static Future<bool?> show(
@@ -124,6 +136,7 @@ class MediaComposer extends StatefulWidget {
     required List<int>? channelPsk,
     required int byteBudget,
     required Future<ChannelDataSendResult> Function(Uint8List blob) sendBlob,
+    required MediaOfferStore offers,
   }) =>
       showModalBottomSheet<bool>(
         context: context,
@@ -134,6 +147,7 @@ class MediaComposer extends StatefulWidget {
           channelPsk: channelPsk,
           byteBudget: byteBudget,
           sendBlob: sendBlob,
+          offers: offers,
         ),
       );
 
@@ -146,11 +160,13 @@ enum _Stage { idle, encoding, ready, sending, done, failed }
 class _MediaComposerState extends State<MediaComposer> {
   _Stage _stage = _Stage.idle;
   MediaTransferPlan? _plan;
+  MediaPhoto? _photo;
+  static int _offerId = 1;
   MediaSendRefusal? _refusal;
   int _sent = 0;
   MediaReceipt? _receipt;
   String? _sourceProblem;
-  Set<int> _lost = <int>{};
+  final Set<int> _lost = <int>{};
 
   /// The upload in flight, so closing the sheet stops it.
   ///
@@ -190,6 +206,7 @@ class _MediaComposerState extends State<MediaComposer> {
   Future<void> _prepare(MediaPhoto photo) async {
     setState(() {
       _stage = _Stage.encoding;
+      _photo = photo;
       _sourceProblem = null;
       _refusal = null;
     });
@@ -221,41 +238,56 @@ class _MediaComposerState extends State<MediaComposer> {
 
   Future<void> _send() async {
     final MediaTransferPlan? plan = _plan;
-    if (plan == null) return;
+    final MediaPhoto? photo = _photo;
+    if (plan == null || photo == null) return;
+    // The id travels in the preview and comes back in a request, so it has to
+    // be unique among the offers this session is holding.
+    final int id = _offerId++;
+    final Uint8List? preview = encodeMp1Preview(
+      photo,
+      transferId: id,
+      upgradeChunks: plan.cost.chunks,
+    );
+    if (preview == null) {
+      // The preview ladder could not fit 163 bytes: the picture is too busy for
+      // a palette this small. That is a refusal, not a crash.
+      setState(() {
+        _refusal = MediaSendRefusal.payloadUnusable;
+        _stage = _Stage.ready;
+      });
+      return;
+    }
     setState(() {
       _stage = _Stage.sending;
       _sent = 0;
       _stalled = null;
     });
-    final MediaUpload upload = widget.service.upload(plan);
-    _upload = upload;
     try {
-      final MediaReceipt receipt = await upload.run((Uint8List blob) async {
-        final ChannelDataSendResult result = await widget.sendBlob(blob);
-        if (mounted) setState(() => _sent = upload.sent);
-        return result;
-      });
+      final ChannelDataSendResult result = await widget.sendBlob(preview);
+      if (!mounted) return;
+      if (!result.accepted) {
+        setState(() {
+          _stalled = MediaSendResult.refused;
+          _stage = _Stage.failed;
+        });
+        return;
+      }
+      // The pixels are held, not sent. Fifteen minutes is long enough for a
+      // reader who saw the preview to tap it and short enough that a phone is
+      // not holding a picture it will never send again.
+      widget.offers.add(MediaOffer(
+        id: id,
+        payload: plan.payload,
+        chunkCount: plan.cost.chunks,
+        createdAt: DateTime.now(),
+      ));
+      setState(() => _stage = _Stage.done);
+    } on AirtimeRefused {
       if (!mounted) return;
       setState(() {
-        _receipt = receipt;
-        _stage = _Stage.done;
-      });
-    } on MediaUploadFailed catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _lost = e.lost;
+        _stalled = MediaSendResult.budgetRefused;
         _stage = _Stage.failed;
       });
-    } on MediaUploadStalled catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _stalled = e.reason;
-        _stage = _Stage.failed;
-      });
-    } on MediaUploadCancelled {
-      // The sheet closed: there is no surface left to tell.
-    } finally {
-      _upload = null;
     }
   }
 

@@ -27,6 +27,8 @@ import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
 import '../media/media_codec.dart';
 import '../media/media_composer.dart';
+import '../media/media_offer.dart';
+import '../media/mp1.dart';
 import '../media/media_inbox.dart';
 import '../media/media_transfer.dart';
 import '../media/photo_inbox.dart';
@@ -1373,11 +1375,17 @@ class _ChatScreenState extends State<ChatScreen>
                       kNoMediaPhotoSource,
                   channelPsk: m.channelPsk(m.activeChannel),
                   byteBudget: MediaSendSize.standard.budgetBytes,
+                  // The preview carries MeshPix's data type, so a MeshPix user
+                  // sees our announcement and we see theirs.
                   sendBlob: (Uint8List blob) => m.sendChannelData(
                     channelIdx: m.activeChannel,
-                    dataType: kChannelDataTypeDev,
+                    dataType: kMp1DataType,
                     blob: blob,
                   ),
+                  // The app provides one store for the session. A harness that
+                  // pumps this screen without it still gets a working sheet:
+                  // the offers simply live as long as the composer.
+                  offers: context.read<MediaOfferStore?>() ?? MediaOfferStore(),
                 )
             : null,
         icon: const Icon(Icons.add_photo_alternate_outlined),

@@ -1,5 +1,6 @@
 import 'media/media_inbox.dart';
 import 'media/media_journal.dart';
+import 'media/media_offer.dart';
 import 'media/photo_source.dart';
 import 'media/media_composer.dart';
 import 'places/place_photo.dart';
@@ -294,6 +295,10 @@ Future<void> startApp() async {
             peers: ctx.read<PeerProfiles>(),
           )..load(),
         ),
+        // The pictures this session has announced and will serve on request.
+        // App-scoped, because an offer outlives the chat tab that made it and a
+        // reader has fifteen minutes to tap the preview.
+        Provider<MediaOfferStore>(create: (_) => MediaOfferStore()),
         Provider<CueService>(
           create: (BuildContext ctx) {
             final ThemeController tc = ctx.read<ThemeController>();
