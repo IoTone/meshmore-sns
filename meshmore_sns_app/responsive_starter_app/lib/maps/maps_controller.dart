@@ -25,6 +25,7 @@ import 'pmtiles.dart';
 import 'tile_ancestor.dart';
 import 'tile_math.dart';
 import 'tile_store.dart';
+import '../app/app_errors.dart';
 import '../util/prefs.dart';
 
 /// A coarser tile that can stand in for one that is not on disk (R114).
@@ -290,12 +291,31 @@ class MapsController extends ChangeNotifier with SafeNotifier {
       for (final Object? a in (j['archives'] as List<Object?>?) ?? <Object?>[]) {
         archives.add(MapArchive.fromJson(a! as Map<String, Object?>));
       }
-    } catch (_) {}
+    } catch (error, stack) {
+      // A corrupt state document used to be dropped in silence, which lost every
+      // saved pack, archive and custom source with nothing said. It is recorded
+      // now, so the loss is visible in Diagnostics instead of being a mystery.
+      AppErrors.record(error, stack, where: 'maps.state');
+    }
   }
 
+  /// Writes the map state.
+  ///
+  /// Every caller is `unawaited`, so a throw here used to become an unhandled
+  /// async error: a full disk or a read-only preferences store would surface as
+  /// a crash-report entry with no sentence, and the state would silently stop
+  /// being saved. It is recorded instead, which is what Diagnostics shows.
   Future<void> _save() async {
+    try {
+      await _saveUnsafe();
+    } catch (error, stack) {
+      AppErrors.record(error, stack, where: 'maps.save');
+    }
+  }
+
+  Future<void> _saveUnsafe() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await Prefs.setString(prefs, 
+    await Prefs.setString(prefs,
         prefsKey,
         jsonEncode(<String, Object?>{
           'budgetMb': budgetMb,
