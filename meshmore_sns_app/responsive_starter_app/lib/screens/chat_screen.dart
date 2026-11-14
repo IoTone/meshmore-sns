@@ -2170,7 +2170,8 @@ class _PhotoAnnouncementStrip extends StatelessWidget {
     final AppLocalizations l = AppLocalizations.of(context);
     final MmSkin skin = context.skin;
     return SizedBox(
-      height: 72,
+      // Two 56 dp thumbnails plus the gap the row is built around.
+      height: skin.space.step(9) * 2 + skin.space.rowGap,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: skin.space.rowInset),
