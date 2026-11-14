@@ -157,8 +157,8 @@ void main() {
     final Iterable<Semantics> counts = t
         .widgetList<Semantics>(find.byType(Semantics))
         .where((Semantics s) =>
-            (s.properties.label ?? '').contains('in this square'));
-    expect(counts, isNotEmpty, reason: 'a square carries a labelled count');
+            (s.properties.label ?? '').contains('in this cell'));
+    expect(counts, isNotEmpty, reason: 'a cell carries a labelled count');
     // The label the widget actually carries, rather than a guess at which
     // square is first: how many nodes share one depends on the zoom's cell size.
     final String label = counts.first.properties.label!;

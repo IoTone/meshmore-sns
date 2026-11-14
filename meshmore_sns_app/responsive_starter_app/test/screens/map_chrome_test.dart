@@ -184,7 +184,9 @@ void main() {
       'You',
       'Which way the phone points',
       'Estimated reach of a peer',
-      'Nodes per square',
+      // The density field is a hexagon lattice, so the key says cell: it said
+      // "square" from the grid it replaced.
+      'Nodes per cell',
       // The coverage quilt is no longer drawn on the map, so the key must not
       // promise it. What it recorded was our own trail plus the peers' own
       // positions, and the survey record now lives only at /settings/coverage.
