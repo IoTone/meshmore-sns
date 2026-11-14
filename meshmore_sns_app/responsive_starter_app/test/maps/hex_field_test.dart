@@ -255,4 +255,27 @@ void main() {
     });
   });
 
+  test('a viewport holds the cells its own radius allows', () {
+    // A pointy-top hexagon is √3·R wide and pitched 1.5·R row to row.
+    const double r = 18;
+    final double width = math.sqrt(3) * r * 10; // exactly ten columns
+    final double height = 1.5 * r * 6; // exactly six rows
+    // Ten columns and six rows, plus the two-cell margin the lattice needs for
+    // its half-cell offsets.
+    expect(hexCellsForViewport(width: width, height: height), 12 * 8);
+
+    // A phone is about 400: the constant this replaces said 800, which was not
+    // wrong for a phone, only for everything bigger.
+    expect(hexCellsForViewport(width: 420, height: 900), greaterThan(200));
+
+    // A tablet landscape viewport needs more than a constant 800, which is the
+    // defect: `includeEmpty` emits in row order, so a short bound drops the last
+    // rows and the bottom of the map has no field.
+    expect(hexCellsForViewport(width: 1280, height: 800), greaterThan(800));
+
+    // Nonsense falls back rather than throwing.
+    expect(hexCellsForViewport(width: 0, height: 0), 400);
+    expect(hexCellsForViewport(width: double.nan, height: 100), 400);
+  });
+
 }

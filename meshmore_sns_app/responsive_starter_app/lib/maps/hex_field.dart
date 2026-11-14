@@ -277,12 +277,42 @@ bool hexContains(LatLng centre, double circumradiusMetres, LatLng point) {
 /// at every scale by construction, and what changes is how much ground one cell
 /// covers — which the map states in its own cell-size chip, so the field never
 /// silently changes meaning.
+/// The radius a cell is drawn at, in logical pixels.
+///
+/// Named rather than defaulted at the call site, because the screen needs the
+/// same number to know how many cells its viewport holds: a bound on the field
+/// that does not agree with the size the cells are drawn at either truncates the
+/// field or reserves room for cells that cannot exist.
+const double kHexRadiusPx = 18.0;
+
 double hexRadiusForZoom({
   required double metresPerPixel,
-  double radiusPx = 18.0,
+  double radiusPx = kHexRadiusPx,
 }) {
   if (!metresPerPixel.isFinite || metresPerPixel <= 0 || radiusPx <= 0) {
     return kDefaultHexCircumradiusMetres;
   }
   return radiusPx * metresPerPixel;
+}
+
+/// The number of cells a viewport of [width] by [height] pixels can hold, at
+/// [radiusPx].
+///
+/// A pointy-top hexagon is `√3·R` wide and pitched `1.5·R` row to row, so this is
+/// the lattice's own arithmetic rather than a guess. Two extra columns and rows
+/// cover the half-cell offsets at the edges. A field that emits more cells than
+/// this is truncated by `hexField`'s `maxCells`, and the cells it drops are the
+/// last rows — which on a tablet looked like the bottom of the map had no nodes.
+int hexCellsForViewport({
+  required double width,
+  required double height,
+  double radiusPx = kHexRadiusPx,
+}) {
+  if (!width.isFinite || !height.isFinite || width <= 0 || height <= 0) {
+    return 400;
+  }
+  final double r = radiusPx <= 0 ? kHexRadiusPx : radiusPx;
+  final int cols = (width / (math.sqrt(3) * r)).ceil() + 2;
+  final int rows = (height / (1.5 * r)).ceil() + 2;
+  return cols * rows;
 }

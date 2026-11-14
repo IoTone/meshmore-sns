@@ -1503,9 +1503,15 @@ class _StreetMapViewState extends State<StreetMapView> {
               box: fieldBox,
               circumradiusMetres: _hexRadiusMetres,
               includeEmpty: true,
-              // A 48 px hexagon tiles a phone screen into about four hundred,
-              // so the bound is the viewport rather than a budget for a scatter.
-              maxCells: 800,
+              // The bound is the viewport, computed from the same radius the
+              // cells are drawn at. It was a constant 800, which is about right
+              // for a phone and short on a tablet: `includeEmpty` emits the
+              // lattice in row order, so the cells a constant drops are the last
+              // rows, and the bottom of a large map simply had no field.
+              maxCells: hexCellsForViewport(
+                width: MediaQuery.sizeOf(context).width,
+                height: MediaQuery.sizeOf(context).height,
+              ),
             );
       _hexPolygons = <Polygon<HexCell>>[
         for (final HexCell c in _hexCache)

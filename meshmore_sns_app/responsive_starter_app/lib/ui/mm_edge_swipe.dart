@@ -29,6 +29,14 @@ import 'package:flutter/material.dart';
 /// [minTravel] **or** the inward fling velocity is at least
 /// [minVelocity]; a short, slow edge touch does nothing.
 ///
+/// **Not mounted anywhere yet.** It was written for the Map, whose pan/zoom
+/// canvas locks the shell's pager (`home_shell.dart`, `dragOwned`), and the Map is
+/// still without a swipe exit: these bands are opaque, and the map's right edge is
+/// where its control column sits, so whether the bands steal those taps has to be
+/// settled on a handset rather than argued about here. Until it is, the strip tap
+/// is the map's way to change view, and this file is a tested widget with no
+/// caller — which is a state to finish, not a design.
+///
 /// **System Back gesture (R70).** On Android with gesture navigation
 /// the OS takes the outer edge zone for Back, so the bands are offset
 /// inward by `MediaQuery.systemGestureInsets`; a swipe must begin just
