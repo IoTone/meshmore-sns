@@ -5080,6 +5080,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photoAnnouncePreviewOnly => 'Preview only';
 
   @override
+  String get photoAnnounceLoaded => 'Loaded';
+
+  @override
   String get photoAnnounceTitle => 'Photo';
 
   @override

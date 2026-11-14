@@ -2345,6 +2345,7 @@
   "checkinNeedsRadio": "チェックインには無線の接続と無線の名前が必要です。",
   "photoAnnounceLoad": "受信 · {n} パケット",
   "photoAnnouncePreviewOnly": "プレビューのみ",
+  "photoAnnounceLoaded": "受信済み",
   "photoAnnounceTitle": "写真",
   "mediaComposerTitle": "写真を送る",
   "mediaSourceUnavailable": "このビルドは端末から写真を読み取れないため、ここからは送信できません。",

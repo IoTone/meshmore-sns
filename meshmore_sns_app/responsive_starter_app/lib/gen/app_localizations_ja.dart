@@ -4878,6 +4878,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get photoAnnouncePreviewOnly => 'プレビューのみ';
 
   @override
+  String get photoAnnounceLoaded => '受信済み';
+
+  @override
   String get photoAnnounceTitle => '写真';
 
   @override

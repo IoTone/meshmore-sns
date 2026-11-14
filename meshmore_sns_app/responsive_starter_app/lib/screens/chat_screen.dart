@@ -29,6 +29,7 @@ import '../media/media_codec.dart';
 import '../media/media_composer.dart';
 import '../media/media_fetch_service.dart';
 import '../media/media_offer.dart';
+import '../media/media_photo.dart';
 import '../media/mp1.dart';
 import '../media/media_inbox.dart';
 import '../media/media_transfer.dart';
@@ -2183,7 +2184,12 @@ class _PhotoAnnouncementStrip extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Mp1PreviewImage(image: a.image, size: 56),
+                // Once the pixels arrive the thumbnail is the picture, not the
+                // palette preview.
+                if (fetch.loaded[a.id] case final MediaPhoto photo)
+                  RgbaThumbnail(photo: photo, size: 56)
+                else
+                  Mp1PreviewImage(image: a.image, size: 56),
                 SizedBox(width: skin.space.rowGap),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -2194,9 +2200,11 @@ class _PhotoAnnouncementStrip extends StatelessWidget {
                             color: skin.color.fg,
                             fontSize: skin.type.sizeBody)),
                     Text(
-                      a.upgradeChunks == 0
-                          ? l.photoAnnouncePreviewOnly
-                          : l.photoAnnounceLoad(a.upgradeChunks),
+                      fetch.loaded.containsKey(a.id)
+                          ? l.photoAnnounceLoaded
+                          : a.upgradeChunks == 0
+                              ? l.photoAnnouncePreviewOnly
+                              : l.photoAnnounceLoad(a.upgradeChunks),
                       style: TextStyle(
                           color: skin.color.fgMuted,
                           fontSize: skin.type.sizeSm),

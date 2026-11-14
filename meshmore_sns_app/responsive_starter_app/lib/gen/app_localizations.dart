@@ -8566,6 +8566,12 @@ abstract class AppLocalizations {
   /// **'Preview only'**
   String get photoAnnouncePreviewOnly;
 
+  /// No description provided for @photoAnnounceLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Loaded'**
+  String get photoAnnounceLoaded;
+
   /// No description provided for @photoAnnounceTitle.
   ///
   /// In en, this message translates to:

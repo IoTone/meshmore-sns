@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 
 import '../media/mp1.dart';
+import '../media/media_photo.dart';
 
 /// A received MP1 preview, drawn as the palette grid it is.
 ///
@@ -24,6 +25,51 @@ class Mp1PreviewImage extends StatelessWidget {
       child: CustomPaint(painter: _Mp1Painter(image)),
     );
   }
+}
+
+/// A decoded picture as a thumbnail.
+///
+/// Raw RGBA, painted by nearest-neighbour: the source is already small (320x240
+/// at most) and a filter would cost more than the picture is worth in a strip.
+class RgbaThumbnail extends StatelessWidget {
+  const RgbaThumbnail({super.key, required this.photo, this.size = 56});
+
+  final MediaPhoto photo;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: size,
+        height: size,
+        child: CustomPaint(painter: _RgbaPainter(photo)),
+      );
+}
+
+class _RgbaPainter extends CustomPainter {
+  _RgbaPainter(this.photo);
+
+  final MediaPhoto photo;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // One row per scanline, drawn from a 1-pixel-wide strip of the source: the
+    // cheapest way to scale RGBA without an image codec.
+    final double px = size.width / photo.width;
+    final double py = size.height / photo.height;
+    for (int y = 0; y < photo.height; y++) {
+      for (int x = 0; x < photo.width; x++) {
+        final int i = (y * photo.width + x) * 4;
+        final Paint p = Paint()
+          ..color = Color.fromARGB(
+              photo.rgba[i + 3], photo.rgba[i], photo.rgba[i + 1], photo.rgba[i + 2]);
+        canvas.drawRect(
+            Rect.fromLTWH(x * px, y * py, px + 0.5, py + 0.5), p);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RgbaPainter old) => old.photo != photo;
 }
 
 class _Mp1Painter extends CustomPainter {

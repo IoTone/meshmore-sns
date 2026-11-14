@@ -3370,6 +3370,7 @@
   "checkinNeedsRadio": "A check-in needs a connected radio and the radio's name.",
   "photoAnnounceLoad": "Load · {n} packets",
   "photoAnnouncePreviewOnly": "Preview only",
+  "photoAnnounceLoaded": "Loaded",
   "photoAnnounceTitle": "Photo",
   "mediaComposerTitle": "Send a photo",
   "@mediaComposerTitle": {},
