@@ -127,6 +127,12 @@ class AboutScreen extends StatelessWidget {
               label: l.termsSettingsRow,
               onPressed: () => context.push('/settings/terms'),
             ),
+            Padding(
+              padding: EdgeInsets.only(top: skin.space.rowGap / 2),
+              child: Text(l.termsSettingsSubtitle,
+                  style: TextStyle(
+                      color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+            ),
             SizedBox(height: skin.space.rowGap),
             MmAction(
               icon: Icons.bug_report_outlined,
