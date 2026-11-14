@@ -308,6 +308,10 @@ void main() {
       fake.emit(contactFrame(firstByte: 0xAA, type: 1, outPath: <int>[]));
       await Future<void>.delayed(Duration.zero);
 
+      // The poller runs only while a screen that shows readings is open: the app
+      // being foregrounded is not interest, and asking the mesh for telemetry on
+      // the chat tab is airtime nobody asked for.
+      ctrl.holdTelemetryInterest();
       fake.sent.clear(); // drop the on-ready self request
       await Future<void>.delayed(const Duration(milliseconds: 60));
       expect(fake.sent.any((f) => f.isNotEmpty && f[0] == 0x27), isTrue,

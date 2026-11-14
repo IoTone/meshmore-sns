@@ -31,13 +31,26 @@ Future<MeshcoreController> _controller(FakeMeshcoreTransport fake) async {
   return c;
 }
 
-/// Spends the whole hourly window on the largest frame the link accepts.
+/// A frame the radio would transmit: 0x03 (channel text) with padding. Only the
+/// first byte decides whether the meter charges it, and only the length is
+/// estimated.
+Uint8List otaFrame(int length) {
+  final Uint8List f = Uint8List(length);
+  if (length > 0) f[0] = 0x03;
+  return f;
+}
+
+/// Spends the whole hourly window on the largest **over-the-air** frame.
+///
+/// The first byte has to be a command the radio transmits — a channel text frame
+/// here — because a local BLE request costs no channel time and is no longer
+/// charged. The rest of the buffer is padding: only the length is estimated.
 ///
 /// 176 bytes is the frame ceiling, about 0.7 s of airtime at the flat
 /// estimator, so a 36 s window takes ~50 frames. The loop stops as soon as
 /// the meter refuses, which is the state under test.
 Future<void> _exhaust(MeshcoreController c) async {
-  final Uint8List big = Uint8List(176);
+  final Uint8List big = otaFrame(176);
   for (int i = 0; i < 90; i++) {
     try {
       await c.send(big, gated: true);
@@ -59,7 +72,7 @@ void main() {
     final int before = fake.sent.length;
 
     await expectLater(
-      c.send(Uint8List(64), gated: true),
+      c.send(otaFrame(64), gated: true),
       throwsA(isA<AirtimeRefused>()),
     );
     expect(fake.sent.length, before,

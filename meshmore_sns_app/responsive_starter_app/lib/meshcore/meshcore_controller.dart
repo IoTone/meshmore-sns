@@ -1376,9 +1376,56 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// (the handshake, the sync drain, a channel probe, a config write) always
   /// goes: refusing it would leave an exhausted meter unable to reconnect or
   /// be reconfigured, which is a worse failure than spending a few dozen
-  /// bytes. Everything is charged either way, so the figure stays honest.
+  /// bytes. Only frames the radio *transmits* are charged: airtime is channel
+  /// time, and a BLE read of the battery does not occupy the channel.
+  /// Whether this frame leaves the radio over the air, and so costs channel time.
+  ///
+  /// **Airtime is a LoRa quantity, and most of this app's frames are not LoRa.**
+  /// Reading contacts, channels, battery, device info or the queue are BLE
+  /// questions to the radio in the reader's hand; they never occupy the shared
+  /// channel. Charging them made the meter answer the wrong question, and on a
+  /// busy session (a 400-contact sync, channel probes, a battery poll a minute)
+  /// that inflated window is what refuses the reader's next message with
+  /// "airtime budget".
+  ///
+  /// The list is the codec's own transmitters: text, datagrams, adverts, the
+  /// position advert, telemetry/status/trace/control requests, raw sends and
+  /// the tools built on them. Anything not listed is treated as local, because a
+  /// wrongly charged frame takes airtime away from messages and a wrongly
+  /// uncharged one only understates a number.
+  static const int _kCmdSendTextMessage = 0x02;
+  static const int _kCmdSendChannelMessage = 0x03;
+  static const int _kCmdSendSelfAdvert = 0x07;
+  static const int _kCmdSetAdvertLatLon = 0x0E;
+  static const int _kCmdSendRawData = 0x19;
+  static const int _kCmdSendStatusReq = 0x1B;
+  static const int _kCmdSendTracePath = 0x24;
+  static const int _kCmdSendTelemetryReq = 0x27;
+  static const int _kCmdSendBinaryReq = 0x32;
+  static const int _kCmdSendControlData = 0x37;
+  static const int _kCmdSendChannelDatagram = 0x3E;
+  static const int _kCmdSendRawPacket = 0x41;
+
+  static bool isOverTheAir(int opcode) => switch (opcode) {
+        _kCmdSendTextMessage ||
+        _kCmdSendChannelMessage ||
+        _kCmdSendChannelDatagram ||
+        _kCmdSendSelfAdvert ||
+        _kCmdSendTelemetryReq ||
+        _kCmdSetAdvertLatLon ||
+        _kCmdSendStatusReq ||
+        _kCmdSendTracePath ||
+        _kCmdSendControlData ||
+        _kCmdSendRawData ||
+        _kCmdSendRawPacket ||
+        _kCmdSendBinaryReq =>
+          true,
+        _ => false,
+      };
+
   Future<void> send(Uint8List frame, {bool gated = false}) async {
-    final Duration cost = _airtimeEstimator.forBytes(frame.length);
+    final bool ota = frame.isNotEmpty && isOverTheAir(frame[0]);
+    final Duration cost = ota ? _airtimeEstimator.forBytes(frame.length) : Duration.zero;
     if (gated && !_airtime.quote(cost).allowed) {
       _airtimeRefusals++;
       notifyListeners();
@@ -4501,8 +4548,48 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
 
   Timer? _telemPollTimer;
   bool _telemPollEnabled = true;
+
+  /// True while a screen that *shows* telemetry is open.
+  ///
+  /// The poller used to run on `_visible`, which only means the app is in front:
+  /// a reader on the chat tab was still asking every peer for temperature and
+  /// humidity, every ten seconds, and paying for the answers on a channel the
+  /// whole mesh shares. Interest is a screen saying it is looking, which is what
+  /// `WeatherView` and the elevation view now do.
+  bool _telemInterest = false;
+
+  /// Whether anything on screen is showing telemetry right now.
+  bool get telemetryInterest => _telemInterest;
+
+  /// A screen that shows telemetry, saying so. Refcounted, because the grid can
+  /// hold the weather page while a sheet over it also wants readings.
+  int _telemInterestHolders = 0;
+
+  void holdTelemetryInterest() {
+    _telemInterestHolders++;
+    _telemInterest = true;
+    if (isReady && _telemPollEnabled) _startTelemetryPolling();
+    // No `notifyListeners`: nothing on screen renders the interest flag, and a
+    // screen calls this from `initState`, where notifying rebuilds listeners in
+    // the middle of a build.
+  }
+
+  void releaseTelemetryInterest() {
+    if (_telemInterestHolders > 0) _telemInterestHolders--;
+    if (_telemInterestHolders > 0) return;
+    _telemInterest = false;
+    _telemPollTimer?.cancel();
+    _telemPollTimer = null;
+  }
   final Duration? _telemPollIntervalOverride; // test seam
-  static const Duration _telemPollInterval = Duration(seconds: 10);
+  /// How often the poller asks one peer for its telemetry.
+  ///
+  /// Ten seconds was six requests a minute on a channel every radio in range
+  /// shares, before a single peer had answered, and it ran whenever the app was
+  /// foregrounded — on the chat tab as much as on the weather list. A minute is
+  /// still fresher than any sensor behind it changes, and it is a sixth of the
+  /// traffic.
+  static const Duration _telemPollInterval = Duration(seconds: 60);
   static const int _telemPollMaxAttempts = 3;
   static const Duration _telemPollRefreshAfter = Duration(minutes: 15);
   static const int _telemPollMaxHopsAlways = 1;
@@ -4539,6 +4626,9 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   void _startTelemetryPolling() {
     _telemPollTimer?.cancel();
     if (!_telemPollEnabled) return;
+    // No interest, no timer: this is the line that stops the app paying for
+    // readings nobody is looking at.
+    if (!_telemInterest) return;
     _telemPollTimer = Timer.periodic(
         _telemPollIntervalOverride ?? _telemPollInterval,
         (_) => _stepTelemetryPoll());
@@ -4550,7 +4640,11 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   int _telemPollTierFor(DiscoveredNode n) {
     final List<int>? hops = n.outPathHashes;
     if (hops == null) return -1;
-    final int hopCount = hops.length;
+    // The route's own hop count, not the length of its byte list: a three-byte,
+    // two-hop peer used to read as six hops and fall straight through the tiers
+    // as "too many", so on a three-byte mesh the poller skipped almost everyone
+    // — which is also why the weather list could look empty.
+    final int hopCount = n.hopCount ?? hops.length;
     if (hopCount == 0) return 0;
     if (hopCount <= _telemPollMaxHopsAlways) return 1;
     if (hopCount <= _telemPollMaxHopsWithDistance && n.hasLocation) {
@@ -4560,8 +4654,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return -1;
   }
 
+  /// One poller tick, for tests: the real timer is a minute apart, and a test
+  /// that waits a minute is a test nobody runs.
+  @visibleForTesting
+  void debugStepTelemetryPoll() => _stepTelemetryPoll();
+
   void _stepTelemetryPoll() {
-    if (!isReady || !_telemPollEnabled || !_visible) return;
+    if (!isReady || !_telemPollEnabled || !_visible || !_telemInterest) return;
     if (backgroundRequestsHeld) return;
     final String? own = ownPubKeyHex;
     final int nowMs = DateTime.now().millisecondsSinceEpoch;

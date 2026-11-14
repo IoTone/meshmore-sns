@@ -38,12 +38,29 @@ class WeatherView extends StatefulWidget {
 }
 
 class _WeatherViewState extends State<WeatherView> {
+  /// Held so dispose can release it: a `dispose` has no context to read.
+  MeshcoreController? _controller;
+  /// The poller asks peers for readings only while somebody is looking at
+  /// readings. Stated here rather than at app level: the app being open is not
+  /// interest, and asking the mesh for telemetry on the chat tab is airtime
+  /// nobody asked for.
+  /// Released in dispose, after the frame: the widget is going away and its
+  /// context must not be used to look the controller up.
+  @override
+  void dispose() {
+    _controller?.releaseTelemetryInterest();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    // Somebody is looking at readings, so the poller may ask for them.
+    _controller = context.read<MeshcoreController>();
+    _controller!.holdTelemetryInterest();
     // Refetch our own telemetry on open so self environment (if the
     // device reports it) is current. Peer readings come from the
-    // background poller.
+    // background poller, which runs only while this interest is held.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final MeshcoreController mc = context.read<MeshcoreController>();
