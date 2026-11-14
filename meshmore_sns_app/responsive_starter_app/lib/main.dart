@@ -307,6 +307,9 @@ Future<void> startApp() async {
           create: (BuildContext ctx) => MediaFetchService(
             mc: ctx.read<MeshcoreController>(),
             offers: ctx.read<MediaOfferStore>(),
+            // The same codec the composer encodes with, so a fetched picture is
+            // decoded by the one library that is already bundled.
+            codec: const AvifMediaCodec(),
           )..attach(),
           dispose: (_, MediaFetchService s) => s.dispose(),
         ),

@@ -9,6 +9,8 @@ import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import 'media_fetch.dart';
 import 'media_offer.dart';
+import 'media_codec.dart';
+import 'media_photo.dart';
 import 'mp1.dart';
 
 /// One preview that arrived on a channel, with what it takes to ask for more.
@@ -46,13 +48,22 @@ final class MediaFetchService {
   MediaFetchService({
     required this.mc,
     required this.offers,
+    this.codec,
   });
 
   final MeshcoreController mc;
   final MediaOfferStore offers;
 
+  /// The decoder for a finished picture, when the app has one. A harness or a
+  /// build without the codec still reassembles; it just cannot show the result.
+  final MediaCodec? codec;
+
   final StreamController<PhotoAnnouncement> _announcements =
       StreamController<PhotoAnnouncement>.broadcast();
+
+  /// Pictures that finished arriving, by offer id.
+  final Map<int, MediaPhoto> _loaded = <int, MediaPhoto>{};
+  Map<int, MediaPhoto> get loaded => Map<int, MediaPhoto>.unmodifiable(_loaded);
   final List<PhotoAnnouncement> _held = <PhotoAnnouncement>[];
   final Map<int, MediaFetchInbox> _inbox = <int, MediaFetchInbox>{};
   final List<StreamSubscription<Object?>> _subs =
@@ -68,6 +79,7 @@ final class MediaFetchService {
   void attach() {
     _subs.add(mc.channelDatagramStream.listen(_onDatagram));
     _subs.add(mc.incomingChannelMessages.listen(_onChannelMessage));
+    _subs.add(mc.incomingRawData.listen(acceptRecord));
   }
 
   Future<void> dispose() async {
@@ -157,8 +169,27 @@ final class MediaFetchService {
     if (!inbox.complete) return null;
     final Uint8List payload = inbox.assemble();
     _inbox.remove(f.id);
+    unawaited(_decodeInto(f.id, payload));
     return payload;
   }
+
+  Future<void> _decodeInto(int id, Uint8List payload) async {
+    final MediaCodec? c = codec;
+    if (c == null) return;
+    try {
+      final MediaPhoto photo = await c.decode(payload);
+      _loaded[id] = photo;
+      _onLoaded?.call(id, photo);
+    } catch (_) {
+      // A payload this build cannot read is not a crash: the announcement stays
+      // a preview and the reader can ask again.
+    }
+  }
+
+  void Function(int id, MediaPhoto photo)? _onLoaded;
+
+  /// Called when a fetched picture decodes, so a surface can repaint.
+  void onDecoded(void Function(int id, MediaPhoto photo)? cb) => _onLoaded = cb;
 
   /// Indices still missing for [id], so a re-request asks for gaps only.
   List<int> missingFor(int id) => _inbox[id]?.missing ?? const <int>[];

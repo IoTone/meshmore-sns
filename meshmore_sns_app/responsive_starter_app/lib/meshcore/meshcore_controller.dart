@@ -3819,10 +3819,25 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   Stream<ChannelDatagram> get channelDatagramStream =>
       _channelDatagramStream.stream;
 
+  /// Every raw-custom packet the radio hears (`PUSH_CODE_RAW_DATA`, 0x84).
+  ///
+  /// This is the carrier for a picture fetched by request: the firmware refuses
+  /// to flood a raw record, so anything on this stream came to us on a path and
+  /// was addressed to us. It carries no sender identity, which is why the fetch
+  /// plane names the requester in its request rather than the sender.
+  Stream<Uint8List> get incomingRawData => _rawDataStream.stream;
+  final StreamController<Uint8List> _rawDataStream =
+      StreamController<Uint8List>.broadcast();
+
   /// Datagrams whose type this build does not interpret. They are still
   /// delivered; the count exists so diagnostics can show that a payload
   /// arrived and was not understood, instead of the two cases looking alike.
   int get channelDatagramsUnrecognised => _channelDatagramsUnrecognised;
+
+  void _publishRawData(MeshcoreInbound f) {
+    if (f is! RawDataFrame) return;
+    if (!_rawDataStream.isClosed) _rawDataStream.add(f.payload);
+  }
 
   void _ingestChannelData(MeshcoreInbound f) {
     if (f is! ChannelDataFrame) return;
@@ -6668,6 +6683,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       _ingestNode,
       _ingestChat,
       _ingestChannelData,
+      _publishRawData,
       _trackMessageHeat,
       _trackDelivery,
       _logEvent,
