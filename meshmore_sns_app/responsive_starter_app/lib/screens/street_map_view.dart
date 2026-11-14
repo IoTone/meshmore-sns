@@ -185,11 +185,35 @@ class StreetMapView extends StatefulWidget {
       final LatLng live = LatLng(selfLat, selfLon);
       if (pts.isEmpty || pts.last != live) pts.add(live);
     }
-    if (pts.length < trailMinPoints) return const <LatLng>[];
+    // **A trail is a walk, not a join-the-dots.** The recorded fixes are whatever
+    // the radio and the phone reported, and one of them can be wrong: a fix that
+    // arrives with a stale or transposed position puts a point kilometres away,
+    // and joining it drew a line straight across the map — the "green line
+    // extending out" the owner saw, with nothing on screen to say it was a bad
+    // sample rather than a route. Only the last contiguous run is drawn: a gap
+    // larger than `trailMaxGapMeters` starts a new run, and everything before it
+    // is dropped rather than connected.
+    final List<LatLng> run = <LatLng>[];
+    for (final LatLng p in pts) {
+      if (run.isNotEmpty) {
+        final double gap =
+            const Distance().as(LengthUnit.Meter, run.last, p);
+        if (gap > trailMaxGapMeters) run.clear();
+      }
+      run.add(p);
+    }
+    if (run.length < trailMinPoints) return const <LatLng>[];
     final double span =
-        const Distance().as(LengthUnit.Meter, pts.first, pts.last);
-    return span < trailMinSpanMeters ? const <LatLng>[] : pts;
+        const Distance().as(LengthUnit.Meter, run.first, run.last);
+    return span < trailMinSpanMeters ? const <LatLng>[] : run;
   }
+
+  /// The largest gap a trail will join, in metres.
+  ///
+  /// Two kilometres is two minutes of driving and well under the shortest useful
+  /// LoRa link, so a gap that big is a bad sample rather than a walk. Anything
+  /// further apart is a different walk.
+  static const double trailMaxGapMeters = 2000;
 
   /// Which gestures the map itself may claim.
   ///
@@ -1518,10 +1542,20 @@ class _StreetMapViewState extends State<StreetMapView> {
       last: _saved,
       fresh: _viewState?.freshView,
     );
-    final bool hasPersonalPosition = start.source == MapCentreSource.phone ||
-        start.source == MapCentreSource.radio;
-    final double? selfLat = hasPersonalPosition ? start.centre.latitude : null;
-    final double? selfLon = hasPersonalPosition ? start.centre.longitude : null;
+    // **Where *we* are is a fact about the radio, not about the camera.**
+    //
+    // This used to be read off the camera ladder: "the centre came from the phone
+    // or the radio, therefore we have a fix". The ladder prefers a recent view
+    // and then the remembered one, so in the two commonest cases — the reader
+    // panned a moment ago, or the app restored last week's view — the screen said
+    // "Your position is not known yet" while the marker, the trail's last point
+    // and every reach estimate were drawn from wherever the camera happened to
+    // be. That is the banner the owner saw over a radio that had a position, and
+    // the stray line is the same bug: the trail was anchored on the camera.
+    final OwnLocation? own = mc.ownLocation;
+    final bool hasPersonalPosition = own != null;
+    final double? selfLat = own?.latitude;
+    final double? selfLon = own?.longitude;
     final bool hasFix = hasPersonalPosition;
 
     // The density squares, computed once per build rather than per layer: the
