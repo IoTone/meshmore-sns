@@ -191,6 +191,29 @@ class StreetMapView extends StatefulWidget {
     return span < trailMinSpanMeters ? const <LatLng>[] : pts;
   }
 
+  /// Which gestures the map itself may claim.
+  ///
+  /// A drag that starts on a corner handle belongs to the handle: the map's pan
+  /// and the handle's pan are both in the arena for it, and the map won, which is
+  /// why the screen said "drag a corner to move it" while the picture slid and
+  /// the corner stayed. While a finger is down on a handle the map's pan is
+  /// removed; pinch and wheel zoom stay, because they are two-finger or not a
+  /// pan and cannot be confused with a handle drag.
+  @visibleForTesting
+  static int mapFlagsFor({
+    required bool interactive,
+    required bool draggingCorner,
+  }) {
+    if (!interactive) return InteractiveFlag.none;
+    if (draggingCorner) {
+      return InteractiveFlag.pinchZoom | InteractiveFlag.scrollWheelZoom;
+    }
+    return InteractiveFlag.drag |
+        InteractiveFlag.pinchZoom |
+        InteractiveFlag.scrollWheelZoom |
+        InteractiveFlag.doubleTapZoom;
+  }
+
   @override
   State<StreetMapView> createState() => _StreetMapViewState();
 }
@@ -239,6 +262,12 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// ladder, which cannot follow a property line or a parking row; drawing one
   /// is the gesture that makes the shape the reader's.
   List<LatLng> _draft = const <LatLng>[];
+
+  /// True while a finger is on a corner handle.
+  ///
+  /// See `interactionOptions` above: the map must not pan a drag that belongs to
+  /// a corner, and this is the flag that tells it so.
+  bool _draggingCorner = false;
 
   /// The equal-area density overlay, off by default: it is a reading about the
   /// mesh, not a record of it, so it is something to ask for rather than
@@ -1713,12 +1742,19 @@ class _StreetMapViewState extends State<StreetMapView> {
               interactionOptions: InteractionOptions(
                 // Pan + pinch + scroll-wheel zoom; no rotation
                 // (heading still works via the self-marker arrow).
-                flags: widget.interactive
-                    ? InteractiveFlag.drag |
-                        InteractiveFlag.pinchZoom |
-                        InteractiveFlag.scrollWheelZoom |
-                        InteractiveFlag.doubleTapZoom
-                    : InteractiveFlag.none,
+                //
+                // **Map panning is off while a corner is being dragged.** The
+                // map's own pan recogniser and the handle's both claim a drag
+                // that starts on the handle, and the map won: the reader saw
+                // the picture slide and the corner stay put, which is what "you
+                // cannot drag a corner" means. The flag is set on pointer-down
+                // on a handle and cleared on release, so panning is normal
+                // everywhere else and only a drag that starts on a corner is
+                // denied to the map.
+                flags: StreetMapView.mapFlagsFor(
+                  interactive: widget.interactive,
+                  draggingCorner: _draggingCorner,
+                ),
               ),
               onPositionChanged: (MapCamera cam, bool hasGesture) {
                 // A gesture is the user's own move: it suppresses the
@@ -1998,39 +2034,61 @@ class _StreetMapViewState extends State<StreetMapView> {
                         // the outline reads as a sequence rather than a scatter.
                         width: 48,
                         height: 48,
-                        // A drag handle is a control, so it says what it is:
-                        // a screen reader that finds an unlabelled gesture area
+                        // A drag handle is a control, so it says what it is: a
+                        // screen reader that finds an unlabelled gesture area
                         // has found something it cannot describe.
                         child: Semantics(
                           label: l.geofenceCornerHandle(i + 1),
-                          child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onPanUpdate: (DragUpdateDetails d) =>
-                              _moveCorner(i, d.delta),
-                          child: Center(
-                            child: Container(
-                              width: 26,
-                              height: 26,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: context.skin.color.base,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: context.skin.color.alert,
-                                    width: 2.5),
-                              ),
-                              child: Text(
-                                '${i + 1}',
-                                style: TextStyle(
-                                  color: context.skin.color.alert,
-                                  fontSize: context.skin.type.size(11),
-                                  fontWeight: FontWeight.w700,
-                                  height: 1,
+                          // The Listener is what makes the drag *work*: it takes
+                          // the raw pointer, and while a finger is down on a
+                          // handle the map's own pan is switched off
+                          // (`interactionOptions`), so the two recognisers never
+                          // compete for the same gesture.
+                          child: Listener(
+                            onPointerDown: (_) {
+                              if (!_draggingCorner) {
+                                setState(() => _draggingCorner = true);
+                              }
+                            },
+                            onPointerUp: (_) {
+                              if (_draggingCorner) {
+                                setState(() => _draggingCorner = false);
+                              }
+                            },
+                            onPointerCancel: (_) {
+                              if (_draggingCorner) {
+                                setState(() => _draggingCorner = false);
+                              }
+                            },
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onPanUpdate: (DragUpdateDetails d) =>
+                                  _moveCorner(i, d.delta),
+                              child: Center(
+                                child: Container(
+                                  width: 26,
+                                  height: 26,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: context.skin.color.base,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: context.skin.color.alert,
+                                        width: 2.5),
+                                  ),
+                                  child: Text(
+                                    '${i + 1}',
+                                    style: TextStyle(
+                                      color: context.skin.color.alert,
+                                      fontSize: context.skin.type.size(11),
+                                      fontWeight: FontWeight.w700,
+                                      height: 1,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
                         ),
                       ),
                   ],
