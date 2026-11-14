@@ -152,3 +152,24 @@ paragraph. What is known from the code:
 | The launch screen is one design in every theme | `test/shell/launch_surface_test.dart` |
 | The mesh tree keeps the depth the radio reported | `test/meshcore/mesh_radial_layout_test.dart` (the layout and the hop rings), `test/meshcore/meshcore_controller_test.dart` (`topologyHopsFor`: an unresolved hop keeps its place, the width is the radio's) |
 | Units, clock and temperature follow the reader's choice | `test/util/mm_format_test.dart` |
+
+---
+
+## 8. Hardware state (2026-11-14)
+
+Both radios were plugged in and identified, and nothing was flashed.
+
+| unit | enumerated as | current firmware | asked for |
+|---|---|---|---|
+| Heltec WiFi LoRa 32 V4 (ESP32-S3, 16 MB flash) | `303a:1001` Espressif USB JTAG/serial, `/dev/ttyACM0`, serial `F8:5B:1B:BE:C5:3C` | MeshCore 1.17.1 **repeater**, node name `HELTEC-REP` | reflash as **`h0`** |
+| Seeed Wio Tracker L1 Pro (nRF52840) | `2886:1667` Seeed Wio Tracker L1, `/dev/ttyACM1`, serial `6A6D57BFADA2FDA2` | MeshCore 1.17.1 **companion**, node name `WIO` | reflash as **`m0`** |
+
+Evidence: `lsusb`, `udevadm info`, and `~/Documents/lora/INVENTORY.md` (which also records
+the flash history and the Meshtastic environment names for both boards).
+
+**Not done, and why:** the request named them "h1, and m0 (m0 for the wio, h0 for the
+heltec)", which is two different names for the Heltec; and a reflash rewrites what every
+other radio on the mesh sees, so the name and the role have to be confirmed first rather
+than guessed. Flashing also needs a decision this register cannot make: whether the Wio
+stays a companion (the app talks to it) and the Heltec stays a repeater, or both become
+companions for testing.
