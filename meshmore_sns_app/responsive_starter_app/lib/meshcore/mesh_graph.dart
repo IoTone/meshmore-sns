@@ -108,9 +108,8 @@ class MeshGraph {
   /// used. The path resolver still walks the controller's whole node
   /// table, so a repeater that's part of a peer's path but not in the
   /// filter still shows up as an intermediate hub.
-  /// [maxHops] caps the resolved hop depth shown. A peer is included
-  /// when its hop count (`outPathHashes.length`, 0 = direct) is
-  /// `<= maxHops`.
+  /// [maxHops] caps the resolved hop depth shown. A peer is included when its
+  /// hop count (`DiscoveredNode.hopCount`, 0 = direct) is `<= maxHops`.
   ///
   /// **Below All, only a peer whose learned route is known is included.**
   ///
@@ -179,7 +178,14 @@ class MeshGraph {
       considered++;
 
       // The depth the radio learned, or null when it learned none.
-      final int? hops = peer.outPathHashes?.length;
+      //
+      // `hopCount`, not `outPathHashes.length`: a path is `hops × hashWidth`
+      // bytes, and `out_path_len` packs the width in its top two bits. Reading
+      // the byte list's length as a depth made a two-byte mesh report twice the
+      // hops and a three-byte mesh three times, so the ladder's "≤2 hops" hid
+      // peers that were one hop away. The controller decodes both numbers from
+      // `PathLen` and `DiscoveredNode.hopCount` is the one that means depth.
+      final int? hops = peer.hopCount;
       if (hops == null) {
         // No learned route: flood-routed or advert-only. Below All the limit
         // cannot be evaluated, and a stop that cannot be checked does not

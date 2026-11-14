@@ -255,9 +255,14 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The reader's scale, through the one spelling the app has for it. These
+    // three numbers and the tile below were hard-coded `toStringAsFixed(1)°`
+    // with no unit at all, while the microclimate bubble two sections up
+    // already used `MmFormat.temperature` — so a reader on Fahrenheit saw °F
+    // in one place and an unlabelled Celsius number in the other.
     Widget stat(String label, double c) => Column(
           children: <Widget>[
-            Text('${c.toStringAsFixed(1)}°',
+            Text(MmFormat.temperature(c, prefs: context.formatPrefs),
                 style: TextStyle(
                     color: temperatureColor(c),
                     fontSize: context.skin.type.size(22),
@@ -344,7 +349,7 @@ class _ReadingTile extends StatelessWidget {
           borderRadius: mmRadius(context, 10),
         ),
         child: Text(
-          c != null ? '${c.toStringAsFixed(1)}°' : '—',
+          MmFormat.temperature(c, prefs: context.formatPrefs),
           style: TextStyle(
               color: c != null ? temperatureColor(c) : cs.onSurfaceVariant,
               fontWeight: FontWeight.w700,

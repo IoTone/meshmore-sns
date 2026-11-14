@@ -123,11 +123,13 @@ class _MeshTreeViewState extends State<MeshTreeView> {
   int _lastGraphSignature = 0;
   Size _lastSize = Size.zero;
 
-  /// Max hop depth shown. 0 = direct neighbours only, 6 = everything
-  /// (flood-routed + advert-only floaters). Default 6 — in practice
-  /// almost every MeshCore contact is flood-routed, so a lower default
-  /// shows only the handful of direct/repeater peers (the "3 nodes"
-  /// surprise). Start wide; the user dials *down* to declutter.
+  /// Max hop depth shown. 0 = direct neighbours only, [allHops] = everything
+  /// (including the peers whose depth is unknown). It opens on the smallest
+  /// stop that covers every learned route — see [defaultHops] — because a stop
+  /// below All only asserts what it can check: peers whose route the radio has
+  /// learned, at most N deep. "Default 6" was true when the top of the ladder
+  /// was six; the ladder is 0..5, ten, then All, and All is the only value that
+  /// can mean "everything".
   int _maxHops = MeshTreeView.allHops;
 
   /// Whether the opening stop has been chosen from the graph that arrived. One
@@ -588,8 +590,8 @@ class _MeshTreeViewState extends State<MeshTreeView> {
 
 }
 
-/// Compact hop-depth slider for the tree view. 0..6 with a label
-/// chip showing the current setting.
+/// Compact hop-depth slider for the tree view: direct, 1..5, ten, then All,
+/// with a label chip saying which stop is current and what it reached.
 class _HopSlider extends StatelessWidget {
 
   const _HopSlider({
