@@ -377,16 +377,20 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                 ),
               ],
             const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.my_location, size: 16),
-                label: Text(l.deviceRegionSuggestFromLocation),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _suggestFromMyLocation(mc);
-                },
-              ),
+            // One family in the band sheet too: this was the last Material
+            // outlined pill on the screen, and a sheet is not a licence for a
+            // second shape language.
+            MmActionRow(
+              children: <Widget>[
+                MmAction(
+                  icon: Icons.my_location,
+                  label: l.deviceRegionSuggestFromLocation,
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _suggestFromMyLocation(mc);
+                  },
+                ),
+              ],
             ),
           ],
         ),
