@@ -1,5 +1,8 @@
 # lobospeak (1805PK)
 
+> **Out of scope for this repository.** lobospeak is a separate product: `meshmore-scope-of-record.md` decides "No lobospeak in MeshMore, separate product, mine it for ideas only". The document is kept here as design material, not as a plan for this app.
+
+
 > *Wolf speak.* A small, opinionated control plane for robots and
 > unattended devices over MeshCore — **no side channel required**.
 >

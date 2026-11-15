@@ -1,5 +1,8 @@
 # lobospeak — Map Pins & Triggers spec
 
+> **Out of scope for this repository.** lobospeak is a separate product: `meshmore-scope-of-record.md` decides "No lobospeak in MeshMore, separate product, mine it for ideas only". The document is kept here as design material, not as a plan for this app.
+
+
 > A pin is a point on the world the operator cares about. lobospeak turns
 > pins into **destinations**, **labels**, and **rules** — the operator's
 > surface for acting on robots and watching a closed mesh, all offline.

@@ -10,10 +10,9 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 > there's no public release channel yet. The one measured set of numbers lives in
 > [`meshmore_sns_app/STATUS.md`](./meshmore_sns_app/STATUS.md), with the date and
 > the command behind each, because a count restated in five documents goes wrong
-> in four of them. Measured there on 2026-11-09: 2,368 widget and unit tests in
-> three minutes, the protocol package's 382 with one skipped, the pure-Java
-> port's 164 with none failing, and `flutter analyze` clean with no standing
-> warnings. Debug and release APKs build, and the release bundle is 77 MB.
+> in four of them. The counts are not restated here on purpose: the
+> number that was true on 2026-11-09 is not the number today, and a figure copied
+> into five documents goes wrong in four of them. Debug and release APKs build.
 >
 > Re-read on a motorola edge 2024 with a MeshCore radio paired: the shell's single
 > header, the "Hyperlocal grid" tab, one rule per group boundary, the radio's
@@ -23,9 +22,9 @@ Offline-first, theme-driven, with a hyperlocal radar grid, per-channel chat,
 >
 > Still owed: the ping round trip, the alarm's hold and cancel, a media transfer,
 > the notification tap-through and the Doze run, all of which need a handset that
-> nobody else is using. One dependency is not store-ready either: the bundled
-> image codec's native library fails the 16 KB page requirement. What is not built
-> at all is listed as residue in the feature register.
+> nobody else is using. Every bundled native library clears the 16 KB page
+> requirement, which `test/store/native_page_alignment_test.dart` holds on every
+> run. What is not built at all is listed as residue in the feature register.
 
 ---
 
@@ -49,8 +48,10 @@ media composer that none of these drawings show.
 | ![Nodes](screens/nodes.svg) | ![Device config](screens/device-config.svg) | ![First-run intro](screens/first-run.svg) |
 | Fabric list with per-node type + distance + signal line, favourite star, tap to detail | **Advert location source** (None / Device GPS / Pinned) + Use phone location / Read device location buttons | Proactive Bluetooth ask + first-class Offline path |
 
-The UX design brief covers the six concept themes (NERV, AG-HUD, Hyperlocal,
-SEELE, DR Pop, Recon) with palette anchors and per-theme rendering plans.
+The UX design brief was written for the six themes that existed then (NERV,
+AG-HUD, Hyperlocal, SEELE, DR Pop, Recon). Eleven presets ship today, and the
+brief is kept as the record of how they were designed rather than as a list of
+them.
 
 - **Design brief (Markdown):** [`meshmore-sns-UX-brief.md`](./meshmore-sns-UX-brief.md)
 - **Design brief (HTML — has the per-theme SVG grid mockups):** [`meshmore-sns-UX-brief.html`](./meshmore-sns-UX-brief.html)
@@ -61,7 +62,7 @@ SEELE, DR Pop, Recon) with palette anchors and per-theme rendering plans.
 
 The requirements, the change record and the sibling specs:
 
-- **Requirements R1–R117 and their change record:** [`meshmore-sns-spec.md`](./meshmore-sns-spec.md). R118 onward are recorded in [`STATUS.md`](./meshmore_sns_app/STATUS.md), which is the live change log
+- **Requirements R1–R113 and their change record:** [`meshmore-sns-spec.md`](./meshmore-sns-spec.md). R118 onward are recorded in [`STATUS.md`](./meshmore_sns_app/STATUS.md), which is the live change log
 - **UX implementation spec (U0–U15, six skins):** [`meshmore-sns-UX-spec.md`](./meshmore-sns-UX-spec.md)
 - **Offline maps (R61, R93):** [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md)
 - **Tools surface (R60):** [`meshmore-sns-tools-spec.md`](./meshmore-sns-tools-spec.md)
@@ -118,7 +119,6 @@ Forward-looking but already speccd (not built):
 - **R25** the equal-area cell overlay on the map. The standalone equal-grid view was
   removed; the density idea survives as the grid's **Message heat** view, and the
   per-cell map layer itself is unbuilt (register residue row).
-- **R26** XR data streaming via private temp-URL reverse proxy.
 - **R27** ~~Globe.GL macro view~~ — withdrawn 2026-11-05; the globe was removed
   from the product.
 
@@ -167,8 +167,10 @@ meshmore-sns/
 ├── screens/                        ← README screen mockups
 ├── libmeshcore/                    ← the protocol codec ported to pure Java
 ├── libmeshcore-android/            ← the Android library wrapper for it
-├── meshmore-xr/                    ← the Android XR companion (Kotlin)
-├── meshmore-xr-www/                ← the XR project's Hugo site
+├── meshmore-xr/                    ← OUT OF SCOPE: a separate Android XR app (Kotlin),
+│                                     frozen and owned by another author. Not built by
+│                                     this project and not in its document map.
+├── meshmore-xr-www/                ← OUT OF SCOPE: the XR project's Hugo site
 └── meshmore_sns_app/               ← the Flutter project (tracked in this repo)
     ├── STATUS.md                   ← what is built, what is open, the change log
     ├── TOOLING.md                  ← the commands, and what each costs

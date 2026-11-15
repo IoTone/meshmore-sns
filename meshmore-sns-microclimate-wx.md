@@ -1,6 +1,10 @@
 # Microclimate / "wx" — design (earmark)
 
-**Status:** design only — earmarked, not built. Captured 2026-06-06.
+**Status:** BUILT (corrected 2026-11-15). Captured 2026-06-06 as a design. The
+wx view mines weather from channel chat in both locales
+(`lib/sns/weather_inference.dart`, `lib/sns/weather_lexicon.dart`, the
+microclimate strip in `lib/screens/weather_view.dart`). The P2 geo bubbles and
+the P3 telemetry cross-reference did not ship and are not planned.
 **Owner concept:** the Hyperlocal Field grid's weather (**wx**) view.
 
 ## 1. Motivation

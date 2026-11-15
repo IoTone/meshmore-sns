@@ -11,6 +11,14 @@ import '../ui/mm_shape.dart';
 import '../ui/mm_confirm.dart';
 import 'grid_notice.dart';
 
+/// The hourly histogram's drawing box, in pixels. Chart geometry: the bars are
+/// fractions of this, so it is not a spacing token and must not follow the
+/// rhythm scale.
+const double _chartHeight = 56;
+
+/// The rank column's width. Geometry for the same reason.
+const double _rankColumn = 22;
+
 /// Meshbook (MBk) — a rolling last-24h readout of the current channel's
 /// social shape: how many messages, the reply rate, the top voices, topics,
 /// and an hourly (by local hour-of-day) volume histogram. The window is the
@@ -45,8 +53,10 @@ class MeshbookView extends StatelessWidget {
     // then accumulates live and survives restarts.
     final MbkDay day = mc.meshbookFor(ch);
 
+    final MmSpace space = context.skin.space;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 24),
+      padding: EdgeInsets.fromLTRB(
+          space.rowInset, space.rowInset, space.rowInset, space.sectionGap),
       children: <Widget>[
         Row(
           children: <Widget>[
@@ -73,7 +83,7 @@ class MeshbookView extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: space.rowGap),
         if (day.isEmpty)
           // The shared notice shape every other grid view uses, with the one
           // line that answers "so what fills it".
@@ -89,21 +99,21 @@ class MeshbookView extends StatelessWidget {
             style: TextStyle(
                 color: cs.onSurface, fontSize: context.skin.type.size(15)),
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: space.sectionGap),
           Text(l.meshbookByHour,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
                   fontSize: context.skin.type.sizeSm,
                   letterSpacing: 2)),
-          const SizedBox(height: 6),
+          SizedBox(height: space.labelToControl),
           _Hourly(day: day, nowHour: now.hour, cs: cs),
-          const SizedBox(height: 18),
+          SizedBox(height: space.sectionGap),
           Text(l.meshbookTopVoices,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
                   fontSize: context.skin.type.sizeSm,
                   letterSpacing: 2)),
-          const SizedBox(height: 6),
+          SizedBox(height: space.labelToControl),
           for (int i = 0; i < day.top.length; i++)
             _VoiceRow(
                 rank: i + 1,
@@ -112,7 +122,7 @@ class MeshbookView extends StatelessWidget {
                 cs: cs,
                 l: l),
           if (day.topics.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 18),
+            SizedBox(height: space.sectionGap),
             Text(l.meshbookTopics,
                 style: TextStyle(
                     color: cs.onSurfaceVariant,
@@ -125,8 +135,9 @@ class MeshbookView extends StatelessWidget {
               children: <Widget>[
                 for (final MbkTopic t in day.topics)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: context.skin.space.rowInset,
+                        vertical: context.skin.space.step(2)),
                     decoration: BoxDecoration(
                       color: cs.surfaceContainerHighest.withValues(alpha: .5),
                       borderRadius: mmRadius(context, 16),
@@ -157,7 +168,9 @@ class _Hourly extends StatelessWidget {
     return Column(
       children: <Widget>[
         SizedBox(
-          height: 56,
+          // The histogram's own drawing height. It is not a rhythm value: the
+          // bar heights below are fractions of it.
+          height: _chartHeight,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
@@ -220,11 +233,13 @@ class _VoiceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final double frac = maxCount == 0 ? 0 : sender.count / maxCount;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: EdgeInsets.symmetric(vertical: context.skin.space.step(2)),
       child: Row(
         children: <Widget>[
           SizedBox(
-            width: 22,
+            // A two-digit rank column, sized to the widest rank the list can
+            // show. Chart geometry, not a rhythm value.
+            width: _rankColumn,
             child: Text('$rank',
                 style: TextStyle(
                     color: cs.onSurfaceVariant,
@@ -240,7 +255,7 @@ class _VoiceRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                         color: cs.onSurface, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 3),
+                SizedBox(height: context.skin.space.insideText),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(kRadiusXs),
                   child: LinearProgressIndicator(
@@ -253,7 +268,7 @@ class _VoiceRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: context.skin.space.rowGap),
           Text('${sender.count}',
               style: TextStyle(
                   color: cs.onSurface,

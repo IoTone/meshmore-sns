@@ -46,92 +46,90 @@ is not, so those three audits owe a write-up rather than being considered comple
 
 ---
 
-## 1. Ranked table
+## 1. Ranked table (rewritten 2026-11-15)
+
+Every row that was open on 2026-11-14 has been re-measured against the tree. The
+rows below are what is still open, and the closures are recorded in §12 with
+their evidence so a row that says "built" can be checked rather than trusted.
 
 | id | area | what is missing | evidence | size | type |
 |----|------|-----------------|----------|------|------|
-| R-01 | radio | **The CLI surface covers two commands.** `runRadioCli` is wired for buzzer and vibration only, because the whitelist is those two; a repeater's own console (the `0x42` path the codec can build) is not reachable. | `lib/meshcore/meshcore_controller.dart:5562`; whitelist `meshmore_sns_app/packages/meshcore/lib/src/codec/cli_command.dart:49,64`; callers `lib/screens/diagnostics_screen.dart:100,104,121` | M | UNFINISHED |
-| R-02 | radio | **Multi-radio switch surface.** One session exists; there is no picker, and no rule for an in-flight send at switch time. | `meshmore-feature-register.md:334` | M | UNFINISHED |
-| R-03 | radio | **Firmware OTA install.** The page reads the gate and shows versions; no transfer starts, because an install drains the radio's offline queue and nothing can re-sync it. | `lib/screens/firmware_screen.dart`; `meshmore-feature-register.md:48` | L | DECIDED |
-| R-04 | radio | **Resume after a phone restart.** `autoRunOnBoot` is false and no boot receiver is registered, so nothing arrives until the app is opened. | `meshmore-feature-register.md:211` | M | DECIDED |
-| R-05 | radio | **Background location publication.** Auto-publish uses the phone fix only while the app is open; the service is `connectedDevice`, not `location`. | `meshmore-feature-register.md:210` | M | DECIDED |
-| U-01 | UI | **Landscape and tablet.** Every view is portrait-locked, so a tablet, an unfolded foldable or a landscape mount gets a narrow column. | `lib/main.dart:123`; `meshmore-feature-register.md:209` | L | DECIDED |
-| U-02 | UI | **`MmEdgeSwipe` is mounted nowhere.** It was written for the map, whose pan/zoom locks the shell pager, so the map has no swipe exit at all. | `lib/ui/mm_edge_swipe.dart:47`; `rg -n "MmEdgeSwipe" lib/` finds only the file | S | UNFINISHED |
-| U-04 | UI | **A drawn fence cannot be reshaped.** Rename only; the sheet says so on screen. | `lib/l10n/app_en.arb:3475` (`geofencePolygonNote`) | M | UNFINISHED |
-| U-05 | UI | **A place cannot be imported.** Sharing writes a human link; nothing parses it back. | `lib/places/place_ui.dart:86` (`placeShareText`), used at `place_detail_sheet.dart:342`; no parser | S | UNFINISHED |
-| T-01 | tools | **The tools keep no history.** Six tools, no store: a range test's rows live in memory and leave as a CSV the reader must paste somewhere. | `lib/tools/` has no `Prefs`/`Store` reference (`rg -n "Prefs\|Store" lib/tools/` is empty); `lib/tools/range_test_tool.dart:195` is the only export | M | UNFINISHED |
-| A-01 | a11y | **Angular floors are unasserted.** The 320 dp / 200 % floors are tested; the Latin 1.2°, kana 1.5°, kanji 1.8° distance thresholds are not. | `meshmore-feature-register.md:214` | S | UNFINISHED |
-| A-02 | a11y | **Icon-only controls inside screens are not all labelled.** The shell's strip cells are; the screens' own are the W9 tail. | `meshmore-feature-register.md:214` | M | UNFINISHED |
-| G-01 | guards | **36 files still carry a bare-`TextButton` baseline** — each is a control that has not moved to `MmAction`/`MmPickerTile`. | `test/ui/tap_affordance_guard_test.dart:31-…` (36 non-zero entries) | M | UNFINISHED |
-| G-02 | guards | **23 files carry an off-ladder spacing baseline.** | `test/ui/mm_spacing_test.dart:104-130` | M | UNFINISHED |
-| B-01 | build | **No release APK can be built from this checkout.** `android/key.properties` is absent, and the Gradle config refuses to sign a release with the debug key. `flutter build apk --profile` works and is what the handset runs. | `android/app/build.gradle` (the signing gate); `flutter build apk --release` → "Release signing needs android/key.properties" | S | DECIDED |
-| G-03 | guards | **19 files carry a literal-size/colour/radius baseline.** | `test/theme/mm_ratchet_test.dart:57-93` | M | UNFINISHED |
-| E-01 | instruments | **The elevation profile is exploratory by its own doc comment** — peers are placed by reported altitude, and phone-GPS altitude is a last-resort fallback. | `lib/screens/elevation_profile_view.dart:18` | S | UNFINISHED |
-| M-01 | media | **Media is app-to-app only.** The ecosystem has no interoperable image standard, so a chunked picture is understood by this app and no other client. | `meshmore-feature-register.md` R167 row | L | DECIDED |
-| P-01 | protocol | **Three encoders are unexercised** by any test (`getAllowedRepeatFreq`, `getDefaultFloodScope`, `removeContact`) — though the register also claims the first is wired, so this row needs re-measuring before it is trusted. | `meshmore-feature-register.md:51` vs `:93` | S | SUSPECTED |
+| N-01 | notifications | **The closed-app delivery test has not been run.** The app-side defects are fixed; what is left measures the platform (an OEM stopping the foreground service, and the service's behaviour on task removal). | `docs/MISSING-WORK.md` §9 has the steps; `background_keepalive.dart` still has `autoRunOnBoot: false` | S | UNFINISHED |
+| N-02 | notifications | **The battery-exemption state is shown but not proved useful.** The row reads `PowerManager.isIgnoringBatteryOptimizations` and offers the request; whether this handset's battery manager is the cause of a missed notification is unmeasured. | `lib/perms/battery_exemption.dart`; the row in `app_settings_screen.dart` | S | UNFINISHED |
+| R-06 | radio | **A radio rename does not survive a power cycle** on the paired Wio (1.17.1). The write lands and reads back in the same session, then the name reverts. This is the firmware's own prefs write, not the app's encode. | `docs/MISSING-WORK.md` §10; firmware `examples/companion_radio/MyMesh.cpp:1219-1225` | — | DECIDED (firmware) |
+| R-07 | radio | **Firmware OTA install.** The page reads the gate and shows versions; no transfer starts, because an install drains the radio's offline queue and nothing can re-sync it. | `lib/screens/firmware_screen.dart`; register row | L | DECIDED |
+| R-08 | radio | **Resume after a phone restart.** `autoRunOnBoot` is false and no boot receiver is registered, so nothing arrives until the app is opened. Android 15+ restricts starting a foreground service from `BOOT_COMPLETED`. | `background_keepalive.dart:75` | M | DECIDED |
+| R-09 | radio | **Background location publication.** Auto-publish uses the phone fix only while the app is open; the service is `connectedDevice`, not `location`. | register row 210 | M | DECIDED |
+| M-01 | media | **Media is app-to-app only.** The ecosystem has no interoperable image standard, so a chunked picture is understood by this app and no other client. | register R167 row | L | DECIDED |
+| M-02 | media | **AEIC, the one large piece of work left open.** MeshCore Open's image codec is three ONNX graphs (835 MB decoder, 64 MB and 58 MB entropy models) driven through `flutter_onnxruntime` in a worker isolate: about 4000 lines of port plus a ~1 GB model bundle and a 2 GiB decode peak. The models are hosted at `huggingface.co/zjs81/aeic-se-onnx`, so the blocker is the port, not a host. This build recognises `0xAE1C` and counts it as a picture it cannot open rather than dropping it as an unknown datagram. | register "Media: what the other clients do, and the AEIC decision"; `lib/media/mp1.dart` | XL | DECIDED |
+| B-01 | build | **No release APK can be built from this checkout.** `android/key.properties` is absent and the Gradle config refuses to sign a release with the debug key. `flutter build apk --profile` works and is what the handset runs. | `android/app/build.gradle` (the signing gate) | S | DECIDED |
+| U-01 | UI | **Landscape and tablet.** Every view is portrait-locked, so a tablet, an unfolded foldable or a landscape mount gets a narrow column. | `lib/main.dart`; register row 209 | L | DECIDED |
 
----
+Closed on 2026-11-15, with the evidence in §12: U-02, U-04, U-05, T-01, A-01,
+A-02, E-01, P-01, the weather summary count, the block-at-send defect, the
+multi-radio switch surface, the fence OS notification, the battery-exemption
+row, the place destination channel and the `MeshGraph` rebuild cost.
 
-## 2. By area
+## 2. By area (rewritten 2026-11-15)
 
 ### Messaging
 
-No gap found by inspection that is not already covered by a test; the parallel
-messaging audit is the authority on this area and its findings should replace this
-paragraph. What is known from the code:
-
-- Channel and DM rows are capped at 250 per channel (`lib/meshcore/chat_store.dart:45`),
-  oldest dropped first, and the drop is counted and shown.
-- The store is sealed and debounced at 400 ms (`meshcore_controller.dart:517`), so a
-  burst collapses into one write.
+- **Fixed 2026-11-15: a blocked key could still be messaged.** `BlockStore` was read
+  by every display surface and by nothing on the way out, so the thread a block was
+  meant to close could be replied to. The send path now asks
+  (`MeshcoreController.isPeerBlocked`), refuses a direct message to a blocked key
+  before a row is written, refuses a *retry* of a row addressed to a key blocked
+  since, and lets the SOS path through with the same precedence an SOS already has
+  over a muted channel. The composer states the rule and the copy says what a block
+  cannot stop: the MeshCore radio still relays the packet.
+  Test: `test/meshcore/block_send_test.dart`.
 
 ### Media
 
-- **M-01** above: no interop with other clients, by decision.
-- The public channel hides the microphone and the photo control, with one line saying
-  where they live (`meshmore-feature-register.md` R167).
+- **M-01** and **M-02** above. Nothing else open.
 
 ### Map
 
-- The overlay count is still higher than it needs to be (pins, rings, cells, trail,
-  fences, event layers) — `meshmore-feature-register.md` R167's closing note.
-- The parallel map audit is the authority on tiles, camera, overlays and cost.
+- No open item. The overlay count is the register's closing note, not a defect.
 
 ### Instruments
 
-- **E-01** elevation profile.
-- Tree mode's hop filter and weather mode's staleness are being audited in parallel;
-  their findings belong here.
+- No open item. The weather band now counts the nodes its own three figures come
+  from (`WeatherTemperatureSummary`), and the altitude chart states where each
+  height came from instead of calling itself exploratory.
 
 ### Settings and IA
 
-- No open item found by inspection beyond the guard baselines (G-01…G-03), which are
-  the mechanical tail of the same work.
+- No open item.
 
 ### Themes and sound
 
-- Closed this pass: eleven presets, eleven synthesised packs, 209 files, no borrowing
-  (`lib/theme/mm_tokens.dart` `audioPackKey`, `brand/_audio_pack.py`).
+- No open item.
 
 ### Accessibility
 
-- **A-01**, **A-02**.
+- **A-01 is not a phone-app rule and is closed as such.** The Latin 1.2°, kana 1.5°
+  and kanji 1.8° floors are visual-angle thresholds, and a visual angle needs a
+  stated viewing distance. They belong to the XR work (`meshmore-xr/`,
+  `MeshmoreXR-i18n-ja.md`), which is out of scope for this repository. The phone app
+  has no such rule to assert, and inventing a distance to make it assertable would
+  be a number nobody measured.
+- **A-02 is closed.** Every `IconButton` in `lib/` carries a tooltip and every
+  icon-only `InkWell`/`GestureDetector` in `lib/screens/` carries a label or a
+  `Semantics` node (measured 2026-11-15 over the whole tree, zero hits).
 
 ### Data and storage
 
-- Every store states its own size and there is one delete that names what goes and what
-  survives (`meshmore-feature-register.md:330`). No open item found.
+- No open item.
 
 ### Radio protocol
 
-- **R-01** … **R-05**, **P-01**.
+- No open item besides R-06 to R-09, which are decided.
 
 ### Tests and guards
 
-- **G-01**, **G-02**, **G-03**: the three ratchets are honest about what is left, and
-  their non-zero baselines are the list of un-migrated UI.
-
----
+- The three ratchets are the mechanical tail and are being worked down rather than
+  added to; their non-zero baselines are the list of un-migrated UI.
 
 ## 3. Known good — proved, with the test that proves it
 
@@ -271,3 +269,40 @@ Still open, with what would close each:
 | A place's destination channel | A channel field on `Place` and a line in the create sheet naming the slot the report will use |
 | Radio rename across a power cycle | A firmware answer: whether the Wio's NVS write or the firmware's prefs write drops the name |
 | A blocked peer can still be messaged | `BlockStore` is read by the UI only (`lib/chat/block_actions.dart:28`, `chat_actions.dart:176`), never by the send path in `meshcore_controller.dart`. The decision the execution plan calls "block vs queue at send time" is still open, so the composer neither refuses nor warns |
+
+---
+
+## 12. The 2026-11-15 pass — what closed, and how to check it
+
+Every row below was open in §1 on 2026-11-14. Each one names the code and the test
+that now holds it, so "built" is checkable rather than asserted.
+
+| Row | What closed it | Evidence |
+|---|---|---|
+| **Blocked peer could still be messaged** | The send path asks the block store. A direct message to a blocked key is refused before a row is written, a retry of a row addressed to a key blocked since is refused, and the SOS path keeps its precedence. The composer states the rule and the copy says the radio still relays. | `lib/meshcore/meshcore_controller.dart` (`isPeerBlocked`), `lib/screens/dm_screen.dart`; `test/meshcore/block_send_test.dart` |
+| **Multi-radio switch surface** (register D8.9) | `switchRadio` plus a "Paired radios" list on the connect screen, which the link chip already routes to. A switch is refused while a send is unanswered, because an answer belongs to the link it arrived on. A phone with one radio shows no picker. | `lib/meshcore/radio_switch.dart`, `lib/screens/connect_screen.dart`; `test/meshcore/radio_switch_test.dart`, `test/screens/connect_screen_radio_switch_test.dart` |
+| **`MeshGraph.fromController` was O(n²) per rebuild** | The repeater prefix map is cached per route width and invalidated by a revision bumped at every `_nodes` mutation, and the graph is memoised on a signature covering exactly what the build reads (`lastHeardUnix` deliberately excluded, entries sorted so recency cannot reorder it). | `lib/meshcore/mesh_graph.dart`, `meshcore_controller.dart`; `test/meshcore/mesh_graph_memo_test.dart` |
+| **P-01, three unexercised encoders** | `getAllowedRepeatFreq`, `getDefaultFloodScope` and `removeContact` are asserted against the firmware's own request bytes, and the gap list is empty. The register's two contradicting rows resolve in favour of the code: the encoders exist and are now exercised. | `packages/meshcore/test/network_shaping_test.dart` |
+| **Weather summary counted a different set than it averaged** | `WeatherTemperatureSummary` is the one set: the count is the nodes the three figures come from, and a node reporting humidity or pressure only is named on the line below instead of being folded into the count. | `lib/screens/weather_view.dart`; `test/screens/weather_summary_count_test.dart` |
+| **E-01, the elevation profile was "exploratory by its own doc comment"** | The doc comment now states what the chart does and where each height comes from, and the chart says it on screen: each height is that node's own telemetry, ours is the phone's GPS. The header stopped reading "MESHMORE :: FUJIさん" in the English bundle. | `lib/screens/elevation_profile_view.dart`; `test/screens/grid_view_controls_test.dart` |
+| **U-02, `MmEdgeSwipe` mounted nowhere** | Closed by deletion, not by mounting. The owner's ruling of 2026-11-11 is that a drag starting near an edge is a pan, so the bands are gone; the widget, its test and its spacing baseline entry went with them. | `git show fcd7377a` (the ruling); `lib/shell/home_shell.dart` |
+| **U-04, a drawn fence could not be reshaped** | The fence sheet offers "Reshape on the map" for a polygon, which hands the reader to the map with the corners loaded and draggable. Saving replaces the corners and keeps the id, the name and the crossing log. | `lib/geofence/geofence_controller.dart` (`updatePolygon`), `lib/screens/street_map_view.dart` (`_beginReshape`); `test/geofence/geofence_controller_test.dart`, `test/geofence/geofence_create_sheet_test.dart` |
+| **U-05, a place could not be imported** | The reverse of `placeShareText` parses a shared place, validates the coordinate range and the id, and opens the create sheet prefilled, refusing with a named reason rather than importing nonsense. | `lib/places/place_import.dart`, `place_import_sheet.dart`; `test/places/place_import_test.dart` |
+| **Place destination channel** | A place report has a destination: a channel picker on the create sheet defaulting to the remembered slot and then the active one, the choice persisted, the send going to that slot, and the sheet saying which channel it went to. | `lib/places/place_channel_pref.dart`, `place_create_sheet.dart`, `place_sender.dart`; `test/places/place_channel_test.dart` |
+| **T-01, the tools kept no history** | A finished run is kept with its one-line summary and its own CSV, in the sealed store, bounded to 40 runs and 96 KB of tables, with both bounds stated on screen and a dropped table named on its row. | `lib/tools/tool_history.dart`, `lib/screens/tools/tool_history_screen.dart`; `test/tools/tool_history_test.dart`, `test/tools/tools_test.dart` |
+| **Geofence OS notification** | A crossing posts its own notification class on its own OS channel, titled by direction and naming the fence, deduped per fence, and kept out of the message group so the "N messages" summary never counts one. The body says a crossing is only noticed when a position fix arrives. | `lib/notifications/message_notification.dart`, `notification_service.dart`, `lib/main.dart`; `test/notifications/geofence_notification_test.dart` |
+| **The app could not show why a backgrounded link stops** | App settings reads `PowerManager.isIgnoringBatteryOptimizations` through the plugin the keep-alive already depends on, and offers the one-tap request when the app is still optimised. | `lib/perms/battery_exemption.dart`, `lib/screens/app_settings_screen.dart`; `test/screens/app_settings_battery_exemption_test.dart` |
+| **A-01, angular floors** | Closed as not applicable: a visual-angle floor needs a stated viewing distance, and the rule belongs to the XR work, which is out of scope for this repository. | `meshmore-xr/MeshmoreXR-i18n-ja.md`; §2 above |
+| **A-02, icon-only controls inside screens** | Closed by measurement: every `IconButton` in `lib/` carries a tooltip and every icon-only `InkWell`/`GestureDetector` in `lib/screens/` carries a label or a `Semantics` node. | measured 2026-11-15 over the whole tree, zero hits |
+| **R-01, the CLI surface covers two commands** | Closed as decided, not built: the typed whitelist is final (D11.11) and the twelve refused commands stay refused. The row was stale against that decision. | `packages/meshcore/lib/src/codec/cli_command.dart`; register D11.11 |
+
+### Still open after this pass
+
+| Item | What closes it |
+|---|---|
+| The closed-app notification test at 5 and 30 minutes | The device steps in §9. The app-side defects are fixed, so this measures the platform |
+| Whether this handset's battery manager is the cause of a missed notification | The same sitting: the exemption row now says whether the app is optimised, so the test can name the cause |
+| AEIC (M-02) | A port of about 4000 lines plus a ~1 GB model bundle. It is the one large piece of work left, and it is a wave of its own rather than a row |
+| A release APK | `android/key.properties` with a real keystore |
+| Landscape and tablet | A layout wave, decided against for now |
+| The radio rename surviving a power cycle | A firmware answer, not an app change |
