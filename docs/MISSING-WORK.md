@@ -359,6 +359,32 @@ longer holds, and the frames the telemetry poller sent. The fourth of that kind
 was `MediaFetchService.foreignPictures`, the count of pictures that arrived in
 AEIC, and it is now a line in the received-pictures sheet.
 
+### The 2026-11-16 second pass
+
+| What was wrong | What it is now | Where |
+|---|---|---|
+| The review found Discover and Trace could transmit past the hour's airtime ceiling | `sendAwaitingReply` sends `gated: true`, and a frame that spends no airtime is never refused (a spent budget used to refuse local config writes too) | `lib/tools/mesh_tool.dart`, `meshcore_controller.dart`; `test/meshcore/airtime_send_test.dart`, `airtime_accounting_test.dart` |
+| A bot bound to a channel could answer its own replies: the own-key guard cannot fire on a channel (no key on a channel row) and the `[bot]` marker was tested against `Name: [bot] …` | The sender name is compared to our own advertised name, and the loop marker is read from the body after the prefix | `lib/bot/bot_controller.dart`, `bot_bridge.dart`; `test/bot/bot_controller_test.dart` |
+| The heat view's recorded backdrop was keyed without the text scale or the label colour, so an accessibility change never reached it | The signature covers `textScale`, `label` and the micro type role | `lib/screens/sns_cells_view.dart` |
+| A friendly ack could borrow another channel's RSSI and route | The RF-log capture carries the packet's channel hash and is matched on it, oldest first | `meshcore_controller.dart`; `test/meshcore/friendly_ack_send_test.dart` |
+| `CMD_SET_ADVERT_LATLON` was charged as airtime although it only writes a preference | Removed from `isOverTheAir` | `meshcore_controller.dart`; `airtime_accounting_test.dart` |
+| A stored movement threshold the current build does not offer (1 m) re-advertised every metre | Validated on load, falling back to interval-only | `lib/meshcore/auto_publish_controller.dart` |
+| The map warmed two zoom levels it might never need, ahead of the tiles on screen | Warm-up is the current zoom only; the parents/children fetchers are gone | `lib/screens/street_map_view.dart`, `lib/maps/maps_controller.dart` |
+| Hexagons were drawn over ground whose tiles had not arrived | A cell is drawn only where its own tile has been drawn, and the field's box is the viewport (or the nodes' box when none is on screen). No margin | same files; `test/maps/hex_field_test.dart` |
+| A node could be counted in a hexagon it was not drawn inside: the assignment rounded each axis independently | The cell is the one with the nearest centre (nine candidates), which is the lattice's own Voronoi rule | `lib/maps/hex_field.dart`; `test/maps/hex_field_test.dart` — *every node lands inside the hexagon it was counted in* |
+| SEELE's radar sweep was invisible: its accent is cream, so the 180° hue turn returned cream, and reduce-motion removed the hand entirely | A low-saturation skin takes its alert colour at full saturation, and the hand stays on the dial at a fixed angle when motion is reduced | `lib/theme/viz_palette.dart`, `lib/screens/grid_screen.dart` |
+| Reduced motion was only the app's own switch: the platform's "Remove animations" did nothing, ripples and page transitions still animated, the boot dial still spun, the chat still glided and the heat wave still travelled | The platform's flags are mirrored into `ThemeController`, the theme drops ink and page transitions, and every self-driven animation asks one helper | `lib/main.dart`, `lib/theme/theme_controller.dart`, `lib/theme/mm_skin.dart` (`reduceMotionNow`), chat, boot overlay, heat view |
+| Vector roads were the brightest thing on the map in every skin | The road ramp starts at the quiet rule colour and reaches a third of the way to the muted text colour at its loudest | `lib/maps/vector_basemap.dart` |
+| Check-in was reachable from both Tools and Settings -> Safety | One entry point: Safety | `lib/screens/tools/tools_hub_screen.dart`; `test/screens/tools_screens_test.dart` |
+| The channel editor was a tall `AlertDialog` with its actions in the system button slot | A scroll-controlled sheet with a drag handle and one `MmActionRow`, like every other editor | `lib/screens/channels_screen.dart` |
+| Channel keys could be derived by shaking the phone | Removed. The generate button uses `Random.secure()`, which is the platform CSPRNG; the accelerometer path and its widget are deleted | `lib/screens/channels_screen.dart`; `lib/cryptokit/dice_roll_entropy.dart` deleted |
+| A network could not be edited, could only use a preset's bandwidth/SF/CR, and two could share a name | The editor carries bandwidth, spreading factor, coding rate and transmit power (every value a preset already holds), edits in place keeping members, refuses a duplicate name, and refuses a "private" frequency that overlaps a public preset | `lib/screens/networks_screen.dart`, `lib/meshcore/mesh_network.dart`, `network_detail_screen.dart` |
+| 56 English UI strings ran past five words in chrome (buttons, menu rows, subtitles, snackbars) | Trimmed to the fact, with the Japanese following | `lib/l10n/app_en.arb`, `app_ja.arb` |
+
+Measured on the handset, 2026-11-16: a geofence created from the Geofences screen records
+"Entered Fence 1/2" in the crossings log and posts its own OS notification; the SEELE dashboard
+leads with the numeral and the status slab beneath it, as the original monolith did.
+
 ### Still open after this pass
 
 | Item | What closes it |
