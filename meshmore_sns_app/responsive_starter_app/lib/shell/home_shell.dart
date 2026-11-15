@@ -343,12 +343,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           // R95's half stays: a strip tap jumps in one frame with one cue, and a
           // vertical drag on the strip steps one view.
           //
-          // The Map therefore has no swipe exit at all: `MmEdgeSwipe` (R67) was
-          // written for exactly this and is mounted nowhere. It is not mounted
-          // here because its bands are opaque hit-test targets, and the map's
-          // right edge is where its control column lives — the interaction has to
-          // be checked on a handset before it goes in, and a strip tap already
-          // changes view from the map.
+          // The Map therefore has no swipe exit at all, by the owner's ruling of
+          // 2026-11-11: a drag that starts near an edge is a pan, not a page
+          // turn, so the edge bands that were written for it (R67) are gone
+          // rather than unmounted. Back and the strip still leave the map.
           body: ValueListenableBuilder<bool>(
             valueListenable: shellDragClaim.claimed,
             builder: (BuildContext _, bool gridOwnsDrag, Widget? __) {

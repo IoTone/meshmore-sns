@@ -127,7 +127,6 @@ void main() {
       // moved into the shared launch surface.
       'lib/splash/branded_splash_screen.dart': 0,
       'lib/ui/mm_components.dart': 4,
-      'lib/ui/mm_edge_swipe.dart': 1,
     };
 
     // Exact equality, in both directions: a migration lowers its entry in the
