@@ -1826,16 +1826,10 @@ abstract class AppLocalizations {
   /// **'Region'**
   String get gridRangeRegion;
 
-  /// No description provided for @gridLegend.
-  ///
-  /// In en, this message translates to:
-  /// **'LEGEND'**
-  String get gridLegend;
-
   /// No description provided for @gridLegendRings.
   ///
   /// In en, this message translates to:
-  /// **'Rings are distance bands. With GPS at both ends the outer ring is the Range scale above (about {value} now). Without GPS they are signal bands: near, mid, far.'**
+  /// **'Rings are distance bands. Without GPS at both ends they are signal bands.'**
   String gridLegendRings(String value);
 
   /// No description provided for @gridViewRadial.
@@ -1877,13 +1871,13 @@ abstract class AppLocalizations {
   /// No description provided for @fujiLegendTitle.
   ///
   /// In en, this message translates to:
-  /// **'FUJIさん'**
+  /// **'ALTITUDE'**
   String get fujiLegendTitle;
 
   /// No description provided for @fujiLegendAutoQuery.
   ///
   /// In en, this message translates to:
-  /// **'The auto-query box asks for altitudes slowly. Tap it to start again.'**
+  /// **'Altitudes arrive slowly. Tap the box to ask again.'**
   String get fujiLegendAutoQuery;
 
   /// No description provided for @elevationProfileTitle.
@@ -2249,7 +2243,7 @@ abstract class AppLocalizations {
   /// No description provided for @voicePickerEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No voices reported by the platform engine — using the system default.'**
+  /// **'No voices reported by the platform engine. Using the system default.'**
   String get voicePickerEmpty;
 
   /// No description provided for @voicePickerOnlyMyLanguage.
@@ -2645,7 +2639,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatEmpty.
   ///
   /// In en, this message translates to:
-  /// **'— no messages on this channel —'**
+  /// **'No messages on this channel'**
   String get chatEmpty;
 
   /// No description provided for @chatJumpToNewest.
@@ -2753,7 +2747,7 @@ abstract class AppLocalizations {
   /// No description provided for @dmEmpty.
   ///
   /// In en, this message translates to:
-  /// **'— no messages yet —'**
+  /// **'No messages yet'**
   String get dmEmpty;
 
   /// No description provided for @dmOpenPeerDetail.
@@ -3683,7 +3677,7 @@ abstract class AppLocalizations {
   /// No description provided for @snsCellsLegendTitle.
   ///
   /// In en, this message translates to:
-  /// **'SNS CELLS'**
+  /// **'MESSAGE HEAT'**
   String get snsCellsLegendTitle;
 
   /// No description provided for @snsCellsLegendDesc.
@@ -3733,12 +3727,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{No peer has a learned route at {stop}. 1 is heard without one — Flood / All shows it.} other{No peer has a learned route at {stop}. {count} are heard without one — Flood / All shows them.}}'**
   String meshTreeFilteredEmptyFor(String stop, int count);
-
-  /// No description provided for @meshTreeKey.
-  ///
-  /// In en, this message translates to:
-  /// **'■ repeater   ● client   ◆ room   ○ advert only'**
-  String get meshTreeKey;
 
   /// No description provided for @meshTreeLearnRoutes.
   ///
@@ -3809,13 +3797,13 @@ abstract class AppLocalizations {
   /// No description provided for @meshTreeLegendFlood.
   ///
   /// In en, this message translates to:
-  /// **'Dashed edge to you = flood-routed contact. Reachable, but with no fixed path.'**
+  /// **'Dashed edge = flood-routed. Reachable, no fixed path.'**
   String get meshTreeLegendFlood;
 
   /// No description provided for @meshTreeLegendFloat.
   ///
   /// In en, this message translates to:
-  /// **'Floating (no edges) — heard via advert only; route unknown.'**
+  /// **'No edges = heard by advert only, route unknown.'**
   String get meshTreeLegendFloat;
 
   /// No description provided for @nodeDetailHopsKv.
@@ -4097,7 +4085,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsEmpty.
   ///
   /// In en, this message translates to:
-  /// **'— empty —'**
+  /// **'Empty'**
   String get channelsEmpty;
 
   /// No description provided for @channelsSlotLabel.
@@ -4511,7 +4499,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsShakeTapFallback.
   ///
   /// In en, this message translates to:
-  /// **'Tap to roll (reduceMotion is on — uses Random.secure instead)'**
+  /// **'Tap to roll.'**
   String get channelsShakeTapFallback;
 
   /// No description provided for @channelsShareQr.
@@ -5273,7 +5261,7 @@ abstract class AppLocalizations {
   /// No description provided for @otherAwaitingDevice.
   ///
   /// In en, this message translates to:
-  /// **'— awaiting device —'**
+  /// **'Awaiting device'**
   String get otherAwaitingDevice;
 
   /// No description provided for @batteryTitle.
@@ -8467,7 +8455,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkinOverdue.
   ///
   /// In en, this message translates to:
-  /// **'Overdue — the deadline passed and no answer came back.'**
+  /// **'Overdue. The deadline passed and no answer came back.'**
   String get checkinOverdue;
 
   /// No description provided for @checkinAnsweredDirect.
@@ -9829,13 +9817,13 @@ abstract class AppLocalizations {
   /// No description provided for @gridCompassLowAccuracy.
   ///
   /// In en, this message translates to:
-  /// **'The phone reports a weak compass here. Turn it right round once.'**
+  /// **'The compass is weak here. Flip the phone end over end a few times.'**
   String get gridCompassLowAccuracy;
 
   /// No description provided for @gridCompassDisturbed.
   ///
   /// In en, this message translates to:
-  /// **'No heading — the magnetic field here is too strong. Lay the phone flat, away from magnets, and turn it right round once.'**
+  /// **'No heading, the magnetic field here is too strong. Move away from magnets and flip the phone end over end a few times.'**
   String get gridCompassDisturbed;
 
   /// No description provided for @gridPurposeRadial.

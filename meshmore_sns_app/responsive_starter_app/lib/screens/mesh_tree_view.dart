@@ -497,21 +497,10 @@ class _MeshTreeViewState extends State<MeshTreeView> {
             // stay, drawn as floaters: a limit cannot exclude a depth nobody
             // measured. Default 6 keeps everything visible on a mesh with no
             // learned routes, which is the public mesh most of the time.
-            // What the shapes mean. A square and a circle are two node kinds,
-            // and a reader who is not told which is which is looking at
-            // decoration.
-            Positioned(
-              left: 16,
-              top: 8,
-              child: IgnorePointer(
-                child: Text(
-                  l.meshTreeKey,
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontSize: context.skin.type.sizeMicro),
-                ),
-              ),
-            ),
+            // The corner strip that named the four shapes is gone: the legend
+            // panel one tap away already names every mark, and the strip's copy
+            // disagreed with it ("client" here, "chat" there) because it was a
+            // hardcoded line inside a translated string.
             Positioned(
               left: 12,
               right: 12,

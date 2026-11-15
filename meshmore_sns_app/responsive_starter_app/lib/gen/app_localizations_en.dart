@@ -998,11 +998,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridRangeRegion => 'Region';
 
   @override
-  String get gridLegend => 'LEGEND';
-
-  @override
   String gridLegendRings(String value) {
-    return 'Rings are distance bands. With GPS at both ends the outer ring is the Range scale above (about $value now). Without GPS they are signal bands: near, mid, far.';
+    return 'Rings are distance bands. Without GPS at both ends they are signal bands.';
   }
 
   @override
@@ -1025,11 +1022,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gridViewElevation => 'Altitude';
 
   @override
-  String get fujiLegendTitle => 'FUJIさん';
+  String get fujiLegendTitle => 'ALTITUDE';
 
   @override
   String get fujiLegendAutoQuery =>
-      'The auto-query box asks for altitudes slowly. Tap it to start again.';
+      'Altitudes arrive slowly. Tap the box to ask again.';
 
   @override
   String get elevationProfileTitle => 'MESHMORE :: FUJIさん';
@@ -1253,7 +1250,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get voicePickerEmpty =>
-      'No voices reported by the platform engine — using the system default.';
+      'No voices reported by the platform engine. Using the system default.';
 
   @override
   String get voicePickerOnlyMyLanguage => 'Only show my language';
@@ -1515,7 +1512,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'the last document was unreadable, and its bytes were kept aside';
 
   @override
-  String get chatEmpty => '— no messages on this channel —';
+  String get chatEmpty => 'No messages on this channel';
 
   @override
   String chatJumpToNewest(int count) {
@@ -1596,7 +1593,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Audio is muted — you will feel the vibration but not hear it.';
 
   @override
-  String get dmEmpty => '— no messages yet —';
+  String get dmEmpty => 'No messages yet';
 
   @override
   String get dmOpenPeerDetail => 'Contact details';
@@ -2156,7 +2153,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get snsFrameMesh => 'Mesh · fit all';
 
   @override
-  String get snsCellsLegendTitle => 'SNS CELLS';
+  String get snsCellsLegendTitle => 'MESSAGE HEAT';
 
   @override
   String get snsCellsLegendDesc =>
@@ -2200,9 +2197,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get meshTreeKey => '■ repeater   ● client   ◆ room   ○ advert only';
-
-  @override
   String get meshTreeLearnRoutes => 'Ask the radio for routes';
 
   @override
@@ -2243,11 +2237,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meshTreeLegendFlood =>
-      'Dashed edge to you = flood-routed contact. Reachable, but with no fixed path.';
+      'Dashed edge = flood-routed. Reachable, no fixed path.';
 
   @override
   String get meshTreeLegendFloat =>
-      'Floating (no edges) — heard via advert only; route unknown.';
+      'No edges = heard by advert only, route unknown.';
 
   @override
   String get nodeDetailHopsKv => 'hops';
@@ -2422,7 +2416,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelCreateAction => 'Create';
 
   @override
-  String get channelsEmpty => '— empty —';
+  String get channelsEmpty => 'Empty';
 
   @override
   String channelsSlotLabel(int idx) {
@@ -2666,8 +2660,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsShakeReroll => 'Reroll';
 
   @override
-  String get channelsShakeTapFallback =>
-      'Tap to roll (reduceMotion is on — uses Random.secure instead)';
+  String get channelsShakeTapFallback => 'Tap to roll.';
 
   @override
   String get channelsShareQr => 'Share via QR';
@@ -3095,7 +3088,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'OTHER PARAMS sent — device-side write may take a moment.';
 
   @override
-  String get otherAwaitingDevice => '— awaiting device —';
+  String get otherAwaitingDevice => 'Awaiting device';
 
   @override
   String get batteryTitle => 'Battery';
@@ -5010,7 +5003,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkinOverdue =>
-      'Overdue — the deadline passed and no answer came back.';
+      'Overdue. The deadline passed and no answer came back.';
 
   @override
   String get checkinAnsweredDirect => 'Answered, by direct message.';
@@ -5859,11 +5852,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridCompassLowAccuracy =>
-      'The phone reports a weak compass here. Turn it right round once.';
+      'The compass is weak here. Flip the phone end over end a few times.';
 
   @override
   String get gridCompassDisturbed =>
-      'No heading — the magnetic field here is too strong. Lay the phone flat, away from magnets, and turn it right round once.';
+      'No heading, the magnetic field here is too strong. Move away from magnets and flip the phone end over end a few times.';
 
   @override
   String get gridPurposeRadial =>

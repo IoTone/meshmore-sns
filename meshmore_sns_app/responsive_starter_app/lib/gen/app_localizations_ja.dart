@@ -949,11 +949,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridRangeRegion => '地域';
 
   @override
-  String get gridLegend => '凡例';
-
-  @override
   String gridLegendRings(String value) {
-    return '輪は距離の帯です。両方に GPS があれば、外側の輪が上の範囲スケール（現在 約 $value）です。GPS がないときは電波の強さの帯（近・中・遠）です。';
+    return 'リングは距離の帯です。両端にGPSがないときは電波の帯になります。';
   }
 
   @override
@@ -975,10 +972,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridViewElevation => '高度';
 
   @override
-  String get fujiLegendTitle => 'Fujiさん';
+  String get fujiLegendTitle => '高度';
 
   @override
-  String get fujiLegendAutoQuery => '自動問い合わせは標高をゆっくり集めます。タップでやり直します。';
+  String get fujiLegendAutoQuery => '高度はゆっくり届きます。枠をタップすると再び問い合わせます。';
 
   @override
   String get elevationProfileTitle => 'MESHMORE :: Fujiさん';
@@ -1196,8 +1193,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get voicePicker => '音声';
 
   @override
-  String get voicePickerEmpty =>
-      'プラットフォームエンジンから利用可能な音声が報告されていません — システム既定を使用します。';
+  String get voicePickerEmpty => '端末の音声エンジンが声を返しません。システム既定を使います。';
 
   @override
   String get voicePickerOnlyMyLanguage => '現在の言語のみ表示';
@@ -1452,7 +1448,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnosticsPlaceStoreCorruptKept => '前回のデータは読めなかったため、内容を別名で保存しました';
 
   @override
-  String get chatEmpty => '— このチャンネルにメッセージはありません —';
+  String get chatEmpty => 'このチャンネルにメッセージはありません';
 
   @override
   String chatJumpToNewest(int count) {
@@ -1524,7 +1520,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailSignatureMutedHint => '音声はミュート中です。振動は伝わりますが音は鳴りません。';
 
   @override
-  String get dmEmpty => '— メッセージはまだありません —';
+  String get dmEmpty => 'まだメッセージはありません';
 
   @override
   String get dmOpenPeerDetail => '連絡先の詳細';
@@ -2074,7 +2070,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get snsFrameMesh => 'メッシュ · 全体';
 
   @override
-  String get snsCellsLegendTitle => 'SNS セル';
+  String get snsCellsLegendTitle => 'メッセージ熱';
 
   @override
   String get snsCellsLegendDesc =>
@@ -2110,9 +2106,6 @@ class AppLocalizationsJa extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get meshTreeKey => '■ 中継機   ● クライアント   ◆ ルーム   ○ アナウンスのみ';
 
   @override
   String get meshTreeLearnRoutes => '無線機に経路を問い合わせる';
@@ -2154,11 +2147,10 @@ class AppLocalizationsJa extends AppLocalizations {
       '無線がどの経路で各コンタクトに到達するかの有向グラフ。各エッジは、実際に送信に使う経路上のリピーターです。';
 
   @override
-  String get meshTreeLegendFlood =>
-      '破線で自分とつながる = フラッドルーティングのコンタクト。到達可能だが固定経路なし。';
+  String get meshTreeLegendFlood => '破線 = フラッド経由。届くが固定経路なし。';
 
   @override
-  String get meshTreeLegendFloat => '浮遊（エッジなし）— advert のみで受信、経路不明。';
+  String get meshTreeLegendFloat => '線なし = 広告のみで受信、経路不明。';
 
   @override
   String get nodeDetailHopsKv => 'ホップ数';
@@ -2328,7 +2320,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelCreateAction => '作成';
 
   @override
-  String get channelsEmpty => '— 未設定 —';
+  String get channelsEmpty => '空';
 
   @override
   String channelsSlotLabel(int idx) {
@@ -2562,8 +2554,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsShakeReroll => '再ロール';
 
   @override
-  String get channelsShakeTapFallback =>
-      'タップでロール (reduceMotion 有効 — Random.secure を使用)';
+  String get channelsShakeTapFallback => 'タップで振る';
 
   @override
   String get channelsShareQr => 'QR で共有';
@@ -2976,7 +2967,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get otherSentSnack => 'OTHER PARAMS を送信 — デバイス側の書込に時間がかかる場合があります。';
 
   @override
-  String get otherAwaitingDevice => '— デバイス待機中 —';
+  String get otherAwaitingDevice => '端末を待っています';
 
   @override
   String get batteryTitle => 'バッテリー';
@@ -4826,7 +4817,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get checkinWatching => '応答待ち';
 
   @override
-  String get checkinOverdue => '期限切れ — 期限を過ぎ、応答はありませんでした。';
+  String get checkinOverdue => '期限切れ。期限を過ぎても返事がありません。';
 
   @override
   String get checkinAnsweredDirect => '応答あり（直接メッセージ）。';
@@ -5625,11 +5616,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridCompassCalibrating => '較正のため、端末を何度か裏返してください。';
 
   @override
-  String get gridCompassLowAccuracy => '端末の方位精度が低い状態です。一度ぐるりと回してください。';
+  String get gridCompassLowAccuracy => 'ここでは方位が弱いです。端末を何度か縦に回してください。';
 
   @override
   String get gridCompassDisturbed =>
-      '方位が取れません — ここは磁場が強すぎます。磁石から離し、平らに置いて一度ぐるりと回してください。';
+      '方位が出ません。ここは磁気が強すぎます。磁石から離れ、端末を何度か縦に回してください。';
 
   @override
   String get gridPurposeRadial => '各ノードまでの距離と、最後に聞こえた時刻。';

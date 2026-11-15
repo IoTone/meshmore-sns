@@ -1337,12 +1337,6 @@ class _GridLegend extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(l.gridLegend,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: context.skin.type.sizeSm,
-                  letterSpacing: 3)),
-          const SizedBox(height: 6),
           row(Icons.adjust, l.gridLegendRingsShort),
           row(Icons.my_location, l.gridLegendSelfShort),
           row(Icons.circle, l.gridLegendDotShort),

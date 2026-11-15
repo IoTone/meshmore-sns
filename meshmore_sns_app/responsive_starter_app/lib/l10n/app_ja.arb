@@ -452,8 +452,7 @@
   "gridRangeWide": "広域",
   "gridRangeCity": "市",
   "gridRangeRegion": "地域",
-  "gridLegend": "凡例",
-  "gridLegendRings": "輪は距離の帯です。両方に GPS があれば、外側の輪が上の範囲スケール（現在 約 {value}）です。GPS がないときは電波の強さの帯（近・中・遠）です。",
+  "gridLegendRings": "リングは距離の帯です。両端にGPSがないときは電波の帯になります。",
   "@gridLegendRings": {
     "placeholders": {
       "value": {
@@ -467,8 +466,8 @@
   "gridZoomTighter": "狭く（ズームイン）",
   "gridNeedsFix": "この表示には自分の位置が必要です。GPS 取得待ち（スマートフォンまたはデバイス）。",
   "gridViewElevation": "高度",
-  "fujiLegendTitle": "Fujiさん",
-  "fujiLegendAutoQuery": "自動問い合わせは標高をゆっくり集めます。タップでやり直します。",
+  "fujiLegendTitle": "高度",
+  "fujiLegendAutoQuery": "高度はゆっくり届きます。枠をタップすると再び問い合わせます。",
   "elevationProfileTitle": "MESHMORE :: Fujiさん",
   "elevationProfileAltLabel": "高度",
   "elevationProfileMeLabel": "現在地",
@@ -616,7 +615,7 @@
   "voiceRate": "速さ",
   "voicePitch": "高さ",
   "voicePicker": "音声",
-  "voicePickerEmpty": "プラットフォームエンジンから利用可能な音声が報告されていません — システム既定を使用します。",
+  "voicePickerEmpty": "端末の音声エンジンが声を返しません。システム既定を使います。",
   "voicePickerOnlyMyLanguage": "現在の言語のみ表示",
   "voicePickerOnlyMyLanguageHint": "スマートフォンの現在の言語（{lang}）に一致する音声のみを表示します。オフにするとOSが報告する全音声を表示します。",
   "@voicePickerOnlyMyLanguageHint": {
@@ -796,7 +795,7 @@
   "diagnosticsPlaceStoreOk": "保存済み",
   "mediaReceiveDropped": "{count, plural, =1{空きを作るため以前の転送1件が破棄され、その写真は途中で止まりました} other{空きを作るため以前の転送{count}件が破棄され、それらの写真は途中で止まりました}}",
   "diagnosticsPlaceStoreCorruptKept": "前回のデータは読めなかったため、内容を別名で保存しました",
-  "chatEmpty": "— このチャンネルにメッセージはありません —",
+  "chatEmpty": "このチャンネルにメッセージはありません",
   "chatJumpToNewest": "新着 {count} 件",
   "@chatJumpToNewest": {
     "placeholders": {
@@ -863,7 +862,7 @@
     }
   },
   "nodeDetailSignatureMutedHint": "音声はミュート中です。振動は伝わりますが音は鳴りません。",
-  "dmEmpty": "— メッセージはまだありません —",
+  "dmEmpty": "まだメッセージはありません",
   "dmOpenPeerDetail": "連絡先の詳細",
   "dmSpeech": "この会話を読み上げる",
   "dmSpeechInherit": "全体の読み上げ設定に従う",
@@ -1249,7 +1248,7 @@
       }
     }
   },
-  "snsCellsLegendTitle": "SNS セル",
+  "snsCellsLegendTitle": "メッセージ熱",
   "snsCellsLegendDesc": "ライブのソーシャル活動ヒートマップ。観測したメッセージごとにセルが温まり、1時間の地平で冷えていきます。",
   "snsCellsLegendHot": "明るい赤 = 活発（直近1分で約5件以上）。",
   "snsCellsLegendCool": "白へ退色 = 沈静化。約1時間無活動で消滅。",
@@ -1258,7 +1257,6 @@
   "snsCellsLegendDecay": "直近1時間のみ追跡。保存はされません。",
   "meshTreeEmpty": "コンタクト同期を待機中 — ツリーは各コンタクトの outPath から構築されます。",
   "meshTreeFilteredEmptyFor": "{count, plural, =1{{stop} に経路が分かっている相手はいません。経路不明の相手が 1 台います。「Flood / All」で表示されます。} other{{stop} に経路が分かっている相手はいません。経路不明の相手が {count} 台います。「Flood / All」で表示されます。}}",
-  "meshTreeKey": "■ 中継機   ● クライアント   ◆ ルーム   ○ アナウンスのみ",
   "meshTreeLearnRoutes": "無線機に経路を問い合わせる",
   "meshTreeLearning": "無線機に問い合わせ中…",
   "meshTreeNoRoutes": "この無線機はまだ経路を学習していないため、すべての相手を表示しています。学習すると停止位置が使えるようになります。",
@@ -1288,8 +1286,8 @@
   "meshTreeRecenter": "中央に戻す",
   "meshTreeLegendTitle": "メッシュツリー",
   "meshTreeLegendDesc": "無線がどの経路で各コンタクトに到達するかの有向グラフ。各エッジは、実際に送信に使う経路上のリピーターです。",
-  "meshTreeLegendFlood": "破線で自分とつながる = フラッドルーティングのコンタクト。到達可能だが固定経路なし。",
-  "meshTreeLegendFloat": "浮遊（エッジなし）— advert のみで受信、経路不明。",
+  "meshTreeLegendFlood": "破線 = フラッド経由。届くが固定経路なし。",
+  "meshTreeLegendFloat": "線なし = 広告のみで受信、経路不明。",
   "nodeDetailHopsKv": "ホップ数",
   "nodeDetailHopsDirect": "直接",
   "nodeDetailHopsViaRepeaters": "{n}",
@@ -1413,7 +1411,7 @@
   "channelCreateKeyRandom": "生成",
   "channelCreateExists": "{name} というチャンネルはすでにあります。",
   "channelCreateAction": "作成",
-  "channelsEmpty": "— 未設定 —",
+  "channelsEmpty": "空",
   "channelsSlotLabel": "チャンネル {idx}",
   "@channelsSlotLabel": {
     "placeholders": {
@@ -1544,7 +1542,7 @@
     }
   },
   "channelsShakeReroll": "再ロール",
-  "channelsShakeTapFallback": "タップでロール (reduceMotion 有効 — Random.secure を使用)",
+  "channelsShakeTapFallback": "タップで振る",
   "channelsShareQr": "QR で共有",
   "channelsQrTitle": "チャンネル {idx} を共有",
   "@channelsQrTitle": {
@@ -1705,7 +1703,7 @@
   "otherMultiAcksLabel": "追加の確認 (0–3)",
   "otherMultiAcksHelper": "0 が既定です。大きくすると、その数だけ多くのラジオの確認を待ってから送信済みとみなします。",
   "otherSentSnack": "OTHER PARAMS を送信 — デバイス側の書込に時間がかかる場合があります。",
-  "otherAwaitingDevice": "— デバイス待機中 —",
+  "otherAwaitingDevice": "端末を待っています",
   "batteryTitle": "バッテリー",
   "batteryConfigSubtitle": "充電量・消費レート・残り時間の推定",
   "batteryAwaiting": "デバイスからのバッテリー値を待機中…",
@@ -2328,7 +2326,7 @@
   "checkinUntil": "期限 {time}",
   "checkinOneMessage": "チェックインは1通のみで、繰り返しません。",
   "checkinWatching": "応答待ち",
-  "checkinOverdue": "期限切れ — 期限を過ぎ、応答はありませんでした。",
+  "checkinOverdue": "期限切れ。期限を過ぎても返事がありません。",
   "checkinAnsweredDirect": "応答あり（直接メッセージ）。",
   "checkinAnsweredChannel": "チャンネルで応答がありました（名前だけで、鍵による確認はありません）。",
   "checkinSent": "チェックインを送信しました。繰り返しはしません。",
@@ -2597,8 +2595,8 @@
   "chatSpeechOffAction": "読み上げはアプリ設定でオフです",
   "nodeDetailAltitudeNotReported": "報告されません",
   "gridCompassCalibrating": "較正のため、端末を何度か裏返してください。",
-  "gridCompassLowAccuracy": "端末の方位精度が低い状態です。一度ぐるりと回してください。",
-  "gridCompassDisturbed": "方位が取れません — ここは磁場が強すぎます。磁石から離し、平らに置いて一度ぐるりと回してください。",
+  "gridCompassLowAccuracy": "ここでは方位が弱いです。端末を何度か縦に回してください。",
+  "gridCompassDisturbed": "方位が出ません。ここは磁気が強すぎます。磁石から離れ、端末を何度か縦に回してください。",
   "gridPurposeRadial": "各ノードまでの距離と、最後に聞こえた時刻。",
   "gridPurposeWeather": "温度・湿度・気圧（報告するノードのみ）。",
   "gridPurposeTree": "ノード同士の経路（広告されたルートより）。",

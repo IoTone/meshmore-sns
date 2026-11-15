@@ -481,8 +481,7 @@
   "gridRangeWide": "Wide",
   "gridRangeCity": "City",
   "gridRangeRegion": "Region",
-  "gridLegend": "LEGEND",
-  "gridLegendRings": "Rings are distance bands. With GPS at both ends the outer ring is the Range scale above (about {value} now). Without GPS they are signal bands: near, mid, far.",
+  "gridLegendRings": "Rings are distance bands. Without GPS at both ends they are signal bands.",
   "@gridLegendRings": {
     "placeholders": {
       "value": {
@@ -496,8 +495,8 @@
   "gridZoomTighter": "Tighter (zoom in)",
   "gridNeedsFix": "This view needs your own position. Waiting for a GPS fix (phone or device).",
   "gridViewElevation": "Altitude",
-  "fujiLegendTitle": "FUJIさん",
-  "fujiLegendAutoQuery": "The auto-query box asks for altitudes slowly. Tap it to start again.",
+  "fujiLegendTitle": "ALTITUDE",
+  "fujiLegendAutoQuery": "Altitudes arrive slowly. Tap the box to ask again.",
   "elevationProfileTitle": "MESHMORE :: FUJIさん",
   "elevationProfileAltLabel": "Altitude",
   "elevationProfileMeLabel": "Me",
@@ -668,7 +667,7 @@
   "voiceRate": "Speed",
   "voicePitch": "Pitch",
   "voicePicker": "Voice",
-  "voicePickerEmpty": "No voices reported by the platform engine — using the system default.",
+  "voicePickerEmpty": "No voices reported by the platform engine. Using the system default.",
   "voicePickerOnlyMyLanguage": "Only show my language",
   "voicePickerOnlyMyLanguageHint": "Limits the list to voices matching the phone's current language ({lang}). Turn off to see every voice the OS reports.",
   "@voicePickerOnlyMyLanguageHint": {
@@ -869,7 +868,7 @@
     }
   },
   "diagnosticsPlaceStoreCorruptKept": "the last document was unreadable, and its bytes were kept aside",
-  "chatEmpty": "— no messages on this channel —",
+  "chatEmpty": "No messages on this channel",
   "chatJumpToNewest": "{count, plural, =1{1 new} other{{count} new}}",
   "@chatJumpToNewest": {
     "placeholders": {
@@ -943,7 +942,7 @@
     }
   },
   "nodeDetailSignatureMutedHint": "Audio is muted — you will feel the vibration but not hear it.",
-  "dmEmpty": "— no messages yet —",
+  "dmEmpty": "No messages yet",
   "dmOpenPeerDetail": "Contact details",
   "dmSpeech": "Read this conversation aloud",
   "dmSpeechInherit": "Follow global speech setting",
@@ -1329,7 +1328,7 @@
       }
     }
   },
-  "snsCellsLegendTitle": "SNS CELLS",
+  "snsCellsLegendTitle": "MESSAGE HEAT",
   "snsCellsLegendDesc": "A live social-activity heat map. Each observed message warms its cell; cells cool over a one-hour horizon.",
   "snsCellsLegendHot": "Bright red = busy (≈5+ messages in the last minute).",
   "snsCellsLegendCool": "Fading to white = quieting down; gone after ~1 h idle.",
@@ -1338,7 +1337,6 @@
   "snsCellsLegendDecay": "Only the last hour is tracked; nothing is stored.",
   "meshTreeEmpty": "Waiting for contact sync — the tree is built from each contact's outPath.",
   "meshTreeFilteredEmptyFor": "{count, plural, =1{No peer has a learned route at {stop}. 1 is heard without one — Flood / All shows it.} other{No peer has a learned route at {stop}. {count} are heard without one — Flood / All shows them.}}",
-  "meshTreeKey": "■ repeater   ● client   ◆ room   ○ advert only",
   "meshTreeLearnRoutes": "Ask the radio for routes",
   "meshTreeLearning": "Asking the radio…",
   "meshTreeNoRoutes": "This radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.",
@@ -1379,8 +1377,8 @@
   "meshTreeRecenter": "Recenter",
   "meshTreeLegendTitle": "MESH TREE",
   "meshTreeLegendDesc": "A directed graph of how the radio reaches each contact. Each edge is a repeater on the route the radio actually sends by.",
-  "meshTreeLegendFlood": "Dashed edge to you = flood-routed contact. Reachable, but with no fixed path.",
-  "meshTreeLegendFloat": "Floating (no edges) — heard via advert only; route unknown.",
+  "meshTreeLegendFlood": "Dashed edge = flood-routed. Reachable, no fixed path.",
+  "meshTreeLegendFloat": "No edges = heard by advert only, route unknown.",
   "nodeDetailHopsKv": "hops",
   "nodeDetailHopsDirect": "direct",
   "nodeDetailHopsViaRepeaters": "{n}",
@@ -1511,7 +1509,7 @@
     }
   },
   "channelCreateAction": "Create",
-  "channelsEmpty": "— empty —",
+  "channelsEmpty": "Empty",
   "channelsSlotLabel": "channel {idx}",
   "@channelsSlotLabel": {
     "placeholders": {
@@ -1703,7 +1701,7 @@
     }
   },
   "channelsShakeReroll": "Reroll",
-  "channelsShakeTapFallback": "Tap to roll (reduceMotion is on — uses Random.secure instead)",
+  "channelsShakeTapFallback": "Tap to roll.",
   "channelsShareQr": "Share via QR",
   "channelsQrTitle": "Share channel {idx}",
   "@channelsQrTitle": {
@@ -1932,7 +1930,7 @@
   "otherMultiAcksLabel": "Extra confirmations (0–3)",
   "otherMultiAcksHelper": "0 is the default. Higher waits for that many more radios to confirm before calling a send confirmed.",
   "otherSentSnack": "OTHER PARAMS sent — device-side write may take a moment.",
-  "otherAwaitingDevice": "— awaiting device —",
+  "otherAwaitingDevice": "Awaiting device",
   "batteryTitle": "Battery",
   "batteryConfigSubtitle": "Charge, drain rate, and time-to-empty estimate",
   "batteryAwaiting": "Waiting for a battery reading from the device…",
@@ -3353,7 +3351,7 @@
   },
   "checkinOneMessage": "A check-in is one message and does not repeat.",
   "checkinWatching": "Waiting for an answer",
-  "checkinOverdue": "Overdue — the deadline passed and no answer came back.",
+  "checkinOverdue": "Overdue. The deadline passed and no answer came back.",
   "checkinAnsweredDirect": "Answered, by direct message.",
   "checkinAnsweredChannel": "Answered on the channel by name only, not by their key.",
   "checkinSent": "Check-in sent. Nothing repeats.",
@@ -3962,8 +3960,8 @@
   "chatSpeechOffAction": "Speech is off in App settings",
   "nodeDetailAltitudeNotReported": "not reported",
   "gridCompassCalibrating": "Flip the phone end over end a few times to calibrate.",
-  "gridCompassLowAccuracy": "The phone reports a weak compass here. Turn it right round once.",
-  "gridCompassDisturbed": "No heading — the magnetic field here is too strong. Lay the phone flat, away from magnets, and turn it right round once.",
+  "gridCompassLowAccuracy": "The compass is weak here. Flip the phone end over end a few times.",
+  "gridCompassDisturbed": "No heading, the magnetic field here is too strong. Move away from magnets and flip the phone end over end a few times.",
   "gridPurposeRadial": "How far each node is, and how long ago it was heard.",
   "gridPurposeWeather": "Temperature, humidity and pressure, from nodes that report them.",
   "gridPurposeTree": "How nodes reach each other, from the routes they advertise.",

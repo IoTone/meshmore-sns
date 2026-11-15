@@ -1297,7 +1297,18 @@ class _StreetMapViewState extends State<StreetMapView> {
                     height: 3,
                     color: cs.secondary.withValues(alpha: 0.7)),
                   l.mapKeyTrail),
-              row(circle(VizPalette.companion), l.mapKeyMessage),
+              // A ring, not a filled dot: the bubble on the map is a 54 dp
+              // radial ring, and drawing it as the client's circle made two
+              // different marks look identical in the key.
+              row(
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: VizPalette.companion, width: 2))),
+                  l.mapKeyMessage),
             ],
           ),
         );
