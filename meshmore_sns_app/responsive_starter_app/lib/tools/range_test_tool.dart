@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+import 'dart:math' as math;
 
 import '../bot/bot_scope.dart';
 import '../meshcore/chat_message.dart';
@@ -190,6 +191,26 @@ class RangeTestTool extends MeshTool {
     );
     notifyListeners();
   }
+
+  /// What the run heard, for the history: how many beacons and the best SNR.
+  ///
+  /// Empty when nothing was heard, so a run that produced no rows leaves no
+  /// entry: a history of "0 beacons" rows would bury the runs that worked.
+  @override
+  String get runHistorySummary {
+    if (rows.isEmpty) return '';
+    final List<double> snrs = <double>[
+      for (final RangeRow r in rows)
+        if (r.snrDb != null) r.snrDb!,
+    ];
+    final String best = snrs.isEmpty
+        ? ''
+        : ', best ${snrs.reduce(math.max).toStringAsFixed(1)} dB';
+    return '${rows.length} beacons heard$best';
+  }
+
+  @override
+  String? get runHistoryCsv => rows.isEmpty ? null : exportCsv();
 
   /// CSV, oldest first (rule 6).
   String exportCsv() {

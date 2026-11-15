@@ -92,6 +92,22 @@ abstract class MeshTool extends ChangeNotifier with SafeNotifier {
   bool Function(MeshTool tool)? acquire;
   void Function(MeshTool tool)? release;
 
+  /// Called once when a run ends, with the failure it ended on (or null).
+  /// `ToolsController` uses it to keep the run in the history, so a tool does
+  /// not have to know that a history exists.
+  void Function(MeshTool tool, ToolFailure? failure)? onFinished;
+
+  /// When the current (or last) run began, or null when it never began.
+  DateTime? get beganAt => _beganAt;
+  DateTime? _beganAt;
+
+  /// What the last run did, in one line, for the history. Empty means the tool
+  /// has nothing to say about a run, and nothing is recorded.
+  String get runHistorySummary => '';
+
+  /// The last run's CSV, or null when the tool has no table to keep.
+  String? get runHistoryCsv => null;
+
   bool _running = false;
   bool get running => _running;
 
@@ -122,6 +138,7 @@ abstract class MeshTool extends ChangeNotifier with SafeNotifier {
     _running = true;
     _stopRequested = false;
     _failure = null;
+    _beganAt = now();
     notifyListeners();
     return true;
   }
@@ -135,6 +152,10 @@ abstract class MeshTool extends ChangeNotifier with SafeNotifier {
     _failure = failure;
     if (_exclusive) release?.call(this);
     notifyListeners();
+    // After the state is settled and the radio is released, so a recorder that
+    // reads the tool's own rows sees the finished run and cannot hold the radio
+    // open by being slow.
+    onFinished?.call(this, failure);
   }
 
   /// Ask the run to stop at its next step; wakes any wait.

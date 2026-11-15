@@ -1,5 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:meshcore/meshcore.dart';
@@ -167,6 +168,22 @@ class PingTool extends MeshTool {
     begin(exclusive: false);
     finish(ToolFailure.noTarget);
   }
+
+  /// What the run measured, for the history.
+  ///
+  /// Empty when nothing was sent, so a refused start leaves no entry.
+  @override
+  String get runHistorySummary {
+    if (attempts.isEmpty) return '';
+    final String loss =
+        lossPercent == null ? '?' : lossPercent!.toStringAsFixed(0);
+    return '$sent sent, $replied replied, $loss% loss';
+  }
+
+  @override
+  String? get runHistoryCsv => attempts.isEmpty
+      ? null
+      : const JsonEncoder.withIndent('  ').convert(report());
 
   /// JSON export (rule 6).
   Map<String, Object?> report({String? firmware}) => <String, Object?>{

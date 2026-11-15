@@ -70,6 +70,23 @@ class ToolsHubScreen extends StatelessWidget {
                   onAction: () => context.push('/connect'),
                 ),
               ),
+            // The history is not a tool: it is what the tools left behind, so
+            // it sits above them and never wears a RUNNING pill.
+            Padding(
+              padding: EdgeInsets.only(bottom: skin.space.rowGap),
+              child: MmListRow(
+                leading: Icon(Icons.history, color: skin.color.accent),
+                title: Text(l.toolHistoryTitle),
+                subtitle: Text(l.toolHistoryEmpty,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: skin.color.fgMuted,
+                        fontSize: skin.type.sizeBody)),
+                trailing: Icon(Icons.chevron_right, color: skin.color.fgMuted),
+                onTap: () => context.push('/settings/tools/history'),
+              ),
+            ),
             // Check-in is a field-safety action rather than an engineering
             // tool, and it lives here because the alarm screen carries exactly
             // one control and must not offer a second way to send (`/sos`,

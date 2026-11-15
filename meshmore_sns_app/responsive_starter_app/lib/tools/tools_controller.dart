@@ -10,6 +10,7 @@ import 'radio_stats_tool.dart';
 import 'range_test_tool.dart';
 import 'soak_tool.dart';
 import '../util/safe_notifier.dart';
+import 'tool_history.dart';
 import 'trace_tool.dart';
 
 /// R60 — owns every tool for the life of the app, so a run survives
@@ -19,7 +20,9 @@ import 'trace_tool.dart';
 /// silently clear each other's. While a tool holds the radio, the
 /// poller is held too.
 class ToolsController extends ChangeNotifier with SafeNotifier {
-  ToolsController(this.mc, {DateTime Function()? now}) {
+  ToolsController(this.mc,
+      {DateTime Function()? now, ToolHistoryStore? historyStore})
+      : history = historyStore ?? ToolHistoryStore() {
     stats = RadioStatsTool(mc, now: now);
     ping = PingTool(mc, now: now);
     trace = TraceTool(mc, now: now);
@@ -29,8 +32,36 @@ class ToolsController extends ChangeNotifier with SafeNotifier {
     for (final MeshTool t in _all) {
       t
         ..acquire = _acquire
-        ..release = _release;
+        ..release = _release
+        ..onFinished = _record;
     }
+    // Fire and forget: a history that has not loaded yet is empty, and the
+    // first recorded run loads it before writing rather than overwriting it.
+    history.load();
+  }
+
+  /// Every finished run, sealed and bounded. Owned here because a run ends
+  /// here, whichever screen started it.
+  final ToolHistoryStore history;
+
+  /// Keep the run that just ended.
+  ///
+  /// The rows come from the tool that produced them, so this knows nothing
+  /// about what any of them mean: a tool with nothing to say records nothing,
+  /// which is why a refused start leaves no entry in the history.
+  void _record(MeshTool t, ToolFailure? failure) {
+    final DateTime? began = t.beganAt;
+    if (began == null) return;
+    final String summary = t.runHistorySummary;
+    if (summary.isEmpty) return;
+    history.record(ToolRun(
+      kind: kindOf(t),
+      startedAt: began,
+      endedAt: t.now(),
+      summary: summary,
+      csv: t.runHistoryCsv,
+      failure: failure,
+    ));
   }
 
   final MeshcoreController mc;
@@ -93,6 +124,7 @@ class ToolsController extends ChangeNotifier with SafeNotifier {
       t.stop();
       t.dispose();
     }
+    history.dispose();
     super.dispose();
   }
 }

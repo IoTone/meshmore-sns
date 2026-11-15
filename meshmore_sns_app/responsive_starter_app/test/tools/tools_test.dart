@@ -5,6 +5,7 @@
 // `t.pump(d)` advances them; the injected clock moves with it so RTTs
 // are deterministic.
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -12,10 +13,13 @@ import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/bot/bot_scope.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
+import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
+import 'package:meshmore_sns_app/meshcore/secure/sealed_document.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/tools/mesh_tool.dart';
 import 'package:meshmore_sns_app/tools/ping_tool.dart';
 import 'package:meshmore_sns_app/tools/range_test_tool.dart';
+import 'package:meshmore_sns_app/tools/tool_history.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/tools/trace_tool.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -375,6 +379,57 @@ void main() {
     r.tools.stopRunning();
     await t.pump();
     await run;
+    await r.dispose(t);
+  });
+
+  testWidgets('a finished run is kept, and a refused start is not',
+      (WidgetTester t) async {
+    // The tools kept nothing: a range test's rows lived in memory and left the
+    // app as a CSV the reader had to paste somewhere before closing the screen.
+    // A run that ends is kept now, with the table it produced, and a run that
+    // never started leaves no row behind.
+    // The history seals through the platform store; a test gives it a memory
+    // cipher and a temp directory, the same seam the store's own suite uses.
+    final Directory dir = Directory.systemTemp.createTempSync('mm_tool_runs');
+    SealedDocument.cipherOverride = MemoryRecordCipher.random();
+    SealedDocument.directoryOverride = dir;
+    addTearDown(() {
+      SealedDocument.cipherOverride = null;
+      SealedDocument.directoryOverride = null;
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
+
+    final _Rig r = await _rig(t);
+    expect(r.tools.history.runs, isEmpty);
+
+    // A refused start: no target chosen, so the ping never begins.
+    await r.tools.ping.start();
+    await t.pump();
+    expect(r.tools.history.runs, isEmpty,
+        reason: 'a run that never began is not a run');
+
+    r.fake.emit(Uint8List.fromList(<int>[
+      0x12, 2, ...utf8.encode('Ops').followedBy(List<int>.filled(29, 0)),
+      ...List<int>.generate(16, (int i) => i + 1),
+    ]));
+    await t.pump();
+    r.tools.range.configure(mode: RangeMode.receiver, channelIdx: 2);
+    final Future<void> run = r.tools.range.start();
+    await t.pump();
+    await r.emit(
+        t, channelMsgFrame(idx: 2, text: 'base: RT 1 47.60000,-122.30000'));
+    r.tools.stopRunning();
+    await t.pump();
+    await run;
+    // The store loads before it writes, so the row lands a microtask later.
+    await t.pump();
+
+    expect(r.tools.history.runs, hasLength(1));
+    final ToolRun kept = r.tools.history.runs.single;
+    expect(kept.kind, ToolKind.range);
+    expect(kept.summary, contains('1 beacons heard'));
+    expect(kept.csv, contains('47.6,-122.3'));
+    expect(kept.failure, isNull);
     await r.dispose(t);
   });
 

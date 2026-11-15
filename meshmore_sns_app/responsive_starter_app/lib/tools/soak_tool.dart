@@ -258,6 +258,19 @@ class SoakTool extends MeshTool {
     notifyListeners();
   }
 
+  /// What the run measured, for the history.
+  ///
+  /// Empty when nothing was sent, so a refused start leaves no entry.
+  @override
+  String get runHistorySummary {
+    if (entries.isEmpty) return '';
+    return '$sent sent, $delivered delivered, $echoed echoed, '
+        '${missingEchoes.length} missing';
+  }
+
+  @override
+  String? get runHistoryCsv => entries.isEmpty ? null : exportReport();
+
   /// JSON report (rule 6): enough to replay and to compare runs.
   String exportReport({String? firmware}) =>
       const JsonEncoder.withIndent('  ').convert(<String, Object?>{

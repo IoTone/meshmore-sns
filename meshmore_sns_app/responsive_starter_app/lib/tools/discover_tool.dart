@@ -75,4 +75,30 @@ class DiscoverTool extends MeshTool {
       unawaited(sub.cancel());
     }
   }
+
+  /// What the run found, for the history.
+  ///
+  /// Empty when nothing answered: the screen already says "nothing yet", and a
+  /// history of empty runs would bury the ones that found a repeater.
+  @override
+  String get runHistorySummary =>
+      found.isEmpty ? '' : '${found.length} repeaters answered';
+
+  @override
+  String? get runHistoryCsv {
+    if (found.isEmpty) return null;
+    final StringBuffer b = StringBuffer('key_hex,snr_db,weaker_snr_db,'
+        'asymmetric,heard_at\n');
+    for (final DiscoveredRepeater r in found) {
+      b.writeln(<Object?>[
+        r.keyHex,
+        r.response.ourSnrDb,
+        r.weakerSnrDb,
+        r.asymmetric ? 1 : 0,
+        r.at.toUtc().toIso8601String(),
+      ].map((Object? v) => v ?? '').join(','));
+    }
+    return b.toString();
+  }
+
 }

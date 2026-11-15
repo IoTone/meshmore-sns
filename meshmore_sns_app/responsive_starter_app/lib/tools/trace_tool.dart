@@ -143,4 +143,42 @@ class TraceTool extends MeshTool {
       return false;
     }
   }
+
+  /// What the run traced, for the history: how many completed and how many were
+  /// lost, with the weakest hop's SNR in the table because that is the number a
+  /// trace exists to produce.
+  ///
+  /// Empty when nothing finished, so a refused start leaves no entry.
+  @override
+  String get runHistorySummary {
+    final int done = runs.where((TraceRun r) => r.done).length;
+    if (done == 0) return '';
+    final int lost = runs.where((TraceRun r) => r.lost).length;
+    return '$done traced, $lost lost';
+  }
+
+  @override
+  String? get runHistoryCsv {
+    final List<TraceRun> done = <TraceRun>[
+      for (final TraceRun r in runs)
+        if (r.done) r,
+    ];
+    if (done.isEmpty) return null;
+    final StringBuffer b = StringBuffer(
+        'target,hops,lost,rtt_ms,weakest_hop,weakest_snr_db,final_snr_db\n');
+    for (final TraceRun r in done) {
+      final TraceResult? res = r.result;
+      final (int, double)? weakest = r.weakest;
+      b.writeln(<Object?>[
+        r.label,
+        res == null ? '' : res.hopSnrsDb.length,
+        r.lost ? 1 : 0,
+        r.rttMs,
+        weakest == null ? '' : weakest.$1,
+        weakest == null ? '' : weakest.$2,
+        res?.finalSnrDb,
+      ].map((Object? v) => v ?? '').join(','));
+    }
+    return b.toString();
+  }
 }

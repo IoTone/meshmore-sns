@@ -35,6 +35,7 @@ import 'screens/tools/ping_screen.dart';
 import 'screens/tools/radio_stats_screen.dart';
 import 'screens/tools/range_test_screen.dart';
 import 'screens/tools/soak_screen.dart';
+import 'screens/tools/tool_history_screen.dart';
 import 'screens/tools/tools_hub_screen.dart';
 import 'screens/tools/trace_screen.dart';
 import 'screens/voice_settings_screen.dart';
@@ -146,6 +147,12 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/settings/tools',
       builder: (_, __) => const ToolsHubScreen(),
+    ),
+    // Before the `:tool` route, which would otherwise match "history" and fall
+    // back to the hub.
+    GoRoute(
+      path: '/settings/tools/history',
+      builder: (_, __) => const ToolHistoryScreen(),
     ),
     GoRoute(
       path: '/settings/tools/:tool',

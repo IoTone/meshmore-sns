@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,14 +14,19 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
+import 'package:meshmore_sns_app/meshcore/secure/sealed_document.dart';
 import 'package:meshmore_sns_app/screens/tools/discover_screen.dart';
 import 'package:meshmore_sns_app/screens/tools/ping_screen.dart';
 import 'package:meshmore_sns_app/screens/tools/radio_stats_screen.dart';
 import 'package:meshmore_sns_app/screens/tools/range_test_screen.dart';
 import 'package:meshmore_sns_app/screens/tools/soak_screen.dart';
+import 'package:meshmore_sns_app/screens/tools/tool_history_screen.dart';
 import 'package:meshmore_sns_app/screens/tools/tools_hub_screen.dart';
 import 'package:meshmore_sns_app/screens/tools/trace_screen.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
+import 'package:meshmore_sns_app/tools/mesh_tool.dart';
+import 'package:meshmore_sns_app/tools/tool_history.dart';
 import 'package:meshmore_sns_app/tools/tools_controller.dart';
 
 import '../meshcore/fake_transport.dart';
@@ -201,5 +208,71 @@ void main() {
     expect(pub.enabled, isFalse);
     tools.dispose();
     mc.dispose();
+  });
+
+  group('tool history screen', _historyTests);
+}
+
+void _historyTests() {
+  MeshcoreController fakeMc() => MeshcoreController(
+        transportFactory: () async => FakeMeshcoreTransport(connected: false),
+        connection:
+            MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      );
+
+  testWidgets('the history says what is kept and what an empty one means',
+      (WidgetTester t) async {
+    // The tools kept nothing before this screen existed, so an empty history is
+    // the common first visit. It has to say that a run is only kept when it
+    // ends, rather than reading as a broken list.
+    final MeshcoreController mc = fakeMc();
+    addTearDown(mc.dispose);
+    final ToolsController tools = ToolsController(mc);
+    addTearDown(tools.dispose);
+    await t.pumpWidget(_host(mc, tools, const ToolHistoryScreen()));
+    await t.pump();
+    final AppLocalizations l = AppLocalizations.of(
+        t.element(find.byType(ToolHistoryScreen)));
+    expect(find.text(l.toolHistoryEmpty), findsOneWidget);
+    await t.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a kept run shows its summary and can be copied',
+      (WidgetTester t) async {
+    // The history seals through the platform store, which a widget test has
+    // no key for: the memory cipher and a temp directory are the same seam the
+    // store's own suite uses.
+    final Directory dir = Directory.systemTemp.createTempSync('mm_tool_runs_ui');
+    SealedDocument.cipherOverride = MemoryRecordCipher.random();
+    SealedDocument.directoryOverride = dir;
+    addTearDown(() {
+      SealedDocument.cipherOverride = null;
+      SealedDocument.directoryOverride = null;
+      if (dir.existsSync()) dir.deleteSync(recursive: true);
+    });
+    final MeshcoreController mc = fakeMc();
+    addTearDown(mc.dispose);
+    final ToolsController tools = ToolsController(mc);
+    addTearDown(tools.dispose);
+    // `runAsync` because the store seals through real file IO, which the
+    // fake clock the rest of this test runs on would never let finish.
+    await t.runAsync(() => tools.history.record(ToolRun(
+          kind: ToolKind.range,
+          startedAt: DateTime.now().subtract(const Duration(minutes: 3)),
+          endedAt: DateTime.now().subtract(const Duration(minutes: 2)),
+          summary: '4 beacons heard, best 6.5 dB',
+          csv: 'seq,snr_db\n1,6.5\n',
+        )));
+    await t.pumpWidget(_host(mc, tools, const ToolHistoryScreen()));
+    await t.pump();
+    final AppLocalizations l = AppLocalizations.of(
+        t.element(find.byType(ToolHistoryScreen)));
+    expect(find.text('4 beacons heard, best 6.5 dB'), findsOneWidget);
+    // The count bound is stated, because a reader has to know how much of their
+    // own history is being kept.
+    expect(find.textContaining('${tools.history.maxRuns}'), findsWidgets);
+    expect(find.text(l.toolsCopyReport), findsNothing,
+        reason: 'the copy action is an icon with a tooltip, not a button');
+    await t.pumpWidget(const SizedBox());
   });
 }
