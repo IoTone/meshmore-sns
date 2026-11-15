@@ -1901,7 +1901,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               point: LatLng(n.latitude!, n.longitude!),
               radius: meters,
               useRadiusInMeter: true,
-              color: const Color(0x00000000),
+              color: Colors.transparent,
               borderColor: cs.tertiary.withValues(alpha: .55),
               borderStrokeWidth: 1.0,
             ),
@@ -2080,7 +2080,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                         // unreadably over OSM tiles when many circles
                         // overlap. Border carries the signal; map stays
                         // legible underneath.
-                        color: const Color(0x00000000),
+                        color: Colors.transparent,
                         borderColor: cs.tertiary.withValues(alpha: .75),
                         borderStrokeWidth: 1.4,
                       ),

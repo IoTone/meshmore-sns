@@ -701,13 +701,13 @@ class _SnsCellsPainter extends CustomPainter {
       text: TextSpan(
         text: text,
         style: TextStyle(
-          color: (onHot ? Colors.white : Colors.black).withValues(alpha: .85),
+          color: (onHot ? kOnHotCell : kOnCoolCell).withValues(alpha: .85),
           fontSize: type.sizeMicro * textScale,
           fontWeight: FontWeight.w700,
           fontFamily: type.monoFamily,
           shadows: <Shadow>[
             Shadow(
-                color: (onHot ? Colors.black : Colors.white)
+                color: (onHot ? kOnCoolCell : kOnHotCell)
                     .withValues(alpha: .5),
                 blurRadius: 2),
           ],

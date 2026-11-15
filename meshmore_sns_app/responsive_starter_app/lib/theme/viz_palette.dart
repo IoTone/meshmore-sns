@@ -27,6 +27,15 @@ const Color kInferredPlaceMarker = Color(0xFF8A6CFF);
 /// The shadow under a map label, so a light or dark basemap cannot swallow it.
 const Color kMarkerShadow = Color(0xCC000000);
 
+/// The two inks a heat cell's count can be drawn in.
+///
+/// A cell's fill is computed from the heat ramp, so the count on it cannot take
+/// a skin colour: it has to be the one of these two that contrasts with the
+/// fill it lands on. Declared here rather than at the painter, because a
+/// literal in a painter is a colour nobody can find again.
+const Color kOnHotCell = Color(0xFFFFFFFF);
+const Color kOnCoolCell = Color(0xFF000000);
+
 /// R55 — semantic colours for the **visualisation painters** (radar,
 /// heat map, maps, charts), derived from the active [MmSkin] so the
 /// grid/map views follow the theme instead of baking in literal hex.

@@ -16,6 +16,57 @@ import 'package:flutter_test/flutter_test.dart';
 /// What is NOT enforceable by a scan: whether a number is the *right* step.
 /// That is a judgement each migration records (see `meshmore-sns-UX-spec.md`,
 /// type scale) — the roles live in `MmType`, the spacings in `MmSpace`.
+
+/// The source with its comments removed.
+///
+/// A scan that reads raw text counts prose: `basemap.dart` carried a comment
+/// saying "`Colors.black54` was the only literal colour left in this file" and
+/// the colour ratchet counted that sentence as a literal colour, so the file
+/// could never reach zero. A comment is not a defect. Strings are kept, because
+/// a colour inside a string is still a colour the app draws.
+String withoutComments(String src) {
+  final StringBuffer out = StringBuffer();
+  int i = 0;
+  String? quote;
+  while (i < src.length) {
+    final String c = src[i];
+    if (quote != null) {
+      out.write(c);
+      if (c == r'\\' && i + 1 < src.length) {
+        out.write(src[i + 1]);
+        i += 2;
+        continue;
+      }
+      if (c == quote) quote = null;
+      i++;
+      continue;
+    }
+    if (c == "'" || c == '"') {
+      quote = c;
+      out.write(c);
+      i++;
+      continue;
+    }
+    if (c == '/' && i + 1 < src.length && src[i + 1] == '/') {
+      while (i < src.length && src[i] != '\n') {
+        i++;
+      }
+      continue;
+    }
+    if (c == '/' && i + 1 < src.length && src[i + 1] == '*') {
+      i += 2;
+      while (i + 1 < src.length && !(src[i] == '*' && src[i + 1] == '/')) {
+        i++;
+      }
+      i += 2;
+      continue;
+    }
+    out.write(c);
+    i++;
+  }
+  return out.toString();
+}
+
 void main() {
   const Set<String> exempt = <String>{
     // Runs before the provider tree exists, so no skin can be read.
@@ -60,7 +111,8 @@ void main() {
     const Map<String, int> baseline = <String, int>{};
     final List<String> drifted = <String>[];
     for (final File f in scanned()) {
-      final int n = fontSize.allMatches(f.readAsStringSync()).length;
+      final int n =
+          fontSize.allMatches(withoutComments(f.readAsStringSync())).length;
       final int was = baseline[rel(f)] ?? 0;
       if (n > was) {
         drifted.add('${rel(f)}: $n literals, baseline $was — '
@@ -73,21 +125,27 @@ void main() {
   });
 
   test('literal colours per file: no file grows past its baseline', () {
+    // What is left is deliberate, and each entry says why. Everything else in
+    // `lib/` takes its colours from the skin or from `viz_palette.dart`.
     const Map<String, int> baseline = <String, int>{
-      'lib/maps/basemap.dart': 1,
+      // The vector style's own `background` layer colour, so an unloaded tile
+      // reads as "land, not yet drawn". A guard test keeps it equal to the
+      // style's background, which is why it cannot be a skin colour.
       'lib/maps/vector_basemap.dart': 1,
+      // The QR field. A camera expects dark modules on a light field, so this
+      // one surface does not follow the skin's ground; its shape does.
       'lib/screens/channels_screen.dart': 2,
-      // DR Pop's Mondrian palette: seven deliberate colour fields.
+      // DR Pop's Mondrian palette: seven deliberate colour fields, which are
+      // the preset's identity rather than chrome.
       'lib/screens/chat_screen.dart': 7,
       'lib/screens/dashboards/drpop_dashboard.dart': 3,
-      'lib/screens/fabric_survey_view.dart': 4,
-      'lib/screens/sns_cells_view.dart': 4,
-      'lib/screens/street_map_view.dart': 2,
+      // The scanline overlay. A scanline is black by definition: it is a
+      // darkening of whatever is under it, not a colour the theme chooses.
       'lib/ui/mm_scaffold.dart': 1,
     };
     final List<String> drifted = <String>[];
     for (final File f in scanned()) {
-      final int n = countColours(f.readAsStringSync());
+      final int n = countColours(withoutComments(f.readAsStringSync()));
       final int was = baseline[rel(f)] ?? 0;
       if (n > was) {
         drifted.add('${rel(f)}: $n literals, baseline $was — '
@@ -112,7 +170,7 @@ void main() {
     final List<String> bad = <String>[];
     for (final File f in scanned()) {
       if (allowed.contains(rel(f))) continue;
-      if (literal.hasMatch(f.readAsStringSync())) {
+      if (literal.hasMatch(withoutComments(f.readAsStringSync()))) {
         bad.add('${rel(f)} — use kRadiusXs / kRadiusSm / kRadiusMd, or '
             'mmRadius(context, …) for a control surface');
       }
