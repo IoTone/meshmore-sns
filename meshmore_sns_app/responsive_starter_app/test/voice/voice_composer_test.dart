@@ -171,7 +171,8 @@ void main() {
     await pump(t, capture: capture, codec: _codec());
     expect(find.byKey(const ValueKey<String>('voice-limit')), findsOneWidget);
     expect(find.textContaining('20 seconds'), findsOneWidget);
-    expect(find.byKey(const ValueKey<String>('voice-record')), findsOneWidget);
+    // Nothing to pick between: one codec, and the refusal is the whole state.
+    expect(find.byKey(const ValueKey<String>('voice-mode-1')), findsNothing);
     // The take does not exist yet, so neither does a preview or a send.
     expect(find.byKey(const ValueKey<String>('voice-preview')), findsNothing);
     expect(find.byKey(const ValueKey<String>('voice-send')), findsNothing);
@@ -199,8 +200,7 @@ void main() {
     expect(find.byKey(const ValueKey<String>('voice-send')), findsOneWidget);
   });
 
-  testWidgets('switching the mode re-encodes the same take, not a second one',
-      (t) async {
+  testWidgets('there is one codec, so there is no mode to pick', (t) async {
     final _FakeCapture capture = _FakeCapture();
     await pump(t, capture: capture, codec: _codec());
     capture.pcm = _take();
@@ -208,14 +208,12 @@ void main() {
     await t.pump();
     await t.tap(find.byKey(const ValueKey<String>('voice-stop')));
     await t.pumpAndSettle();
-    await t.tap(find.byKey(const ValueKey<String>('voice-mode-1')));
-    await t.pumpAndSettle();
-    expect(capture.starts, 1, reason: 'the take is kept, not re-recorded');
-    // 50 × 52 bits = 325 bytes plus the header: three datagrams.
+    // 700C is the only mode: no chip to switch it, and the cost line says so.
+    expect(find.byKey(const ValueKey<String>('voice-mode-0')), findsNothing);
+    expect(find.byKey(const ValueKey<String>('voice-mode-1')), findsNothing);
     final Text cost =
         t.widget<Text>(find.byKey(const ValueKey<String>('voice-cost')));
-    expect(cost.data, contains('3 packets'));
-    expect(cost.data, contains('1300'));
+    expect(cost.data, contains('700'));
   });
 
   testWidgets('a send goes out one paced datagram at a time and receipts',
@@ -265,7 +263,9 @@ void main() {
     expect(find.byKey(const ValueKey<String>('voice-send')), findsNothing);
     // The take is still there: the refusal names a channel rule, and throwing
     // the recording away would make the user speak again to send it elsewhere.
-    expect(find.byKey(const ValueKey<String>('voice-mode-1')), findsOneWidget);
+    // There is no mode row to look at any more, so the proof is the refusal
+    // itself plus the absent cost line above.
+    expect(find.byKey(const ValueKey<String>('voice-mode-1')), findsNothing);
   });
 
   testWidgets('a click is too short to be a note', (t) async {

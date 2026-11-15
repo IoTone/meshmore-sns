@@ -671,6 +671,9 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
         label: l.settingsGroupApp,
         rows: <(IconData, String, String)>[
           (Icons.tune, l.settingsHubApp, '/settings/app'),
+          // Chat, photos and voice are one page: what a message costs and how
+          // much of it leaves the phone.
+          (Icons.forum_outlined, l.chatMediaTitle, '/settings/chat'),
           (Icons.palette_outlined, l.settingsHubProfile, '/settings/profile'),
           (Icons.map_outlined, l.settingsHubMaps, '/settings/maps'),
         ],

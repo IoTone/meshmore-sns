@@ -314,10 +314,18 @@ class DashboardScreen extends StatelessWidget {
                       // 8-character mono stamp at 12pt, so the stamp ran into
                       // the event text. Mono keeps the column aligned without
                       // a hardcoded width.
+                      // One line, whatever the type size. A mono stamp is eight
+                      // fixed characters, and without this the Row could squeeze
+                      // it by one character and wrap the last digit onto its own
+                      // line — the "bad newline in the timestamp" the owner saw
+                      // on the light themes, where the body size is largest.
                       Text(
                         '${e.at.hour.toString().padLeft(2, '0')}:'
                         '${e.at.minute.toString().padLeft(2, '0')}:'
                         '${e.at.second.toString().padLeft(2, '0')}',
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.clip,
                         style: TextStyle(
                             color: cs.onSurfaceVariant,
                             fontFamily: context.skin.type.monoFamily,

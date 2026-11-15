@@ -154,6 +154,19 @@ class _ChatScreenState extends State<ChatScreen>
   /// `position` (which throws when there are no clients).
   bool _atBottom = true;
 
+  /// True while the thread is scrolled to its very top.
+  ///
+  /// The dropped-rows line belongs there and only there: it describes what is
+  /// *above* the first visible row, so in the middle of a conversation it was
+  /// a permanent banner about something the reader cannot act on, and at the
+  /// bottom it pushed the newest message up for no reason. Scrolling to the top
+  /// is exactly the moment a reader asks "is that all of it?".
+  ///
+  /// True to begin with: an empty or short thread has nothing above its first
+  /// row, so the reader is already at the top, and the first append scrolls the
+  /// view to the bottom and corrects it.
+  bool _atTop = true;
+
   /// APP-E6 — the row a search hit asked for. It is tinted until the reader
   /// scrolls or switches channel, and the key is what lets the list find it
   /// after the jump.
@@ -323,9 +336,14 @@ class _ChatScreenState extends State<ChatScreen>
     // without flipping state. Empty / short lists report
     // maxScrollExtent==0 and pixels==0, also "at bottom".
     final bool nowAtBottom = (maxExtent - pixels) <= _bottomSlackPx;
-    if (nowAtBottom == _atBottom) return;
+    // "At the top" with the same slack, and true for a list too short to
+    // scroll at all: with nothing above the first row there is nothing to
+    // report.
+    final bool nowAtTop = pixels <= _bottomSlackPx;
+    if (nowAtBottom == _atBottom && nowAtTop == _atTop) return;
     setState(() {
       _atBottom = nowAtBottom;
+      _atTop = nowAtTop;
       if (nowAtBottom) _unreadSinceScrollAway = 0;
     });
   }
@@ -1221,7 +1239,9 @@ class _ChatScreenState extends State<ChatScreen>
           // offer the one recovery path, rather than showing an empty thread
           // beside a report that it is missing.
           HistoryUnreadableNotice(onRestore: () => _restoreFromExport(mc)),
-          HistoryRetentionNotice(dropped: dropped),
+          // Only at the very top: the line is about the rows above the first
+          // one, so anywhere else it is a banner about something out of reach.
+          if (_atTop) HistoryRetentionNotice(dropped: dropped),
 
           // Photos announced on this channel that nobody has asked for yet.
           // One preview, one line, one action: the pixels are a tap away and

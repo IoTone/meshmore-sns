@@ -120,7 +120,10 @@ void main() {
   });
 
   test('no screen spells a numeric device code into user text', () {
-    final RegExp rawCode = RegExp(r'\$\{[^}]*\.code[^}]*\}');
+    // `\.code` and not `\.code…`: the loose form also matched `l.codecInstalled`,
+    // which is a label, and a guard that fires on a word is a guard that gets
+    // switched off.
+    final RegExp rawCode = RegExp(r'\$\{[^}]*\.code(?![A-Za-z_])[^}]*\}');
     for (final File f in Directory('lib')
         .listSync(recursive: true)
         .whereType<File>()

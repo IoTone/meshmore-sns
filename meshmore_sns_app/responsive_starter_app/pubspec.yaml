@@ -86,6 +86,9 @@ dependencies:
   #     mode; no background sampling. crypto for SHA-256 mix. ---
   sensors_plus: ^6.0.1
   crypto: ^3.0.6
+  # The AEIC model bundle is fetched over HTTPS, resumably, with a SHA-256
+  # check per file; `http` is the client the map fetcher already uses.
+  http: ^1.2.2
 
   # --- Encrypted history store (W4) — AES-256-GCM and PBKDF2 in pure Dart.
   #     MIT. The device key itself lives in the Android Keystore; this only

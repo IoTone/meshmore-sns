@@ -325,9 +325,35 @@ class _StreetMapViewState extends State<StreetMapView> {
   List<Polygon<HexCell>> _hexPolygons = const <Polygon<HexCell>>[];
   String _hexKey = '';
 
-  /// The polygon list's own key: the field key plus how much of the basemap has
-  /// been drawn at this zoom, so a cell appears when its tile does.
+  /// The polygon list's own key: the field it describes and the skin it is
+  /// painted in. Readiness is deliberately *not* part of it — see
+  /// [_schedulePolygonRebuild].
   String _hexPolyKey = '';
+
+  /// Set when a coalesced readiness tick has asked for a new polygon list.
+  ///
+  /// The list itself is rebuilt whole and thrown away whole: a polygon is a view
+  /// of one cell at one cell size, and holding them alive would keep geometry
+  /// that the next zoom step invalidates. What costs is building the list a dozen
+  /// times for a dozen tile arrivals, and that is what the tick prevents.
+  bool _hexPolyStale = true;
+
+  /// The readiness revision the field was last built for.
+  int _hexReadyRev = -1;
+
+  Timer? _hexPolyTimer;
+
+  /// One rebuild per burst of tile arrivals.
+  void _schedulePolygonRebuild() {
+    if (_hexPolyTimer?.isActive ?? false) return;
+    _hexPolyTimer = Timer(const Duration(milliseconds: 120), () {
+      _hexPolyTimer = null;
+      if (!mounted) return;
+      if (_hexPolyStale) return; // a field rebuild is already queued
+      _hexPolyStale = true;
+      setState(() {});
+    });
+  }
 
   /// The hexagon's circumradius, in metres, for the current zoom: a cell that is
   /// legible as a shape at street zoom and does not become a mosaic at a city
@@ -669,6 +695,7 @@ class _StreetMapViewState extends State<StreetMapView> {
     // its list after the tab is gone is the literal reading of "it stays alive".
     _warmGenerationOf?.call();
     _bubbleTick?.cancel();
+    _hexPolyTimer?.cancel();
     _warm?.cancel();
     _saveView?.cancel();
     _compass.removeListener(_onCompass);
@@ -1042,6 +1069,31 @@ class _StreetMapViewState extends State<StreetMapView> {
         p.lon >= visible.west &&
         p.lon <= visible.east);
     return any ? visible : _nodeBox(points);
+  }
+
+  /// The field box rounded outward to whole cells of the current radius.
+  ///
+  /// Done in Mercator metres because that is the projection the lattice uses: a
+  /// snap in degrees would depend on the latitude and move cells as the map
+  /// travels north.
+  GeoBox _snapFieldBox(GeoBox box) {
+    final double r = _hexRadiusMetres;
+    if (r <= 0) return box;
+    final double step = r; // one cell edge, which is a lattice period
+    final double x0 = mercatorX(box.west);
+    final double x1 = mercatorX(box.east);
+    final double y0 = mercatorY(box.south);
+    final double y1 = mercatorY(box.north);
+    final double sx0 = (x0 / step).floorToDouble() * step;
+    final double sx1 = (x1 / step).ceilToDouble() * step;
+    final double sy0 = (y0 / step).floorToDouble() * step;
+    final double sy1 = (y1 / step).ceilToDouble() * step;
+    return GeoBox(
+      west: mercatorLon(sx0),
+      east: mercatorLon(sx1),
+      south: mercatorLat(sy0),
+      north: mercatorLat(sy1),
+    );
   }
 
   GeoBox _nodeBox(List<DensityPoint> points) {
@@ -1842,12 +1894,20 @@ class _StreetMapViewState extends State<StreetMapView> {
     final MapsController? mapsForReady =
         Provider.of<MapsController?>(context, listen: false);
     final int hexZoom = _zoom.round().clamp(0, kOsmVector.maxNativeZoom);
-    final GeoBox fieldBox = _fieldBox(densityPoints);
+    // The field's box is snapped to the cell lattice before it is used.
+    //
+    // It used to be the exact viewport, which meant every frame of a pan moved
+    // the box, changed the key and rebuilt the whole lattice — a thousand cells
+    // and a thousand polygons per frame, for a pan of two pixels. Snapping the
+    // edges outward to whole cells keeps the key still while the map slides
+    // inside the same cells, so a pan costs nothing until it crosses a cell
+    // boundary, and the cells that are drawn do not shift when it does.
+    final GeoBox fieldBox = _snapFieldBox(_fieldBox(densityPoints));
     final String hexKey = densityPoints.isEmpty
         ? ''
         : '${fieldBox.south},${fieldBox.west},${fieldBox.north},'
-            '${fieldBox.east}|$_hexRadiusMetres|${context.skin.preset.name}|'
-            '${_densitySignature(densityPoints)}';
+            '${fieldBox.east}|$_hexRadiusMetres|$hexZoom|'
+            '${context.skin.preset.name}|${_densitySignature(densityPoints)}';
     if (hexKey != _hexKey) {
       _hexKey = hexKey;
       _hexCache = densityPoints.isEmpty
@@ -1861,10 +1921,19 @@ class _StreetMapViewState extends State<StreetMapView> {
               // drawn at: `includeEmpty` emits the lattice in row order, so a
               // bound short of the viewport drops the last rows and the bottom of
               // the map simply has no field.
+              // The snapped box is up to one cell wider on each side than the
+              // viewport, so the bound carries a row and a column more than the
+              // view itself needs. A bound short of the box drops the last rows,
+              // and the bottom of the map simply has no field.
               maxCells: hexCellsForViewport(
                     width: MediaQuery.sizeOf(context).width,
                     height: MediaQuery.sizeOf(context).height,
                     radiusPx: drawnRadiusPx,
+                  ) +
+                  hexCellsForViewport(
+                    width: MediaQuery.sizeOf(context).width,
+                    height: MediaQuery.sizeOf(context).height,
+                    radiusPx: drawnRadiusPx * 0.25,
                   ) +
                   8,
             );
@@ -1881,9 +1950,42 @@ class _StreetMapViewState extends State<StreetMapView> {
             lonToTileX(c.centre.longitude, hexZoom),
             latToTileY(c.centre.latitude, hexZoom));
     final List<HexCell> hexes = _hexCache.where(mappable).toList(growable: false);
-    final String polyKey = '$hexKey|$readyRev|${context.skin.preset.name}';
-    if (polyKey != _hexPolyKey) {
-      _hexPolyKey = polyKey;
+
+    // A tile arriving used to rebuild every polygon in the field, and a zoom
+    // streams a dozen tiles: the field re-shaped itself a dozen times after the
+    // map had already drawn, which is the "slow repopulate" the owner saw. Two
+    // things fix it.
+    //
+    // First, coalescing: a readiness change schedules one rebuild a fraction of a
+    // second later, so a burst of tile loads is one pass rather than twelve.
+    // Until it lands the previous polygons stay on screen, which is what a reader
+    // expects while the map fills in.
+    //
+    // Second, no rebuild here at all unless the *field* changed (its key) or the
+    // preset did: cells that were already built are reused by id, so a readiness
+    // change only adds the cells that just became drawable.
+    final String fieldKey = '$hexKey|${context.skin.preset.name}';
+    if (fieldKey != _hexPolyKey) {
+      _hexPolyKey = fieldKey;
+      _hexPolyStale = true;
+      // The old cells describe a lattice that no longer exists — a different
+      // radius, or a different set of cells. Nothing is drawn for them: the new
+      // field is built below in this same build, so what appears is the new
+      // lattice, and cells whose tile has not arrived appear when it does.
+      _hexPolygons = const <Polygon<HexCell>>[];
+      _hexPolyTimer?.cancel();
+      _hexPolyTimer = null;
+    }
+    if (readyRev != _hexReadyRev) {
+      _hexReadyRev = readyRev;
+      _schedulePolygonRebuild();
+    }
+    // One list per field, or per coalesced tick. Until then the previous list is
+    // what is drawn, which is exactly what the map looked like a moment ago.
+    if (_hexPolyStale) {
+      _hexPolyStale = false;
+      final Color accent = VizPalette.of(context.skin).accent;
+      final Color edge = cs.onSurface;
       _hexPolygons = <Polygon<HexCell>>[
         for (final HexCell c in hexes)
           Polygon<HexCell>(
@@ -1904,11 +2006,11 @@ class _StreetMapViewState extends State<StreetMapView> {
             // disappeared into the vegetation it was measuring, so the line is
             // the skin's foreground — the one colour guaranteed to differ from
             // the ground it is drawn on — and the fill keeps the accent.
-            color: VizPalette.of(context.skin)
-                .accent
-                .withValues(alpha: hexAlpha(c.count)),
-            borderColor:
-                cs.onSurface.withValues(alpha: c.count == 0 ? 0.22 : 0.55),
+            // One palette lookup for the whole field, not one per cell: the
+            // palette is a map of a dozen colours and building it inside the
+            // loop made a thousand of them per rebuild.
+            color: accent.withValues(alpha: hexAlpha(c.count)),
+            borderColor: edge.withValues(alpha: c.count == 0 ? 0.22 : 0.55),
             borderStrokeWidth: c.count == 0 ? 0.7 : 1.1,
           ),
       ];
@@ -2055,7 +2157,21 @@ class _StreetMapViewState extends State<StreetMapView> {
                 if (hasGesture) {
                   _userMoved = true;
                   _userCentre = cam.center;
+                  // A zoom step changes the cell size, and the field is built for
+                  // one cell size at a time: the old cells describe a lattice that
+                  // no longer exists, so they must stop being drawn the moment the
+                  // step is crossed rather than at whatever rebuild happens next.
+                  //
+                  // This used to assign `_zoom` and nothing else, so a pinch moved
+                  // the map over a lattice anchored at the previous step and the
+                  // cells only caught up when a tile arrival happened to rebuild
+                  // the screen. Comparing the quantised radius means one rebuild
+                  // per √2 of zoom, not one per frame of the gesture.
+                  final double nextRadius = hexRadiusForZoomLevel(cam.zoom);
+                  final bool step = nextRadius != _hexRadiusMetres;
                   _zoom = cam.zoom;
+                  _hexRadiusMetres = nextRadius;
+                  if (step) setState(() {});
                   _rememberView();
                 }
                 _scheduleWarm(moved: true);
@@ -2584,40 +2700,13 @@ class _StreetMapViewState extends State<StreetMapView> {
               MapAttribution(vectorDrawn
                   ? kOsmVector.attribution
                   : shownSource.attribution),
-              // The wedge on the self marker is the one heading in the app,
-              // and it comes from the phone's magnetometer, not from the
-              // radio: a MeshCore node reports a position, never a facing. It
-              // is drawn only while a compass reading exists, so the legend
-              // for it appears only while there is an arrow to explain.
-              if (hasPersonalPosition)
-                ValueListenableBuilder<double?>(
-                  valueListenable: _heading,
-                  builder: (BuildContext _, double? heading, Widget? __) =>
-                      heading == null
-                          ? const SizedBox.shrink()
-                          : Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(Icons.navigation,
-                          size: context.skin.type.sizeMicro,
-                          color: cs.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          l.mapCompassLegend,
-                          key: const ValueKey<String>('map-compass-legend'),
-                          softWrap: true,
-                          style: TextStyle(
-                              color: cs.onSurfaceVariant,
-                              fontSize: context.skin.type.sizeMicro),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                ),
+              // The wedge on the self marker is the one heading in the app, and
+              // it comes from the phone's magnetometer, not from the radio: a
+              // MeshCore node reports a position, never a facing. It used to
+              // carry a legend line ("The arrow is this phone's compass"), which
+              // the owner removed: a compass needle needs no caption, and the line
+              // was a permanent piece of text under a map that is already busy.
+
               // R114 — a pack has a zoom range. Outside it, offline, the map is
               // showing coarser tiles on purpose, and saying so once is the
               // difference between "working as designed" and "broken".

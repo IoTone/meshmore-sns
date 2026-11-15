@@ -1587,13 +1587,14 @@ class _GridPainter extends CustomPainter {
     // The sweep: a leading line and a faint wedge behind it, one revolution
     // per refresh interval. Drawn over the rings and under the markers so a
     // blip is never hidden by the line.
-    // The hand stays on the dial when motion is reduced. The setting is about
-    // animation, not about hiding the instrument: a radar with no sweep line
-    // reads as a broken dial, and the sweep is also what says the poll is live.
-    // Reduced motion freezes it at one angle instead of removing it.
+    // No hand at all when motion is reduced. It was first frozen at one angle on
+    // the theory that a dial without a sweep reads as broken, and a stationary
+    // hand reads worse: it is indistinguishable from a sweep caught mid-turn, so
+    // the screen looks stuck rather than still. The rings, the bearings, the
+    // labels and the markers are the instrument; the hand is only the clock.
     final double? sweepPhase = sweep;
-    if (sweepPhase != null) {
-      final double a = (reduceMotion ? 0.125 : sweepPhase) * 2 * math.pi;
+    if (sweepPhase != null && !reduceMotion) {
+      final double a = sweepPhase * 2 * math.pi;
       const double trail = math.pi / 3;
       final Rect rect = Rect.fromCircle(center: center, radius: maxR);
       canvas.drawArc(

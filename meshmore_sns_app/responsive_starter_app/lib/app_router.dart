@@ -38,7 +38,7 @@ import 'screens/tools/soak_screen.dart';
 import 'screens/tools/tool_history_screen.dart';
 import 'screens/tools/tools_hub_screen.dart';
 import 'screens/tools/trace_screen.dart';
-import 'screens/voice_settings_screen.dart';
+import 'screens/chat_media_settings_screen.dart';
 import 'tools/mesh_tool.dart';
 import 'shell/home_shell.dart';
 import 'screens/firmware_screen.dart';
@@ -126,9 +126,13 @@ final GoRouter appRouter = GoRouter(
       path: '/settings/blocks',
       builder: (_, __) => const BlockedKeysScreen(),
     ),
+    // Everything about a message: history, photographs, voice. One page, because
+    // a message, a picture and a voice note are one decision from the reader's
+    // side — how much goes on the air — and three pages meant three answers to
+    // "where do I change that".
     GoRoute(
-      path: '/settings/voice',
-      builder: (_, __) => const VoiceSettingsScreen(),
+      path: '/settings/chat',
+      builder: (_, __) => const ChatMediaSettingsScreen(),
     ),
     GoRoute(
       path: '/settings/location',

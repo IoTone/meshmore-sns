@@ -385,6 +385,62 @@ Future<bool> confirmDeleteMessage(BuildContext context, ChatMessage m) {
 /// The reason shown under Retry: the catalogue's translated sentence when the
 /// row carries a cause, the older stored sentence otherwise (APP-N2).
 
+/// One emoji from the platform keyboard.
+///
+/// A reaction is one grapheme: a base emoji plus any modifiers, joined into a
+/// single cluster, because a bare codepoint would send half a flag or a skin
+/// tone with the wrong base. `characters` is Flutter's own grapheme splitter and
+/// is already a dependency of the framework.
+Future<String?> _pickTypedEmoji(
+    BuildContext context, AppLocalizations l, MmSkin skin) {
+  final TextEditingController ctl = TextEditingController();
+  return showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (BuildContext ctx) => Padding(
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(ctx).bottom,
+          left: skin.space.screenEdge,
+          right: skin.space.screenEdge,
+          top: skin.space.rowGap),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(l.actionReact,
+              style: TextStyle(
+                  color: skin.color.fg,
+                  fontSize: skin.type.sizeBodyLg,
+                  fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          TextField(
+            key: const ValueKey<String>('react-typed'),
+            controller: ctl,
+            autofocus: true,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: skin.type.size(28)),
+            decoration: InputDecoration(labelText: l.reactionAnyEmoji),
+            onSubmitted: (String v) => Navigator.pop(
+                ctx, v.characters.isEmpty ? null : v.characters.first),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton(
+              key: const ValueKey<String>('react-typed-send'),
+              onPressed: () => Navigator.pop(ctx,
+                  ctl.text.characters.isEmpty ? null : ctl.text.characters.first),
+              child: Text(l.reactionSend),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    ),
+  ).whenComplete(ctl.dispose);
+}
+
 /// Asks for one emoji from the fixed palette.
 ///
 /// A grid of eight rather than a full emoji picker: a reaction on a mesh is a
@@ -452,6 +508,37 @@ Future<String?> pickReaction(
                       ),
                     ),
                   ),
+                // Any emoji, from the platform's own keyboard.
+                //
+                // Flutter cannot ask Android for the emoji panel specifically
+                // (there is no such request in the text-input channel; the
+                // keyboard decides), so this opens a one-field sheet with the
+                // normal text keyboard and takes the first grapheme typed. That
+                // is the honest version of "the full picker": the reader gets
+                // every emoji their own keyboard has, and the reaction line puts
+                // it on the air in the same format as the fixed row.
+                InkWell(
+                  key: const ValueKey<String>('react-more'),
+                  onTap: () async {
+                    final String? typed = await _pickTypedEmoji(ctx, l, skin);
+                    if (typed != null && ctx.mounted) {
+                      Navigator.pop(ctx, typed);
+                    }
+                  },
+                  borderRadius: mmRadius(context, 8),
+                  child: Container(
+                    width: kMinInteractiveDimension,
+                    height: kMinInteractiveDimension,
+                    decoration: ShapeDecoration(
+                      shape: mmShapeBorder(skin.shape,
+                          side: BorderSide(color: skin.color.line)),
+                    ),
+                    child: Center(
+                      child: Icon(Icons.keyboard_outlined,
+                          size: skin.type.size(22), color: skin.color.fgMuted),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

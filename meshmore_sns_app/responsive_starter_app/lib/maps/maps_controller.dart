@@ -461,11 +461,8 @@ class MapsController extends ChangeNotifier with SafeNotifier {
   /// Bytes for one tile: the store first, the network if we must.
   /// Stale view tiles are revalidated (If-None-Match) when online and
   /// shown as-is when not; pack tiles are never refetched by viewing.
-  Future<Uint8List?> loadTile(MapSource src, int z, int x, int y) async {
-    final TileLoad t = await loadTileDetailed(src, z, x, y);
-    if (t.bytes != null) _noteReady(src, z, x, y);
-    return t.bytes;
-  }
+  Future<Uint8List?> loadTile(MapSource src, int z, int x, int y) async =>
+      (await loadTileDetailed(src, z, x, y)).bytes;
 
   /// [loadTile] plus the one distinction the vector layer needs: "the
   /// server has nothing here" (draw an empty tile) versus "could not reach
@@ -602,7 +599,20 @@ class MapsController extends ChangeNotifier with SafeNotifier {
     return d < src.minCacheAge ? src.minCacheAge : d;
   }
 
+  /// [loadTileDetailed] with the readiness note, so every consumer counts.
+  ///
+  /// The raster layer calls [loadTile] and the vector layer calls this one
+  /// directly, and only the first of those used to record the tile. The map
+  /// draws vector tiles by default, so the density field's "is this ground
+  /// drawn?" test answered no for every cell on every skin and the hexagons
+  /// vanished. One wrapper, so a new tile consumer cannot miss it again.
   Future<TileLoad> loadTileDetailed(MapSource src, int z, int x, int y) async {
+    final TileLoad t = await _loadTileDetailed(src, z, x, y);
+    if (t.bytes != null) _noteReady(src, z, x, y);
+    return t;
+  }
+
+  Future<TileLoad> _loadTileDetailed(MapSource src, int z, int x, int y) async {
     await ready;
     if (src.id == kOsmVector.id && archives.isNotEmpty) {
       final TileLoad? a = await _fromArchives(z, x, y);

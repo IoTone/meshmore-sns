@@ -48,11 +48,25 @@ class ThemeController extends ChangeNotifier {
   /// on high contrast still got the quiet skin. Set from `MediaQuery` at the root
   /// (`main.dart`), never persisted: they are the platform's, not ours.
   bool _osReduceMotion = false;
-  bool _osHighContrast = false;
 
   /// True when either the app's switch or the platform's is on.
+  ///
+  /// Reduce motion is a request to *stop moving*, which the app can honour
+  /// without changing what anything looks like, so the platform's answer is
+  /// ORed in.
   bool get reduceMotion => _reduceMotion || _osReduceMotion;
-  bool get highContrast => _highContrast || _osHighContrast;
+
+  /// The app's own switch, and only that.
+  ///
+  /// The platform's high-contrast request used to be ORed in here too, and that
+  /// made it a second, invisible switch: this getter feeds `context.skin`, while
+  /// `ThemeData` was built from the **raw field**. With the platform flag on and
+  /// the app's switch off, the ground came from the high-contrast skin and the
+  /// text from the chosen one — a black page with near-black text on Air, and the
+  /// same split on every other theme, with the switch unable to turn it off.
+  /// High contrast is an app decision about colours, so it is read from the app's
+  /// own field in both places.
+  bool get highContrast => _highContrast;
 
   /// The platform's reduce-motion setting changed. No-op when it did not
   /// change, so a rebuild per frame cannot notify in a loop.
@@ -62,11 +76,6 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setOsHighContrast(bool v) {
-    if (v == _osHighContrast) return;
-    _osHighContrast = v;
-    notifyListeners();
-  }
 
   MmThemePreset get preset => _preset;
   double get fontScale => _fontScale;

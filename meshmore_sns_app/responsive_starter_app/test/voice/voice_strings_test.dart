@@ -34,9 +34,9 @@ void main() {
     'voiceNoteSend',
     'voiceNotePreview',
     'voiceNotePlaying',
-    'voiceModeTitle',
-    'voiceModeNarrow',
-    'voiceModeStandard',
+    // The mode picker is gone: one codec, 700C, chosen by the wire format
+    // rather than by the reader. The names are not in the ARBs because nothing
+    // asks the reader to pick between two bitrates for a talk burst.
     'voiceNoteTooShort',
     // The received side: the sheet, its empty state, its count, and the one
     // failure a stored payload can produce.

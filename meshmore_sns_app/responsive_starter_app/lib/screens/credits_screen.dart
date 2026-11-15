@@ -192,6 +192,19 @@ final class Credit {
 /// faces, and the map data and style. Each is named with the licence it is
 /// actually under, and the URL is the project's own page rather than a guess.
 const List<Credit> kNativeCredits = <Credit>[
+  // The neural image codec's model bundle. Not a package: it is downloaded from
+  // its publisher on demand (about 1 GB), so the registry never sees it and the
+  // attribution has to be written here. MIT, and the copyright line is the one
+  // the model card carries.
+  Credit(
+    name: 'AEIC-SE image codec (zjs81/aeic-se-onnx)',
+    licence: 'MIT',
+    body: 'Copyright (c) 2026 zjs81\n\n'
+        'The AEIC-SE neural image codec models (three ONNX graphs and the rANS '
+        'CDF table) are published at huggingface.co/zjs81/aeic-se-onnx under the '
+        'MIT licence. They are downloaded from that address only when the reader '
+        'installs the codec from App settings, and deleted when they remove it.',
+  ),
   Credit(
     name: 'libavif',
     licence: 'BSD-2-Clause',

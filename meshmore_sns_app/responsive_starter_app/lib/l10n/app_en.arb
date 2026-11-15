@@ -894,7 +894,7 @@
       }
     }
   },
-  "chatSendNotSent": "Not sent. The MeshCore radio is not connected. Your message is back in the box.",
+  "chatSendNotSent": "Not sent: no MeshCore radio.",
   "chatSend": "Send",
   "chatBudgetNear": "Nearly at the limit: the MeshCore radio counts its own name in these bytes",
   "chatBudgetTooLong": "Too long by {over} bytes. The MeshCore radio would cut the rest without telling you",
@@ -1491,7 +1491,6 @@
     }
   },
   "channelsTitle": "Channels",
-  "channelsRadioSettings": "MeshCore radio settings: Networks",
   "networksIntro": "Who can hear this MeshCore radio",
   "channelsIntro": "Who can read your messages: a shared key per thread.",
   "channelsHelp": "Channel 0 is the shared public one. A private group needs the same channel number, name and key on every MeshCore radio.",
@@ -1589,12 +1588,12 @@
   "@notifTitleSos": {
     "description": "OS notification title for an SOS or its acknowledgement."
   },
-  "notifBodySos": "Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.",
-  "notifAlarmRunningBody": "An alarm is repeating. Open the app to stop it.",
+  "notifBodySos": "Open the app to see the position.",
+  "notifAlarmRunningBody": "Alarm repeating. Open to stop.",
   "@notifAlarmRunningBody": {
     "description": "Ongoing notification shown while an SOS is running."
   },
-  "notifBodyFence": "From the latest position update. A crossing is only noticed when a fix arrives.",
+  "notifBodyFence": "Noticed on the latest position fix.",
   "@notifBodyFence": {
     "description": "OS notification body for a fence crossing. States the limit: fences are evaluated against the position fixes the app already has, so a crossing can lag the walk."
   },
@@ -1614,7 +1613,7 @@
     "description": "OS notification body for an SOS. Deliberately omits the coordinates: the lock screen is not where a position should be published."
   },
   "notifSectionTitle": "Notifications",
-  "notifMutedNoticeHere": "Silenced. These switches apply when it is turned back on.",
+  "notifMutedNoticeHere": "Silenced. Switches apply when unsilenced.",
   "notifMuted": "Silence this channel",
   "settingsSilencePerChannel": "Silence a channel",
   "notifMutedSub": "Messages kept, alerts stopped",
@@ -1654,11 +1653,11 @@
     "description": "Warns about the key-suffix opt-in."
   },
   "notifDeniedBanner": "Notifications are off",
-  "notifQuietBanner": "Notifications for this app are set to silent in Android settings, so alerts will not make a sound.",
+  "notifQuietBanner": "Notifications are silent in Android settings.",
   "@notifQuietBanner": {
     "description": "Shown when one of the app's notification channels is below high importance."
   },
-  "notifMissingChannelBanner": "One of this app's notification channels was deleted, so some alerts could not be shown. It has been recreated.",
+  "notifMissingChannelBanner": "Notification channel recreated.",
   "@notifMissingChannelBanner": {
     "description": "Shown when a notification channel was deleted by the user."
   },
@@ -3430,7 +3429,6 @@
       }
     }
   },
-  "checkinOneMessage": "One message, no repeat",
   "checkinWatching": "Waiting for an answer",
   "checkinOverdue": "Overdue. The deadline passed and no answer came back.",
   "checkinAnsweredDirect": "Answered, by direct message.",
@@ -3971,6 +3969,42 @@
   "settingsFahrenheitOn": "70 °F",
   "settingsAppGroupSound": "Reading and sound",
   "settingsPhotoColorTitle": "Send photos in colour",
+  "codecUnavailableHere": "Not in this build yet",
+  "codecLicence": "MIT · zjs81/aeic-se-onnx",
+  "codecCancel": "Cancel",
+  "codecRetry": "Try again",
+  "codecFailed": "Download failed",
+  "codecRemove": "Delete",
+  "codecInstalled": "Installed",
+  "codecDownload": "Download",
+  "codecNotInstalled": "Not installed · about 1 GB",
+  "codecTitle": "Neural image codec",
+  "photoModeNeedsCodec": "Needs the neural codec",
+  "photoModeOnRequest": "Full picture on request",
+  "photoModePreview": "Preview only",
+  "photoModeTitle": "Photo mode",
+  "photoModeSettings": "Photo settings",
+  "photoModeLinePreview": "Preview only · pixels stay here",
+  "photoModeLine": "{mode} · {cost}",
+
+  "@photoModeLine": {
+    "placeholders": {
+      "mode": { "type": "String" },
+      "cost": { "type": "String" }
+    }
+  },
+  "photoSettingsTitle": "Photos",
+  "chatMediaTitle": "Chat & media",
+  "chatMediaMessages": "Messages",
+  "voiceUnavailable": "Speech is not available on this device.",
+  "chatMediaRetentionBody": "The newest {count} messages per channel.",
+
+  "@chatMediaRetentionBody": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "chatMediaRetentionTitle": "History kept",
   "settingsPhotoColorSub": "Grey: one third the data",
   "settingsAppGroupData": "Data",
   "settingsAppGroupSystem": "System",
@@ -4188,7 +4222,6 @@
   "placeSuggestReport": "Tag place",
   "placeSuggestDismiss": "Dismiss",
   "placeSuggestNeedsLocation": "Turn on location to tag a place.",
-  "mapCompassLegend": "The arrow is this phone's compass.",
   "diagnosticsPosition": "Position, as the app sees it",
   "diagnosticsPositionRadio": "MeshCore radio {lat}, {lon}",
   "diagnosticsPositionPolicy": "advert policy {policy}",
@@ -4585,9 +4618,6 @@
   "voiceNoteSend": "Send voice",
   "voiceNotePreview": "Preview",
   "voiceNotePlaying": "Playing",
-  "voiceModeTitle": "Voice mode",
-  "voiceModeNarrow": "Narrow",
-  "voiceModeStandard": "Standard",
   "voiceNotesTitle": "Voice notes",
   "voiceNotesEmpty": "No voice notes yet. Record one, then send it.",
   "voiceNotesCount": "Voice notes ({count})",
@@ -4714,6 +4744,8 @@
   },
   "actionQuote": "Quote this message",
   "actionReact": "React",
+  "reactionSend": "Send",
+  "reactionAnyEmoji": "Any emoji",
   "actionFriendlyAck": "Friendly ack",
   "actionReplyNoName": "Reply",
   "chatActionsNoRadio": "No MeshCore radio: a reply or quote waits in the box until one is connected.",

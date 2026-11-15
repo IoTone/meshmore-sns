@@ -175,6 +175,23 @@ void main() {
       await mc.sendChannelText('m$i');
     }
     await t.pumpAndSettle();
+    // At the bottom of a long thread the line is not shown: it is about the rows
+    // above the first one, and a reader in the middle or at the newest message
+    // cannot act on it.
+    expect(find.textContaining('older message'), findsNothing,
+        reason: 'a thread scrolled to the bottom must not carry the line');
+
+    // Scrolling to the very top is the moment a reader asks "is that all of
+    // it?", and it is the only place the answer belongs.
+    // Every scrollable in the tree, because the thread is not the only one on
+    // the screen (the channel strip is horizontal). Jumping the wrong one would
+    // assert the wrong thing.
+    for (final Element e in find.byType(Scrollable).evaluate()) {
+      final ScrollableState st = (e as StatefulElement).state as ScrollableState;
+      if (st.position.hasContentDimensions) st.position.jumpTo(0);
+    }
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 50));
     expect(find.textContaining('1 older message'), findsOneWidget);
 
     mc.dispose();

@@ -1522,8 +1522,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chatSendNotSent =>
-      'Not sent. The MeshCore radio is not connected. Your message is back in the box.';
+  String get chatSendNotSent => 'Not sent: no MeshCore radio.';
 
   @override
   String get chatSend => 'Send';
@@ -2331,9 +2330,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsTitle => 'Channels';
 
   @override
-  String get channelsRadioSettings => 'MeshCore radio settings: Networks';
-
-  @override
   String get networksIntro => 'Who can hear this MeshCore radio';
 
   @override
@@ -2468,16 +2464,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifTitleSos => 'Emergency alert';
 
   @override
-  String get notifBodySos =>
-      'Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.';
+  String get notifBodySos => 'Open the app to see the position.';
 
   @override
-  String get notifAlarmRunningBody =>
-      'An alarm is repeating. Open the app to stop it.';
+  String get notifAlarmRunningBody => 'Alarm repeating. Open to stop.';
 
   @override
-  String get notifBodyFence =>
-      'From the latest position update. A crossing is only noticed when a fix arrives.';
+  String get notifBodyFence => 'Noticed on the latest position fix.';
 
   @override
   String get settingsBatteryOptimisedTitle => 'Android may stop the link';
@@ -2494,7 +2487,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifMutedNoticeHere =>
-      'Silenced. These switches apply when it is turned back on.';
+      'Silenced. Switches apply when unsilenced.';
 
   @override
   String get notifMuted => 'Silence this channel';
@@ -2534,11 +2527,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifQuietBanner =>
-      'Notifications for this app are set to silent in Android settings, so alerts will not make a sound.';
+      'Notifications are silent in Android settings.';
 
   @override
-  String get notifMissingChannelBanner =>
-      'One of this app\'s notification channels was deleted, so some alerts could not be shown. It has been recreated.';
+  String get notifMissingChannelBanner => 'Notification channel recreated.';
 
   @override
   String get channelsKeyPublic => 'Public';
@@ -5063,9 +5055,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get checkinOneMessage => 'One message, no repeat';
-
-  @override
   String get checkinWatching => 'Waiting for an answer';
 
   @override
@@ -5801,6 +5790,79 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPhotoColorTitle => 'Send photos in colour';
 
   @override
+  String get codecUnavailableHere => 'Not in this build yet';
+
+  @override
+  String get codecLicence => 'MIT · zjs81/aeic-se-onnx';
+
+  @override
+  String get codecCancel => 'Cancel';
+
+  @override
+  String get codecRetry => 'Try again';
+
+  @override
+  String get codecFailed => 'Download failed';
+
+  @override
+  String get codecRemove => 'Delete';
+
+  @override
+  String get codecInstalled => 'Installed';
+
+  @override
+  String get codecDownload => 'Download';
+
+  @override
+  String get codecNotInstalled => 'Not installed · about 1 GB';
+
+  @override
+  String get codecTitle => 'Neural image codec';
+
+  @override
+  String get photoModeNeedsCodec => 'Needs the neural codec';
+
+  @override
+  String get photoModeOnRequest => 'Full picture on request';
+
+  @override
+  String get photoModePreview => 'Preview only';
+
+  @override
+  String get photoModeTitle => 'Photo mode';
+
+  @override
+  String get photoModeSettings => 'Photo settings';
+
+  @override
+  String get photoModeLinePreview => 'Preview only · pixels stay here';
+
+  @override
+  String photoModeLine(String mode, String cost) {
+    return '$mode · $cost';
+  }
+
+  @override
+  String get photoSettingsTitle => 'Photos';
+
+  @override
+  String get chatMediaTitle => 'Chat & media';
+
+  @override
+  String get chatMediaMessages => 'Messages';
+
+  @override
+  String get voiceUnavailable => 'Speech is not available on this device.';
+
+  @override
+  String chatMediaRetentionBody(int count) {
+    return 'The newest $count messages per channel.';
+  }
+
+  @override
+  String get chatMediaRetentionTitle => 'History kept';
+
+  @override
   String get settingsPhotoColorSub => 'Grey: one third the data';
 
   @override
@@ -6106,9 +6168,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeSuggestNeedsLocation => 'Turn on location to tag a place.';
-
-  @override
-  String get mapCompassLegend => 'The arrow is this phone\'s compass.';
 
   @override
   String get diagnosticsPosition => 'Position, as the app sees it';
@@ -6721,15 +6780,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get voiceNotePlaying => 'Playing';
 
   @override
-  String get voiceModeTitle => 'Voice mode';
-
-  @override
-  String get voiceModeNarrow => 'Narrow';
-
-  @override
-  String get voiceModeStandard => 'Standard';
-
-  @override
   String get voiceNotesTitle => 'Voice notes';
 
   @override
@@ -6896,6 +6946,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get actionReact => 'React';
+
+  @override
+  String get reactionSend => 'Send';
+
+  @override
+  String get reactionAnyEmoji => 'Any emoji';
 
   @override
   String get actionFriendlyAck => 'Friendly ack';

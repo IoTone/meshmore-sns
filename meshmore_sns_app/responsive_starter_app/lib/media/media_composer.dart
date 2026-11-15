@@ -3,6 +3,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -14,6 +15,7 @@ import '../ui/mm_components.dart';
 import 'media_chunk.dart';
 import 'media_journal.dart';
 import 'media_offer.dart';
+import 'media_mode.dart';
 import 'media_photo.dart';
 import 'mp1.dart';
 import 'media_prefs.dart';
@@ -168,6 +170,13 @@ class _MediaComposerState extends State<MediaComposer> {
   String? _sourceProblem;
   final Set<int> _lost = <int>{};
 
+  /// The photo mode at the moment the composer opened. Read once so the line the
+  /// reader sees and the behaviour of the send cannot disagree if the preference
+  /// changes behind the sheet. Null until the preference has been read, which is
+  /// the same answer as the default.
+  MediaMode? _modeRead;
+  MediaMode get _mode => _modeRead ?? MediaMode.onRequest;
+
   /// The upload in flight, so closing the sheet stops it.
   ///
   /// A photo is twenty datagrams with a 350 ms pacing, and a radio that answers
@@ -240,6 +249,12 @@ class _MediaComposerState extends State<MediaComposer> {
     final MediaTransferPlan? plan = _plan;
     final MediaPhoto? photo = _photo;
     if (plan == null || photo == null) return;
+    // What the reader chose in App settings decides how far the pixels go.
+    // Preview-only means the preview *is* the picture: the payload is not held,
+    // so no request can pull the full one later. The neural mode never reaches
+    // here while `kAeicEncodeAvailable` is false, because the settings row will
+    // not select it.
+    final MediaMode mode = _mode;
     // The id travels in the preview and comes back in a request, so it has to
     // be unique among the offers this session is holding.
     final int id = _offerId++;
@@ -270,6 +285,11 @@ class _MediaComposerState extends State<MediaComposer> {
           _stalled = MediaSendResult.refused;
           _stage = _Stage.failed;
         });
+        return;
+      }
+      // Preview only: nothing is held, so the one datagram is the whole send.
+      if (mode == MediaMode.preview) {
+        setState(() => _stage = _Stage.done);
         return;
       }
       // The pixels are held, not sent. Fifteen minutes is long enough for a
@@ -368,6 +388,7 @@ class _MediaComposerState extends State<MediaComposer> {
                   style: TextStyle(
                       color: skin.color.fgMuted,
                       fontSize: skin.type.sizeSm)),
+            _modeLine(skin, l),
             if (_plan != null && _stage != _Stage.done) _planBlock(skin, l),
             if (_stage == _Stage.sending)
               Text(l.mediaSendingProgress(_sent, _plan!.cost.chunks),
@@ -445,6 +466,43 @@ class _MediaComposerState extends State<MediaComposer> {
           MediaSendRefusal.fullPictureOnChannel => l.mediaFullPictureOnChannel,
         },
       );
+
+  /// What the reader's photo mode means for this send, and the way to change it.
+  ///
+  /// The mode lives in App settings → Photos, which is one screen away, and a
+  /// reader who has just taken a picture should not have to leave the composer to
+  /// find out that the pixels are not going anywhere.
+  Widget _modeLine(MmSkin skin, AppLocalizations l) {
+    final MediaMode mode = _mode;
+    final String text = mode == MediaMode.preview
+        ? l.photoModeLinePreview
+        : l.photoModeLine(_modeLabel(l, mode), mode.bytes);
+    return Padding(
+      padding: EdgeInsets.only(bottom: skin.space.step(2)),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(text,
+                key: const ValueKey<String>('photo-mode-line'),
+                style: TextStyle(
+                    color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+          ),
+          MmAction(
+            key: const ValueKey<String>('photo-mode-settings'),
+            dense: true,
+            label: l.photoModeSettings,
+            onPressed: () => context.push('/settings/chat'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _modeLabel(AppLocalizations l, MediaMode m) => switch (m) {
+        MediaMode.preview => l.photoModePreview,
+        MediaMode.onRequest => l.photoModeOnRequest,
+        MediaMode.neural => l.codecTitle,
+      };
 
   Widget _planBlock(MmSkin skin, AppLocalizations l) {
     final MediaTransferPlan plan = _plan!;

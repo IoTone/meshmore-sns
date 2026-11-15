@@ -42,17 +42,22 @@ enum MmThemePreset {
 
 extension MmThemePresetX on MmThemePreset {
   String get label => switch (this) {
+        // A name, not a description. The picker already shows each preset in its
+        // own colours, which is a better description than three adjectives and
+        // does not have to be translated twice. The one exception is the
+        // monolith: it is the high-contrast ground the accessibility floor is
+        // measured against, and that is a fact a reader needs in the list.
         MmThemePreset.nerv => 'NERV Terminal',
         MmThemePreset.agHud => 'AG-HUD',
         MmThemePreset.hyperlocal => 'Hyperlocal',
-        MmThemePreset.seele => 'SEELE Monolith — default · high-contrast',
+        MmThemePreset.seele => 'SEELE Monolith — high contrast',
         MmThemePreset.drPop => 'DR Pop',
         MmThemePreset.recon => 'Recon Night',
-        MmThemePreset.studio => 'Studio Dark — clean · square',
-        MmThemePreset.forest => 'Forest — dark pine · one green',
-        MmThemePreset.air => 'Air — white page · blue',
-        MmThemePreset.daybreak => 'Daybreak — white page · vermilion',
-        MmThemePreset.umber => 'Umber — gruvbox browns',
+        MmThemePreset.studio => 'Studio',
+        MmThemePreset.forest => 'Forest',
+        MmThemePreset.air => 'Air',
+        MmThemePreset.daybreak => 'Daybreak',
+        MmThemePreset.umber => 'Umber',
       };
 
   /// Asset-folder slug for the R12 per-theme audio pack. Used by

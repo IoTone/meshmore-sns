@@ -22,11 +22,12 @@ import '../meshcore/fake_transport.dart';
 
 /// The Map tab draws exactly one heading, and it is the phone's.
 ///
-/// A MeshCore node reports a position, never a facing, so the arrow on the
-/// self marker comes from the phone's magnetometer. Nothing in the UI said so
-/// — a reader could only guess whether the arrow was the radio's or the
-/// phone's. The legend says it now, and says it only while there is an arrow
-/// to explain: a legend for a mark that is not drawn is its own small lie.
+/// A MeshCore node reports a position, never a facing, so the arrow on the self
+/// marker comes from the phone's magnetometer. It carried a legend line for a
+/// while ("The arrow is this phone's compass") and the owner removed it: a
+/// compass needle needs no caption, and the line was permanent text under a map
+/// that is already busy. This test holds the removal, because a legend that
+/// creeps back is a permanent piece of chrome nobody asked for again.
 class _NoSettings implements PermissionsService {
   @override
   Future<void> openAppSettingsPage() async {}
@@ -39,7 +40,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
 
-  testWidgets('a compass reading puts the legend under the map',
+  testWidgets('a compass reading draws the arrow with no legend under it',
       (WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(400, 800));
     addTearDown(() => t.binding.setSurfaceSize(null));
@@ -99,8 +100,8 @@ void main() {
     await t.pumpAndSettle();
 
     expect(find.byKey(const ValueKey<String>('map-compass-legend')),
-        findsOneWidget);
-    expect(find.text("The arrow is this phone's compass."), findsOneWidget);
+        findsNothing);
+    expect(find.text("The arrow is this phone's compass."), findsNothing);
     // Disposed inside the body: the controller's poll is a periodic timer,
     // and the harness checks for pending timers before tear-downs run.
     ctrl.dispose();

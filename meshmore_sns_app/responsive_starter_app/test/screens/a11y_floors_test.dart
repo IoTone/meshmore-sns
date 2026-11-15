@@ -278,7 +278,7 @@ void main() {
     '/settings/tools/discover',
     '/settings/tools/soak',
     '/settings/tools/range',
-    '/settings/voice',
+    '/settings/chat',
     '/settings/location',
     '/settings/geofences',
     '/settings/places',

@@ -179,17 +179,11 @@ class ChannelsScreen extends StatelessWidget {
       body: MmScaffold(
         child: ListView(
           children: <Widget>[
-                      // The other half of "who else is in this conversation": a
-                      // channel is a shared key, not a radio setting. The same
-                      // line appears on Settings -> Networks.
-                      Padding(
-                        padding: EdgeInsets.only(
-                            bottom: context.skin.space.rowGap),
-                        child: Text(l.channelsRadioSettings,
-                            style: TextStyle(
-                                color: context.skin.color.fgMuted,
-                                fontSize: context.skin.type.sizeSm)),
-                      ),
+            // One sentence, then the slots. This page carried two intro lines —
+            // `channelsRadioSettings` and `channelsIntro` — saying the same thing
+            // in different words, which is the "different header" the owner saw:
+            // one page, two openings. The section label below is the only heading
+            // the body has.
             // Channels and Networks are the two halves of "who else is in this
             // conversation", and they are not the same question: a channel is a
             // shared key (who can *read* a thread), a network is the radio tuple
@@ -210,7 +204,8 @@ class ChannelsScreen extends StatelessWidget {
                 child: Text(l.channelsOfflineHint,
                     style: TextStyle(color: cs.error)),
               ),
-            const Divider(height: 1),
+            SizedBox(height: context.skin.space.sectionGap),
+            MmSectionHeader(l.channelsTitle),
             for (int idx = 0; idx < slots; idx++)
               ListTile(
                 leading: Icon(

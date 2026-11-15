@@ -2669,7 +2669,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatSendNotSent.
   ///
   /// In en, this message translates to:
-  /// **'Not sent. The MeshCore radio is not connected. Your message is back in the box.'**
+  /// **'Not sent: no MeshCore radio.'**
   String get chatSendNotSent;
 
   /// No description provided for @chatSend.
@@ -3968,12 +3968,6 @@ abstract class AppLocalizations {
   /// **'Channels'**
   String get channelsTitle;
 
-  /// No description provided for @channelsRadioSettings.
-  ///
-  /// In en, this message translates to:
-  /// **'MeshCore radio settings: Networks'**
-  String get channelsRadioSettings;
-
   /// No description provided for @networksIntro.
   ///
   /// In en, this message translates to:
@@ -4193,19 +4187,19 @@ abstract class AppLocalizations {
   /// OS notification body for an SOS. Deliberately omits the coordinates: the lock screen is not where a position should be published.
   ///
   /// In en, this message translates to:
-  /// **'Open the app for the position. The alert carries coordinates that this phone does not show on the lock screen.'**
+  /// **'Open the app to see the position.'**
   String get notifBodySos;
 
   /// Ongoing notification shown while an SOS is running.
   ///
   /// In en, this message translates to:
-  /// **'An alarm is repeating. Open the app to stop it.'**
+  /// **'Alarm repeating. Open to stop.'**
   String get notifAlarmRunningBody;
 
   /// OS notification body for a fence crossing. States the limit: fences are evaluated against the position fixes the app already has, so a crossing can lag the walk.
   ///
   /// In en, this message translates to:
-  /// **'From the latest position update. A crossing is only noticed when a fix arrives.'**
+  /// **'Noticed on the latest position fix.'**
   String get notifBodyFence;
 
   /// App settings row shown when this app is still on the battery-optimisation list, which lets an OEM stop the foreground service.
@@ -4235,7 +4229,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifMutedNoticeHere.
   ///
   /// In en, this message translates to:
-  /// **'Silenced. These switches apply when it is turned back on.'**
+  /// **'Silenced. Switches apply when unsilenced.'**
   String get notifMutedNoticeHere;
 
   /// No description provided for @notifMuted.
@@ -4313,13 +4307,13 @@ abstract class AppLocalizations {
   /// Shown when one of the app's notification channels is below high importance.
   ///
   /// In en, this message translates to:
-  /// **'Notifications for this app are set to silent in Android settings, so alerts will not make a sound.'**
+  /// **'Notifications are silent in Android settings.'**
   String get notifQuietBanner;
 
   /// Shown when a notification channel was deleted by the user.
   ///
   /// In en, this message translates to:
-  /// **'One of this app\'s notification channels was deleted, so some alerts could not be shown. It has been recreated.'**
+  /// **'Notification channel recreated.'**
   String get notifMissingChannelBanner;
 
   /// No description provided for @channelsKeyPublic.
@@ -8608,12 +8602,6 @@ abstract class AppLocalizations {
   /// **'Deadline {time}'**
   String checkinUntil(String time);
 
-  /// No description provided for @checkinOneMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'One message, no repeat'**
-  String get checkinOneMessage;
-
   /// No description provided for @checkinWatching.
   ///
   /// In en, this message translates to:
@@ -9772,6 +9760,144 @@ abstract class AppLocalizations {
   /// **'Send photos in colour'**
   String get settingsPhotoColorTitle;
 
+  /// No description provided for @codecUnavailableHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in this build yet'**
+  String get codecUnavailableHere;
+
+  /// No description provided for @codecLicence.
+  ///
+  /// In en, this message translates to:
+  /// **'MIT · zjs81/aeic-se-onnx'**
+  String get codecLicence;
+
+  /// No description provided for @codecCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get codecCancel;
+
+  /// No description provided for @codecRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get codecRetry;
+
+  /// No description provided for @codecFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed'**
+  String get codecFailed;
+
+  /// No description provided for @codecRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get codecRemove;
+
+  /// No description provided for @codecInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Installed'**
+  String get codecInstalled;
+
+  /// No description provided for @codecDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get codecDownload;
+
+  /// No description provided for @codecNotInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'Not installed · about 1 GB'**
+  String get codecNotInstalled;
+
+  /// No description provided for @codecTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Neural image codec'**
+  String get codecTitle;
+
+  /// No description provided for @photoModeNeedsCodec.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs the neural codec'**
+  String get photoModeNeedsCodec;
+
+  /// No description provided for @photoModeOnRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Full picture on request'**
+  String get photoModeOnRequest;
+
+  /// No description provided for @photoModePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only'**
+  String get photoModePreview;
+
+  /// No description provided for @photoModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo mode'**
+  String get photoModeTitle;
+
+  /// No description provided for @photoModeSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo settings'**
+  String get photoModeSettings;
+
+  /// No description provided for @photoModeLinePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only · pixels stay here'**
+  String get photoModeLinePreview;
+
+  /// No description provided for @photoModeLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{mode} · {cost}'**
+  String photoModeLine(String mode, String cost);
+
+  /// No description provided for @photoSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get photoSettingsTitle;
+
+  /// No description provided for @chatMediaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat & media'**
+  String get chatMediaTitle;
+
+  /// No description provided for @chatMediaMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get chatMediaMessages;
+
+  /// No description provided for @voiceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech is not available on this device.'**
+  String get voiceUnavailable;
+
+  /// No description provided for @chatMediaRetentionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The newest {count} messages per channel.'**
+  String chatMediaRetentionBody(int count);
+
+  /// No description provided for @chatMediaRetentionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'History kept'**
+  String get chatMediaRetentionTitle;
+
   /// No description provided for @settingsPhotoColorSub.
   ///
   /// In en, this message translates to:
@@ -10287,12 +10413,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Turn on location to tag a place.'**
   String get placeSuggestNeedsLocation;
-
-  /// No description provided for @mapCompassLegend.
-  ///
-  /// In en, this message translates to:
-  /// **'The arrow is this phone\'s compass.'**
-  String get mapCompassLegend;
 
   /// No description provided for @diagnosticsPosition.
   ///
@@ -11308,24 +11428,6 @@ abstract class AppLocalizations {
   /// **'Playing'**
   String get voiceNotePlaying;
 
-  /// No description provided for @voiceModeTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Voice mode'**
-  String get voiceModeTitle;
-
-  /// No description provided for @voiceModeNarrow.
-  ///
-  /// In en, this message translates to:
-  /// **'Narrow'**
-  String get voiceModeNarrow;
-
-  /// No description provided for @voiceModeStandard.
-  ///
-  /// In en, this message translates to:
-  /// **'Standard'**
-  String get voiceModeStandard;
-
   /// No description provided for @voiceNotesTitle.
   ///
   /// In en, this message translates to:
@@ -11577,6 +11679,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'React'**
   String get actionReact;
+
+  /// No description provided for @reactionSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get reactionSend;
+
+  /// No description provided for @reactionAnyEmoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Any emoji'**
+  String get reactionAnyEmoji;
 
   /// No description provided for @actionFriendlyAck.
   ///

@@ -1461,7 +1461,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatSendNotSent => '送信できませんでした（MeshCore 無線機が未接続）。メッセージは入力欄に戻しました。';
+  String get chatSendNotSent => '未送信：MeshCore 無線機なし';
 
   @override
   String get chatSend => '送信';
@@ -2249,9 +2249,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsTitle => 'チャンネル';
 
   @override
-  String get channelsRadioSettings => '無線機の設定は「ネットワーク」';
-
-  @override
   String get networksIntro => 'この無線機を誰が受信できるか';
 
   @override
@@ -2382,13 +2379,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifTitleSos => '緊急アラート';
 
   @override
-  String get notifBodySos => '位置はアプリで確認してください。警報には座標が含まれますが、ロック画面には表示しません。';
+  String get notifBodySos => 'アプリで位置を確認してください。';
 
   @override
-  String get notifAlarmRunningBody => '警報を繰り返し送信中です。アプリを開いて停止してください。';
+  String get notifAlarmRunningBody => '警報を繰り返し中。開いて停止。';
 
   @override
-  String get notifBodyFence => '最新の位置情報による判定です。位置情報が届いたときにだけ通過を検知します。';
+  String get notifBodyFence => '最新の位置情報で検知。';
 
   @override
   String get settingsBatteryOptimisedTitle => 'Android が接続を止める場合あり';
@@ -2403,7 +2400,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifSectionTitle => '通知';
 
   @override
-  String get notifMutedNoticeHere => '通知は停止中です。再び有効にすると下のスイッチが効きます。';
+  String get notifMutedNoticeHere => '消音中。解除後に反映されます。';
 
   @override
   String get notifMuted => 'このチャンネルを通知停止';
@@ -2442,12 +2439,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifDeniedBanner => '通知がオフです';
 
   @override
-  String get notifQuietBanner =>
-      'このアプリの通知が Android 設定でサイレントになっているため、警告音は鳴りません。';
+  String get notifQuietBanner => 'Android 設定で通知が消音です。';
 
   @override
-  String get notifMissingChannelBanner =>
-      'このアプリの通知チャンネルが削除されていたため、一部の通知を表示できませんでした。再作成しました。';
+  String get notifMissingChannelBanner => '通知チャンネルを再作成しました。';
 
   @override
   String get channelsKeyPublic => 'Public';
@@ -4893,9 +4888,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get checkinOneMessage => '1 通のみ、繰り返しなし';
-
-  @override
   String get checkinWatching => '応答待ち';
 
   @override
@@ -5585,6 +5577,79 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsPhotoColorTitle => '写真をカラーで送る';
 
   @override
+  String get codecUnavailableHere => 'このビルドでは未対応';
+
+  @override
+  String get codecLicence => 'MIT · zjs81/aeic-se-onnx';
+
+  @override
+  String get codecCancel => '中止';
+
+  @override
+  String get codecRetry => '再試行';
+
+  @override
+  String get codecFailed => 'ダウンロード失敗';
+
+  @override
+  String get codecRemove => '削除';
+
+  @override
+  String get codecInstalled => '導入済み';
+
+  @override
+  String get codecDownload => 'ダウンロード';
+
+  @override
+  String get codecNotInstalled => '未導入・約 1 GB';
+
+  @override
+  String get codecTitle => 'ニューラル画像コーデック';
+
+  @override
+  String get photoModeNeedsCodec => 'ニューラルコーデックが必要';
+
+  @override
+  String get photoModeOnRequest => '要求時に全体';
+
+  @override
+  String get photoModePreview => 'プレビューのみ';
+
+  @override
+  String get photoModeTitle => '写真のモード';
+
+  @override
+  String get photoModeSettings => '写真設定';
+
+  @override
+  String get photoModeLinePreview => 'プレビューのみ・画像は送信しません';
+
+  @override
+  String photoModeLine(String mode, String cost) {
+    return '$mode · $cost';
+  }
+
+  @override
+  String get photoSettingsTitle => '写真';
+
+  @override
+  String get chatMediaTitle => 'チャットとメディア';
+
+  @override
+  String get chatMediaMessages => 'メッセージ';
+
+  @override
+  String get voiceUnavailable => 'この端末では音声合成を利用できません。';
+
+  @override
+  String chatMediaRetentionBody(int count) {
+    return 'チャンネルごとに最新 $count 件。';
+  }
+
+  @override
+  String get chatMediaRetentionTitle => '保持する履歴';
+
+  @override
   String get settingsPhotoColorSub => 'グレー：データ 3 分の 1';
 
   @override
@@ -5880,9 +5945,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get placeSuggestNeedsLocation => '場所をタグ付けするには位置情報をオンにしてください。';
-
-  @override
-  String get mapCompassLegend => '矢印はこの端末の方位磁針です。';
 
   @override
   String get diagnosticsPosition => 'アプリが見ている位置';
@@ -6478,15 +6540,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get voiceNotePlaying => '再生中';
 
   @override
-  String get voiceModeTitle => '音声モード';
-
-  @override
-  String get voiceModeNarrow => 'ナロー';
-
-  @override
-  String get voiceModeStandard => 'スタンダード';
-
-  @override
   String get voiceNotesTitle => 'ボイスメモ';
 
   @override
@@ -6649,6 +6702,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get actionReact => 'リアクション';
+
+  @override
+  String get reactionSend => '送信';
+
+  @override
+  String get reactionAnyEmoji => '任意の絵文字';
 
   @override
   String get actionFriendlyAck => 'フレンドリー ACK';

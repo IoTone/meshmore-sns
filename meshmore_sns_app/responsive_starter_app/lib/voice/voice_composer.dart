@@ -101,7 +101,7 @@ enum _Stage { idle, recording, encoding, ready, sending, done, failed }
 
 class _VoiceComposerState extends State<VoiceComposer> {
   _Stage _stage = _Stage.idle;
-  late VoiceMode _mode = widget.initialMode;
+  VoiceMode get _mode => widget.initialMode;
 
   /// Null until the answer has come back, so the sheet does not say "no codec"
   /// for the frame before the platform answers.
@@ -274,12 +274,6 @@ class _VoiceComposerState extends State<VoiceComposer> {
           _stage = _Stage.ready;
         });
     }
-  }
-
-  Future<void> _setMode(VoiceMode mode) async {
-    if (mode == _mode) return;
-    setState(() => _mode = mode);
-    if (_recording != null) await _encode();
   }
 
   Future<void> _preview() async {
@@ -480,7 +474,13 @@ class _VoiceComposerState extends State<VoiceComposer> {
                 key: const ValueKey<String>('voice-stopped-at-limit'),
               ),
             if (_refusal != null) _refusalNote(skin, l),
-            ..._modeRow(skin, l),
+            // One codec, 700C. There were two, and the choice cost the reader a
+            // decision for 87.5 bytes per second of audio: at 1300 bit/s the
+            // same take is nearly twice the datagrams for a difference nobody
+            // hears through a LoRa-codec recording. The mode stays in the wire
+            // format (the header byte carries `wireId`), so a note recorded by
+            // a build that offers 1300 still decodes here.
+
             if (_stage == _Stage.recording)
               Text(
                 l.voiceRecording(_elapsed.inSeconds, _liveBytes, _liveDatagrams),
@@ -575,35 +575,6 @@ class _VoiceComposerState extends State<VoiceComposer> {
         ),
       ),
     );
-  }
-
-  /// The mode picker. Two options, each with its own cost, and both read from
-  /// the mode itself rather than from a table this file would have to keep in
-  /// step with the codec.
-  List<Widget> _modeRow(MmSkin skin, AppLocalizations l) {
-    final bool locked = _stage == _Stage.sending || _stage == _Stage.done;
-    final List<(VoiceMode, String)> options = <(VoiceMode, String)>[
-      (VoiceMode.narrowband, l.voiceModeNarrow),
-      (VoiceMode.standard, l.voiceModeStandard),
-    ];
-    return <Widget>[
-      Text(l.voiceModeTitle,
-          style: TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
-      SizedBox(height: skin.space.step(2)),
-      Wrap(
-        spacing: skin.space.step(2),
-        children: <Widget>[
-          for (final (VoiceMode mode, String label) in options)
-            MmChoiceChip(
-              key: ValueKey<String>('voice-mode-${mode.wireId}'),
-              label: Text(label),
-              selected: _mode == mode,
-              onSelected: locked ? null : (_) => _setMode(mode),
-            ),
-        ],
-      ),
-      SizedBox(height: skin.space.step(4)),
-    ];
   }
 
   Widget _refusalNote(MmSkin skin, AppLocalizations l) => _Note(

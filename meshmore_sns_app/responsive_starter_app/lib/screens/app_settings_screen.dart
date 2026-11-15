@@ -387,21 +387,8 @@ class AppSettingsScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/settings/channels'),
             ),
-            // R5 / U5 — Voice quality picker (rate / pitch / voice +
-            // preview). Always reachable, even when SPEECH is off —
-            // the preview button greys-out instead, with a hint.
-            ListTile(
-              leading: const Icon(Icons.tune),
-              title: Text(l.voiceSettingsTitle),
-              subtitle: Text(
-                '${l.voiceRate} ${tts.rate.toStringAsFixed(1)}× · '
-                '${l.voicePitch} ${tts.pitch.toStringAsFixed(1)}'
-                '${tts.voice == null ? '' : ' · ${tts.voice!.name}'}',
-                style: TextStyle(color: cs.onSurfaceVariant),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/settings/voice'),
-            ),
+            // Voice lives on Settings → Chat & media, with everything else a
+            // message is. This row was a second door to the same page.
             SizedBox(height: context.skin.space.sectionGap),
             MmSectionHeader(l.settingsAppGroupData),
             // Colour or grey. A mesh photo has one budget and grey is a third

@@ -32,8 +32,15 @@ abstract final class Reactions {
   /// vowel for a digit.
   static const String _crockford = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
-  /// The reaction palette. A fixed set, not a picker: a reaction is a gesture,
-  /// and eight choices is what fits a long-press menu on a 320 dp phone.
+  /// The reaction palette: two rows of eight on a 320 dp phone.
+  ///
+  /// It was one row of eight, on the theory that a reaction is a gesture and a
+  /// wall of emoji is a picker. The cost of the second row is nine more bytes on
+  /// a line that already carries a mention and a hash, and the benefit is that
+  /// the common replies a channel actually uses — ack, understood, looking,
+  /// 73, party — stop needing a full message. Everything here is a single
+  /// grapheme that the MeshCore One format carries as text, so no client has to
+  /// know this list: the emoji travels in the line itself.
   static const List<String> palette = <String>[
     '👍',
     '❤️',
@@ -43,6 +50,14 @@ abstract final class Reactions {
     '🙏',
     '🔥',
     '✅',
+    '👀',
+    '🙌',
+    '👎',
+    '🤔',
+    '😅',
+    '😎',
+    '🎉',
+    '❗',
   ];
 
   /// The hash that names one message: `SHA-256(text + uint32le(ts))`, first

@@ -1,3 +1,4 @@
+import 'media/aeic_installer.dart';
 import 'media/media_inbox.dart';
 import 'media/media_journal.dart';
 import 'media/media_fetch_service.dart';
@@ -324,6 +325,12 @@ Future<void> startApp() async {
             tc.addListener(() => unawaited(cues.warm()));
             return cues;
           },
+        ),
+        // The neural codec's model bundle: one installer for the process, so a
+        // download survives leaving App settings and no two screens can start
+        // one at once.
+        ChangeNotifierProvider<AeicInstaller>(
+          create: (_) => AeicInstaller()..refresh(),
         ),
         ChangeNotifierProvider<DemoMode>.value(value: demo),
         ChangeNotifierProvider<MeshcoreController>.value(value: controller),
@@ -720,11 +727,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         // answer too. Pushed after the frame: a notifier cannot fire during a
         // build, and `MediaQuery` can change while one is running.
         final bool osReduceMotion = mq.disableAnimations;
-        final bool osHighContrast = mq.highContrast;
-        if (osReduceMotion != tc.reduceMotion || osHighContrast != tc.highContrast) {
+        if (osReduceMotion != tc.reduceMotion) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             tc.setOsReduceMotion(osReduceMotion);
-            tc.setOsHighContrast(osHighContrast);
           });
         }
         return MediaQuery(
