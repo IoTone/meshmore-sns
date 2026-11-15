@@ -2164,7 +2164,6 @@
   "placePrecision100": "約100 m",
   "placePrecision1000": "約1 km",
   "placeRadioRefused": "MeshCore 無線機が受け付けなかったため、この場所は送信されていません。",
-  "placeGoesTo": "送信先: {channel}",
   "placeChannelTitle": "チャンネル",
   "placeSentOn": "送信したチャンネル: {channel}",
   "placeArrivedOn": "受信したチャンネル: {channel}",

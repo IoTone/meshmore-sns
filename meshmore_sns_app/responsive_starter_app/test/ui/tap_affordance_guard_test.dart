@@ -44,6 +44,9 @@ void main() {
     'lib/ui/mm_confirm.dart': 1,
     'lib/media/media_composer.dart': 1,
     'lib/places/place_create_sheet.dart': 1,
+    // The import dialog: a Cancel beside the filled Go button that reads the
+    // pasted text, the same shape as every other dialog's action row.
+    'lib/places/place_import_sheet.dart': 1,
     // The two that take a pin out of the app — Directions, which hands the
     // coordinate pair to a map app, and Share, which hands the address to
     // anything that takes text — plus the photo line's own action.

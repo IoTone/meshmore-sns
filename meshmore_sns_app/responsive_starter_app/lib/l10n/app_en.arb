@@ -2937,7 +2937,6 @@
   "placePrecision100": "About 100 m",
   "placePrecision1000": "About 1 km",
   "placeRadioRefused": "The MeshCore radio did not take it, so the place is not on the air.",
-  "placeGoesTo": "Goes to {channel}",
   "placeChannelTitle": "Channel",
   "placeSentOn": "Sent on {channel}",
   "@placeSentOn": {
@@ -4367,7 +4366,7 @@
   "@dmBlockedNotice": {
     "description": "Composer line in a direct message whose peer is on the block list. Says what a block does to the conversation rather than only that sending is off."
   },
-  "dmBlockedRefused": "Not sent. This key is blocked, so the reply would be hidden here. The radio would still carry the message.",
+  "dmBlockedRefused": "Not sent. This key is blocked, so the reply would be hidden here. The MeshCore radio would still carry the message.",
   "@dmBlockedRefused": {
     "description": "Snackbar after a send to a blocked key was refused. Names the limit: a block is this app's filter and does not stop the radio relaying."
   },
@@ -4615,11 +4614,11 @@
     },
     "description": "Confirmation after the link was torn down and the new radio is connecting."
   },
-  "radioSwitchSame": "That radio is already the one in use.",
+  "radioSwitchSame": "That MeshCore radio is already the one in use.",
   "@radioSwitchSame": {
     "description": "The row was for the radio already paired, so nothing was touched."
   },
-  "radioSwitchWaiting": "Not switched. A message is still waiting for an answer, and that answer belongs to the radio it was sent on.",
+  "radioSwitchWaiting": "Not switched. A message is still waiting for an answer, and that answer belongs to the MeshCore radio it was sent on.",
   "@radioSwitchWaiting": {
     "description": "The switch was refused because a send is unsettled. Names why waiting is the honest answer rather than a rule for its own sake."
   },

@@ -7594,12 +7594,6 @@ abstract class AppLocalizations {
   /// **'The MeshCore radio did not take it, so the place is not on the air.'**
   String get placeRadioRefused;
 
-  /// No description provided for @placeGoesTo.
-  ///
-  /// In en, this message translates to:
-  /// **'Goes to {channel}'**
-  String placeGoesTo(Object channel);
-
   /// No description provided for @placeChannelTitle.
   ///
   /// In en, this message translates to:
@@ -10921,7 +10915,7 @@ abstract class AppLocalizations {
   /// Snackbar after a send to a blocked key was refused. Names the limit: a block is this app's filter and does not stop the radio relaying.
   ///
   /// In en, this message translates to:
-  /// **'Not sent. This key is blocked, so the reply would be hidden here. The radio would still carry the message.'**
+  /// **'Not sent. This key is blocked, so the reply would be hidden here. The MeshCore radio would still carry the message.'**
   String get dmBlockedRefused;
 
   /// No description provided for @settingsHubFirmware.
@@ -11389,13 +11383,13 @@ abstract class AppLocalizations {
   /// The row was for the radio already paired, so nothing was touched.
   ///
   /// In en, this message translates to:
-  /// **'That radio is already the one in use.'**
+  /// **'That MeshCore radio is already the one in use.'**
   String get radioSwitchSame;
 
   /// The switch was refused because a send is unsettled. Names why waiting is the honest answer rather than a rule for its own sake.
   ///
   /// In en, this message translates to:
-  /// **'Not switched. A message is still waiting for an answer, and that answer belongs to the radio it was sent on.'**
+  /// **'Not switched. A message is still waiting for an answer, and that answer belongs to the MeshCore radio it was sent on.'**
   String get radioSwitchWaiting;
 
   /// No description provided for @mapKeyTitle.

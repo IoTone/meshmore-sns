@@ -4297,11 +4297,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeRadioRefused => 'MeshCore 無線機が受け付けなかったため、この場所は送信されていません。';
 
   @override
-  String placeGoesTo(Object channel) {
-    return '送信先: $channel';
-  }
-
-  @override
   String get placeChannelTitle => 'チャンネル';
 
   @override

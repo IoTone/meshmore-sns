@@ -4458,11 +4458,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The MeshCore radio did not take it, so the place is not on the air.';
 
   @override
-  String placeGoesTo(Object channel) {
-    return 'Goes to $channel';
-  }
-
-  @override
   String get placeChannelTitle => 'Channel';
 
   @override
@@ -6531,7 +6526,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dmBlockedRefused =>
-      'Not sent. This key is blocked, so the reply would be hidden here. The radio would still carry the message.';
+      'Not sent. This key is blocked, so the reply would be hidden here. The MeshCore radio would still carry the message.';
 
   @override
   String get settingsHubFirmware => 'Firmware';
@@ -6816,11 +6811,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get radioSwitchSame => 'That radio is already the one in use.';
+  String get radioSwitchSame =>
+      'That MeshCore radio is already the one in use.';
 
   @override
   String get radioSwitchWaiting =>
-      'Not switched. A message is still waiting for an answer, and that answer belongs to the radio it was sent on.';
+      'Not switched. A message is still waiting for an answer, and that answer belongs to the MeshCore radio it was sent on.';
 
   @override
   String get mapKeyTitle => 'Map key';
