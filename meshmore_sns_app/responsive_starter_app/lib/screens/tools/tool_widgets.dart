@@ -135,10 +135,11 @@ class ToolNotice extends StatelessWidget {
           if (action != null && onAction != null)
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(
+              child: MmAction(
                 key: const ValueKey<String>('tool-notice-action'),
                 onPressed: onAction,
-                child: Text(action!),
+                label: action!,
+                dense: true,
               ),
             ),
         ],

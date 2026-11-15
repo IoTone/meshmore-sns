@@ -666,15 +666,14 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                           fontSize: context.skin.type.sizeBody,
                           letterSpacing: 1)),
                   const Spacer(),
-                  TextButton.icon(
-                    icon: Icon(
-                        _revealCurrent
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        size: 16),
-                    label: Text(_revealCurrent
+                  MmAction(
+                    icon: _revealCurrent
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    label: _revealCurrent
                         ? l.channelsHideKey
-                        : l.channelsRevealKey),
+                        : l.channelsRevealKey,
+                    dense: true,
                     onPressed: () =>
                         setState(() => _revealCurrent = !_revealCurrent),
                   ),

@@ -140,9 +140,10 @@ class _TraceScreenState extends State<TraceScreen> {
         if (!_manual && _node != null && !t.running)
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              icon: const Icon(Icons.restart_alt, size: 18),
-              label: Text(l.traceReset),
+            child: MmAction(
+              icon: Icons.restart_alt,
+              label: l.traceReset,
+              dense: true,
               onPressed: mc.isReady
                   ? () async {
                       final ScaffoldMessengerState sm =

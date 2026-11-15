@@ -10,6 +10,7 @@ import '../gen/app_localizations.dart';
 import '../meshcore/mesh_network.dart';
 import '../meshcore/mesh_network_store.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_confirm.dart';
 import '../ui/mm_scaffold.dart';
 import 'networks_screen.dart';
@@ -200,19 +201,20 @@ class _NetworkDetailScreenState extends State<NetworkDetailScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(m.label),
                 subtitle: Text(m.shortKey),
-                trailing: TextButton(
+                trailing: MmAction(
+                  label: l.networksRemoveMember,
+                  dense: true,
                   onPressed: () => _replace(n.copyWith(members: <NetworkMember>[
                     for (final NetworkMember o in n.members)
                       if (o.publicKeyHex != m.publicKeyHex) o,
                   ])),
-                  child: Text(l.networksRemoveMember),
                 ),
               ),
-            TextButton.icon(
+            MmAction(
               key: const Key('network-add-member'),
               onPressed: () => _addMember(n, mc),
-              icon: const Icon(Icons.person_add_alt),
-              label: Text(l.networksAddMember),
+              icon: Icons.person_add_alt,
+              label: l.networksAddMember,
             ),
             const SizedBox(height: 24),
             OutlinedButton(

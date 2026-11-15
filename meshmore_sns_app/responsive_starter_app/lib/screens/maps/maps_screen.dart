@@ -159,9 +159,9 @@ class MapsScreen extends StatelessWidget {
             ),
             Align(
               alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                icon: const Icon(Icons.cleaning_services_outlined),
-                label: Text(l.mapsClearView),
+              child: MmAction(
+                icon: Icons.cleaning_services_outlined,
+                label: l.mapsClearView,
                 onPressed: maps.viewBytes == 0 ? null : maps.clearViewCache,
               ),
             ),
@@ -229,9 +229,9 @@ class MapsScreen extends StatelessWidget {
               ),
             Align(
               alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                icon: const Icon(Icons.add),
-                label: Text(l.mapsAddSource),
+              child: MmAction(
+                icon: Icons.add,
+                label: l.mapsAddSource,
                 onPressed: () => _addSource(context, maps),
               ),
             ),
@@ -785,9 +785,10 @@ class _CatalogRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          TextButton(
+          MmAction(
+            label: l.mapsPackInstall,
+            dense: true,
             onPressed: onInstall,
-            child: Text(l.mapsPackInstall),
           ),
         ],
       ),

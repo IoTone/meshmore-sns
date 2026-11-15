@@ -12,6 +12,7 @@ import '../meshcore/ble_connector.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/paired_device_history.dart';
 import 'device_contacts_screen.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
 import '../theme/mm_skin.dart';
 import 'package:meshcore/meshcore.dart';
@@ -334,16 +335,17 @@ class _DeviceManagerSheetState extends State<DeviceManagerSheet> {
                           letterSpacing: 2)),
                 ),
                 if (_scanning)
-                  TextButton.icon(
-                    icon: const Icon(Icons.stop_circle_outlined,
-                        size: 16),
-                    label: Text(l.deviceMgrStopScan),
+                  MmAction(
+                    icon: Icons.stop_circle_outlined,
+                    label: l.deviceMgrStopScan,
+                    dense: true,
                     onPressed: _stopScan,
                   )
                 else
-                  TextButton.icon(
-                    icon: const Icon(Icons.search, size: 16),
-                    label: Text(l.deviceMgrScan),
+                  MmAction(
+                    icon: Icons.search,
+                    label: l.deviceMgrScan,
+                    dense: true,
                     onPressed: _startScan,
                   ),
               ],

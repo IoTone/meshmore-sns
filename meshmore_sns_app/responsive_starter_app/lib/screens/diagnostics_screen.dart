@@ -568,9 +568,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        TextButton.icon(
-                          icon: const Icon(Icons.copy, size: 16),
-                          label: Text(l.diagnosticsCopyFixture),
+                        MmAction(
+                          icon: Icons.copy,
+                          label: l.diagnosticsCopyFixture,
+                          dense: true,
                           onPressed: () {
                             Clipboard.setData(
                                 ClipboardData(text: _exportJson!));
@@ -612,7 +613,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                         child: Text(l.diagnosticsRawFrameLog,
                             style: mmSectionLabelStyle(skin)),
                       ),
-                      TextButton.icon(
+                      MmAction(
+                        icon: Icons.copy,
+                        label: l.diagnosticsCopyLog,
+                        dense: true,
                         onPressed: mc.captureLog.isEmpty
                             ? null
                             : () {
@@ -629,8 +633,6 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                                 _toast(
                                     l.diagnosticsFramesCopied('${mc.captureLog.length}'));
                               },
-                        icon: const Icon(Icons.copy, size: 16),
-                        label: Text(l.diagnosticsCopyLog),
                       ),
                     ],
                   ),
@@ -764,9 +766,10 @@ class _BotSoakPanel extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 4),
-          TextButton.icon(
-            icon: const Icon(Icons.copy, size: 16),
-            label: Text(l.diagnosticsCopySoak),
+          MmAction(
+            icon: Icons.copy,
+            label: l.diagnosticsCopySoak,
+            dense: true,
             onPressed: () {
               Clipboard.setData(ClipboardData(
                   text: _redaction.maskSecrets(bot.exportReport())));

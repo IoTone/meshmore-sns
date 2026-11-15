@@ -544,10 +544,11 @@ class _NotificationsDeniedBanner extends StatelessWidget {
         return ListTile(
           leading: const Icon(Icons.notifications_off_outlined),
           title: Text(l.notifDeniedBanner),
-          trailing: TextButton(
+          trailing: MmAction(
+            label: l.deviceOpenSettings,
+            dense: true,
             onPressed: () =>
                 ctx.read<PermissionsService>().openAppSettingsPage(),
-            child: Text(l.deviceOpenSettings),
           ),
         );
       },

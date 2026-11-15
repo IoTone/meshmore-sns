@@ -51,69 +51,49 @@ int _closeParen(String src, int open) {
 }
 
 void main() {
-  /// `TextButton`s that read as labels today. Seeded 2026-11-05 (R114).
+  /// `TextButton`s that read as labels today.
+  ///
+  /// What is left is one shape and one only: a **dialog's action row**, where a
+  /// Cancel (or a Close, or a destructive Clear) sits beside the filled confirm
+  /// that ends the dialog. That is the convention the other thirty files
+  /// already follow, and a dialog is not a page: its buttons are the last thing
+  /// in a modal, not an offer in a scroll view. Every page-level button has been
+  /// converted to `MmAction`, which is why the counts below are all dialog rows.
   const Map<String, int> textButtons = <String, int>{
-    // The recorded send's confirmation and the passphrase dialog both end in
-    // a Cancel beside a FilledButton, which is the dialog convention the other
-    // twenty-nine files already follow. Counted here so the class cannot grow
-    // while those dialogs are unified behind one widget.
-    'lib/chat/export_passphrase_dialog.dart': 1,
-    'lib/chat/report_flow.dart': 5,
-    'lib/screens/raw_record_card.dart': 0,
+    // The rulepack editor: Restore, Cancel, Save.
     'lib/bot/bot_scope_config.dart': 2,
-    'lib/bot/bot_section.dart': 2,
-    'lib/chat/chat_actions.dart': 0,
-    // The delete-everything dialog: a Cancel beside a filled destructive
-    // confirm, the same shape as the two above and the one thing a dialog's
-    // action row may be.
-    'lib/ui/storage_use_block.dart': 1,
-    // The one confirmation dialog (R130): a Cancel beside a filled confirm, in
-    // one place instead of seventeen. Every site it replaced lost its own copy,
-    // which is why several of the per-file counts below went down.
-    'lib/ui/mm_confirm.dart': 1,
+    // The passphrase prompt: Cancel beside the filled Unlock.
+    'lib/chat/export_passphrase_dialog.dart': 1,
+    // The report bundle dialog (Copy, Share, Close) and the observation prompt
+    // (Cancel beside the filled Report).
+    'lib/chat/report_flow.dart': 5,
+    // The composer's Close beside the filled Send.
     'lib/media/media_composer.dart': 1,
+    // The place sheet's Cancel beside the filled Send.
     'lib/places/place_create_sheet.dart': 1,
-    // The import dialog: a Cancel beside the filled Go button that reads the
-    // pasted text, the same shape as every other dialog's action row.
+    // The import dialog's Cancel beside the filled Go.
     'lib/places/place_import_sheet.dart': 1,
-    // The two that take a pin out of the app — Directions, which hands the
-    // coordinate pair to a map app, and Share, which hands the address to
-    // anything that takes text — plus the photo line's own action.
-    'lib/places/place_detail_sheet.dart': 3,
-    'lib/screens/app_settings_screen.dart': 1,
-    'lib/screens/battery_screen.dart': 0,
-    'lib/screens/blocked_keys_screen.dart': 1,
-    'lib/screens/channels_screen.dart': 5,
-    'lib/screens/chat_screen.dart': 0,
-    'lib/screens/dashboard_screen.dart': 1,
-    'lib/screens/dashboards/studio_dashboard.dart': 1,
+    // The channel editor: Clear (destructive), Cancel, Save; and the two
+    // single-button dialogs (the key prompt's Cancel, the QR sheet's Close).
+    'lib/screens/channels_screen.dart': 4,
+    // The region disclaimer's Close.
     'lib/screens/device_config_screen.dart': 1,
+    // Two single-button dialogs: the contact add and the contact remove.
     'lib/screens/device_contacts_screen.dart': 2,
-    'lib/screens/device_manager_sheet.dart': 2,
-    'lib/screens/diagnostics_screen.dart': 3,
-    'lib/screens/fabric_survey_view.dart': 0,
-    // One dialog action row: the full-legend close button.
-    // Two now: the existing one, and the connect action the "not connected"
-    // strip carries (a state that offers no way out is a dead end).
-    'lib/screens/grid_screen.dart': 2,
-    'lib/screens/first_run_intro_screen.dart': 1,
-    'lib/screens/maps/maps_screen.dart': 6,
-    'lib/screens/meshbook_view.dart': 0,
-    'lib/screens/network_detail_screen.dart': 2,
-    'lib/screens/node_detail_sheet.dart': 4,
-    // Two now: the existing one, and the connect action on the offline status
-    // line (a line that says "not connected" and does nothing is the dead end a
-    // reader meets first in the app).
-    'lib/screens/nodes_screen.dart': 2,
-    // The connect action on the tools' offline notice: one notice widget, so one
-    // site, and a tool that says "not connected" now says where to fix it.
-    'lib/screens/tools/tool_widgets.dart': 1,
-    'lib/screens/pair_radio_screen.dart': 1,
+    // The layer, source and pack dialogs: Cancel beside the filled Add.
+    'lib/screens/maps/maps_screen.dart': 3,
+    // The tag dialog's Cancel beside the filled Apply.
+    'lib/screens/node_detail_sheet.dart': 1,
+    // The alarm's Cancel beside the filled Stop.
     'lib/screens/sos_screen.dart': 1,
+    // The terms gate: Exit beside the filled Accept.
     'lib/screens/terms_screen.dart': 1,
-    'lib/screens/tools/trace_screen.dart': 1,
-    'lib/shell/boot_overlay.dart': 1,
-    'lib/ui/radio_health_block.dart': 1,
+    // The one confirmation dialog (R130): a Cancel beside a filled confirm, in
+    // one place instead of seventeen.
+    'lib/ui/mm_confirm.dart': 1,
+    // The delete-everything dialog: a Cancel beside a filled destructive
+    // confirm.
+    'lib/ui/storage_use_block.dart': 1,
   };
 
   /// Rows that open a choice or a page with nothing in the trailing slot.

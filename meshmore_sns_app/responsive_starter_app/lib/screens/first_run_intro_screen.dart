@@ -381,10 +381,11 @@ class _WelcomePage extends StatelessWidget {
             ),
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton.icon(
+              child: MmAction(
                 onPressed: onOpenSettings,
-                icon: const Icon(Icons.settings_outlined),
-                label: Text(l.firstRunOpenSettings),
+                icon: Icons.settings_outlined,
+                label: l.firstRunOpenSettings,
+                dense: true,
               ),
             ),
           ],

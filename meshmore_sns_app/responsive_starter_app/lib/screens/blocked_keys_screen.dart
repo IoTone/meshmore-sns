@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/block_store.dart';
 import '../theme/mm_skin.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/clock_model.dart';
 
@@ -97,7 +98,9 @@ class BlockedKeysScreen extends StatelessWidget {
                       fontSize: skin.type.sizeSm,
                     ),
                   ),
-                  trailing: TextButton(
+                  trailing: MmAction(
+                    label: l.blockedKeysUnblock,
+                    dense: true,
                     onPressed: () {
                       // The list is the answer to the press: it removes the
                       // entry and notifies before the write, so the row goes
@@ -112,7 +115,6 @@ class BlockedKeysScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    child: Text(l.blockedKeysUnblock),
                   ),
                 ),
             if (store.atCapacity)

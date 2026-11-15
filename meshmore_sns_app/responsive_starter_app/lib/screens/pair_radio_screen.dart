@@ -13,6 +13,7 @@ import '../meshcore/meshcore_controller.dart';
 import '../meshcore/pair_scanner.dart';
 import '../perms/permissions_service.dart';
 import '../theme/mm_skin.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../ui/mm_shape.dart';
 
@@ -354,14 +355,15 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
                 style: TextStyle(
                     fontSize: skin.type.sizeSm, color: skin.color.fgMuted)),
             const Spacer(),
-            TextButton(
+            MmAction(
+              label: l.pairStopScan,
+              dense: true,
               onPressed: () async {
                 await _scanner.stopScan();
                 unawaited(_scanSub?.cancel());
                 _scanSub = null;
                 if (mounted) setState(() => _scanning = false);
               },
-              child: Text(l.pairStopScan),
             ),
           ],
         )

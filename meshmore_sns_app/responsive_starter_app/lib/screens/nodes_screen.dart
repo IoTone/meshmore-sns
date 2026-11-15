@@ -231,11 +231,11 @@ class _NodesScreenState extends State<NodesScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: <Widget>[
-                      TextButton(
+                      MmAction(
+                        label: l.nodesFilterClear,
                         onPressed: _anyFilterActive
                             ? () => both(_clearFilters)
                             : null,
-                        child: Text(l.nodesFilterClear),
                       ),
                       const Spacer(),
                       FilledButton(
@@ -474,11 +474,12 @@ class _NodesScreenState extends State<NodesScreen> {
                 )
               : Align(
                   alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
+                  child: MmAction(
                     key: const ValueKey<String>('nodes-status-connect'),
                     onPressed: () => context.push('/connect'),
-                    icon: const Icon(Icons.bluetooth_searching, size: 16),
-                    label: Text(l.nodesStatusOffline),
+                    icon: Icons.bluetooth_searching,
+                    label: l.nodesStatusOffline,
+                    dense: true,
                   ),
                 ),
         ),

@@ -599,9 +599,10 @@ class _LocationTile extends StatelessWidget {
               ),
               Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: TextButton(
+                child: MmAction(
+                  label: l.dashboardLocationConfigure,
+                  dense: true,
                   onPressed: () => context.push('/settings/device'),
-                  child: Text(l.dashboardLocationConfigure),
                 ),
               ),
             ],

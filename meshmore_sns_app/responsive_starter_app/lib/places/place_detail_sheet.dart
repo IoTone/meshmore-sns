@@ -244,20 +244,20 @@ class PlaceDetailSheet extends StatelessWidget {
                   label: l.placeFenceThis,
                   onPressed: () => _fence(context),
                 ),
-                TextButton.icon(
+                MmAction(
                   key: const ValueKey<String>('place-directions'),
-                  icon: const Icon(Icons.directions_outlined, size: 18),
-                  label: Text(l.placeDirections),
+                  icon: Icons.directions_outlined,
+                  label: l.placeDirections,
                   onPressed: () => _directions(context),
                 ),
                 // The share belongs on the pin, and what it shares is the
                 // address: a label, a coordinate pair and a link that opens
                 // them somewhere else. The list used to offer a CSV of the
                 // whole ledger instead, which answered a different question.
-                TextButton.icon(
+                MmAction(
                   key: const ValueKey<String>('place-share'),
-                  icon: const Icon(Icons.ios_share, size: 18),
-                  label: Text(l.placeShareAddress),
+                  icon: Icons.ios_share,
+                  label: l.placeShareAddress,
                   onPressed: () => _share(context),
                 ),
               ],
@@ -443,10 +443,11 @@ class _PhotoSectionState extends State<_PhotoSection> {
             ),
           ),
           if (widget.onFetch != null)
-            TextButton(
+            MmAction(
               key: const ValueKey<String>('place-photo-fetch'),
+              label: widget.l.placePhotoFetch,
+              dense: true,
               onPressed: _start,
-              child: Text(widget.l.placePhotoFetch),
             ),
         ],
       );

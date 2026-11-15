@@ -269,10 +269,10 @@ class StudioDashboard extends StatelessWidget {
         Icon(Icons.location_off_outlined, size: 18, color: muted),
         SizedBox(width: skin.space.rowGap),
         Expanded(child: Text(l.dashboardLocationNotSet)),
-        TextButton(
-          style: TextButton.styleFrom(minimumSize: const Size(64, 48)),
+        MmAction(
+          label: l.dashboardLocationConfigure,
+          dense: true,
           onPressed: () => context.push('/settings/device'),
-          child: Text(l.dashboardLocationConfigure),
         ),
       ],
     );

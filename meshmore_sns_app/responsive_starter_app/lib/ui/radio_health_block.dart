@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
+import 'mm_components.dart';
 import '../tools/radio_stats_tool.dart';
 import '../tools/tools_controller.dart';
 
@@ -80,9 +81,10 @@ class _RadioHealthBlockState extends State<RadioHealthBlock> {
                     letterSpacing: skin.type.headingTracking,
                   )),
             ),
-            TextButton(
+            MmAction(
+              label: _busy ? l.radioHealthReading : l.radioHealthRead,
+              dense: true,
               onPressed: _busy ? null : _read,
-              child: Text(_busy ? l.radioHealthReading : l.radioHealthRead),
             ),
           ],
         ),

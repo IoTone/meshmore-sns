@@ -1413,10 +1413,11 @@ class _NotConnectedStrip extends StatelessWidget {
           if (action != null && onAction != null)
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(
+              child: MmAction(
                 key: const ValueKey<String>('grid-not-connected-connect'),
                 onPressed: onAction,
-                child: Text(action!),
+                label: action!,
+                dense: true,
               ),
             ),
         ],

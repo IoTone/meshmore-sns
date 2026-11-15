@@ -663,9 +663,10 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                   : null,
             ),
             const SizedBox(height: 6),
-            TextButton.icon(
-              icon: const Icon(Icons.copy, size: 16),
-              label: Text(l.nodeDetailCopyPubkey),
+            MmAction(
+              icon: Icons.copy,
+              label: l.nodeDetailCopyPubkey,
+              dense: true,
               onPressed: () async {
                 await Clipboard.setData(
                     ClipboardData(text: n.pubKeyHex));
@@ -682,9 +683,10 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             // new key (auto-detect can miss it when the saved name differs
             // from the advert), let the user link the two explicitly.
             if (!widget.isSelf)
-              TextButton.icon(
-                icon: const Icon(Icons.link, size: 16),
-                label: Text(l.nodeIdentityLinkAction),
+              MmAction(
+                icon: Icons.link,
+                label: l.nodeIdentityLinkAction,
+                dense: true,
                 onPressed: () => _promptLinkKey(mc, n, l),
               ),
             // Remove from the radio's contact table — frees a slot (the
@@ -692,11 +694,10 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
             if (!widget.isSelf &&
                 n.pubKeyHex.length == 64 &&
                 mc.isSyncedContact(n.pubKeyHex))
-              TextButton.icon(
-                icon: Icon(Icons.person_remove_alt_1,
-                    size: 16, color: cs.error),
-                label: Text(l.nodeDetailRemoveDeviceContact,
-                    style: TextStyle(color: cs.error)),
+              MmAction(
+                icon: Icons.person_remove_alt_1,
+                label: l.nodeDetailRemoveDeviceContact,
+                dense: true,
                 onPressed: () => _removeDeviceContact(mc, n, l),
               ),
           ],

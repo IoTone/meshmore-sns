@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import 'bot_controller.dart';
+import '../ui/mm_components.dart';
 import '../theme/mm_skin.dart';
 import 'bot_guards.dart';
 import 'bot_scope.dart';
@@ -64,9 +65,10 @@ class BotSection extends StatelessWidget {
           _Instrumentation(scope: scope),
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              icon: const Icon(Icons.rule, size: 16),
-              label: Text(l.botEditRules),
+            child: MmAction(
+              icon: Icons.rule,
+              label: l.botEditRules,
+              dense: true,
               onPressed: () => showDialog<void>(
                 context: context,
                 builder: (BuildContext _) => RulepackEditor(scope: scope),
@@ -212,10 +214,10 @@ class _Instrumentation extends StatelessWidget {
                   l.botCounters(c.received, c.replied, held),
                   style: mono),
             ),
-            TextButton(
+            MmAction(
+              label: l.botResetCounters,
+              dense: true,
               onPressed: () => bot.resetCounters(scope),
-              child: Text(l.botResetCounters,
-                  style: TextStyle(fontSize: context.skin.type.sizeSm)),
             ),
           ],
         ),
