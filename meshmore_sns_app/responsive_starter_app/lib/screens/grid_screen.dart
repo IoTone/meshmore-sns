@@ -206,7 +206,23 @@ class GridScreen extends StatefulWidget {
   /// rim" with the ring labels still legible.
   static const double autoAnchor = 0.86;
 
+  /// The size of a group, as a multiple of the next distance inward.
+  ///
+  /// A gap this wide between two sorted distances is a break in the mesh rather
+  /// than a spacing: the nodes inside it are one local group and the ones
+  /// outside belong to the wider net. 1.6 was picked against the fleet on this
+  /// handset, where the neighbourhood sits within 3 km and the rest of the
+  /// region starts at 9 km, so the break reads at about 3x.
+  static const double autoClusterGap = 1.6;
+
   /// The outer radius, in km, that frames [distancesKm].
+  ///
+  /// The group first, the region second. Nodes are sorted by distance and the
+  /// widest relative break inside the first nine tenths wins: everything closer
+  /// than the break is the local group, and the radar frames that group instead
+  /// of averaging it against a handful of far peers. With no break worth the
+  /// name the 90th percentile frames the mesh as before, so a flat distribution
+  /// behaves exactly as it did.
   ///
   /// Pure and static so the arithmetic is testable without a canvas or a
   /// controller: everything else about the radar is drawing.
@@ -218,7 +234,24 @@ class GridScreen extends StatefulWidget {
     final int at = sorted.length >= 5
         ? ((sorted.length - 1) * autoPercentile).round()
         : sorted.length - 1;
-    final double anchor = sorted[at];
+    double anchor = sorted[at];
+    // Look for a break in the sorted distances, but never below the third node:
+    // one node at 200 m and the rest at 4 km is not a group of one.
+    if (sorted.length >= 5) {
+      int best = -1;
+      double bestRatio = autoClusterGap;
+      for (int i = 2; i < at; i++) {
+        if (sorted[i] <= 0) continue;
+        final double ratio = sorted[i + 1] / sorted[i];
+        if (ratio > bestRatio) {
+          bestRatio = ratio;
+          best = i;
+        }
+      }
+      // A break found means the group is the nearer side of it, framed so the
+      // group's own furthest node still lands inside the rim.
+      if (best >= 0) anchor = sorted[best];
+    }
     if (anchor <= 0) return null; // every node is on top of us
     // An exact radius rather than a rounded one. Rounding to a "nice" number
     // was tried and is worse than it sounds: the ladder's own steps are up to

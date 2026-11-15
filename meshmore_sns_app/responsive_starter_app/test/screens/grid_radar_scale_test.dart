@@ -192,4 +192,19 @@ void main() {
       await t.pump(const Duration(seconds: 5));
     });
   });
+
+  test('auto framing takes the local group inside a wider region', () {
+    // A neighbourhood within 3 km, then the region's own peers from 9 km out.
+    final List<double> mixed = <double>[
+      0.4, 0.9, 1.2, 1.8, 2.2, 2.9, 3.0, 9.1, 12.0, 14.5, 22.0,
+    ];
+    final double? framed = GridScreen.autoRangeKm(mixed);
+    expect(framed, isNotNull);
+    // Framed on the group's furthest node, not the region's.
+    expect(framed! * GridScreen.autoAnchor, closeTo(3.0, 0.01));
+    // A flat spread has no break to find, so the ninth decile still frames it.
+    final List<double> flat = <double>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    expect(GridScreen.autoRangeKm(flat)! * GridScreen.autoAnchor,
+        closeTo(9.0, 0.01));
+  });
 }
