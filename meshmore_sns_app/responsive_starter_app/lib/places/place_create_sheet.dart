@@ -10,9 +10,11 @@ import '../theme/mm_skin.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_components.dart';
 import 'place.dart';
+import 'place_channel_pref.dart';
 import 'place_codec.dart';
 import 'place_sender.dart';
 import 'place_ui.dart';
+import 'place_wiring.dart';
 
 /// The sheet a long-press on the map opens
 /// (`meshmore-places-spec.md` §3, §7, §9, §12).
@@ -31,6 +33,7 @@ class PlaceCreateSheet extends StatefulWidget {
     required this.composer,
     this.showPrecision = false,
     this.initialLabel,
+    this.initialChannelIdx,
   });
 
   final double latitude;
@@ -46,6 +49,11 @@ class PlaceCreateSheet extends StatefulWidget {
   /// the field is focused and editable like any other.
   final String? initialLabel;
 
+  /// The channel to start on, when the caller knows better than the reader's
+  /// last choice: a place suggested by a message belongs on the channel that
+  /// message arrived on. Null means the remembered slot, then the active one.
+  final int? initialChannelIdx;
+
   /// Shows the sheet; resolves to the place when one went out.
   static Future<Place?> show(
     BuildContext context, {
@@ -54,6 +62,7 @@ class PlaceCreateSheet extends StatefulWidget {
     required PlaceComposer composer,
     bool showPrecision = false,
     String? initialLabel,
+    int? initialChannelIdx,
   }) =>
       showModalBottomSheet<Place>(
         context: context,
@@ -64,6 +73,7 @@ class PlaceCreateSheet extends StatefulWidget {
           composer: composer,
           showPrecision: showPrecision,
           initialLabel: initialLabel,
+          initialChannelIdx: initialChannelIdx,
         ),
       );
 
@@ -82,6 +92,40 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
   DateTime? _refusedUntil;
   int _refusedAfter = 0;
   bool _noIdentity = false;
+
+  /// The channels this radio has, and the slot the report will go to. Both are
+  /// empty until the controller answers, which is also what keeps the picker
+  /// out of a widget test that has no radio.
+  List<MapEntry<int, String>> _channels = const <MapEntry<int, String>>[];
+  int? _channelIdx;
+
+  /// True once the reader has moved the picker. Only a real choice is
+  /// remembered: writing the active channel on every send would turn "follow
+  /// the channel I am on" into a setting nobody made.
+  bool _channelChosen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChannel();
+  }
+
+  Future<void> _loadChannel() async {
+    final MeshcoreController? mc = context.read<MeshcoreController?>();
+    if (mc == null) return;
+    final List<MapEntry<int, String>> channels = mc.channels;
+    final int? remembered = await PlaceChannelPref.read();
+    if (!mounted) return;
+    final int fallback = widget.initialChannelIdx ?? mc.activeChannel;
+    final int chosen = remembered != null &&
+            channels.any((MapEntry<int, String> e) => e.key == remembered)
+        ? remembered
+        : fallback;
+    setState(() {
+      _channels = channels;
+      _channelIdx = chosen;
+    });
+  }
 
   @override
   void dispose() {
@@ -102,7 +146,15 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
       _refusedUntil = null;
       _noIdentity = false;
     });
-    final PlaceComposeResult result = await widget.composer.compose(
+    // The report goes to the slot the picker shows, not to whichever channel
+    // happens to be active: the two differ as soon as the reader picks one.
+    final int? chosen = _channelIdx;
+    PlaceComposer composer = widget.composer;
+    if (chosen != null && chosen != widget.composer.destinationChannelIdx) {
+      composer = placeComposerOf(context, channelIdx: chosen);
+    }
+    if (chosen != null && _channelChosen) await PlaceChannelPref.write(chosen);
+    final PlaceComposeResult result = await composer.compose(
       latitude: widget.latitude,
       longitude: widget.longitude,
       label: _label.text,
@@ -167,24 +219,48 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
             ),
           ),
           // Where it goes. A place is ordinary channel text, so it lands on
-          // whichever channel is active, and every MeshCore client on that
-          // channel can read it. The sheet used to say none of that, so a
-          // report dropped while #cos was open went to #cos and the reader had
-          // no way to know.
-          Builder(builder: (BuildContext c) {
-            final MeshcoreController? mc =
-                c.read<MeshcoreController?>();
-            if (mc == null) return const SizedBox.shrink();
-            return Padding(
+          // one slot and every MeshCore client on that slot can read it. The
+          // sheet used to say none of that, so a report dropped while #cos was
+          // open went to #cos and the reader had no way to know. It is a
+          // picker now, because knowing where a report goes and being able to
+          // change it are the same question.
+          if (_channels.isNotEmpty && _channelIdx != null)
+            Padding(
               padding: EdgeInsets.only(top: skin.space.step(2)),
-              child: Text(
-                l.placeGoesTo(mc.activeChannelName),
-                key: const ValueKey<String>('place-goes-to'),
-                style: TextStyle(
-                    color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
+              child: Row(
+                children: <Widget>[
+                  Text(l.placeChannelTitle,
+                      style: TextStyle(
+                          color: skin.color.fgMuted,
+                          fontSize: skin.type.sizeSm)),
+                  SizedBox(width: skin.space.step(3)),
+                  DropdownButton<int>(
+                    key: const ValueKey<String>('place-channel-picker'),
+                    value: _channelIdx,
+                    isDense: true,
+                    dropdownColor: skin.color.surface,
+                    style: TextStyle(
+                        color: skin.color.fg, fontSize: skin.type.sizeBody),
+                    underline: Container(height: 1, color: skin.color.line),
+                    items: <DropdownMenuItem<int>>[
+                      for (final MapEntry<int, String> c in _channels)
+                        DropdownMenuItem<int>(
+                          key: ValueKey<String>('place-channel-${c.key}'),
+                          value: c.key,
+                          child: Text(c.value),
+                        ),
+                    ],
+                    onChanged: (int? idx) {
+                      if (idx == null) return;
+                      setState(() {
+                        _channelIdx = idx;
+                        _channelChosen = true;
+                      });
+                    },
+                  ),
+                ],
               ),
-            );
-          }),
+            ),
           SizedBox(height: skin.space.step(3)),
           TextField(
             key: const ValueKey<String>('place-label'),

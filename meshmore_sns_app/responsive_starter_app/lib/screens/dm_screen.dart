@@ -324,6 +324,15 @@ class _DmScreenState extends State<DmScreen> {
   void _send(MeshcoreController mc) {
     final String t = _input.text;
     if (t.trim().isEmpty) return;
+    // The send button is disabled for a blocked key, but the text field's own
+    // send action is not, so the refusal is stated here as well as on the row.
+    if (mc.isPeerBlocked(widget.peerPubKeyHex)) {
+      context.cue?.play(CueKind.taskError);
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).dmBlockedRefused)),
+      );
+      return;
+    }
     final String? key = _draftKey;
     // Cleared on the send, put back by [_restoreIfFailed] if the row fails.
     if (key != null) {
@@ -453,6 +462,10 @@ class _DmScreenState extends State<DmScreen> {
     // One message in flight per contact: the composer says so rather than
     // accepting a tap the controller would refuse.
     final bool waiting = mc.hasUnsettledDmTo(widget.peerPubKeyHex);
+    // A blocked key is refused here rather than at the controller, because the
+    // reader needs the reason and not a message that vanishes. The controller
+    // refuses too, for the callers that are not a composer.
+    final bool blocked = mc.isPeerBlocked(widget.peerPubKeyHex);
     final AppLocalizations l = AppLocalizations.of(context);
     final MmSkin skin = context.skin;
     final List<ChatMessage> msgs = mc.dmHistoryFor(widget.peerPubKeyHex);
@@ -539,6 +552,11 @@ class _DmScreenState extends State<DmScreen> {
                                       style: TextStyle(
                                           color: cs.onSurfaceVariant,
                                           fontSize: skin.type.sizeSm)),
+                                if (blocked)
+                                  Text(l.dmBlockedNotice,
+                                      style: TextStyle(
+                                          color: cs.onSurfaceVariant,
+                                          fontSize: skin.type.sizeSm)),
                               ],
                             ),
                           ),
@@ -550,10 +568,15 @@ class _DmScreenState extends State<DmScreen> {
                           // second send to the same contact can overwrite the
                           // first one's entry.
                           IconButton(
-                            tooltip: waiting ? l.dmWaiting : l.dmSend,
+                            tooltip: blocked
+                                ? l.dmBlockedNotice
+                                : waiting
+                                    ? l.dmWaiting
+                                    : l.dmSend,
                             onPressed: _input.text.trim().isEmpty ||
                                     !_budget.canSend(_input.text) ||
                                     waiting ||
+                                    blocked ||
                                     !mc.isReady
                                 ? null
                                 : () => _send(mc),

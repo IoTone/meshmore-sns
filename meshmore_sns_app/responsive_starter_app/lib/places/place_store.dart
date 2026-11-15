@@ -244,7 +244,10 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
     );
     final Place? place = outcome.place;
     if (place == null) return null;
-    upsert(place);
+    // The slot the line arrived on is the only channel fact a receiver has, so
+    // it is recorded here rather than guessed later from whichever channel is
+    // active when the sheet opens.
+    upsert(place.copyWith(channelIdx: message.channelIdx));
     return place;
   }
 
@@ -636,6 +639,10 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
         'expires': p.expiresAt.toUtc().toIso8601String(),
         'seen': p.lastSeen.toUtc().toIso8601String(),
         'kept': p.kept,
+        // The channel the report was sent on or seen on. Local only: the wire
+        // grammar carries no channel, so this is written here and never
+        // encoded into a message.
+        'ch': p.channelIdx,
       };
 
   static Place? _placeFromJson(Object? raw) {
@@ -697,6 +704,7 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
       expiresAt: expires.toLocal(),
       lastSeen: seen.toLocal(),
       kept: raw['kept'] == true,
+      channelIdx: num_('ch'),
     );
   }
 

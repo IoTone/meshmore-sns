@@ -125,10 +125,8 @@ class _WeatherViewState extends State<WeatherView> {
     );
 
     // Measured (sensor) telemetry section.
-    final List<double> temps = <double>[
-      for (final _Reading r in readings)
-        if (r.t.temperatureC != null) r.t.temperatureC!,
-    ];
+    final WeatherTemperatureSummary? summary = WeatherTemperatureSummary.from(
+        <NodeTelemetry>[for (final _Reading r in readings) r.t]);
     readings.sort((_Reading a, _Reading b) =>
         (b.t.temperatureC ?? -999).compareTo(a.t.temperatureC ?? -999));
 
@@ -154,15 +152,29 @@ class _WeatherViewState extends State<WeatherView> {
         onAction: () => context.push('/settings/app'),
       ));
     } else {
-      if (temps.isNotEmpty) {
+      if (summary != null) {
+        // The count is the set the three numbers are computed over, not the set
+        // of nodes that reported anything. Whatever reports something else is
+        // named on the line below instead of being folded into this count.
         measured.add(_SummaryCard(
-          count: readings.length,
-          minC: temps.reduce((double a, double b) => a < b ? a : b),
-          maxC: temps.reduce((double a, double b) => a > b ? a : b),
-          avgC: temps.reduce((double a, double b) => a + b) / temps.length,
+          count: summary.count,
+          minC: summary.minC,
+          maxC: summary.maxC,
+          avgC: summary.avgC,
           cs: cs,
           l: l,
         ));
+        if (summary.other > 0) {
+          measured.add(Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Text(
+              l.weatherReportingOther(summary.other),
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: context.skin.type.sizeMicro),
+            ),
+          ));
+        }
       }
       measured.add(const SizedBox(height: 8));
       for (final _Reading r in readings) {
@@ -239,6 +251,55 @@ class _Reading {
   final bool isSelf;
   final String? pubKeyHex;
   final NodeTelemetry t;
+}
+
+/// The temperature band: the three numbers and the set they are computed over.
+///
+/// It is a separate value rather than three locals in `build` because the count
+/// and the figures used to be taken from different sets. A node that reported
+/// humidity and no temperature was counted in "N reporting" and left out of
+/// min, average and max, so the card stated a number none of its own figures
+/// came from. The count here is exactly the set the three numbers come from,
+/// and [other] says how many reported something else so they are named instead
+/// of silently missing.
+class WeatherTemperatureSummary {
+  const WeatherTemperatureSummary._({
+    required this.count,
+    required this.other,
+    required this.minC,
+    required this.maxC,
+    required this.avgC,
+  });
+
+  /// What [telemetries] says, or null when none of them carries a temperature.
+  static WeatherTemperatureSummary? from(List<NodeTelemetry> telemetries) {
+    final List<double> temps = <double>[
+      for (final NodeTelemetry t in telemetries)
+        if (t.temperatureC != null) t.temperatureC!,
+    ];
+    if (temps.isEmpty) return null;
+    int other = 0;
+    for (final NodeTelemetry t in telemetries) {
+      if (t.temperatureC == null && t.hasEnvironment) other++;
+    }
+    return WeatherTemperatureSummary._(
+      count: temps.length,
+      other: other,
+      minC: temps.reduce((double a, double b) => a < b ? a : b),
+      maxC: temps.reduce((double a, double b) => a > b ? a : b),
+      avgC: temps.reduce((double a, double b) => a + b) / temps.length,
+    );
+  }
+
+  /// How many nodes the three figures below are computed over.
+  final int count;
+
+  /// How many more reported environment data but no temperature.
+  final int other;
+
+  final double minC;
+  final double maxC;
+  final double avgC;
 }
 
 /// Map a temperature to a cold→hot colour ramp (blue → teal → amber →

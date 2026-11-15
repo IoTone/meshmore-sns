@@ -104,7 +104,9 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     Duration? channelProbeIdleOverride,
     PlaceInferenceEngine? placeInferenceEngine,
     AirtimeMeter? airtimeMeter,
-  })  : _deliveryTimeoutOverride = deliveryTimeoutOverride,
+    bool Function(String? keyHex)? isBlocked,
+  })  : _isBlocked = isBlocked,
+        _deliveryTimeoutOverride = deliveryTimeoutOverride,
         _linkCloseTimeout = linkCloseTimeout ?? kLinkCloseTimeout,
         _linkOpenTimeout = linkOpenTimeout ?? kLinkOpenTimeout,
         _contactIdleOverride = contactIdleOverride,
@@ -3302,6 +3304,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       String peerPubKeyHex, String text, {bool urgent = false}) async {
     final String t = text.trim();
     if (t.isEmpty || !isReady || peerPubKeyHex.length < 12) return null;
+    // A blocked key is refused before a row is written: there is nothing to
+    // retry and nothing to show, and a row would claim a message the reader
+    // asked the app not to carry. The composer says which rule refused it.
+    if (!urgent && isPeerBlocked(peerPubKeyHex)) {
+      _emitTaskError('sendDm');
+      return null;
+    }
     // The firmware keeps eight pending ACKs in one circular table, so a ninth
     // in-flight message evicts the oldest entry and that message can no longer
     // be attributed. The app keeps to half of it, leaving room for anything the
@@ -3356,6 +3365,25 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return m;
   }
 
+  /// The block list, read at send time.
+  ///
+  /// A block is the app's own filter: the radio still receives and relays the
+  /// packet, and nothing on the mesh learns anything. That made it a display
+  /// rule only, and the send path never asked — so a blocked peer could be
+  /// messaged from the thread the block was meant to close, and the reply that
+  /// came back was hidden with no sign that it would be. The composer refuses
+  /// first and says why; this is the backstop for every other caller (the bot's
+  /// reply, a soak run, a place reply).
+  ///
+  /// An alarm outranks a block, the same way an SOS outranks a muted channel:
+  /// `urgent` sends are never refused here.
+  final bool Function(String? keyHex)? _isBlocked;
+
+  /// Whether [peerPubKeyHex] is on the block list. False when no list is
+  /// attached, which is the case in a test that does not care.
+  bool isPeerBlocked(String? peerPubKeyHex) =>
+      _isBlocked?.call(peerPubKeyHex) ?? false;
+
   /// Re-send an outgoing message whose delivery did not settle in its
   /// favour (same text, same channel or peer), reusing its row so the
   /// history does not fill with copies. Re-arms the same delivery tracking
@@ -3393,6 +3421,10 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     final bool dm = m.peerPubKeyHex != null;
     final String? peer = m.peerPubKeyHex;
     if (dm && peer!.length < 12) return RetryOutcome.refused;
+    // A retry is a send, so the block applies to it too: the row may predate
+    // the block, and retrying it would put a message into an inbox this device
+    // has been told not to show.
+    if (dm && isPeerBlocked(peer)) return RetryOutcome.refused;
     bool resetRoute = false;
     if (dm) {
       final Contact? c = _contacts[peer!];

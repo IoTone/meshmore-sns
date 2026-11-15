@@ -1142,6 +1142,14 @@
       }
     }
   },
+  "weatherReportingOther": "ほかに {count} 件は湿度または気圧のみ",
+  "@weatherReportingOther": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "docsHubSubtitle": "プロトコル・ファームウェア・アプリ・実地メモをオフラインで。",
   "docsHubFooter": "ドキュメントはオフライン閲覧用に端末にキャッシュされます。項目を開いて ↻ で最新版を取得。出典: meshcore-dev/MeshCore。",
   "docsProtocolTitle": "プロトコル",
@@ -2773,6 +2781,8 @@
   "placeSentDirect": "送信者にダイレクトメッセージで送りました。",
   "placeNoSenderKey": "この場所には鍵が付いていないため、直接宛先にできません。",
   "dmWaiting": "上のメッセージの結果を待っています。連絡先ごとに1通ずつにすることで、MeshCore 無線機がどのメッセージに応答があったかを示せます。",
+  "dmBlockedNotice": "この鍵はブロック中です。返信はここには表示されません。設定のブロックした鍵で解除すると、またやり取りできます。",
+  "dmBlockedRefused": "送信しませんでした。この鍵はブロック中のため、返信はここには表示されません。無線機はメッセージを中継します。",
   "settingsHubFirmware": "ファームウェア",
   "firmwareTitle": "ファームウェア",
   "firmwareIntro": "この無線機が動かしているものと、アプリがそれに対して行うこと。この画面から何かをインストールすることはありません。",

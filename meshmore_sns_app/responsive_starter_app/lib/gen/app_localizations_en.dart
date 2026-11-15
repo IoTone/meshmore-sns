@@ -2020,6 +2020,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String weatherReportingOther(int count) {
+    return '$count more report humidity or pressure only';
+  }
+
+  @override
   String get docsHubSubtitle =>
       'Protocol, firmware, app and field notes, offline.';
 
@@ -6470,6 +6475,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dmWaiting =>
       'Waiting for the message above to settle. One message per contact at a time keeps the MeshCore radio able to say which one was answered.';
+
+  @override
+  String get dmBlockedNotice =>
+      'This key is blocked, so a reply would be hidden here. Unblock it under Settings, Blocked keys, to talk again.';
+
+  @override
+  String get dmBlockedRefused =>
+      'Not sent. This key is blocked, so the reply would be hidden here. The radio would still carry the message.';
 
   @override
   String get settingsHubFirmware => 'Firmware';

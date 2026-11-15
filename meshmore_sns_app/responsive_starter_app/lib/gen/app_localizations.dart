@@ -3476,6 +3476,12 @@ abstract class AppLocalizations {
   /// **'{count} reporting'**
   String weatherReporting(int count);
 
+  /// Under the temperature summary, naming the nodes that reported environment data but no temperature, so they are not silently missing from the count above.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more report humidity or pressure only'**
+  String weatherReportingOther(int count);
+
   /// No description provided for @docsHubSubtitle.
   ///
   /// In en, this message translates to:
@@ -10821,6 +10827,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting for the message above to settle. One message per contact at a time keeps the MeshCore radio able to say which one was answered.'**
   String get dmWaiting;
+
+  /// Composer line in a direct message whose peer is on the block list. Says what a block does to the conversation rather than only that sending is off.
+  ///
+  /// In en, this message translates to:
+  /// **'This key is blocked, so a reply would be hidden here. Unblock it under Settings, Blocked keys, to talk again.'**
+  String get dmBlockedNotice;
+
+  /// Snackbar after a send to a blocked key was refused. Names the limit: a block is this app's filter and does not stop the radio relaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent. This key is blocked, so the reply would be hidden here. The radio would still carry the message.'**
+  String get dmBlockedRefused;
 
   /// No description provided for @settingsHubFirmware.
   ///

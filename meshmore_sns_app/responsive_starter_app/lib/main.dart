@@ -138,9 +138,17 @@ Future<void> startApp() async {
   // are needed before the first frame, so awaiting them in sequence put a
   // second wait in front of the splash for no reason.
   await Future.wait(<Future<void>>[collapse.load(), demo.load()]);
+  // The block list is read by every surface, so it is one app-scoped store:
+  // the timeline, the roster, the map, search, speech and notifications all
+  // ask the same object (block-spec §5). It is created before the controller
+  // because the send path asks it too: a block that only filtered what was
+  // drawn still let a blocked peer be messaged.
+  final BlockStore blockStore = BlockStore();
+  unawaited(blockStore.load());
   final MeshcoreController controller = MeshcoreController(
     backgroundKeepalive: createBackgroundKeepalive(),
     locationService: const GeolocatorLocationService(),
+    isBlocked: blockStore.isBlocked,
   );
   // **The radio is shared.** Another app on this phone can ask Meshmore to let go of the BLE
   // companion, and this is the wiring that makes the answer happen. Attached before the first
@@ -159,11 +167,6 @@ Future<void> startApp() async {
   // tree so the notification permission is asked at first launch, not on
   // the first message; the service starts after the first frame so its
   // stream subscription never races the controller's own connect.
-  // The block list is read by every surface, so it is one app-scoped store:
-  // the timeline, the roster, the map, search, speech and notifications all
-  // ask the same object (block-spec §5).
-  final BlockStore blockStore = BlockStore();
-  unawaited(blockStore.load());
   // Places share the block list: a blocked reporter's stored rows leave with
   // the block rather than sitting on disk behind a read-time filter (places
   // spec §10). Attached here, before the tree reads the store.

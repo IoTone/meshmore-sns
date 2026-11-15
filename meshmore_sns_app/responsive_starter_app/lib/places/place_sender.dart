@@ -30,6 +30,12 @@ abstract interface class PlaceSender {
   /// which is not the same as "nobody heard it": a channel send is a broadcast
   /// and the only answer is the radio's own OK.
   Future<bool> sendPlaceText(String text);
+
+  /// The channel slot the line goes out on, or null when the sender has no
+  /// channel of its own (a direct-message sender). Recorded on the stored row
+  /// so the sheet can say where a report went, which is the half of "a place
+  /// goes to the active channel" the app used to leave unsaid.
+  int? get destinationChannelIdx;
 }
 
 /// [PlaceSender] over the app's live controller.
@@ -46,6 +52,9 @@ final class ChannelPlaceSender implements PlaceSender {
 
   @override
   Uint8List? get reporterKey => _controller.selfInfo?.publicKey;
+
+  @override
+  int? get destinationChannelIdx => channelIdx ?? _controller.activeChannel;
 
   @override
   Future<bool> sendPlaceText(String text) async {
@@ -130,6 +139,11 @@ final class PlaceComposer {
   /// The name this node reports under, so a key-bound reply says who sent it.
   String get reporterNameForReply => _sender.reporterName;
 
+  /// The slot a report from this composer goes out on, or null when the sender
+  /// has no channel. The sheet reads it to tell "the channel I am on" from "a
+  /// channel the reader picked".
+  int? get destinationChannelIdx => _sender.destinationChannelIdx;
+
   Future<PlaceComposeResult> compose({
     required double latitude,
     required double longitude,
@@ -187,6 +201,7 @@ final class PlaceComposer {
       sentAtFromSender: false,
       expiresAt: now.add(ttl.life),
       lastSeen: now,
+      channelIdx: _sender.destinationChannelIdx,
     );
 
     final String text = encodePlace(place);

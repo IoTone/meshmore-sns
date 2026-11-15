@@ -1939,6 +1939,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String weatherReportingOther(int count) {
+    return 'ほかに $count 件は湿度または気圧のみ';
+  }
+
+  @override
   String get docsHubSubtitle => 'プロトコル・ファームウェア・アプリ・実地メモをオフラインで。';
 
   @override
@@ -6208,6 +6213,14 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get dmWaiting =>
       '上のメッセージの結果を待っています。連絡先ごとに1通ずつにすることで、MeshCore 無線機がどのメッセージに応答があったかを示せます。';
+
+  @override
+  String get dmBlockedNotice =>
+      'この鍵はブロック中です。返信はここには表示されません。設定のブロックした鍵で解除すると、またやり取りできます。';
+
+  @override
+  String get dmBlockedRefused =>
+      '送信しませんでした。この鍵はブロック中のため、返信はここには表示されません。無線機はメッセージを中継します。';
 
   @override
   String get settingsHubFirmware => 'ファームウェア';

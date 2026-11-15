@@ -1222,6 +1222,15 @@
       }
     }
   },
+  "weatherReportingOther": "{count} more report humidity or pressure only",
+  "@weatherReportingOther": {
+    "description": "Under the temperature summary, naming the nodes that reported environment data but no temperature, so they are not silently missing from the count above.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "docsHubSubtitle": "Protocol, firmware, app and field notes, offline.",
   "docsHubFooter": "Documentation is cached on-device for offline reading. Tap a doc, then ↻ to pull the latest. Upstream: meshcore-dev/MeshCore.",
   "docsProtocolTitle": "Protocol",
@@ -4324,6 +4333,14 @@
   "placeSentDirect": "Sent to the sender as a direct message.",
   "placeNoSenderKey": "This place came without a key, so there is nobody to address directly.",
   "dmWaiting": "Waiting for the message above to settle. One message per contact at a time keeps the MeshCore radio able to say which one was answered.",
+  "dmBlockedNotice": "This key is blocked, so a reply would be hidden here. Unblock it under Settings, Blocked keys, to talk again.",
+  "@dmBlockedNotice": {
+    "description": "Composer line in a direct message whose peer is on the block list. Says what a block does to the conversation rather than only that sending is off."
+  },
+  "dmBlockedRefused": "Not sent. This key is blocked, so the reply would be hidden here. The radio would still carry the message.",
+  "@dmBlockedRefused": {
+    "description": "Snackbar after a send to a blocked key was refused. Names the limit: a block is this app's filter and does not stop the radio relaying."
+  },
   "settingsHubFirmware": "Firmware",
   "firmwareTitle": "Firmware",
   "firmwareIntro": "What this MeshCore radio is running, and what this app will do about it. Nothing on this page installs anything.",

@@ -222,6 +222,7 @@ final class Place {
     this.description,
     this.sentAtFromSender = false,
     this.kept = false,
+    this.channelIdx,
   });
 
   /// Eight lowercase hex characters, derived by [placeIdFor] from the
@@ -285,6 +286,16 @@ final class Place {
   /// Pinned on this device only; does not extend the wire life.
   final bool kept;
 
+  /// The channel slot this device sent the report on, or saw it arrive on.
+  ///
+  /// Local only: the wire grammar is `[PLACE1]` text and carries no channel, so
+  /// a receiver learns the slot from the message that carried it and a sender
+  /// from the slot it chose. Null on a row that arrived as a direct message, on
+  /// a row stored before this field existed, and on a row whose channel has
+  /// since been renamed away. It is an annotation for the reader ("sent on
+  /// #cos"), never an input to the id or to the digits that travel.
+  final int? channelIdx;
+
   double get latitude => latE6 / 1e6;
   double get longitude => lonE6 / 1e6;
 
@@ -328,6 +339,7 @@ final class Place {
     DateTime? expiresAt,
     DateTime? lastSeen,
     bool? kept,
+    int? channelIdx,
   }) {
     return Place(
       id: id,
@@ -347,6 +359,7 @@ final class Place {
       expiresAt: expiresAt ?? this.expiresAt,
       lastSeen: lastSeen ?? this.lastSeen,
       kept: kept ?? this.kept,
+      channelIdx: channelIdx ?? this.channelIdx,
     );
   }
 
@@ -370,7 +383,8 @@ final class Place {
         other.sentAtFromSender == sentAtFromSender &&
         other.expiresAt == expiresAt &&
         other.lastSeen == lastSeen &&
-        other.kept == kept;
+        other.kept == kept &&
+        other.channelIdx == channelIdx;
   }
 
   @override
@@ -388,6 +402,7 @@ final class Place {
         expiresAt,
         lastSeen,
         kept,
+        channelIdx,
         reporterKey == null ? null : Object.hashAll(reporterKey!),
       );
 
