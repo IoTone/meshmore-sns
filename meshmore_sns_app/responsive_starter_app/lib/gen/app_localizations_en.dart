@@ -4285,7 +4285,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get networksNameRequired => 'Give the network a name.';
 
   @override
-  String get networksPreset => 'Radio settings from';
+  String get networksPreset => 'Settings the members share';
 
   @override
   String get networksPathHash => 'Path hash size';

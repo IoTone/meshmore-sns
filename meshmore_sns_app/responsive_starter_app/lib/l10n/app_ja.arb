@@ -2111,7 +2111,7 @@
   "networksNew": "新しいネットワーク",
   "networksName": "名前",
   "networksNameRequired": "ネットワーク名を入力してください。",
-  "networksPreset": "無線設定の元",
+  "networksPreset": "メンバー共通の設定",
   "networksPathHash": "パスハッシュ長",
   "networksPrivateSwitch": "専用周波数",
   "networksPrivateHelp": "公開プリセットが使わない周波数を使います。この周波数の無線機は公開メッシュを聞けず、公開メッシュからも聞こえません。",

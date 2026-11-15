@@ -305,9 +305,11 @@ a real instruction with nothing behind it in the tree, so each is a task until a
 - **A duty-cycle cutoff the user can switch on, with the time left in the hour stated under it** (2026-11-06). What
   exists is the airtime *policy* choice in App settings; the toggle and the countdown line are not built and no row
   covers them.
-- **Region presets and the public preset list are redundant** (2026-11-06, as a question). Never resolved: the radio
-  screen still offers both, and the register has no row either way. Answer it — one list, or two with a stated
-  difference.
+- **Region presets and the public preset list: answered 2026-11-15, two lists, one difference.** They are not the
+  same control. Device configuration *applies* a preset to this radio (a radio command, applied by the screen's own
+  Apply), while Networks *records* which preset a saved network's members share (a stored field on the network).
+  The list is the same `kRegionPresets` and the difference is now stated in both places: the networks dropdown
+  reads "Settings the members share" instead of the ambiguous "Radio settings from" (`app_en.arb` `networksPreset`).
 - **Videos are out of the media scope; screenshots only** (2026-11-06, LDMUX). Recorded here because the same sentence
   reads as a MeshMore instruction out of context, and it was not one.
 

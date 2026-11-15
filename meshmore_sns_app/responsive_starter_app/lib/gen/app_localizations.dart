@@ -7320,7 +7320,7 @@ abstract class AppLocalizations {
   /// No description provided for @networksPreset.
   ///
   /// In en, this message translates to:
-  /// **'Radio settings from'**
+  /// **'Settings the members share'**
   String get networksPreset;
 
   /// No description provided for @networksPathHash.

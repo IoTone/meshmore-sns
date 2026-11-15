@@ -4130,7 +4130,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get networksNameRequired => 'ネットワーク名を入力してください。';
 
   @override
-  String get networksPreset => '無線設定の元';
+  String get networksPreset => 'メンバー共通の設定';
 
   @override
   String get networksPathHash => 'パスハッシュ長';

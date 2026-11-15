@@ -2796,7 +2796,7 @@
   "networksNew": "New network",
   "networksName": "Name",
   "networksNameRequired": "Give the network a name.",
-  "networksPreset": "Radio settings from",
+  "networksPreset": "Settings the members share",
   "networksPathHash": "Path hash size",
   "networksPrivateSwitch": "Private frequency",
   "networksPrivateHelp": "Use a frequency no public preset uses. Radios on it do not hear the public mesh, and the public mesh does not hear them.",
