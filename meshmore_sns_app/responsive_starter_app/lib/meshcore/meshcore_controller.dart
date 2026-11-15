@@ -561,6 +561,16 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     final List<ChatMessage> hist = await ChatStore.load();
     if (hist.isEmpty) return;
     _messages.insertAll(0, hist);
+    // A reaction stored by a build that kept it as an ordinary row is folded
+    // into the message it names now, so an old reaction shows as a chip on its
+    // target instead of disappearing with the row.
+    for (final ChatMessage m in List<ChatMessage>.of(_messages)) {
+      if (!m.hidden) continue;
+      final ({String hash, String emoji, String? author, bool isOpen})? rx =
+          Reactions.parse(m.text.trim());
+      if (rx == null) continue;
+      _applyReaction(m.channelIdx < 0 ? 0 : m.channelIdx, m.peerPubKeyHex, rx);
+    }
     if (_messages.length > _messagesCap) {
       for (final ChatMessage m
           in _messages.getRange(0, _messages.length - _messagesCap)) {

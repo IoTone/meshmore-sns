@@ -114,4 +114,27 @@ void main() {
     expect(Reactions.parse(wire)?.emoji, '👍',
         reason: 'the hidden row is the wire line, in the format other clients read');
   });
+
+  test('a reaction row written before this build is hidden on the way in', () {
+    // The row in the thread read `@[Half Live]✅\nch3z0stx`: a reaction sent by a
+    // build that stored it as ordinary chat. Reading it back normalises it, so
+    // the history stops showing the wire format.
+    final ChatMessage old = ChatMessage.fromJson(<String, Object?>{
+      'i': 'x1',
+      'c': 0,
+      't': '@[Half Live]✅\nch3z0stx',
+      'o': true,
+      'a': 1700000000000,
+    });
+    expect(old.hidden, isTrue);
+    // An ordinary message is untouched, including one that mentions a hash.
+    final ChatMessage plain = ChatMessage.fromJson(<String, Object?>{
+      'i': 'x2',
+      'c': 0,
+      't': 'look at ch3z0stx',
+      'o': false,
+      'a': 1700000000000,
+    });
+    expect(plain.hidden, isFalse);
+  });
 }

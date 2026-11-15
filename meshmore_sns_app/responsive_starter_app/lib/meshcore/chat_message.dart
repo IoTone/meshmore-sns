@@ -4,6 +4,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import '../chat/reactions.dart';
 import '../media/mp1.dart';
 import 'failure.dart';
 
@@ -248,7 +249,12 @@ class ChatMessage {
         final String b64 => _tryBase64(b64),
         _ => null,
       },
-      hidden: j['h'] == true,
+      // A row written before this build marked reactions was stored as ordinary
+      // chat, so its text is the wire line. The parser is the same one the
+      // inbound path uses, so an old row is recognised on the way in rather than
+      // left in the thread as `@[name]🙂\n<hash>`.
+      hidden: j['h'] == true ||
+          Reactions.parse((j['t'] as String? ?? '').trim()) != null,
       reactions: switch (j['e']) {
         final Map<Object?, Object?> m => <String, List<String?>>{
             for (final MapEntry<Object?, Object?> e in m.entries)
