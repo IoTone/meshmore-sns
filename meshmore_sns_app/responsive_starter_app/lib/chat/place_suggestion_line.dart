@@ -54,6 +54,11 @@ class PlaceSuggestionLine extends StatelessWidget {
       longitude: own.longitude,
       composer: placeComposerOf(context, channelIdx: message.channelIdx),
       initialLabel: name,
+      // The sheet's picker opens on the channel the message arrived on, so the
+      // slot it shows is the slot the report will use. Without this the picker
+      // fell back to the remembered slot while the composer sent on the
+      // message's channel, and the two disagreed on screen.
+      initialChannelIdx: message.channelIdx,
     );
     if (!context.mounted) return;
     if (place != null) {

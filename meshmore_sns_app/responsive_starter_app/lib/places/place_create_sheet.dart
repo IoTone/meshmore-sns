@@ -116,11 +116,20 @@ class _PlaceCreateSheetState extends State<PlaceCreateSheet> {
     final List<MapEntry<int, String>> channels = mc.channels;
     final int? remembered = await PlaceChannelPref.read();
     if (!mounted) return;
-    final int fallback = widget.initialChannelIdx ?? mc.activeChannel;
-    final int chosen = remembered != null &&
-            channels.any((MapEntry<int, String> e) => e.key == remembered)
-        ? remembered
-        : fallback;
+    bool has(int? slot) =>
+        slot != null && channels.any((MapEntry<int, String> e) => e.key == slot);
+    // The caller's slot wins when it names one the radio actually has: a place
+    // suggested by a message belongs on the channel that message arrived on,
+    // and the remembered slot is only a default for a report the reader started
+    // themselves. Every candidate is checked against the radio's own list,
+    // because a remembered slot can outlive the channel it named.
+    final int chosen = has(widget.initialChannelIdx)
+        ? widget.initialChannelIdx!
+        : has(remembered)
+            ? remembered!
+            : has(mc.activeChannel)
+                ? mc.activeChannel
+                : (channels.isEmpty ? mc.activeChannel : channels.first.key);
     setState(() {
       _channels = channels;
       _channelIdx = chosen;

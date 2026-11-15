@@ -278,6 +278,48 @@ void main() {
           ),
         );
 
+    testWidgets('a caller that knows the channel wins over the remembered one',
+        (WidgetTester t) async {
+      // A place suggested by a message belongs on the channel that message
+      // arrived on. The sheet used to ignore the caller's slot and open on the
+      // remembered one, so the picker and the composer disagreed on screen.
+      await PlaceChannelPref.write(0);
+      await t.pumpWidget(host(Builder(
+        builder: (BuildContext c) => TextButton(
+          onPressed: () => PlaceCreateSheet.show(c,
+              latitude: 51.500741,
+              longitude: -0.124596,
+              composer: placeComposerOf(c, channelIdx: 1),
+              initialChannelIdx: 1),
+          child: const Text('open'),
+        ),
+      )));
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      expect(find.text('#field'), findsWidgets,
+          reason: 'the caller named slot 1, and the remembered slot was 0');
+    });
+
+    testWidgets('a remembered slot the radio no longer has falls back',
+        (WidgetTester t) async {
+      // A remembered slot can outlive the channel it named, and a picker that
+      // opens on a slot the radio does not have would send nowhere.
+      await PlaceChannelPref.write(9);
+      await t.pumpWidget(host(Builder(
+        builder: (BuildContext c) => TextButton(
+          onPressed: () => PlaceCreateSheet.show(c,
+              latitude: 51.500741,
+              longitude: -0.124596,
+              composer: placeComposerOf(c)),
+          child: const Text('open'),
+        ),
+      )));
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      expect(find.text('Public'), findsOneWidget,
+          reason: 'slot 9 does not exist, so the active channel is the answer');
+    });
+
     testWidgets('the picker starts on the active channel and lists the rest',
         (WidgetTester t) async {
       await t.pumpWidget(host(Builder(
