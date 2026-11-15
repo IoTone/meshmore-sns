@@ -134,6 +134,7 @@ dependencies:
   image_picker: ^1.2.4
   record: ^7.1.2
   ffi: ^2.2.0
+  flutter_onnxruntime: ^1.9.0
 
 # Meshmore: the image codec is rebuilt from the same libavif/libaom/dav1d pins
 # as upstream 0.2.0, with the 16 KB page-size linker flags Play requires (D11.9).

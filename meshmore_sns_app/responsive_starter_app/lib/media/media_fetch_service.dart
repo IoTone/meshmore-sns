@@ -13,6 +13,8 @@ import 'media_fetch.dart';
 import 'media_offer.dart';
 import 'media_codec.dart';
 import 'media_photo.dart';
+import 'aeic/aeic_chunk.dart';
+import 'aeic_codec_service.dart';
 import 'mp1.dart';
 
 /// One preview that arrived on a channel, with what it takes to ask for more.
@@ -92,13 +94,54 @@ final class MediaFetchService extends ChangeNotifier {
   final List<StreamSubscription<Object?>> _subs =
       <StreamSubscription<Object?>>[];
 
-  /// Datagrams that are a picture in a codec this build does not carry.
+  /// Datagrams that were a picture in a codec this build cannot open.
   ///
-  /// AEIC is MeshCore Open's neural codec: about 872 MB of ONNX graphs and a
-  /// 2.16 GiB peak decode, which this app does not ship. Counting them is
-  /// honest: the alternative is a silent drop that looks like an unknown type.
+  /// AEIC is MeshCore Open's neural codec. The chunks are now reassembled here
+  /// (the framing is cheap and ours), and only the *decode* needs the model
+  /// bundle: without it a picture arrives complete and is counted rather than
+  /// dropped as an unknown type.
   int _foreignPictures = 0;
   int get foreignPictures => _foreignPictures;
+
+  /// Pictures reassembled from AEIC chunks this session, newest last.
+  final List<AeicPicture> _aeic = <AeicPicture>[];
+  List<AeicPicture> get aeicPictures => List<AeicPicture>.unmodifiable(_aeic);
+
+  /// Decodes a reassembled bitstream, when this build has the bundle.
+  AeicCodecService? aeic;
+
+  final AeicReassembler _aeicReassembler = AeicReassembler();
+
+  /// Our own sender prefix, so a receiver's echo of our transmission is not
+  /// reassembled into a picture we already have.
+  int get _ownPrefix => mc.selfInfo == null
+      ? -1
+      : aeicSenderPrefixFromKey(mc.selfInfo!.publicKey);
+
+  /// One chunk of an AEIC picture.
+  ///
+  /// The reassembler owns the TTL, the parity repair and the key, so this is a
+  /// pass-through that only says what happened. A picture that completes is kept
+  /// in memory as a bitstream: decoding it needs the model bundle and a couple
+  /// of gigabytes, which is not something to do for a datagram that arrived
+  /// while the reader was elsewhere.
+  void _acceptAeicChunk(ChannelDatagram d) {
+    final AeicChunkStatus status = _aeicReassembler.accept(
+      blob: d.blob,
+      channelIndex: d.channelIndex,
+      ownSenderPrefix: _ownPrefix,
+    );
+    if (status == AeicChunkStatus.refused) _foreignPictures++;
+    if (status != AeicChunkStatus.completed &&
+        status != AeicChunkStatus.parityMatched) {
+      return;
+    }
+    final AeicPicture? picture = _aeicReassembler.lastPicture;
+    if (picture == null) return;
+    _aeic.add(picture);
+    if (_aeic.length > 8) _aeic.removeAt(0);
+    notifyListeners();
+  }
 
   /// Previews heard this session, newest last, bounded to sixteen.
   List<PhotoAnnouncement> get announcements =>
@@ -125,7 +168,7 @@ final class MediaFetchService extends ChangeNotifier {
 
   void _onDatagram(ChannelDatagram d) {
     if (d.dataType == kAeicDataType) {
-      _foreignPictures++;
+      _acceptAeicChunk(d);
       return;
     }
     if (d.dataType != kMp1DataType) return;

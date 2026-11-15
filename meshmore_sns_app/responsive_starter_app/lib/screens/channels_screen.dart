@@ -204,8 +204,6 @@ class ChannelsScreen extends StatelessWidget {
                 child: Text(l.channelsOfflineHint,
                     style: TextStyle(color: cs.error)),
               ),
-            SizedBox(height: context.skin.space.sectionGap),
-            MmSectionHeader(l.channelsTitle),
             for (int idx = 0; idx < slots; idx++)
               ListTile(
                 leading: Icon(

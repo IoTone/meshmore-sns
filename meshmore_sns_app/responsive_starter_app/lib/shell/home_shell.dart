@@ -583,10 +583,19 @@ class _SettingsView extends StatelessWidget {
                   String label,
                   List<(IconData, String, String)> rows
                 }) g in _settingsGroups(l)) ...<Widget>[
-                  _GroupLabel(
-                      text: g.label,
-                      skin: skin,
-                      first: g.label == l.settingsGroupRadio),
+                  // The same header every settings page uses. The hub had its
+                  // own label widget with its own padding, which is why the
+                  // group titles here did not line up with the section titles
+                  // one tap deeper.
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(skin.space.screenEdge,
+                        g.label == l.settingsGroupRadio
+                            ? skin.space.rowGap
+                            : skin.space.sectionGap,
+                        skin.space.screenEdge,
+                        0),
+                    child: MmSectionHeader(g.label),
+                  ),
                   for (final (IconData icon, String title, String route) r
                       in g.rows)
                     Padding(
@@ -707,27 +716,6 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
     ];
 
 /// A group's name, at the same weight and tracking in every skin.
-class _GroupLabel extends StatelessWidget {
-  const _GroupLabel(
-      {required this.text, required this.skin, this.first = false});
-
-  final String text;
-  final MmSkin skin;
-  final bool first;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-          first ? 0 : skin.space.screenEdge,
-          first ? skin.space.rowGap : skin.space.sectionGap - skin.space.step(3),
-          skin.space.screenEdge,
-          skin.space.step(3)),
-      child: Text(text, style: mmSectionLabelStyle(skin)),
-    );
-  }
-}
-
 /// The link glyph's box, in pixels. Both halves of the mark are drawn to it.
 const double _glyphBox = 22;
 

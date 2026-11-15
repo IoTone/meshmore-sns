@@ -9,6 +9,8 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/media/aeic_installer.dart';
+import 'package:meshmore_sns_app/media/aeic_codec_service.dart'
+    show kAeicWireAvailable;
 import 'package:meshmore_sns_app/media/media_mode.dart';
 
 AeicModelFile _file(String name, List<int> body, {String? sha}) => AeicModelFile(
@@ -48,10 +50,11 @@ void main() {
       }
     });
 
-    test('the neural mode is not selectable until its codec can encode', () {
-      // The settings row reads this, so it cannot drift from the truth: a mode
-      // that cannot encode would refuse every picture.
-      expect(kAeicEncodeAvailable, isFalse);
+    test('the neural mode is selectable once the build carries the codec', () {
+      // The settings row still gates on the *bundle*: a mode whose models are
+      // not installed would refuse every picture.
+      expect(kAeicEncodeAvailable, isTrue);
+      expect(kAeicWireAvailable, isTrue);
     });
   });
 

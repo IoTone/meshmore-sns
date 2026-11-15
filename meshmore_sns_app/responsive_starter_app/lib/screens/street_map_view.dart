@@ -341,6 +341,33 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// The readiness revision the field was last built for.
   int _hexReadyRev = -1;
 
+  /// The camera zoom the field on screen was built for.
+  ///
+  /// The owner's rule, said three times and only now true: the moment the map
+  /// zooms, the cells that were measured at the old zoom are *not* the cells at
+  /// the new one, so they must stop being drawn at once — not when the new
+  /// lattice happens to be built. While the camera is moving this differs from
+  /// [_zoom] by more than [_kFieldZoomSettle], the field draws nothing, and the
+  /// rebuild is scheduled for the moment the camera stops.
+  double _fieldZoom = double.nan;
+
+  static const double _kFieldZoomSettle = 0.004;
+
+  Timer? _fieldRebuild;
+  void _scheduleFieldRebuild() {
+    if (_fieldRebuild?.isActive ?? false) return;
+    _fieldRebuild = Timer(const Duration(milliseconds: 140), () {
+      _fieldRebuild = null;
+      if (!mounted) return;
+      // Re-key the field so it is rebuilt at the zoom the camera settled on: the
+      // cells are a function of the zoom, and the tile readiness asked about is
+      // a function of the rounded zoom.
+      _hexKey = '';
+      _fieldZoom = _zoom;
+      setState(() {});
+    });
+  }
+
   Timer? _hexPolyTimer;
 
   /// One rebuild per burst of tile arrivals.
@@ -696,6 +723,7 @@ class _StreetMapViewState extends State<StreetMapView> {
     _warmGenerationOf?.call();
     _bubbleTick?.cancel();
     _hexPolyTimer?.cancel();
+    _fieldRebuild?.cancel();
     _warm?.cancel();
     _saveView?.cancel();
     _compass.removeListener(_onCompass);
@@ -1858,6 +1886,7 @@ class _StreetMapViewState extends State<StreetMapView> {
     // continuous radius changed the memo key on every frame of a pinch, so the
     // lattice was rebuilt and re-anchored under the finger.
     _hexRadiusMetres = hexRadiusForZoomLevel(_zoom);
+    if (_fieldZoom.isNaN) _fieldZoom = _zoom;
     // The drawn radius in logical pixels, which is what the cap must be sized
     // from: it is not `kHexRadiusPx` once quantisation has moved it.
     final double drawnRadiusPx = _hexRadiusMetres / hexMetresPerPixel(_zoom);
@@ -1949,7 +1978,15 @@ class _StreetMapViewState extends State<StreetMapView> {
         mapsForReady.tileReady(kOsmVector, hexZoom,
             lonToTileX(c.centre.longitude, hexZoom),
             latToTileY(c.centre.latitude, hexZoom));
-    final List<HexCell> hexes = _hexCache.where(mappable).toList(growable: false);
+    // Any zoom at all clears the field on the next frame. A pinch that has not
+    // crossed a lattice step still changes what the cells mean on the glass, and
+    // the previous set was measured for a different one.
+    final bool zooming = !_fieldZoom.isNaN &&
+        (_zoom - _fieldZoom).abs() > _kFieldZoomSettle;
+    if (zooming) _scheduleFieldRebuild();
+    final List<HexCell> hexes = zooming
+        ? const <HexCell>[]
+        : _hexCache.where(mappable).toList(growable: false);
 
     // A tile arriving used to rebuild every polygon in the field, and a zoom
     // streams a dozen tiles: the field re-shaped itself a dozen times after the

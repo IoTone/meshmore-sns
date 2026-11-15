@@ -88,6 +88,7 @@ class AppSettingsScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             ListTile(
+              dense: true,
               key: const ValueKey<String>('units-metric'),
               title: Text(l.settingsUnitsMetric),
               subtitle: Text(l.settingsUnitsMetricHint),
@@ -97,6 +98,7 @@ class AppSettingsScreen extends StatelessWidget {
               onTap: () => Navigator.pop(sheet, DistanceUnits.metric),
             ),
             ListTile(
+              dense: true,
               key: const ValueKey<String>('units-imperial'),
               title: Text(l.settingsUnitsImperial),
               subtitle: Text(l.settingsUnitsImperialHint),
@@ -132,11 +134,13 @@ class AppSettingsScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             ListTile(
+              dense: true,
               title: Text(l.settingsLanguageSystem),
               trailing: lc.locale == null ? const Icon(Icons.check) : null,
               onTap: () => Navigator.pop(ctx, null),
             ),
             ListTile(
+              dense: true,
               title: Text(l.settingsLanguageEnglish),
               trailing: lc.locale?.languageCode == 'en'
                   ? const Icon(Icons.check)
@@ -144,6 +148,7 @@ class AppSettingsScreen extends StatelessWidget {
               onTap: () => Navigator.pop(ctx, const Locale('en')),
             ),
             ListTile(
+              dense: true,
               title: Text(l.settingsLanguageJapanese),
               trailing: lc.locale?.languageCode == 'ja'
                   ? const Icon(Icons.check)
@@ -192,6 +197,7 @@ class AppSettingsScreen extends StatelessWidget {
             // already-paired companion to reconnect rather than waiting for the
             // next launch.
             SwitchListTile(
+              dense: true,
               title: Text(l.demoModeRow),
               subtitle: Text(
                 l.demoModeSubtitle,
@@ -206,6 +212,7 @@ class AppSettingsScreen extends StatelessWidget {
             // R17/U8 — Android background keep-alive (foreground service
             // + persistent notification). No-op on iOS.
             SwitchListTile(
+              dense: true,
               title: Text(l.settingsBackgroundTitle),
               subtitle: Text(
                 !mc.backgroundKeepaliveEnabled
@@ -238,6 +245,7 @@ class AppSettingsScreen extends StatelessWidget {
             // fabric. Costs a little OTA airtime; off = no telemetry
             // traffic from us.
             SwitchListTile(
+              dense: true,
               title: Text(l.settingsTelemetryPoll),
               subtitle: Text(
                 mc.telemetryPollEnabled
@@ -255,6 +263,7 @@ class AppSettingsScreen extends StatelessWidget {
             // limit. The policy is a claim about the channel, not about the
             // law: the radio keeps its own regulatory limit either way.
             ListTile(
+              dense: true,
               leading: const Icon(Icons.data_usage),
               title: Text(l.settingsAirtimeTitle),
               subtitle: Text(
@@ -271,6 +280,7 @@ class AppSettingsScreen extends StatelessWidget {
             // the line under it is the only place the time left in the hour is
             // stated.
             SwitchListTile(
+              dense: true,
               key: const ValueKey<String>('settings-airtime-cutoff'),
               secondary: const Icon(Icons.hourglass_bottom),
               title: Text(l.airtimeCutoffTitle),
@@ -284,6 +294,7 @@ class AppSettingsScreen extends StatelessWidget {
               onChanged: (bool v) => mc.setAirtimeCutoff(v),
             ),
             ListTile(
+              dense: true,
               key: const ValueKey<String>('settings-airtime-left'),
               title: Text(l.airtimeLeftInHour),
               trailing: Text(
@@ -307,6 +318,7 @@ class AppSettingsScreen extends StatelessWidget {
             // converted in their head and a 12-hour phone showed two clock
             // conventions in one app.
             ListTile(
+              dense: true,
               key: const ValueKey<String>('settings-units-distance'),
               leading: const Icon(Icons.straighten),
               title: Text(l.settingsUnits),
@@ -319,6 +331,7 @@ class AppSettingsScreen extends StatelessWidget {
               onTap: () => _pickUnits(context, fmt, l),
             ),
             SwitchListTile(
+              dense: true,
               key: const ValueKey<String>('settings-clock-24'),
               secondary: const Icon(Icons.schedule),
               title: Text(l.settingsClock24),
@@ -329,6 +342,7 @@ class AppSettingsScreen extends StatelessWidget {
               onChanged: (bool v) => fmt.setClock24(v),
             ),
             SwitchListTile(
+              dense: true,
               key: const ValueKey<String>('settings-temperature'),
               secondary: const Icon(Icons.thermostat),
               title: Text(l.settingsCelsius),
@@ -344,6 +358,7 @@ class AppSettingsScreen extends StatelessWidget {
             // System / English / 日本語; the choice is persisted by
             // LocaleController and re-skins the whole tree live.
             ListTile(
+              dense: true,
               leading: const Icon(Icons.language),
               title: Text(l.settingsLanguage),
               subtitle: Text(_languageLabel(l, lc.locale),
@@ -357,6 +372,7 @@ class AppSettingsScreen extends StatelessWidget {
             // switch can still be inaudible — say so rather than
             // leaving the user with a toggle that does nothing.
             SwitchListTile(
+              dense: true,
               title: Text(l.settingsSpeech),
               subtitle: Text(
                 !tts.enabled
@@ -381,6 +397,7 @@ class AppSettingsScreen extends StatelessWidget {
             // channel nobody could silence from anywhere else — and the sheet
             // pointed back here. One place, every channel.
             ListTile(
+              dense: true,
               key: const ValueKey<String>('settings-channel-silence'),
               leading: const Icon(Icons.notifications_off_outlined),
               title: Text(l.settingsSilencePerChannel),
@@ -398,6 +415,7 @@ class AppSettingsScreen extends StatelessWidget {
             // it under "App settings" rather than buried in Device
             // config; the device-side advert policy is separate.
             ListTile(
+              dense: true,
               leading: const Icon(Icons.satellite_alt),
               title: Text(l.locTitle),
               subtitle: Text(l.locTileSubtitle,
@@ -411,6 +429,7 @@ class AppSettingsScreen extends StatelessWidget {
             // page where the user can flip BLE / Notifications etc.
             // back on after a permanent denial.
             ListTile(
+              dense: true,
               leading: const Icon(Icons.lock_outline),
               title: Text(l.settingsPermissions),
               subtitle: Text(
@@ -424,6 +443,7 @@ class AppSettingsScreen extends StatelessWidget {
             // APP-F1..F3 - blocking is a content setting, so it lives with the
             // content settings rather than in Device configuration.
             ListTile(
+              dense: true,
               leading: const Icon(Icons.block),
               title: Text(l.blockedKeysTitle),
               subtitle: Text(
@@ -437,6 +457,7 @@ class AppSettingsScreen extends StatelessWidget {
             // that one hands over this thread only, this one hands over
             // everything, which is what restore reads.
             ListTile(
+              dense: true,
               key: const ValueKey<String>('settings-export-history'),
               leading: const Icon(Icons.save_alt),
               title: Text(l.settingsHistoryExportRow),
@@ -529,6 +550,7 @@ class _NotificationsDeniedBanner extends StatelessWidget {
         if (snap.data != false) return const SizedBox.shrink();
         final AppLocalizations l = AppLocalizations.of(ctx);
         return ListTile(
+              dense: true,
           leading: const Icon(Icons.notifications_off_outlined),
           title: Text(l.notifDeniedBanner),
           trailing: MmAction(
@@ -565,6 +587,7 @@ class _NotificationHealthRow extends StatelessWidget {
           return const SizedBox.shrink();
         }
         return ListTile(
+              dense: true,
           key: const ValueKey<String>('notif-health'),
           leading: const Icon(Icons.volume_mute_outlined),
           title: Text(state == NotifierHealth.quiet
@@ -663,6 +686,7 @@ class _BatteryExemptionRowState extends State<_BatteryExemptionRow>
       return const SizedBox.shrink();
     }
     return ListTile(
+              dense: true,
       key: const ValueKey<String>('settings-battery-exemption'),
       leading: const Icon(Icons.battery_alert_outlined),
       title: Text(l.settingsBatteryOptimisedTitle),
@@ -741,6 +765,7 @@ class _RadioPinBlockState extends State<_RadioPinBlock> {
               style: TextStyle(color: cs.onSurfaceVariant)),
         ),
         ListTile(
+              dense: true,
           contentPadding: EdgeInsets.zero,
           title: Text(l.settingsPinCurrent),
           subtitle: Text(
@@ -833,6 +858,7 @@ class _PhotoColorSwitchState extends State<_PhotoColorSwitch> {
   @override
   Widget build(BuildContext context) {
     return SwitchListTile(
+              dense: true,
       key: const ValueKey<String>('settings-photo-color'),
       title: Text(widget.l.settingsPhotoColorTitle),
       subtitle: Text(widget.l.settingsPhotoColorSub,

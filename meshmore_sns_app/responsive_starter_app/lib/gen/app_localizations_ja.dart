@@ -5633,7 +5633,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get photoSettingsTitle => '写真';
 
   @override
-  String get chatMediaTitle => 'チャットとメディア';
+  String get chatMediaTitle => 'チャット・写真・音声';
 
   @override
   String get chatMediaMessages => 'メッセージ';

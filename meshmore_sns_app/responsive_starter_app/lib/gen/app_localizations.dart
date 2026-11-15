@@ -9871,7 +9871,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatMediaTitle.
   ///
   /// In en, this message translates to:
-  /// **'Chat & media'**
+  /// **'Chat, photos & voice'**
   String get chatMediaTitle;
 
   /// No description provided for @chatMediaMessages.

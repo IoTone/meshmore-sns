@@ -1,3 +1,4 @@
+import 'media/aeic_codec_service.dart';
 import 'media/aeic_installer.dart';
 import 'media/media_inbox.dart';
 import 'media/media_journal.dart';
@@ -332,6 +333,9 @@ Future<void> startApp() async {
         ChangeNotifierProvider<AeicInstaller>(
           create: (_) => AeicInstaller()..refresh(),
         ),
+        // The codec itself. One instance for the process: its sessions are
+        // gigabytes and two of them is how a phone runs out of memory.
+        Provider<AeicCodecService>(create: (_) => AeicCodecService()),
         ChangeNotifierProvider<DemoMode>.value(value: demo),
         ChangeNotifierProvider<MeshcoreController>.value(value: controller),
         // The pictures this session has announced and will serve on request.

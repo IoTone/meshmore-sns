@@ -5846,7 +5846,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photoSettingsTitle => 'Photos';
 
   @override
-  String get chatMediaTitle => 'Chat & media';
+  String get chatMediaTitle => 'Chat, photos & voice';
 
   @override
   String get chatMediaMessages => 'Messages';

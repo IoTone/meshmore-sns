@@ -78,6 +78,7 @@ class _RetentionRow extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return ListTile(
       key: const ValueKey<String>('chat-media-retention'),
+      dense: true,
       leading: const Icon(Icons.history),
       title: Text(l.chatMediaRetentionTitle),
       subtitle: Text(l.chatMediaRetentionBody(ChatStore.cap),

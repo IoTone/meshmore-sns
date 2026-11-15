@@ -54,6 +54,7 @@ class PhotoModeTileState extends State<PhotoModeTile> {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return ListTile(
       key: const ValueKey<String>('settings-photo-mode'),
+      dense: true,
       contentPadding: EdgeInsets.zero,
       leading: const Icon(Icons.photo_size_select_large),
       title: Text(l.photoModeTitle),
@@ -73,6 +74,7 @@ class PhotoModeTileState extends State<PhotoModeTile> {
                 for (final MediaMode m in MediaMode.values)
                   ListTile(
                     key: ValueKey<String>('photo-mode-${m.id}'),
+                    dense: true,
                     title: Text(label(l, m)),
                     subtitle: Text(
                         m == MediaMode.neural
@@ -131,6 +133,7 @@ class AeicCodecRow extends StatelessWidget {
         };
         return ListTile(
           key: const ValueKey<String>('settings-photo-codec'),
+          dense: true,
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.memory),
           title: Text(l.codecTitle),
@@ -202,6 +205,7 @@ class PhotoColorSwitchState extends State<PhotoColorSwitch> {
     final AppLocalizations l = AppLocalizations.of(context);
     return SwitchListTile(
       key: const ValueKey<String>('settings-photo-color'),
+      dense: true,
       contentPadding: EdgeInsets.zero,
       title: Text(l.settingsPhotoColorTitle),
       subtitle: Text(l.settingsPhotoColorSub,

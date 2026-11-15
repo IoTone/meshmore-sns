@@ -15,6 +15,9 @@ import '../ui/mm_components.dart';
 import 'media_chunk.dart';
 import 'media_journal.dart';
 import 'media_offer.dart';
+import 'aeic/aeic_chunk.dart';
+import 'aeic/onnx_codec.dart' show AeicUnavailable;
+import 'aeic_codec_service.dart';
 import 'media_mode.dart';
 import 'media_photo.dart';
 import 'mp1.dart';
@@ -43,7 +46,8 @@ abstract interface class MediaPhotoSource {
   /// The picture the user chose, or null when they backed out. A failure to
   /// read one is [MediaPhotoSourceFailure], which is a different thing from
   /// choosing nothing.
-  Future<MediaPhoto?> pick({MediaPhotoOrigin origin = MediaPhotoOrigin.gallery});
+  Future<MediaPhoto?> pick(
+      {MediaPhotoOrigin origin = MediaPhotoOrigin.gallery});
 }
 
 /// Why a chosen file did not become a picture.
@@ -106,6 +110,9 @@ class MediaComposer extends StatefulWidget {
     required this.byteBudget,
     required this.sendBlob,
     required this.offers,
+    this.sendDatagram,
+    this.aeic,
+    this.senderPrefix,
   });
 
   final MediaTransferService service;
@@ -130,6 +137,20 @@ class MediaComposer extends StatefulWidget {
   /// Where the full payload waits to be served, with a TTL.
   final MediaOfferStore offers;
 
+  /// The channel-datagram call with an explicit data type, for the neural mode.
+  ///
+  /// Null when the caller has no radio: the mode then refuses rather than
+  /// pretending. It is separate from [sendBlob] because AEIC travels under its
+  /// own data type (0xAE1C) and a preview under MeshPix's (0xFF50).
+  final Future<ChannelDataSendResult> Function(int dataType, Uint8List blob)?
+      sendDatagram;
+
+  /// The codec behind the neural mode. Null in a build without it.
+  final AeicCodecService? aeic;
+
+  /// Two bytes of this node's public key, which every AEIC chunk carries.
+  final int? senderPrefix;
+
   /// Opens the composer; resolves to true when a picture was sent.
   static Future<bool?> show(
     BuildContext context, {
@@ -139,9 +160,17 @@ class MediaComposer extends StatefulWidget {
     required int byteBudget,
     required Future<ChannelDataSendResult> Function(Uint8List blob) sendBlob,
     required MediaOfferStore offers,
+    Future<ChannelDataSendResult> Function(int, Uint8List)? sendDatagram,
+    AeicCodecService? aeic,
+    int? senderPrefix,
   }) =>
       showModalBottomSheet<bool>(
         context: context,
+        // A grip and a close button, the two ways out every other sheet in this
+        // app offers. The sheet had neither: it could only be dismissed by
+        // swiping a region that did not look draggable, which reads as a sheet
+        // that is stuck.
+        showDragHandle: true,
         isScrollControlled: true,
         builder: (_) => MediaComposer(
           service: service,
@@ -150,6 +179,9 @@ class MediaComposer extends StatefulWidget {
           byteBudget: byteBudget,
           sendBlob: sendBlob,
           offers: offers,
+          sendDatagram: sendDatagram,
+          aeic: aeic,
+          senderPrefix: senderPrefix,
         ),
       );
 
@@ -251,10 +283,13 @@ class _MediaComposerState extends State<MediaComposer> {
     if (plan == null || photo == null) return;
     // What the reader chose in App settings decides how far the pixels go.
     // Preview-only means the preview *is* the picture: the payload is not held,
-    // so no request can pull the full one later. The neural mode never reaches
-    // here while `kAeicEncodeAvailable` is false, because the settings row will
-    // not select it.
+    // so no request can pull the full one later. The neural mode goes its own way
+    // below, because it does not use this framing at all.
     final MediaMode mode = _mode;
+    if (mode == MediaMode.neural) {
+      await _sendNeural(photo);
+      return;
+    }
     // The id travels in the preview and comes back in a request, so it has to
     // be unique among the offers this session is holding.
     final int id = _offerId++;
@@ -335,25 +370,26 @@ class _MediaComposerState extends State<MediaComposer> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              l.mediaComposerTitle,
-              style: TextStyle(
-                  color: skin.color.fg,
-                  fontSize: skin.type.sizeLg,
-                  fontWeight: FontWeight.w600),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    l.mediaComposerTitle,
+                    style: TextStyle(
+                        color: skin.color.fg,
+                        fontSize: skin.type.sizeLg,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+                IconButton(
+                  key: const ValueKey<String>('media-close'),
+                  tooltip: l.mediaClose,
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+              ],
             ),
-            SizedBox(height: skin.space.step(2)),
-            Text(
-              scope == null
-                  ? l.mediaReachUnknown
-                  : scope.isEmpty
-                      ? l.mediaReachNoScope
-                      : l.mediaReachScope(scope),
-              key: const ValueKey<String>('media-reach'),
-              style: TextStyle(
-                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
-            ),
-            SizedBox(height: skin.space.step(5)),
+            SizedBox(height: skin.space.step(3)),
             if (_sourceProblem != null)
               _Note(
                 skin: skin,
@@ -365,7 +401,9 @@ class _MediaComposerState extends State<MediaComposer> {
               ),
             if (_refusal != null) _refusalNote(skin, l),
             if (interrupted) _interruptedNote(skin, l),
-            if (_stage == _Stage.idle && _plan == null && _sourceProblem == null)
+            if (_stage == _Stage.idle &&
+                _plan == null &&
+                _sourceProblem == null)
               Row(
                 children: <Widget>[
                   FilledButton.icon(
@@ -386,15 +424,27 @@ class _MediaComposerState extends State<MediaComposer> {
             if (_stage == _Stage.encoding)
               Text(l.mediaEncoding,
                   style: TextStyle(
-                      color: skin.color.fgMuted,
-                      fontSize: skin.type.sizeSm)),
+                      color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
             _modeLine(skin, l),
             if (_plan != null && _stage != _Stage.done) _planBlock(skin, l),
+            // Who receives it is the radio's flood scope, and it belongs beside
+            // the cost: the two together are the whole decision. It used to be
+            // the first line of the sheet, above the buttons, where it read as a
+            // disclaimer rather than as part of the price.
+            Text(
+              scope == null
+                  ? l.mediaReachUnknown
+                  : scope.isEmpty
+                      ? l.mediaReachNoScope
+                      : l.mediaReachScope(scope),
+              key: const ValueKey<String>('media-reach'),
+              style: TextStyle(
+                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
+            ),
             if (_stage == _Stage.sending)
               Text(l.mediaSendingProgress(_sent, _plan!.cost.chunks),
                   style: TextStyle(
-                      color: skin.color.fgMuted,
-                      fontSize: skin.type.sizeSm)),
+                      color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
             if (_stage == _Stage.done && _receipt != null)
               _receiptBlock(skin, l, _receipt!),
             if (_stage == _Stage.failed && _stalled != null)
@@ -472,6 +522,89 @@ class _MediaComposerState extends State<MediaComposer> {
   /// The mode lives in App settings → Photos, which is one screen away, and a
   /// reader who has just taken a picture should not have to leave the composer to
   /// find out that the pixels are not going anywhere.
+  /// Encode with the neural codec and put the stream on the channel.
+  ///
+  /// The bitstream is about 156 bytes, so it is one or two data chunks plus one
+  /// parity chunk: the whole picture is on the air in two or three datagrams,
+  /// which is why this mode exists at all. The chunk framing names the source
+  /// aspect ratio so the receiver can letterbox the 512-square back to the shape
+  /// the photo actually had.
+  Future<void> _sendNeural(MediaPhoto photo) async {
+    final AeicCodecService? codec = widget.aeic;
+    final Future<ChannelDataSendResult> Function(int, Uint8List)? send =
+        widget.sendDatagram;
+    if (codec == null || send == null) {
+      setState(() {
+        _refusal = MediaSendRefusal.payloadUnusable;
+        _stage = _Stage.ready;
+      });
+      return;
+    }
+    setState(() {
+      _stage = _Stage.sending;
+      _sent = 0;
+      _stalled = null;
+    });
+    try {
+      final DateTime started = DateTime.now();
+      final Uint8List bitstream =
+          await codec.encodeRgb(photo.rgba, photo.width, photo.height);
+      final AeicChunkSet set = buildAeicChunks(
+        payload: bitstream,
+        metadata: AeicStreamMetadata(
+          rate: AeicRate.standard,
+          aspectCode: aeicAspectCodeFor(photo.width, photo.height),
+        ),
+        // Two bytes of the local key: a receiver keys its reassembly on this and
+        // the sender can be named from it. Zero is the honest answer when the
+        // radio has not reported a key yet, and it matches no real sender.
+        senderPrefix: widget.senderPrefix ?? 0,
+        imageId: _nextImageId(),
+      );
+      var sent = 0;
+      for (final Uint8List blob in set.blobs) {
+        final ChannelDataSendResult result =
+            await send(kAeicImageDataType, blob);
+        if (!result.accepted) {
+          setState(() {
+            _stalled = MediaSendResult.refused;
+            _stage = _Stage.failed;
+          });
+          return;
+        }
+        sent++;
+        if (mounted) setState(() => _sent = sent);
+      }
+      if (!mounted) return;
+      setState(() {
+        _receipt = MediaReceipt(
+          chunks: sent,
+          resends: 0,
+          elapsed: DateTime.now().difference(started),
+        );
+        _stage = _Stage.done;
+      });
+    } on AeicUnavailable {
+      if (!mounted) return;
+      setState(() {
+        _refusal = MediaSendRefusal.payloadUnusable;
+        _stage = _Stage.ready;
+      });
+    } on AirtimeRefused {
+      if (!mounted) return;
+      setState(() {
+        _stalled = MediaSendResult.budgetRefused;
+        _stage = _Stage.failed;
+      });
+    }
+  }
+
+  /// Eight bits of image id, so a receiver can tell two streams on one channel
+  /// apart. Wrapping is fine: the reassembly key also carries the sender and the
+  /// channel, and entries expire after a minute.
+  static int _imageIdCounter = 1;
+  int _nextImageId() => (_imageIdCounter++) & 0xFF;
+
   Widget _modeLine(MmSkin skin, AppLocalizations l) {
     final MediaMode mode = _mode;
     final String text = mode == MediaMode.preview
@@ -511,8 +644,7 @@ class _MediaComposerState extends State<MediaComposer> {
       children: <Widget>[
         Text(
           l.mediaCostLine(plan.cost.chunks, _airtime(plan.cost.airtime)),
-          style: TextStyle(
-              color: skin.color.fg, fontSize: skin.type.sizeBody),
+          style: TextStyle(color: skin.color.fg, fontSize: skin.type.sizeBody),
         ),
         if (!plan.withinBudget)
           _Note(skin: skin, alert: true, text: l.mediaOverBudget),
@@ -526,8 +658,8 @@ class _MediaComposerState extends State<MediaComposer> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(l.mediaReceiptLine(r.chunks, r.resends),
-              style:
-                  TextStyle(color: skin.color.fg, fontSize: skin.type.sizeBody)),
+              style: TextStyle(
+                  color: skin.color.fg, fontSize: skin.type.sizeBody)),
           Text(l.mediaAcceptedNotDelivered,
               style: TextStyle(
                   color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),

@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'aeic_codec_service.dart' show kAeicWireAvailable;
+
 import '../util/prefs.dart';
 
 /// What this app does with a photograph.
@@ -60,11 +62,11 @@ enum MediaMode {
 
 /// Whether this build can run the neural codec.
 ///
-/// False until the ONNX session port lands beside the installer. It is a named
-/// constant rather than a comment so the settings row can say "not in this build
-/// yet" instead of offering a mode that would refuse every picture, and so the
-/// day the port arrives is one line here rather than a hunt through the UI.
-const bool kAeicEncodeAvailable = false;
+/// True: the rANS coder, the entropy layer and the ONNX sessions are all in the
+/// build. What remains is a *device* question, not a build one — the model
+/// bundle has to be installed — so the settings row offers the mode only once
+/// the installer reports [AeicState.ready].
+const bool kAeicEncodeAvailable = kAeicWireAvailable;
 
 /// The stored choice, and the colour switch beside it.
 ///

@@ -2635,7 +2635,7 @@
     }
   },
   "photoSettingsTitle": "写真",
-  "chatMediaTitle": "チャットとメディア",
+  "chatMediaTitle": "チャット・写真・音声",
   "chatMediaMessages": "メッセージ",
   "voiceUnavailable": "この端末では音声合成を利用できません。",
   "chatMediaRetentionBody": "チャンネルごとに最新 {count} 件。",

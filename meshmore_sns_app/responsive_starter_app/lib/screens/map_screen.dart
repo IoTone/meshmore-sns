@@ -69,9 +69,40 @@ class MapScreen extends StatelessWidget {
                     ),
                   );
                   if (count == 0) return button;
-                  return Badge(
-                    label: Text('$count'),
-                    child: button,
+                  // The count is drawn *inside* the cell, not by `Badge`.
+                  //
+                  // `Badge` places its label at the child's top-right, which is
+                  // the edge of the control column: the column's own border was
+                  // painted across it, so the number read as a smudge under the
+                  // frame. A Stack inside the cell cannot leave the cell, so the
+                  // count is always on the button it counts.
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: <Widget>[
+                      button,
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: IgnorePointer(
+                          child: Container(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: Theme.of(ctx).colorScheme.tertiary,
+                              borderRadius: BorderRadius.circular(7),
+                            ),
+                            child: Text(
+                              '$count',
+                              style: TextStyle(
+                                color: Theme.of(ctx).colorScheme.onTertiary,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   );
                 }),
               ],

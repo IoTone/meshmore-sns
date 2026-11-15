@@ -11,7 +11,6 @@ import '../meshcore/mesh_network_store.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/region_presets.dart';
 import '../theme/mm_skin.dart';
-import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import 'network_detail_screen.dart';
 
@@ -103,8 +102,6 @@ class _NetworksScreenState extends State<NetworksScreen> {
                                 color: context.skin.color.fgMuted,
                                 fontSize: context.skin.type.sizeSm)),
                       ),
-                      SizedBox(height: context.skin.space.sectionGap),
-                      MmSectionHeader(l.networksTitle),
                       for (final MeshNetwork n in networks)
                         ListTile(
                           key: Key('network-${n.id}'),

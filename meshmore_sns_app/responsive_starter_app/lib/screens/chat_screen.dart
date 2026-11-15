@@ -28,6 +28,8 @@ import '../chat/export_passphrase_dialog.dart';
 import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
 import '../media/media_codec.dart';
+import '../media/aeic/aeic_chunk.dart';
+import '../media/aeic_codec_service.dart';
 import '../media/media_composer.dart';
 import '../media/media_fetch_service.dart';
 import '../media/media_offer.dart';
@@ -1445,6 +1447,20 @@ class _ChatScreenState extends State<ChatScreen>
                     dataType: kMp1DataType,
                     blob: blob,
                   ),
+                  // AEIC travels under its own data type. The two are separate
+                  // because a preview is MeshPix's and a neural stream is
+                  // MeshCore Open's, and a client that understands one should not
+                  // be handed the other.
+                  sendDatagram: (int dataType, Uint8List blob) =>
+                      m.sendChannelData(
+                        channelIdx: m.activeChannel,
+                        dataType: dataType,
+                        blob: blob,
+                      ),
+                  aeic: context.read<AeicCodecService?>(),
+                  senderPrefix: m.selfInfo == null
+                      ? null
+                      : aeicSenderPrefixFromKey(m.selfInfo!.publicKey),
                   // The app provides one store for the session. A harness that
                   // pumps this screen without it still gets a working sheet:
                   // the offers simply live as long as the composer.
