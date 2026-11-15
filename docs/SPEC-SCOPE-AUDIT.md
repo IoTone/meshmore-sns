@@ -373,3 +373,31 @@ the reason, so the same ground is not re-argued next pass:
   is read from `packages/meshcore` and the register's `file:line` citations at tag
   `companion-v1.17.1`. None was re-checked against the firmware tree in this
   pass.
+
+---
+
+## §7 What was acted on, 2026-11-15
+
+The audit is the deliverable and the cuts are the owner's call, so only the
+statements that were **false against the code** were changed, plus the two
+out-of-scope products being marked as such. Nothing was deleted.
+
+| Change | Where |
+|---|---|
+| The 16 KB page claim is corrected: every bundled native library clears it, and `test/store/native_page_alignment_test.dart` holds them there | `README.md` |
+| The test count is removed from the front door, leaving the pointer to `STATUS.md` | `README.md` |
+| The requirement range is corrected to R1–R113 | `README.md` |
+| The six-theme sentence is put in the past tense, because eleven presets ship | `README.md` |
+| R26 (XR data streaming) is cut from the forward-looking list | `README.md` |
+| `meshmore-xr/` and `meshmore-xr-www/` are marked OUT OF SCOPE in the tree map, with the reason | `README.md` |
+| The geofence spec's status line now says what ships and what does not | `meshmore-sns-geofence-tracking.md` |
+| The microclimate spec's status line now says it is built | `meshmore-sns-microclimate-wx.md` |
+| The meshbook earmark says it has no register row, which is why it is invisible to the plan | `meshmore-sns-meshbook-mbk.md` |
+| Both lobospeak documents carry an out-of-scope banner pointing at the scope of record | `lobospeak-design.md`, `lobospeak-mappins-spec.md` |
+
+**Not acted on, deliberately.** The 27 CUT rows are editorial decisions about
+documents the owner wrote, and several of them (the XR client's 39k Kotlin lines,
+the lobospeak material) are another author's work sitting in this checkout.
+Moving or deleting them is the owner's call, not a documentation pass. The
+master plan already marks both as parked and frozen (`meshmore-master-plan.md:194-195`),
+so the roadmap does not read as if they were open.
