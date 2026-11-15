@@ -6015,7 +6015,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get storageClearAllGoes =>
-      'このアプリが保持していたメッセージ履歴、場所、移動の軌跡、未完了のメディア記録、キャッシュした地図タイルを削除します。';
+      'このアプリが保持していたメッセージ履歴、場所、移動の軌跡、未完了のメディア記録、ツール実行とその表、キャッシュした地図タイルを削除します。';
 
   @override
   String get storageClearAllStays =>
@@ -6682,4 +6682,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get toolHistoryClearBody => '保存されたツール実行とその表をすべて消去します。ツール自体は変わりません。';
+
+  @override
+  String storageToolRuns(int n, int cap, String size) {
+    return 'ツール実行 $n / $cap 件、表 $size';
+  }
 }

@@ -2720,7 +2720,7 @@
   "storageMedia": "未完了のメディア送信 {n} 件",
   "storageClearAll": "アプリが保持したデータをすべて削除",
   "storageClearAllTitle": "すべて削除しますか？",
-  "storageClearAllGoes": "このアプリが保持していたメッセージ履歴、場所、移動の軌跡、未完了のメディア記録、キャッシュした地図タイルを削除します。",
+  "storageClearAllGoes": "このアプリが保持していたメッセージ履歴、場所、移動の軌跡、未完了のメディア記録、ツール実行とその表、キャッシュした地図タイルを削除します。",
   "storageClearAllStays": "MeshCore 無線機には影響しません。無線機自身の連絡先・チャンネル・設定は残り、送信済みのメッセージは取り消されません。アプリの設定とダウンロード済みの地図地域も残ります。",
   "storageClearAllTypeWord": "確認のため {word} と入力",
   "storageClearAllConfirm": "削除",
@@ -3025,5 +3025,19 @@
   "toolHistoryTableDropped": "サイズ上限のため表は破棄されました。要約は残っています。",
   "toolHistoryUnreadable": "保存された履歴をこの端末では開けません。空として表示しています。新しい実行は保存されます。",
   "toolHistoryClear": "履歴を消去",
-  "toolHistoryClearBody": "保存されたツール実行とその表をすべて消去します。ツール自体は変わりません。"
+  "toolHistoryClearBody": "保存されたツール実行とその表をすべて消去します。ツール自体は変わりません。",
+  "storageToolRuns": "ツール実行 {n} / {cap} 件、表 {size}",
+  "@storageToolRuns": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  }
 }

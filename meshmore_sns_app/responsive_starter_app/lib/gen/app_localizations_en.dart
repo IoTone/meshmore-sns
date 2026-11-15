@@ -6264,7 +6264,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storageClearAllGoes =>
-      'This deletes the message history this app kept, places, the movement trail, unfinished media records and cached map tiles.';
+      'This deletes the message history this app kept, places, the movement trail, unfinished media records, the tool runs and their tables, and cached map tiles.';
 
   @override
   String get storageClearAllStays =>
@@ -6959,4 +6959,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get toolHistoryClearBody =>
       'Every stored tool run goes, with its table. The tools themselves are unchanged.';
+
+  @override
+  String storageToolRuns(int n, int cap, String size) {
+    return 'Tool runs $n of $cap, $size of tables';
+  }
 }

@@ -10465,7 +10465,7 @@ abstract class AppLocalizations {
   /// No description provided for @storageClearAllGoes.
   ///
   /// In en, this message translates to:
-  /// **'This deletes the message history this app kept, places, the movement trail, unfinished media records and cached map tiles.'**
+  /// **'This deletes the message history this app kept, places, the movement trail, unfinished media records, the tool runs and their tables, and cached map tiles.'**
   String get storageClearAllGoes;
 
   /// No description provided for @storageClearAllStays.
@@ -11595,6 +11595,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Every stored tool run goes, with its table. The tools themselves are unchanged.'**
   String get toolHistoryClearBody;
+
+  /// The tool history store's own size, in the storage block. States both the run count and the table bytes, because the store bounds both.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool runs {n} of {cap}, {size} of tables'**
+  String storageToolRuns(int n, int cap, String size);
 }
 
 class _AppLocalizationsDelegate

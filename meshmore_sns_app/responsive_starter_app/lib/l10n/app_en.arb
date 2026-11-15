@@ -4210,7 +4210,7 @@
   "storageMedia": "Unfinished media transfers {n}",
   "storageClearAll": "Delete everything the app kept",
   "storageClearAllTitle": "Delete everything?",
-  "storageClearAllGoes": "This deletes the message history this app kept, places, the movement trail, unfinished media records and cached map tiles.",
+  "storageClearAllGoes": "This deletes the message history this app kept, places, the movement trail, unfinished media records, the tool runs and their tables, and cached map tiles.",
   "storageClearAllStays": "The MeshCore radio is untouched: its contacts, channels and settings stay, and a sent message is not recalled. Your settings and downloaded map regions stay too.",
   "storageClearAllTypeWord": "Type {word} to confirm",
   "storageClearAllConfirm": "Delete",
@@ -4720,5 +4720,20 @@
   "toolHistoryTableDropped": "Table dropped to stay inside the size limit. The summary is kept.",
   "toolHistoryUnreadable": "The stored history cannot be opened on this device, so it reads as empty. New runs are still kept.",
   "toolHistoryClear": "Clear history",
-  "toolHistoryClearBody": "Every stored tool run goes, with its table. The tools themselves are unchanged."
+  "toolHistoryClearBody": "Every stored tool run goes, with its table. The tools themselves are unchanged.",
+  "storageToolRuns": "Tool runs {n} of {cap}, {size} of tables",
+  "@storageToolRuns": {
+    "description": "The tool history store's own size, in the storage block. States both the run count and the table bytes, because the store bounds both.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -10,6 +10,8 @@ import '../media/media_journal.dart';
 import '../voice/voice_inbox.dart';
 import '../meshcore/chat_store.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../tools/tool_history.dart';
+import '../tools/tools_controller.dart';
 import '../places/place_store.dart';
 import '../theme/mm_skin.dart';
 import 'mm_components.dart';
@@ -35,7 +37,10 @@ class StorageUseBlock extends StatelessWidget {
     final PlaceStore? places = context.watch<PlaceStore?>();
     final PositionRecorder? trail = context.watch<PositionRecorder?>();
     final MediaInterruptions? media = context.watch<MediaInterruptions?>();
+    final ToolHistoryStore? toolRuns =
+        context.watch<ToolsController?>()?.history;
     final MeshcoreController? mc = context.watch<MeshcoreController?>();
+    final ToolsController? tools = context.watch<ToolsController?>();
     final int mapBytes = maps == null ? 0 : maps.tileBytes + maps.archiveBytes;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -98,6 +103,15 @@ class StorageUseBlock extends StatelessWidget {
             text: l.storageMedia(media.count),
             skin: skin,
           ),
+        // The tool runs are a store like the others, so they state their own
+        // number here and go with the one delete. A store that is not in this
+        // block is a store the reader cannot see or clear.
+        if (toolRuns != null)
+          _Line(
+            text: l.storageToolRuns(toolRuns.runs.length, toolRuns.maxRuns,
+                _kb(toolRuns.csvBytes)),
+            skin: skin,
+          ),
         // Deleting the history is the one act here that cannot be undone, and
         // the dialog is its whole safety: it names both halves — what goes and
         // what the radio keeps — and the confirm stays disabled until the word
@@ -126,7 +140,8 @@ class StorageUseBlock extends StatelessWidget {
                     maps: maps,
                     places: places,
                     trail: trail,
-                    media: media),
+                    media: media,
+                    tools: tools),
               ),
             ),
           ),
@@ -142,6 +157,7 @@ class StorageUseBlock extends StatelessWidget {
     required PlaceStore? places,
     required PositionRecorder? trail,
     required MediaInterruptions? media,
+    required ToolsController? tools,
   }) async {
     // Read before the first await, so the step below does not touch a context
     // that a dialog may have outlived.
@@ -185,6 +201,7 @@ class StorageUseBlock extends StatelessWidget {
       voice?.clear();
     });
     await step(() async => maps?.clearViewCache());
+    await step(() async => tools?.history.clear());
     if (!context.mounted) return;
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
         content: Text(clearEverythingMessage(l, unfinished, attempted))));

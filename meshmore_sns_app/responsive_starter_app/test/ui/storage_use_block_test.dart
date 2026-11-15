@@ -17,6 +17,9 @@ import 'package:meshmore_sns_app/places/place.dart';
 import 'package:meshmore_sns_app/places/place_store.dart';
 import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
+import 'package:meshmore_sns_app/tools/mesh_tool.dart';
+import 'package:meshmore_sns_app/tools/tool_history.dart';
+import 'package:meshmore_sns_app/tools/tools_controller.dart';
 import 'package:meshmore_sns_app/ui/storage_use_block.dart';
 
 import '../meshcore/fake_transport.dart';
@@ -41,6 +44,7 @@ void main() {
   late MeshcoreController mc;
   late FakeMeshcoreTransport fake;
   late ThemeController theme;
+  late ToolsController tools;
 
   Place place(String id) => Place(
         id: id,
@@ -68,12 +72,14 @@ void main() {
     fake = FakeMeshcoreTransport(connected: true);
     mc = MeshcoreController(transportFactory: () async => fake);
     theme = ThemeController();
+    tools = ToolsController(mc);
   });
 
   tearDown(() {
     places.dispose();
     trail.dispose();
     media.dispose();
+    tools.dispose();
     mc.dispose();
   });
 
@@ -87,6 +93,7 @@ void main() {
     bool withTrail = true,
     bool withMedia = true,
     bool withController = true,
+    bool withTools = false,
   }) async {
     await theme.setPreset(MmThemePreset.air);
     await t.pumpWidget(MultiProvider(
@@ -99,6 +106,8 @@ void main() {
           ChangeNotifierProvider<PositionRecorder>.value(value: trail),
         if (withMedia)
           ChangeNotifierProvider<MediaInterruptions>.value(value: media),
+        if (withTools)
+          ChangeNotifierProvider<ToolsController>.value(value: tools),
       ],
       child: MaterialApp(
         locale: const Locale("en"),
@@ -253,13 +262,15 @@ void main() {
       await t.pump(const Duration(milliseconds: 500));
     }
 
-    // Two of the five steps cannot finish on a host without a Keystore (the
+    // Two of the six steps cannot finish on a host without a Keystore (the
     // sealed history and the sealed places file), so the sentence names them
     // rather than claiming a clean delete. The happy-path wording is pinned by
-    // the case below, which does not need a platform store.
+    // the case below, which does not need a platform store. The count is the
+    // number of stores the action clears, so it moves when a store is added:
+    // the tool runs made it six.
     final AppLocalizations l =
         AppLocalizations.of(t.element(find.byType(StorageUseBlock)));
-    expect(find.text(l.storageClearAllPartly(2, 5)), findsOneWidget,
+    expect(find.text(l.storageClearAllPartly(2, 6)), findsOneWidget,
         reason: "a delete that cannot finish still has to say so");
     expect(mc.allMessages, isEmpty,
         reason: "the controller's memory is the store's truth: clearing only "
@@ -295,5 +306,40 @@ void main() {
     addTearDown(t.view.reset);
     await pump(t);
     expect(t.takeException(), isNull);
+  });
+
+  testWidgets("the tool runs are a store like the others: stated, and cleared",
+      (WidgetTester t) async {
+    // A store that is not in this block is a store the reader cannot see or
+    // clear, and the tool history is a store: it holds run summaries and their
+    // tables. It states its own number and it goes with the one delete.
+    // `runAsync` because the store seals through real file IO, which the fake
+    // clock the rest of this test runs on would never let finish.
+    await t.runAsync(() => tools.history.record(ToolRun(
+          kind: ToolKind.range,
+          startedAt: DateTime.now().subtract(const Duration(minutes: 4)),
+          endedAt: DateTime.now().subtract(const Duration(minutes: 3)),
+          summary: "3 beacons heard",
+          csv: "seq,snr_db\n1,4\n",
+        )));
+    await pump(t, withTools: true);
+    expect(find.textContaining("Tool runs 1 of 40"), findsOneWidget);
+
+    await openDialog(t);
+    await t.enterText(
+        find.byKey(const ValueKey<String>("storage-clear-all-field")),
+        "DELETE");
+    await t.pump();
+    await t
+        .tap(find.byKey(const ValueKey<String>("storage-clear-all-confirm")));
+    await t.pump();
+    for (int i = 0; i < 120 && find.byType(SnackBar).evaluate().isEmpty; i++) {
+      await t.pump(const Duration(milliseconds: 500));
+    }
+
+    expect(tools.history.runs, isEmpty,
+        reason: "the delete names the tool runs, so it has to clear them");
+    expect(find.textContaining("Tool runs 0 of 40"), findsOneWidget,
+        reason: "and the line repaints in the same frame");
   });
 }
