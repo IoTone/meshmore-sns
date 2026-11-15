@@ -176,7 +176,7 @@ class _MarkdownViewState extends State<MarkdownView> {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final TextStyle base = TextStyle(
       fontFamily: _mono,
-      fontSize: 14,
+      fontSize: context.skin.type.size(14),
       height: 1.55,
       color: cs.onSurface,
     );
@@ -206,7 +206,7 @@ class _MarkdownViewState extends State<MarkdownView> {
           code,
           style: TextStyle(
             fontFamily: _mono,
-            fontSize: 12.5,
+            fontSize: context.skin.type.size(12.5),
             height: 1.45,
             color: cs.onSurface.withValues(alpha: .92),
           ),
@@ -236,7 +236,7 @@ class _MarkdownViewState extends State<MarkdownView> {
               child: Text(marker,
                   style: TextStyle(
                       fontFamily: _mono,
-                      fontSize: 14,
+                      fontSize: context.skin.type.size(14),
                       height: 1.55,
                       color: cs.primary,
                       fontWeight: FontWeight.w700)),
@@ -272,7 +272,7 @@ class _MarkdownViewState extends State<MarkdownView> {
           children: _inline(context, List<md.Node>.of(inline),
               base: TextStyle(
                   fontFamily: _mono,
-                  fontSize: 14,
+                  fontSize: context.skin.type.size(14),
                   height: 1.55,
                   color: cs.onSurface)),
         ),
@@ -319,7 +319,7 @@ class _MarkdownViewState extends State<MarkdownView> {
                     context, cell.children ?? const <md.Node>[],
                     base: TextStyle(
                       fontFamily: _mono,
-                      fontSize: 12.5,
+                      fontSize: context.skin.type.size(12.5),
                       height: 1.4,
                       color: head ? cs.primary : cs.onSurface,
                       fontWeight:

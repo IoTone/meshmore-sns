@@ -53,18 +53,11 @@ void main() {
   }
 
   test('literal type sizes per file: no file grows past its baseline', () {
-    const Map<String, int> baseline = <String, int>{
-      'lib/bot/bot_scope_config.dart': 2,
-      'lib/bot/bot_section.dart': 4,
-      'lib/bot/bot_tag.dart': 1,
-      'lib/docs/markdown_view.dart': 5,
-      'lib/maps/basemap.dart': 1,
-      'lib/screens/device_contacts_screen.dart': 4,
-      'lib/screens/equal_grid_view.dart': 5,
-      'lib/screens/maps/maps_screen.dart': 6,
-      'lib/screens/maps/maps_self_test_screen.dart': 1,
-      'lib/screens/maps/new_pack_screen.dart': 1,
-    };
+    // Empty as of this pass: every literal type size is a role
+    // (`sizeSm`/`sizeBody`/`sizeBodyLg`) or `size(n)` for the few steps that
+    // have no role yet, so the number still rides the skin's scale and the
+    // accessibility pass. The map stays so a new literal fails here.
+    const Map<String, int> baseline = <String, int>{};
     final List<String> drifted = <String>[];
     for (final File f in scanned()) {
       final int n = fontSize.allMatches(f.readAsStringSync()).length;

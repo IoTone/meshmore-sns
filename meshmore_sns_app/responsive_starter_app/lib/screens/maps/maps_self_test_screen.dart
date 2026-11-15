@@ -148,7 +148,7 @@ class _MapsSelfTestScreenState extends State<MapsSelfTestScreen> {
                                 style: TextStyle(
                                     color: skin.color.fgMuted,
                                     fontFamily: skin.type.monoFamily,
-                                    fontSize: 11),
+                                    fontSize: context.skin.type.sizeSm),
                               ),
                       ),
                     );

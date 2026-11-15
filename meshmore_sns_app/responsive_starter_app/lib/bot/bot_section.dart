@@ -57,7 +57,7 @@ class BotSection extends StatelessWidget {
         ),
         if (on && refusal == null) ...<Widget>[
           Text(l.botOnWire,
-              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+              style: TextStyle(fontSize: context.skin.type.sizeSm, color: cs.onSurfaceVariant)),
           const SizedBox(height: 8),
           _ModePicker(scope: scope),
           const SizedBox(height: 4),
@@ -121,7 +121,7 @@ class _ModePicker extends StatelessWidget {
           mode == BotMode.deterministic
               ? l.botModeDeterministicSub
               : l.botModeRandomSub,
-          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+          style: TextStyle(fontSize: context.skin.type.sizeSm, color: cs.onSurfaceVariant),
         ),
         // The seed is only meaningful in random mode, and it is shown
         // rather than hidden: a "random" soak that cannot be replayed
@@ -196,7 +196,7 @@ class _Instrumentation extends StatelessWidget {
 
     final TextStyle mono = TextStyle(
         fontFamily: context.skin.type.monoFamily,
-        fontSize: 11,
+        fontSize: context.skin.type.sizeSm,
         color: cs.onSurfaceVariant);
 
     return Column(
@@ -215,7 +215,7 @@ class _Instrumentation extends StatelessWidget {
             TextButton(
               onPressed: () => bot.resetCounters(scope),
               child: Text(l.botResetCounters,
-                  style: TextStyle(fontSize: 11)),
+                  style: TextStyle(fontSize: context.skin.type.sizeSm)),
             ),
           ],
         ),

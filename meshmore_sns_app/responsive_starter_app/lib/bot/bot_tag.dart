@@ -34,7 +34,7 @@ class BotTag extends StatelessWidget {
         AppLocalizations.of(context).botFromBot.toUpperCase(),
         style: TextStyle(
           color: c,
-          fontSize: 9,
+          fontSize: context.skin.type.size(9),
           letterSpacing: 1,
           fontWeight: FontWeight.w800,
           fontFamily: context.skin.type.monoFamily,

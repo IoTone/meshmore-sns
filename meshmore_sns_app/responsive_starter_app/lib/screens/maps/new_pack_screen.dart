@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../gen/app_localizations.dart';
+import '../../theme/mm_skin.dart';
 import '../../maps/map_source.dart';
 import '../../maps/maps_controller.dart';
 import '../../maps/tile_math.dart';
@@ -142,7 +143,8 @@ class _NewPackScreenState extends State<NewPackScreen> {
                                 overflow: TextOverflow.ellipsis)),
                       ])
                     : Text(l.newPackNoLocation,
-                        style: const TextStyle(fontSize: 12)),
+                        style: TextStyle(
+                            fontSize: context.skin.type.sizeBody)),
               ),
               if (!mine)
                 TextField(

@@ -61,7 +61,7 @@ class _RulepackEditorState extends State<RulepackEditor> {
               maxLines: 12,
               minLines: 6,
               style: TextStyle(
-                  fontFamily: context.skin.type.monoFamily, fontSize: 12),
+                  fontFamily: context.skin.type.monoFamily, fontSize: context.skin.type.sizeBody),
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 isDense: true,
@@ -74,7 +74,7 @@ class _RulepackEditorState extends State<RulepackEditor> {
               if (errors == 0) return const SizedBox.shrink();
               return Text(
                 l.botRulesErrors(errors),
-                style: TextStyle(fontSize: 11, color: cs.error),
+                style: TextStyle(fontSize: context.skin.type.sizeSm, color: cs.error),
               );
             }),
           ],

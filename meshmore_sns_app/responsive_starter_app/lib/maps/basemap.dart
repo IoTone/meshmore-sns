@@ -200,7 +200,7 @@ class MapAttribution extends StatelessWidget {
         // names underneath ran through the letters.
         color: cs.surface,
         child: Text(text,
-            style: TextStyle(fontSize: 9, color: cs.onSurfaceVariant)),
+            style: TextStyle(fontSize: context.skin.type.size(9), color: cs.onSurfaceVariant)),
       ),
     );
   }

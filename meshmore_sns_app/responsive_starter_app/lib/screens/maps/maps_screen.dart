@@ -212,7 +212,7 @@ class MapsScreen extends StatelessWidget {
                             ? l.mapsSourcePacks
                             : l.mapsSourcePacksUs)
                         : l.mapsSourceViewOnly,
-                    style: TextStyle(color: skin.color.fgMuted, fontSize: 12),
+                    style: TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeBody),
                   ),
                   trailing: s.custom
                       ? IconButton(
@@ -291,7 +291,7 @@ class _PackRow extends StatelessWidget {
     final MapPack p = pack;
     final String src = maps.sourceById(p.sourceId)?.name ?? p.sourceId;
     final bool running = p.wantsWork;
-    final TextStyle sub = TextStyle(color: skin.color.fgMuted, fontSize: 12);
+    final TextStyle sub = TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeBody);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: MmListRow(
@@ -395,7 +395,7 @@ class _LayerRowState extends State<_LayerRow> {
     final MapsController maps = context.read<MapsController>();
     final MmSkin skin = context.skin;
     final EventLayer e = layer;
-    final TextStyle sub = TextStyle(color: skin.color.fgMuted, fontSize: 12);
+    final TextStyle sub = TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeBody);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: MmListRow(
@@ -537,7 +537,9 @@ class _AddLayerDialogState extends State<_AddLayerDialog> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(l.mapsLayerTerms, style: const TextStyle(fontSize: 12)),
+            Text(l.mapsLayerTerms,
+                style: TextStyle(
+                    fontSize: context.skin.type.sizeBody)),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 8),
               ToolNotice(text: _error!, icon: Icons.error_outline),
@@ -615,7 +617,8 @@ class _AddSourceDialogState extends State<_AddSourceDialog> {
               value: _packs,
               onChanged: (bool? v) => setState(() => _packs = v ?? false),
               title: Text(l.mapsSourceAllowsPacks,
-                  style: const TextStyle(fontSize: 13)),
+                  style: TextStyle(
+                      fontSize: context.skin.type.sizeBodyLg)),
             ),
             if (_bad) ToolNotice(text: l.mapsSourceBad, icon: Icons.error_outline),
           ],
@@ -804,7 +807,7 @@ class _ArchiveRow extends StatelessWidget {
     final MapsController maps = context.read<MapsController>();
     final MmSkin skin = context.skin;
     final MapArchive a = archive;
-    final TextStyle sub = TextStyle(color: skin.color.fgMuted, fontSize: 12);
+    final TextStyle sub = TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeBody);
     final int have = maps.archiveBytesOf(a);
     final bool active = a.state == ArchiveState.downloading ||
         a.state == ArchiveState.waitingForNetwork;

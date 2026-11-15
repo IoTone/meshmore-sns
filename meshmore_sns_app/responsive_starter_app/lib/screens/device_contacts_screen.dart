@@ -106,13 +106,13 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(l.deviceContactsOutOfRangeIntro,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBodyLg)),
               if (mc.ownLocation == null) ...<Widget>[
                 const SizedBox(height: 6),
                 Text(l.deviceContactsNeedLocation,
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         fontStyle: FontStyle.italic)),
               ],
               const SizedBox(height: 8),
@@ -163,7 +163,7 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(l.deviceContactsStaleIntro,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBodyLg)),
               const SizedBox(height: 8),
               for (final int days in <int>[30, 90, 180])
                 ListTile(
@@ -422,7 +422,7 @@ class _DeviceContactsScreenState extends State<DeviceContactsScreen> {
                         subtitle: Text(
                             '…${key.substring(0, 12)} · ${_path(c, l)}',
                             style: TextStyle(
-                                fontFamily: context.skin.type.monoFamily, fontSize: 11)),
+                                fontFamily: context.skin.type.monoFamily, fontSize: context.skin.type.sizeSm)),
                         trailing: IconButton(
                           tooltip: l.nodeDetailRemoveDeviceContact,
                           icon: Icon(Icons.delete_outline, color: cs.error),
