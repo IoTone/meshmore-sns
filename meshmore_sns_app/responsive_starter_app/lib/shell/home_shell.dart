@@ -623,6 +623,17 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
       // nothing at all like an app preference. Firmware moved here too: it was
       // under CONNECTION, which is what the *link* is doing, and flashing a
       // radio is not a property of the link.
+      // Safety, because SOS and a check-in are actions a reader takes, not
+      // settings they tune. Check-in was an icon-only button in the app bar and
+      // the owner could not tell what it meant; a labelled row with a sentence
+      // under it is what the action needs.
+      (
+        label: l.settingsGroupSafety,
+        rows: <(IconData, String, String)>[
+          (Icons.sos, l.sosTitle, '/sos'),
+          (Icons.check_circle_outline, l.checkinTitle, '/checkin'),
+        ],
+      ),
       (
         label: l.settingsGroupRadio,
         rows: <(IconData, String, String)>[
@@ -644,17 +655,6 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
       // Where the device says it is. The screen existed four taps deep inside
       // App settings → Auto-publish location, and geofences and the coverage
       // survey live under it, so the app's whole location story had no front door.
-      // Safety, because SOS and a check-in are actions a reader takes, not
-      // settings they tune. Check-in was an icon-only button in the app bar and
-      // the owner could not tell what it meant; a labelled row with a sentence
-      // under it is what the action needs.
-      (
-        label: l.settingsGroupSafety,
-        rows: <(IconData, String, String)>[
-          (Icons.sos, l.sosTitle, '/sos'),
-          (Icons.check_circle_outline, l.checkinTitle, '/checkin'),
-        ],
-      ),
       (
         label: l.settingsGroupLocation,
         rows: <(IconData, String, String)>[

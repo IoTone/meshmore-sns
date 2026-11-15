@@ -560,15 +560,19 @@ class _SnsCellsPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.7
       ..color = accent.withValues(alpha: 0.18);
-    final int cols = (size.width / hexW).ceil() + 2;
-    final int rows = (size.height / (hexH * 0.75)).ceil() + 2;
-    for (int row = -1; row < rows; row++) {
-      for (int col = -1; col < cols; col++) {
+    // The lattice starts at the first cell left of and above the viewport, not
+    // at the grid origin: the origin is our own cell, which can be far to the
+    // right of the screen, and starting there drew the field in one corner.
+    final double rowStride = hexH * 0.75;
+    final int colStart = ((-gridOriginX) / hexW).floor() - 2;
+    final int rowStart = ((-gridOriginY) / rowStride).floor() - 2;
+    final int cols = (size.width / hexW).ceil() + 4;
+    final int rows = (size.height / rowStride).ceil() + 4;
+    for (int row = rowStart; row < rowStart + rows; row++) {
+      final double cy = gridOriginY + row * rowStride + hexH / 2;
+      for (int col = colStart; col < colStart + cols; col++) {
         final double cx =
             gridOriginX + (col + (row.isOdd ? 0.5 : 0)) * hexW + hexW / 2;
-        final double cy = gridOriginY + row * hexH * 0.75 + hexH / 2;
-        if (cx < -hexW || cx > size.width + hexW) continue;
-        if (cy < -hexH || cy > size.height + hexH) continue;
         canvas.drawPath(_hexagon(Offset(cx, cy), hexW / 2, hexH / 2), latticeStroke);
       }
     }
