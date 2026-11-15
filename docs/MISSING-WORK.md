@@ -54,8 +54,8 @@ their evidence so a row that says "built" can be checked rather than trusted.
 
 | id | area | what is missing | evidence | size | type |
 |----|------|-----------------|----------|------|------|
-| N-01 | notifications | **The closed-app delivery test has not been run.** The app-side defects are fixed; what is left measures the platform (an OEM stopping the foreground service, and the service's behaviour on task removal). | `docs/MISSING-WORK.md` §9 has the steps; `background_keepalive.dart` still has `autoRunOnBoot: false` | S | UNFINISHED |
-| N-02 | notifications | **The battery-exemption state is shown but not proved useful.** The row reads `PowerManager.isIgnoringBatteryOptimizations` and offers the request; whether this handset's battery manager is the cause of a missed notification is unmeasured. | `lib/perms/battery_exemption.dart`; the row in `app_settings_screen.dart` | S | UNFINISHED |
+| N-01 | notifications | **Task removal is the one delivery case left.** Closed-app delivery is measured: a real channel message notified at 22 minutes of a screen-off background on 2026-11-16, with the foreground service still listed. What is not measured is the app swiped out of the recents list, because that needs its own sitting. | `docs/MISSING-WORK.md` §9, the 2026-11-16 run | S | UNFINISHED |
+| N-02 | notifications | **Measured: the app runs optimised on this handset.** `dumpsys deviceidle whitelist` has no entry for the package, and the App settings row says so. Whether that stops delivery is answered by N-01's run (it did not, at 22 minutes), so the row is informational until an OEM does stop it. | `docs/MISSING-WORK.md` §9; `lib/perms/battery_exemption.dart` | S | CLOSED (measured) |
 | R-06 | radio | **A radio rename does not survive a power cycle** on the paired Wio (1.17.1). The write lands and reads back in the same session, then the name reverts. This is the firmware's own prefs write, not the app's encode. | `docs/MISSING-WORK.md` §10; firmware `examples/companion_radio/MyMesh.cpp:1219-1225` | — | DECIDED (firmware) |
 | R-07 | radio | **Firmware OTA install.** The page reads the gate and shows versions; no transfer starts, because an install drains the radio's offline queue and nothing can re-sync it. | `lib/screens/firmware_screen.dart`; register row | L | DECIDED |
 | R-08 | radio | **Resume after a phone restart.** `autoRunOnBoot` is false and no boot receiver is registered, so nothing arrives until the app is opened. Android 15+ restricts starting a foreground service from `BOOT_COMPLETED`. | `background_keepalive.dart:75` | M | DECIDED |
@@ -236,6 +236,27 @@ and record whether a notification appears and whether `dumpsys activity services
 exemption row is the fix; if it is running and the message is not delivered, the fault is in
 the drain, not the service.
 
+**Run on 2026-11-16, and what it settled.** Baseline at 13:43:06 UTC on build 1.0.198, linked to
+the Wio on 1.17.1: one notification (`mm_keepalive`, id 4403), `ForegroundService isForeground=true`
+in `dumpsys activity services`, and `GeolocatorLocationService` beside it. The phone was sent
+home and the screen turned off at 13:43:14, and the screen was off for the whole window
+(`mWakefulness=Dozing` before and after each check; it woke once at 13:54 and was put back).
+
+- `dumpsys deviceidle whitelist` has **no entry** for `com.iotone.meshmore_sns_app`: this
+  handset runs the app optimised, which is the precondition for an OEM stopping the foreground
+  service. The App settings row reports exactly that state, so N-02's cause is now named on
+  the handset rather than inferred.
+- At 22 minutes (14:05:57) a **real channel message arrived and notified**: a group summary on
+  `mm_messages_channel` reading `1 message · RichardWB5YOE: @[Half Live] ack, 5 hops to SE
+  Aurora`, plus its own message record (`id=584208371`, `category=msg`, `AUTO_CANCEL`), with
+  the keepalive still in place and the service still listed.
+- The service and the drain therefore survive at least 22 minutes of a screen-off background,
+  so the platform did not stop it and question 2 is answered for this handset in this
+  configuration. Question 3 (task removal) is unchanged: it needs the app swiped out of the
+  recents list, which is a separate sitting.
+- Not exercised: the 5-minute mark with an inbound message, because no traffic arrived in the
+  first five minutes. The 22-minute delivery covers the same path at a longer interval.
+
 ---
 
 ## 10. What the 2026-11-14 device session did, and what it could not finish
@@ -340,9 +361,35 @@ AEIC, and it is now a line in the received-pictures sheet.
 
 | Item | What closes it |
 |---|---|
-| The closed-app notification test at 5 and 30 minutes | The device steps in §9. The app-side defects are fixed, so this measures the platform |
-| Whether this handset's battery manager is the cause of a missed notification | The same sitting: the exemption row now says whether the app is optimised, so the test can name the cause |
+| Delivery after a **task removal** (swipe out of recents) | Swipe the app out and repeat §9's steps. Closed-app delivery itself is measured (§9, 2026-11-16) |
 | AEIC (M-02) | A port of about 4000 lines plus a ~1 GB model bundle. It is the one large piece of work left, and it is a wave of its own rather than a row |
 | A release APK | `android/key.properties` with a real keystore |
 | Landscape and tablet | A layout wave, decided against for now |
 | The radio rename surviving a power cycle | A firmware answer, not an app change |
+
+## 13. The 2026-11-16 pass
+
+Four defects, each one reported from the handset rather than found by a scan, plus the
+notification sitting that §9 left open. Every fix names the test that now holds it.
+
+| What the owner saw | What it was | Where it is fixed |
+|---|---|---|
+| Reacting to the same message with the same emoji sent another line | A reaction is a text line on the air, so a second tap was a second send and every other client counted the reactor once per tap. `reactTo` had no memory of what this app had already sent, and the folded reaction map cannot say who is who, because a channel reaction carries a name and a DM reaction carries nothing | `ChatMessage.ownReactions`, persisted as `or`, checked before any send; the picker marks an emoji this message already has from us. `test/meshcore/chat_reaction_test.dart` — *the same emoji on the same message sends once*, *what this app reacted with is remembered across a restart* |
+| The hexagons moved a hair after swiping up to the app switcher and coming back | The cell size came from ground metres under the camera, so metres-per-degree-longitude, a cosine of the box centre's latitude, was part of the lattice frame. Any change to the box rescaled that frame and slid every cell: measured at 1.4769e-4 of longitude, about 13 m, for a hundred-thousandth of a degree of change | The lattice is laid out in Web Mercator metres (`mercatorX/Y/Lon/Lat`, `groundPerProjectionMetre`) and a cell is sized from the zoom alone (`hexRadiusForZoomLevel`). A cell is now a regular hexagon on screen at every latitude. `test/maps/hex_field_test.dart` — *a resize cannot move the lattice* (identical centres and corners, bit for bit), *a hexagon is regular on the screen, at any latitude* (0, 39, 47.61, 60, −33) |
+| The message bubbles in the heat view left and arrived at a few frames a second, and the field never moved | The ticker returned for every frame inside the same second, so a toast rising and fading over 3.5 s advanced in one-second steps. There was no motion left to smooth after the CRT sweep was removed, so nothing showed it | The ticker repaints every frame. The backdrop — ground, lattice, heat fills, counts — is recorded into a `ui.Picture` once per signature and drawn as one call, the geometry is computed once per paint for both passes, and the lattice is one path rather than a draw per cell. `test/screens/heat_wave_test.dart` |
+| The heat view's hexagons were wider than they were tall | A pointy-top hexagon is `√3/2` as wide as it is tall, and both the column pitch and the hexagon's own half-width used the cell size, so each one sat in a square box: fifteen percent too wide, and row neighbours overlapped | `hexW = hexH · √3/2`, with the row pitch at `3/4` of the height. Same file |
+
+**The wave.** The field carries a band of green light crossing it top to bottom on an 8 s loop:
+`heatWaveY(nowMs, height, hexH)` is the whole of the motion, one path is built over the rows the
+band crosses, and a vertical gradient with `BlendMode.plus` fades its own edges. On the handset,
+two screenshots 0.4 s apart differ across a band of rows, which is what a frame-rate clock looks
+like; before the fix both frames were identical.
+
+**Also closed in this pass.** A poll landing in the middle of a contact sync split the feed's one
+line into two counts that did not match the CONTACTS row, because the run was only merged while
+the contact frame was the *last* event. The run is now found anywhere in the feed within a minute
+(`test/meshcore/recent_feed_coalesce_test.dart` — *a poll landing mid-sync does not split the one
+line*). The menu copy trim from the previous sitting is committed with it: menus name what they
+open, and the sentences that explained the design moved off the firmware page.
+
+Test count on 2026-11-16: 3168 passing, `flutter analyze` clean.
