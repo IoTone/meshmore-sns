@@ -13,6 +13,11 @@ import 'mm_shape.dart';
 /// rest of the app is built on.
 const double kPadPanel = 12;
 
+/// The check-mark gutter in a picker row: one glyph wide, and held open when
+/// the glyph is absent so the row's text does not shift between the selected
+/// row and its neighbours. A drawing width, not a rhythm value.
+const double _checkGutter = 28;
+
 /// A framed surface panel whose edge treatment (sharp / rounded /
 /// chamfered) comes from the active skin. The NERV concept renders this
 /// as a chamfered HUD panel; SEELE as a plain sharp slab.
@@ -662,7 +667,8 @@ class MmStatusPill extends StatelessWidget {
     final MmSkin skin = context.skin;
     final Color fg = alert ? skin.color.alert : skin.color.accent;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: EdgeInsets.symmetric(
+          horizontal: skin.space.rowGap, vertical: skin.space.step(1) + 1),
       decoration: ShapeDecoration(
         shape: mmShapeBorder(
           MmShape(
@@ -921,7 +927,8 @@ Future<T?> showMmPicker<T>({
           for (final MmPickerItem<T> it in items)
             if (it.isHeader)
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+                padding: EdgeInsets.fromLTRB(skin.space.step(7),
+                    skin.space.rowInset, skin.space.step(7), skin.space.step(2)),
                 child: Text(it.label,
                     style: TextStyle(
                         color: skin.color.fgMuted,
@@ -946,11 +953,16 @@ Future<T?> showMmPicker<T>({
                   constraints: const BoxConstraints(minHeight: 48),
                   child: Padding(
                     padding: EdgeInsets.symmetric(
-                        horizontal: skin.space.step(7), vertical: 6),
+                        horizontal: skin.space.step(7),
+                        vertical: skin.space.step(3)),
                     child: Row(
                       children: <Widget>[
                         SizedBox(
-                          width: 28,
+                          // The check-mark gutter: wide enough for the glyph
+                          // and its hole when it is absent, so a row's text does
+                          // not jump between selected and unselected. Geometry,
+                          // not rhythm.
+                          width: _checkGutter,
                           child: it.value == current
                               ? Icon(Icons.check,
                                   size: 18, color: skin.color.accent)
@@ -958,7 +970,7 @@ Future<T?> showMmPicker<T>({
                         ),
                         if (it.icon != null) ...<Widget>[
                           Icon(it.icon, size: 18, color: skin.color.fgMuted),
-                          const SizedBox(width: 10),
+                          SizedBox(width: skin.space.rowGap),
                         ],
                         Expanded(
                           child: Column(

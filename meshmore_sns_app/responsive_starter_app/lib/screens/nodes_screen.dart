@@ -134,7 +134,9 @@ class _NodesScreenState extends State<NodesScreen> {
           }
 
           Widget label(String t) => Padding(
-                padding: const EdgeInsets.only(top: 14, bottom: 6),
+                padding: EdgeInsets.only(
+                    top: context.skin.space.rowInset,
+                    bottom: context.skin.space.step(3)),
                 child: Text(t,
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
@@ -481,7 +483,7 @@ class _NodesScreenState extends State<NodesScreen> {
           child: nodes.isEmpty
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(28),
+                    padding: EdgeInsets.all(context.skin.space.emptyState),
                     child: Text(
                       _anyFilterActive
                           ? l.nodesEmptyFiltered
@@ -549,7 +551,8 @@ class _NodesScreenState extends State<NodesScreen> {
                                             : Icons.chat_bubble,
                                         size: 12,
                                         color: badgeFg),
-                                    const SizedBox(width: 3),
+                                    SizedBox(
+                                        width: context.skin.space.insideText + 1),
                                     Text(
                                       unread > 0
                                           ? '$unread / $dmN'
@@ -624,7 +627,8 @@ class _NodesScreenState extends State<NodesScreen> {
                                     Icon(Icons.thermostat,
                                         size: 11,
                                         color: cs.onTertiaryContainer),
-                                    const SizedBox(width: 3),
+                                    SizedBox(
+                                        width: context.skin.space.insideText + 1),
                                     Text(
                                       <String>[
                                         MmFormat.temperature(

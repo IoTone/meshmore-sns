@@ -14,10 +14,21 @@ import '../../theme/theme_controller.dart';
 import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_scaffold.dart';
 import '../../util/geo.dart';
+
 import '../device_manager_sheet.dart';
 import '../node_detail_sheet.dart';
 import 'dashboard_model.dart';
 import 'my_pubkey_line.dart';
+
+/// The compass and the two readout columns, in pixels.
+///
+/// Instrument geometry: the compass painter draws to its square, and the two
+/// columns are as wide as the widest reading they carry. These are not rhythm
+/// values and must not follow the spacing scale, which is why they are named
+/// rather than written at the call site.
+const double _compassSize = 92;
+const double _bearingColumn = 42;
+const double _labelColumn = 52;
 
 /// Concept F — **Tactical Recon** dashboard: night-ops codec. OLED-black,
 /// single amber phosphor, map/bearing-first. A small sweep compass + a
@@ -132,8 +143,8 @@ class _ReconDashboardState extends State<ReconDashboard>
             child: Row(
               children: <Widget>[
                 SizedBox(
-                  width: 92,
-                  height: 92,
+                  width: _compassSize,
+                  height: _compassSize,
                   child: AnimatedBuilder(
                     animation: _sweep,
                     builder: (BuildContext _, Widget? __) => CustomPaint(
@@ -223,7 +234,7 @@ class _ReconDashboardState extends State<ReconDashboard>
                                       fontSize: skin.type.sizeBody)),
                               SizedBox(width: skin.space.rowInset),
                               SizedBox(
-                                width: 42,
+                                width: _bearingColumn,
                                 child: Text('${w.bearingDeg}°',
                                     textAlign: TextAlign.right,
                                     style: mono),
@@ -247,7 +258,7 @@ class _ReconDashboardState extends State<ReconDashboard>
         child: Row(
           children: <Widget>[
             SizedBox(
-                width: 52,
+                width: _labelColumn,
                 child: Text(k,
                     style: TextStyle(
                         color: dim,

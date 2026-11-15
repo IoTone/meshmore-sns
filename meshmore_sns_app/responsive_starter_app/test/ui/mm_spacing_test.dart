@@ -105,25 +105,20 @@ void main() {
       'lib/bot/bot_section.dart': 1,
       'lib/bot/bot_tag.dart': 1,
       'lib/chat/studio_message_row.dart': 0,
-      'lib/docs/markdown_view.dart': 4,
       'lib/maps/basemap.dart': 1,
       'lib/screens/chat_screen.dart': 2,
       'lib/screens/dashboard_screen.dart': 1,
       'lib/screens/dashboards/aghud_dashboard.dart': 1,
-      'lib/screens/dashboards/recon_dashboard.dart': 3,
       'lib/screens/dashboards/studio_dashboard.dart': 1,
       'lib/screens/dm_screen.dart': 1,
       'lib/screens/elevation_profile_view.dart': 2,
       'lib/screens/fabric_survey_view.dart': 1,
       'lib/screens/mesh_tree_view.dart': 1,
       'lib/screens/node_detail_sheet.dart': 2,
-      'lib/screens/nodes_screen.dart': 4,
       'lib/screens/sns_cells_view.dart': 2,
-      'lib/shell/home_shell.dart': 3,
       // It is `MmBootSurface` and a lookup now: every number it used to carry
       // moved into the shared launch surface.
       'lib/splash/branded_splash_screen.dart': 0,
-      'lib/ui/mm_components.dart': 4,
     };
 
     // Exact equality, in both directions: a migration lowers its entry in the

@@ -713,11 +713,18 @@ class _GroupLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(first ? 0 : 16, first ? 8 : 18, 16, 6),
+      padding: EdgeInsets.fromLTRB(
+          first ? 0 : skin.space.screenEdge,
+          first ? skin.space.rowGap : skin.space.sectionGap - skin.space.step(3),
+          skin.space.screenEdge,
+          skin.space.step(3)),
       child: Text(text, style: mmSectionLabelStyle(skin)),
     );
   }
 }
+
+/// The link glyph's box, in pixels. Both halves of the mark are drawn to it.
+const double _glyphBox = 22;
 
 /// Always-visible radio link state (every primary view). Tap → the
 /// Diagnostics & connect screen.
@@ -841,7 +848,9 @@ class RadioLinkIndicator extends StatelessWidget {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            padding: EdgeInsets.symmetric(
+                horizontal: context.skin.space.rowInset,
+                vertical: context.skin.space.step(2) + 1),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
@@ -893,7 +902,9 @@ class _StripBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
     return SizedBox(
-      height: 22,
+      // The link glyph's own box: it holds a two-outline icon whose halves are
+      // drawn to it. Geometry, not rhythm.
+      height: _glyphBox,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,

@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_shape.dart';
 
 /// R53 — renders a Markdown string to widgets with the app's
@@ -89,8 +90,10 @@ class _MarkdownViewState extends State<MarkdownView> {
         return _codeBlock(context, node);
       case 'blockquote':
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.fromLTRB(14, 2, 8, 2),
+          margin: EdgeInsets.only(bottom: context.skin.space.rowInset),
+          padding: EdgeInsets.fromLTRB(context.skin.space.rowInset,
+              context.skin.space.insideText, context.skin.space.rowGap,
+              context.skin.space.insideText),
           decoration: BoxDecoration(
             border: Border(
                 left: BorderSide(color: cs.primary.withValues(alpha: .7), width: 3)),
@@ -106,7 +109,7 @@ class _MarkdownViewState extends State<MarkdownView> {
         return _list(context, node, ordered: true);
       case 'hr':
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: EdgeInsets.symmetric(vertical: context.skin.space.rowInset),
           child: Container(height: 1, color: cs.primary.withValues(alpha: .4)),
         );
       case 'table':
@@ -146,7 +149,11 @@ class _MarkdownViewState extends State<MarkdownView> {
       ),
     );
     return Padding(
-      padding: EdgeInsets.only(top: level <= 2 ? 18 : 12, bottom: 8),
+      padding: EdgeInsets.only(
+          top: level <= 2
+              ? context.skin.space.sectionGap - context.skin.space.step(2)
+              : context.skin.space.rowInset,
+          bottom: context.skin.space.rowGap),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -174,7 +181,7 @@ class _MarkdownViewState extends State<MarkdownView> {
       color: cs.onSurface,
     );
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: context.skin.space.rowGap),
       child: RichText(
         text: TextSpan(children: _inline(context, children, base: base)),
       ),
