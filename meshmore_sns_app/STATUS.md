@@ -4,7 +4,7 @@ _Snapshot as of 2026-11-15. App `1.0.198+14`, branch `feat/app-completion`.
 Change records below are newest first from R122; older entries are kept in
 the order they were written._
 
-**What is proven and what is not.** Measured on this tree, **2026-11-15**: `flutter test` **3142 passed** in 4 m 12 s;
+**What is proven and what is not.** Measured on this tree, **2026-11-15**: `flutter test` **3147 passed** in 5 m 15 s;
 `flutter analyze` reports **no issues**; the protocol package `dart test` **386 passed with 1 skipped**; the pure-Java
 port at the repository root, `cd libmeshcore && ./gradlew test --offline --rerun-tasks`, **164 tests with 0 failures**.
 This paragraph is the only place a count lives: every other document points here rather than restating a number that

@@ -217,6 +217,18 @@ it); a reconnect was treated as a backlog even when the link had only blinked
 flag that a missed lifecycle event could leave true (`notification_focus.dart`). What is left
 here is the platform question, not the app's.
 
+**Run on 2026-11-15, and what it settled.** The phone was attached and the app
+linked to the radio. `dumpsys activity services` showed
+`com.pravera.flutter_foreground_task.service.ForegroundService` with
+`isForeground=true` and the `mm_keepalive` notification, so **question 1 is
+answered: the service does start on a fresh link.** The app was then sent to the
+background and the screen turned off at 07:26:55 UTC. Eight minutes later the
+notification list held the same 19 entries it held before, with no new message
+notification. That is not yet a result: whether any channel traffic arrived in
+those eight minutes is unproven, because the device locked and the check needs
+the owner's PIN to read the thread. The test therefore stops at the lock screen
+and the remaining steps are the owner's.
+
 **The device test that settles 2 and 3** (one sitting): turn the screen off, leave the app in
 the background, send a channel message from another node after five minutes and after thirty,
 and record whether a notification appears and whether `dumpsys activity services` still lists
