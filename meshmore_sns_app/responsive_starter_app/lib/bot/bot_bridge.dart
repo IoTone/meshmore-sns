@@ -4,6 +4,7 @@ import 'dart:async';
 
 import '../meshcore/chat_message.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import 'bot_controller.dart';
 import 'bot_scope.dart';
 
@@ -34,6 +35,8 @@ class BotBridge {
   void _syncOwnKey() {
     final String? hex = _mc.ownPubKeyHex;
     if (hex != null && hex != _bot.ownPubKeyHex) _bot.ownPubKeyHex = hex;
+    final String? name = _mc.selfInfo?.name;
+    if (name != null && name != _bot.ownName) _bot.ownName = name;
   }
 
   void _onChannel(ChatMessage m) {
@@ -55,6 +58,9 @@ class BotBridge {
       scope: scope,
       text: m.text,
       fromPubKeyHex: m.peerPubKeyHex,
+      // A channel line's sender, parsed from its own prefix: the only identity
+      // the protocol gives one.
+      fromName: parseChannelSenderName(m.text),
     );
     if (reply == null) return;
     unawaited(_mc.sendChannelTextTo(m.channelIdx, reply));

@@ -1512,15 +1512,21 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// that inflated window is what refuses the reader's next message with
   /// "airtime budget".
   ///
-  /// The list is the codec's own transmitters: text, datagrams, adverts, the
-  /// position advert, telemetry/status/trace/control requests, raw sends and
-  /// the tools built on them. Anything not listed is treated as local, because a
-  /// wrongly charged frame takes airtime away from messages and a wrongly
-  /// uncharged one only understates a number.
+  /// The list is the codec's own transmitters: text, datagrams, adverts,
+  /// telemetry/status/trace/control requests, raw sends and the tools built on
+  /// them. Anything not listed is treated as local, because a wrongly charged
+  /// frame takes airtime away from messages and a wrongly uncharged one only
+  /// understates a number.
+  ///
+  /// `CMD_SET_ADVERT_LATLON` (0x0E) is **not** here. It sets the position the
+  /// radio will advertise next (`assets/docs/protocol.md`: "update the lat/lon
+  /// for this node, as used in the advertisement packets"); the advert itself
+  /// is `CMD_SEND_SELF_ADVERT`. Charging both meant every auto-publish spent two
+  /// frames of budget for one transmission, and the meter is what the reader
+  /// reads and what can refuse their next message.
   static const int _kCmdSendTextMessage = 0x02;
   static const int _kCmdSendChannelMessage = 0x03;
   static const int _kCmdSendSelfAdvert = 0x07;
-  static const int _kCmdSetAdvertLatLon = 0x0E;
   static const int _kCmdSendRawData = 0x19;
   static const int _kCmdSendStatusReq = 0x1B;
   static const int _kCmdSendTracePath = 0x24;
@@ -1536,7 +1542,6 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         _kCmdSendChannelDatagram ||
         _kCmdSendSelfAdvert ||
         _kCmdSendTelemetryReq ||
-        _kCmdSetAdvertLatLon ||
         _kCmdSendStatusReq ||
         _kCmdSendTracePath ||
         _kCmdSendControlData ||
@@ -1550,7 +1555,11 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   Future<void> send(Uint8List frame, {bool gated = false}) async {
     final bool ota = frame.isNotEmpty && isOverTheAir(frame[0]);
     final Duration cost = ota ? airtimeEstimator.forBytes(frame.length) : Duration.zero;
-    if (gated && _airtimeCutoff && !_airtime.quote(cost).allowed) {
+    // A frame that spends no airtime is never refused for airtime: a spent
+    // budget used to refuse local commands too (`quote(0)` is not allowed once
+    // the hour is over), which turned the ceiling into "the app stops working".
+    if (gated && ota && cost > Duration.zero && _airtimeCutoff &&
+        !_airtime.quote(cost).allowed) {
       _airtimeRefusals++;
       notifyListeners();
       throw AirtimeRefused(needed: cost, budget: _airtime.budget);
@@ -3738,9 +3747,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return true;
   }
 
-  /// Answers a received row with a friendly acknowledgement.
+  /// The friendly-acknowledgement line for a received row.
   ///
-  /// A plain text line in the format the other clients read as a signal report
+  /// Composed, not sent: the answer is a message like any other, and a reader who
+  /// wants to add a word or drop a number should be able to. The chat puts this
+  /// in the composer (the same path Reply takes) and the reader sends it.
+  ///
+  /// The line is a plain text report in the format the other clients parse
   /// (`ack: SNR 12.5 dB, RSSI -38 dBm, 3 hops via 4490, DF7C, 7F47`), carrying
   /// what THIS radio measured when the row's packet arrived. It is a courtesy
   /// rather than a protocol acknowledgement: MeshCore's ACK is a four-byte
@@ -3750,14 +3763,12 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// The route hangs off the RF-log capture of the same packet, so a row that
   /// arrived without one reports the SNR and hop count it does have rather than
   /// inventing a path.
-  Future<bool> sendFriendlyAck(ChatMessage target) async {
-    if (!isReady) return false;
+  String friendlyAckLineFor(ChatMessage target) {
     final bool dm = target.peerPubKeyHex != null;
     // A direct message already says who sent it, so it carries no mention; a
     // channel line names the reader or it is not addressed to anyone.
-    final String? sender =
-        dm ? null : parseChannelSenderName(target.text);
-    final String line = friendlyAckLine(
+    final String? sender = dm ? null : parseChannelSenderName(target.text);
+    return friendlyAckLine(
       sender: sender,
       snrDb: target.snrDb,
       rssiDbm: target.rssiDbm,
@@ -3768,10 +3779,6 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       // what is left after our own name.
       maxBytes: ComposerBudget.forSender(selfInfo?.name).maxTextBytes,
     );
-    final ChatMessage? sent = dm
-        ? await sendDirectText(target.peerPubKeyHex!, line)
-        : await sendChannelTextTo(target.channelIdx, line);
-    return sent != null;
   }
 
   /// The body of a channel message: after the `Name: ` prefix, when there is
@@ -3792,25 +3799,47 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   static const Duration _rxCaptureWindow = Duration(seconds: 3);
   final List<_RxCapture> _rxCaptures = <_RxCapture>[];
 
+  /// The channel hash a slot's PSK produces, which is what the packet carries.
+  ///
+  /// Null until the slot's key has been read from the radio: a capture is then
+  /// matched on the SNR alone, which is the weaker pairing and the reason this
+  /// is worth having.
+  int? _channelHashOf(int channelIdx) {
+    final List<int>? psk = _channelPsks[channelIdx];
+    if (psk == null || psk.isEmpty) return null;
+    return MeshcoreChannelCrypto.channelHashFromPsk(psk);
+  }
+
   /// The capture for [snrDb], or the newest one when the SNRs cannot be matched.
   ///
   /// An exact SNR match is what makes the pairing unambiguous when two messages
   /// land inside the window: the RF log and the message frame report the same
   /// measurement of the same packet. A matched capture is consumed, because each
   /// packet is logged once and two messages must not both claim it.
-  _RxCapture? _takeRxCapture(double? snrDb) {
+  _RxCapture? _takeRxCapture(double? snrDb, int? channelHash) {
     final DateTime now = DateTime.now();
     _rxCaptures.removeWhere(
         (_RxCapture c) => now.difference(c.at) > _rxCaptureWindow);
     if (_rxCaptures.isEmpty) return null;
-    for (int i = _rxCaptures.length - 1; i >= 0; i--) {
+    // Oldest first: the radio logs the packet it heard before it pushes the
+    // message for it, so the capture that belongs to a message is the earliest
+    // one still in the window that matches it. Newest-first scanning swapped
+    // two packets whose SNR happened to be identical.
+    bool sameChannel(_RxCapture c) =>
+        channelHash == null || c.channelHash == null ||
+        c.channelHash == channelHash;
+    for (int i = 0; i < _rxCaptures.length; i++) {
       final _RxCapture c = _rxCaptures[i];
-      if (snrDb != null && (c.snrDb - snrDb).abs() < 0.001) {
+      if (snrDb != null && (c.snrDb - snrDb).abs() < 0.001 && sameChannel(c)) {
         _rxCaptures.removeAt(i);
         return c;
       }
     }
-    return snrDb == null ? null : _rxCaptures.removeLast();
+    if (snrDb == null) return null;
+    for (int i = 0; i < _rxCaptures.length; i++) {
+      if (sameChannel(_rxCaptures[i])) return _rxCaptures.removeAt(i);
+    }
+    return null;
   }
 
   /// Reactions heard for a message this window no longer holds.
@@ -3909,7 +3938,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       // The packet this row arrived in, when the radio's RF log caught it: the
       // SNR and the hop count come with the message, the RSSI and the route only
       // with the capture.
-      final _RxCapture? cap = _takeRxCapture(cm.snrDb);
+      final _RxCapture? cap = _takeRxCapture(cm.snrDb, _channelHashOf(cm.channelIdx));
       final ChatMessage m = ChatMessage(
         channelIdx: cm.channelIdx,
         text: cm.text,
@@ -5820,12 +5849,17 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       }
       // A channel packet is kept for the message push that follows it, which is
       // where the RSSI and the path come from.
-      if (p != null && p.isGrpTxt) {
+      final GrpTxtPayload? grp = p?.grpTxt;
+      if (p != null && grp != null) {
         _rxCaptures.add(_RxCapture(
           snrDb: f.log.snrDb,
           rssiDbm: f.log.rssi,
           hopCount: p.hopCount,
           pathHashes: p.pathHashes,
+          // Recorded so a capture cannot be lent to a row on another channel:
+          // a `#cos` message must not carry the RSSI and route of a packet heard
+          // on `#public`.
+          channelHash: grp.channelHash,
           at: DateTime.now(),
         ));
         while (_rxCaptures.length > _rxCaptureCap) {
@@ -7399,11 +7433,16 @@ class _RxCapture {
     required this.hopCount,
     required this.pathHashes,
     required this.at,
+    this.channelHash,
   });
 
   final double snrDb;
   final int rssiDbm;
   final int hopCount;
   final List<String> pathHashes;
+
+  /// The packet's own `GRP_TXT` channel hash, so a capture can only answer a
+  /// message on the channel it was heard on.
+  final int? channelHash;
   final DateTime at;
 }

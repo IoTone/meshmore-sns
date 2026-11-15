@@ -402,10 +402,16 @@ class _DmScreenState extends State<DmScreen> {
         _input.selection = TextSelection.collapsed(offset: _input.text.length);
         break;
       case ChatAction.friendlyAck:
-        // Sent, not drafted: the measurements belong to this reception, and a
-        // reader who edits them is quoting numbers about a packet that is no
-        // longer the one on the screen.
-        await mc.sendFriendlyAck(m);
+        // Composed, never sent: an acknowledgement is a message like any other,
+        // so it lands in the composer where the reader can add a word, drop a
+        // number, or decide not to send it at all.
+        final String line = mc.friendlyAckLineFor(m);
+        setState(() {
+          _input.text = line;
+          _input.selection = TextSelection.collapsed(offset: line.length);
+        });
+        final String? key = _draftKey;
+        if (key != null) unawaited(DraftStore.save(key, line));
         break;
       case ChatAction.copy:
         await copyMessageToClipboard(context, m);

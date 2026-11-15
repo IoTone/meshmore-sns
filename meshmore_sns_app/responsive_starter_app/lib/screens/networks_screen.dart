@@ -91,6 +91,17 @@ class _NetworksScreenState extends State<NetworksScreen> {
                 : ListView(
                     padding: context.skin.space.padScreen,
                     children: <Widget>[
+                      // The other half of "who else is in this conversation": a
+                      // network is the radio tuple, not a key. See the same line
+                      // on Settings -> Channels.
+                      Padding(
+                        padding: EdgeInsets.only(
+                            bottom: context.skin.space.rowGap),
+                        child: Text(l.networksIntro,
+                            style: TextStyle(
+                                color: context.skin.color.fgMuted,
+                                fontSize: context.skin.type.sizeSm)),
+                      ),
                       for (final MeshNetwork n in networks)
                         ListTile(
                           key: Key('network-${n.id}'),
@@ -127,7 +138,14 @@ bool networkIsCurrent(MeshcoreController mc, MeshNetwork n) {
 /// Create a network: a name, radio settings copied from a preset, a path hash
 /// size, and optionally a private frequency.
 class NetworkEditScreen extends StatefulWidget {
-  const NetworkEditScreen({super.key});
+  const NetworkEditScreen({super.key, this.initial});
+
+  /// The network being edited, or null to create one.
+  ///
+  /// A network's settings are a written-down agreement and they change: a
+  /// frequency typo used to mean deleting the network, which threw away its
+  /// members and their history. Editing keeps the id and the members.
+  final MeshNetwork? initial;
 
   @override
   State<NetworkEditScreen> createState() => _NetworkEditScreenState();
@@ -138,6 +156,14 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
   final TextEditingController _freq = TextEditingController();
   late RegionPreset _preset = presetById('us_canada') ?? kRegionPresets.first;
   late int _hash = _preset.pathHashSize ?? 1;
+  // The three radio fields and the power, carried explicitly once the reader
+  // touches them: a preset fills them in, and any change makes the tuple the
+  // reader's own rather than the preset's.
+  late double _bandwidth = _preset.bandwidthKhz;
+  late int _sf = _preset.spreadingFactor;
+  late int _cr = _preset.codingRate;
+  late int _tx = _preset.txPowerDbm;
+  bool _custom = false;
   bool _private = false;
   String? _nameError;
   String? _freqError;
@@ -153,6 +179,21 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
   @override
   void initState() {
     super.initState();
+    final MeshNetwork? edit = widget.initial;
+    if (edit != null) {
+      _name.text = edit.name;
+      _freq.text = edit.frequencyMhz.toString();
+      _private = edit.isolatedFromPublicMesh;
+      _hash = edit.pathHashSize;
+      _bandwidth = edit.bandwidthKhz;
+      _sf = edit.spreadingFactor;
+      _cr = edit.codingRate;
+      _tx = edit.txPowerDbm;
+      final RegionPreset? p = edit.overlappingPublicPreset;
+      _custom = p == null;
+      if (p != null) _preset = p;
+      return;
+    }
     final MeshcoreController? mc =
         Provider.of<MeshcoreController?>(context, listen: false);
     final SelfInfo? si = mc?.selfInfo;
@@ -184,8 +225,21 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
     String? freqError;
     if (name.isEmpty) nameError = l.networksNameRequired;
 
+    // A name is how a reader tells two networks apart in a list, so two with the
+    // same one are one network with two copies: refuse the second rather than
+    // making the reader find out later.
+    final List<MeshNetwork> existing = await MeshNetworkStore.load();
+    if (nameError == null &&
+        existing.any((MeshNetwork n) =>
+            n.id != widget.initial?.id &&
+            n.name.toLowerCase() == name.toLowerCase())) {
+      nameError = l.networksNameTaken;
+    }
+
+    // The frequency starts at the preset's and is overridden below when the
+    // reader typed one (a private network, or a custom tuple).
     double freq = _preset.frequencyMhz;
-    if (_private) {
+    if (_private || _custom) {
       final double? f = double.tryParse(_freq.text.trim());
       if (f == null || f < 150 || f > 2500) {
         freqError = l.networksFrequencyInvalid;
@@ -195,21 +249,29 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
     }
     MeshNetwork? net;
     if (nameError == null && freqError == null) {
-      net = MeshNetwork(
-        id: 'n${DateTime.now().microsecondsSinceEpoch}',
+      final MeshNetwork candidate = MeshNetwork(
+        id: widget.initial?.id ?? 'n${DateTime.now().microsecondsSinceEpoch}',
         name: name,
         frequencyMhz: freq,
-        bandwidthKhz: _preset.bandwidthKhz,
-        spreadingFactor: _preset.spreadingFactor,
-        codingRate: _preset.codingRate,
-        txPowerDbm: _preset.txPowerDbm,
+        bandwidthKhz: _bandwidth,
+        spreadingFactor: _sf,
+        codingRate: _cr,
+        txPowerDbm: _tx,
         pathHashSize: _hash,
+        members: widget.initial?.members ?? const <NetworkMember>[],
       );
-      final RegionPreset? clash = net.overlappingPublicPreset;
-      if (_private && clash != null) {
+      final RegionPreset? clash = candidate.overlappingPublicPreset;
+      // A frequency the reader typed, or a switch that claims privacy, has to
+      // stand on its own: a tuple that lands on a public preset is not isolated
+      // whatever the switch says, and the honest answer is that the frequency
+      // cannot deliver privacy rather than a saved network that is public in
+      // fact. Only a network that simply copies a preset is exempt, because it
+      // never claimed otherwise.
+      if ((_custom || _private) && clash != null) {
         freqError =
             l.networksFrequencyPublic(localizedPresetLabel(l, clash.id));
       }
+      net = candidate;
     }
     if (nameError != null || freqError != null || net == null) {
       setState(() {
@@ -219,8 +281,37 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
       return;
     }
     final List<MeshNetwork> all = await MeshNetworkStore.load();
-    await MeshNetworkStore.save(<MeshNetwork>[...all, net]);
+    await MeshNetworkStore.save(<MeshNetwork>[
+      for (final MeshNetwork n in all)
+        if (n.id != net.id) n,
+      net,
+    ]);
     if (mounted) Navigator.of(context).pop();
+  }
+
+  /// The transmit powers the field offers: every step the firmware accepts, plus
+  /// whatever the loaded network or a preset already holds.
+  List<int> _txChoices() {
+    final Set<int> all = <int>{
+      for (int dbm = -9; dbm <= 30; dbm += 3) dbm,
+      _tx,
+      if (widget.initial != null) widget.initial!.txPowerDbm,
+      for (final RegionPreset p in kRegionPresets) p.txPowerDbm,
+    };
+    final List<int> out = all.toList()..sort();
+    return out;
+  }
+
+  /// The bandwidths the field offers: the radio's own widths and every value a
+  /// shipped preset uses, so a preset can always be shown in the control that
+  /// describes it.
+  static List<double> _bandwidthChoices() {
+    final Set<double> all = <double>{
+      7.8, 10.4, 15.6, 20.8, 31.25, 41.7, 62.5, 125, 250, 500,
+      for (final RegionPreset p in kRegionPresets) p.bandwidthKhz,
+    };
+    final List<double> out = all.toList()..sort();
+    return out;
   }
 
   @override
@@ -231,7 +322,14 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l.networksNew)),
       body: MmScaffold(
-        child: ListView(
+        // The form scrolls, the save does not. The advanced section made this
+        // list taller than a phone, and a save button at the end of a scroll is
+        // a save button a reader has to hunt for — the app's other editors keep
+        // their action row in reach.
+        child: Column(
+          children: <Widget>[
+            Expanded(
+              child: ListView(
           padding: context.skin.space.padScreen,
           children: <Widget>[
             TextField(
@@ -260,8 +358,125 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
                 setState(() {
                   _preset = p;
                   _hash = p.pathHashSize ?? _hash;
+                  // A preset is a whole tuple: choosing one replaces every radio
+                  // field with it, and clears the custom flag because the tuple
+                  // is now the preset's.
+                  _bandwidth = p.bandwidthKhz;
+                  _sf = p.spreadingFactor;
+                  _cr = p.codingRate;
+                  _tx = p.txPowerDbm;
+                  _custom = false;
+                  _private = false;
+                  _freq.text = '';
                 });
               },
+            ),
+            const SizedBox(height: 16),
+            // The tuple itself, not just a preset label. A community network
+            // that is not one of the shipped presets is the common case on a
+            // busy mesh, and it used to be impossible to write down: the preset
+            // decided bandwidth, spreading and coding rate, and there was no
+            // field to disagree with it.
+            Text(l.networksAdvanced,
+                style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 8),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: DropdownButtonFormField<double>(
+                    key: const Key('network-bandwidth'),
+                    isExpanded: true,
+                    initialValue: _bandwidth,
+                    decoration:
+                        InputDecoration(labelText: l.networksBandwidth),
+                    // Every bandwidth this build can hold: the LoRa widths a
+                    // radio offers, plus whatever the shipped presets use. A
+                    // fixed list without the presets' own values meant a preset
+                    // whose bandwidth was not in it (22 kHz) could not be shown
+                    // in its own field, and the form threw before it drew.
+                    items: <DropdownMenuItem<double>>[
+                      for (final double bw in _bandwidthChoices())
+                        DropdownMenuItem<double>(
+                            value: bw, child: Text('${bw}kHz')),
+                    ],
+                    onChanged: (double? v) {
+                      if (v == null) return;
+                      setState(() {
+                        _bandwidth = v;
+                        _custom = true;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    key: const Key('network-sf'),
+                    isExpanded: true,
+                    initialValue: _sf,
+                    decoration: InputDecoration(labelText: l.networksSpreading),
+                    items: <DropdownMenuItem<int>>[
+                      for (int sf = 5; sf <= 12; sf++)
+                        DropdownMenuItem<int>(value: sf, child: Text('SF$sf')),
+                    ],
+                    onChanged: (int? v) {
+                      if (v == null) return;
+                      setState(() {
+                        _sf = v;
+                        _custom = true;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    key: const Key('network-cr'),
+                    isExpanded: true,
+                    initialValue: _cr,
+                    decoration:
+                        InputDecoration(labelText: l.networksCodingRate),
+                    items: <DropdownMenuItem<int>>[
+                      for (int cr = 5; cr <= 8; cr++)
+                        DropdownMenuItem<int>(value: cr, child: Text('CR$cr')),
+                    ],
+                    onChanged: (int? v) {
+                      if (v == null) return;
+                      setState(() {
+                        _cr = v;
+                        _custom = true;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    key: const Key('network-tx'),
+                    isExpanded: true,
+                    initialValue: _tx,
+                    decoration:
+                        InputDecoration(labelText: l.networksTxPower),
+                    // Every power a preset or a radio may already hold. The
+                    // list stepped by three from -9, which skipped 22 — the
+                    // figure two shipped presets use — so opening the form on
+                    // one of them threw before it drew.
+                    items: <DropdownMenuItem<int>>[
+                      for (final int dbm in _txChoices())
+                        DropdownMenuItem<int>(
+                            value: dbm, child: Text('$dbm dBm')),
+                    ],
+                    onChanged: (int? v) {
+                      if (v == null) return;
+                      setState(() => _tx = v);
+                    },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Text(l.networksPathHash,
@@ -298,11 +513,24 @@ class _NetworkEditScreenState extends State<NetworkEditScreen> {
                 decoration: InputDecoration(
                     labelText: l.networksFrequency, errorText: _freqError),
               ),
-            const SizedBox(height: 24),
-            FilledButton(
-              key: const Key('network-save'),
-              onPressed: _save,
-              child: Text(l.networksSave),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  context.skin.space.screenEdge,
+                  context.skin.space.rowGap,
+                  context.skin.space.screenEdge,
+                  context.skin.space.sectionGap),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  key: const Key('network-save'),
+                  onPressed: _save,
+                  child: Text(
+                      widget.initial == null ? l.networksSave : l.networksEdit),
+                ),
+              ),
             ),
           ],
         ),

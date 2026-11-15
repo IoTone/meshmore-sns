@@ -106,11 +106,23 @@ class VizPalette {
   static Color sweepFor(MmSkin skin) {
     final Color c = skin.color.accent;
     final HSLColor hsl = HSLColor.fromColor(c);
-    if (hsl.saturation < 0.12) return skin.color.warn;
+    // A monochrome skin has no hue to turn. SEELE's accent is the same cream as
+    // its text (20 % saturation), so a half turn returned cream again and the
+    // hand of the clock disappeared into the dial — the owner's "I can't see the
+    // radar line". Those skins take their alert colour, which is always a real
+    // hue, at **full saturation**: the quieting is the alpha the painter draws
+    // it with, not a washed-out colour.
+    if (hsl.saturation < 0.30) {
+      final HSLColor a = HSLColor.fromColor(skin.color.alert);
+      return a
+          .withSaturation(1.0)
+          .withLightness(a.lightness.clamp(0.42, 0.56))
+          .toColor();
+    }
     return hsl
         .withHue((hsl.hue + 180) % 360)
-        .withSaturation(hsl.saturation.clamp(0.35, 1.0))
-        .withLightness(hsl.lightness.clamp(0.45, 0.72))
+        .withSaturation(hsl.saturation.clamp(0.55, 1.0))
+        .withLightness(hsl.lightness.clamp(0.5, 0.72))
         .toColor();
   }
 

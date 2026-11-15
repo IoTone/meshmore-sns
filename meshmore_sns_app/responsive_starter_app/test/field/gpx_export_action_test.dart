@@ -137,6 +137,6 @@ void main() {
     await t.pumpAndSettle();
 
     expect(calls, isEmpty);
-    expect(find.textContaining('No trail yet'), findsOneWidget);
+    expect(find.textContaining('No trail recorded yet'), findsOneWidget);
   });
 }

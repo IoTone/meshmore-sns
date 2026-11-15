@@ -96,7 +96,12 @@ class AutoPublishController extends ChangeNotifier {
     // interval it does offer, not zero: the user asked for beacons, and a
     // silent switch-off is a worse answer than a slower cadence.
     _intervalSec = intervalOptions.contains(stored) ? stored : 900;
-    _minMovementM = Prefs.readInt(p, _kMinMovementM);
+    // Validated on the way in as well as through the setter: a stored value this
+    // build does not offer (an old build's 1 m, say) re-adverts on every metre
+    // walked. Zero — "publish on the interval only" — is the answer that keeps
+    // the radio quiet.
+    final int movement = Prefs.readInt(p, _kMinMovementM);
+    _minMovementM = movementOptions.contains(movement) ? movement : 0;
     _restart();
     notifyListeners();
   }

@@ -66,7 +66,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get botTitle => '自動応答ボット';
 
   @override
-  String get botSubtitle => 'ここのメッセージに自動で返信します。既定はオフ。';
+  String get botSubtitle => '自動応答。既定はオフ';
 
   @override
   String get botOnWire => '返信には [bot] を付けて送信し、相手が機械の発言だと分かるようにします。';
@@ -475,10 +475,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'バックグラウンドでの接続を維持できませんでした。アプリを開いて再接続してください。';
 
   @override
-  String get settingsTelemetryPoll => 'ノードから気温と高度を取得';
+  String get settingsTelemetryPoll => '各ノードの気温と高度を取得';
 
   @override
-  String get settingsTelemetryPollOn => '連絡先に気温と高度を問い合わせます。多少の空中時間を使います。';
+  String get settingsTelemetryPollOn => '通信時間を少し使う';
 
   @override
   String get settingsTelemetryPollOff => '自動では問い合わせません。ノードを開けば1回だけ尋ねられます。';
@@ -693,8 +693,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get demoBanner => 'デモ';
 
   @override
-  String get demoTooltip =>
-      'デモモード 、 MeshCore 無線機なし。コンパニオンなしでチャンネル・設定・ドキュメントを試せます。';
+  String get demoTooltip => 'デモ：MeshCore 無線機なし';
 
   @override
   String get demoModeRow => 'MeshCore 無線機なし';
@@ -731,6 +730,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get firstRunConnect => 'MeshCore 無線機に接続';
 
   @override
+  String firstRunRadioLinked(String name) {
+    return '$name に接続中';
+  }
+
+  @override
+  String get firstRunKeepRadio => 'この MeshCore 無線機を使う';
+
+  @override
   String get firstRunUnits => 'フィートとマイル';
 
   @override
@@ -760,7 +767,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get firstRunGrant => 'Bluetooth を許可';
 
   @override
-  String get firstRunSkip => 'デモモードで試す（MeshCore 無線機なし）';
+  String get firstRunSkip => 'MeshCore 無線機なしで試す';
 
   @override
   String get firstRunDeniedTransient =>
@@ -807,17 +814,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesFloodAdvert => 'フラッドアドバート';
 
   @override
-  String get nodesFloodAdvertBody => 'メッシュ全体 、 隣接 + リピーター。発見に最適。';
+  String get nodesFloodAdvertBody => '中継機経由でメッシュ全体';
 
   @override
   String get nodesZeroHopAdvert => '直接アドバート';
 
   @override
-  String get nodesZeroHopAdvertBody => '隣接のみ 、 再ブロードキャストなし。混雑したメッシュ向け。';
+  String get nodesZeroHopAdvertBody => '直接の近隣のみ';
 
   @override
-  String get nodesFloodAdvertSent =>
-      'フラッドアドバートを送信 、 メッシュ全体に伝播します。相手側でも Advertise を実行するまで表示されません。';
+  String get nodesFloodAdvertSent => 'フラッドアドバートを送信';
 
   @override
   String get nodesZeroHopAdvertSent => '直接届く範囲の無線機にだけ送りました。';
@@ -882,7 +888,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get nodesStatusOffline => '未接続 、 「MeshCore 無線機に接続」を開いてください';
+  String get nodesStatusOffline => '未接続';
 
   @override
   String get nodesFarBadge => '遠距離';
@@ -1097,7 +1103,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locTitle => '位置の自動公開';
 
   @override
-  String get locTileSubtitle => 'スマートフォンの位置をMeshCore 無線機に送ります';
+  String get locTileSubtitle => 'MeshCore 無線機に位置を送信';
 
   @override
   String get deviceGpsIntervalWhy =>
@@ -1107,7 +1113,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locMaster => '自動公開';
 
   @override
-  String get locMasterOn => 'オン 、 現在地をアドバートに載せて送ります';
+  String get locMasterOn => '位置はアドバートで送信';
 
   @override
   String get locMasterOff => 'オフ';
@@ -1154,7 +1160,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locBeacon => '定期位置ビーコン';
 
   @override
-  String get locBeaconSub => '60 秒ごと。通信時間と電池を使います。';
+  String get locBeaconSub => '60 秒ごと。通信時間を使う';
 
   @override
   String get locBatteryHint => 'GPS を流し続けると反応は速くなりますが、電池を多く使います。';
@@ -1200,7 +1206,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String voicePickerOnlyMyLanguageHint(String lang) {
-    return 'スマートフォンの現在の言語（$lang）に一致する音声のみを表示します。オフにするとOSが報告する全音声を表示します。';
+    return '$lang の音声のみ';
   }
 
   @override
@@ -1361,13 +1367,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chatRetentionDropped(int count, int cap) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '古いメッセージ$count件が削除済み',
-      one: '古いメッセージ1件が削除済み',
-    );
-    return '$_temp0 、 各会話は最新の$cap件を保持します';
+    return '$count 件の古いメッセージを破棄';
   }
 
   @override
@@ -1398,7 +1398,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatRestoreMenu => '書き出しから復元…';
 
   @override
-  String get chatRestoreNothing => '書き出しファイルをこのアプリで開くか、ここに共有してから、もう一度復元してください。';
+  String get chatRestoreNothing => '先にエクスポートを開く';
 
   @override
   String get chatRestoreTitle => '会話を復元';
@@ -1421,7 +1421,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatRestoreFailed => 'そのパスフレーズでは開けませんでした。書き出しファイルではない可能性があります。';
+  String get chatRestoreFailed => 'パスフレーズかファイルが違う';
 
   @override
   String get diagnosticsPlaceStore => 'プレイスストア';
@@ -1541,7 +1541,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dmSpeechMutedByMaster => 'オーディオミュートにより消音中';
 
   @override
-  String get dmPeerNotInFabric => 'この相手はまだメッシュで確認できていません。';
+  String get dmPeerNotInFabric => 'まだ受信していません';
 
   @override
   String dmComposerHint(String peer) {
@@ -1644,8 +1644,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailAddDeviceContactDone => '追加しました。DM が届くようになります。';
 
   @override
-  String get nodeDetailAddDeviceContactFailed =>
-      '連絡先を追加できませんでした 、 リンクを確認して再試行してください。';
+  String get nodeDetailAddDeviceContactFailed => '連絡先を追加できません';
 
   @override
   String get nodeDetailRemoveDeviceContact => 'デバイスの連絡先から削除';
@@ -1953,7 +1952,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get docsProtocolTitle => 'プロトコル';
 
   @override
-  String get docsProtocolSub => 'MeshCore コンパニオン無線プロトコル 、 フレーム、オペコード、フロー。';
+  String get docsProtocolSub => 'コンパニオン通信：フレームと命令';
 
   @override
   String get docsFirmwareTitle => 'ファームウェア';
@@ -1970,13 +1969,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get docsAppTitle => 'アプリ';
 
   @override
-  String get docsAppSub => 'Meshmore SNS の仕組みとメッシュの活用方法。';
+  String get docsAppSub => 'アプリの仕組み';
 
   @override
   String get docsDevicesTitle => 'デバイス';
 
   @override
-  String get docsDevicesSub => 'T1000-E、Wio Tracker L1 Pro、Heltec V3。';
+  String get docsDevicesSub => 'T1000-E、Wio Tracker、Heltec';
 
   @override
   String get docsRefresh => 'GitHub から更新';
@@ -2250,6 +2249,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsTitle => 'チャンネル';
 
   @override
+  String get channelsRadioSettings => '無線機の設定は「ネットワーク」';
+
+  @override
+  String get networksIntro => 'この無線機を誰が受信できるか';
+
+  @override
+  String get channelsIntro => 'だれが読めるか。スレッドごとの共有鍵です。';
+
+  @override
   String get channelsHelp =>
       'チャンネル 0 は共有のパブリックです。非公開にするには、どのMeshCore 無線機でも同じ番号・名前・鍵にします。';
 
@@ -2358,7 +2366,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsInferPlaces => 'メッセージから地名を探す';
 
   @override
-  String get channelsInferPlacesSub => 'メッセージに出てきた場所を提案します。';
+  String get channelsInferPlacesSub => 'メッセージ内の場所を提案';
 
   @override
   String notifTitleChannel(String name) {
@@ -2383,11 +2391,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifBodyFence => '最新の位置情報による判定です。位置情報が届いたときにだけ通過を検知します。';
 
   @override
-  String get settingsBatteryOptimisedTitle =>
-      'バッテリー最適化によりバックグラウンドで切断されることがあります';
+  String get settingsBatteryOptimisedTitle => 'Android が接続を止める場合あり';
 
   @override
-  String get settingsBatteryOptimisedSub => '一部の端末は最適化されたアプリを停止します。';
+  String get settingsBatteryOptimisedSub => '一部の端末は背景アプリを停止';
 
   @override
   String get settingsBatteryAllow => '許可する';
@@ -2405,7 +2412,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsSilencePerChannel => 'チャンネルの通知を止める';
 
   @override
-  String get notifMutedSub => 'メッセージは保存し、通知・読み上げ・バッジだけ止めます。';
+  String get notifMutedSub => 'メッセージは残し通知は停止';
 
   @override
   String get notifOs => '通知を表示';
@@ -2423,16 +2430,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifMentionsOnly => '自分の名前が出たときだけ';
 
   @override
-  String get notifMentionsOnlySub => '単語全体か @名前。オフなら全メッセージで通知します。';
+  String get notifMentionsOnlySub => 'メンションのみ。オフで全件';
 
   @override
-  String get notifKeySuffix => 'ID の末尾 4 文字にも一致させる';
+  String get notifKeySuffix => 'ID 下 4 桁も一致';
 
   @override
-  String get notifKeySuffixSub => '4 文字は誰でも選べるので、送信者が確かなとき以外はオフにしてください。';
+  String get notifKeySuffixSub => '誰でも選べる 4 文字';
 
   @override
-  String get notifDeniedBanner => 'このアプリの通知がオフのため、メッセージはロック画面に表示されません。';
+  String get notifDeniedBanner => '通知がオフです';
 
   @override
   String get notifQuietBanner =>
@@ -2552,27 +2559,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get channelsClearedDefaultSnack => '起動時の既定を解除しました';
-
-  @override
-  String get channelsKeyShake => '振る';
-
-  @override
-  String get channelsShakeTitle => 'シェイクでダイスロール';
-
-  @override
-  String get channelsShakeBody =>
-      'スマートフォンを振ってください 、 検出された動きサンプルがハッシュに加算されます。リングが満たされたら停止。';
-
-  @override
-  String channelsShakeProgress(int accepted, int target, int pct) {
-    return '$accepted / $target サンプル · $pct%';
-  }
-
-  @override
-  String get channelsShakeReroll => '再ロール';
-
-  @override
-  String get channelsShakeTapFallback => 'タップで振る';
 
   @override
   String get channelsShareQr => 'QR で共有';
@@ -2915,7 +2901,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceToastInvalidRadio => 'freq/BW/SF/CR に有効な数値を入力';
 
   @override
-  String get deviceLocPermDenied => 'スマートフォン GPS 取得には位置情報の許可が必要です。';
+  String get deviceLocPermDenied => '位置情報の許可が必要';
 
   @override
   String get deviceLocPermDeniedPerm => '位置情報が永続的に拒否されました 、 OS 設定で許可してください。';
@@ -2927,7 +2913,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get connectionDiagnosticsRow => '診断とツール';
 
   @override
-  String get connectionDiagnosticsExplainer => '生フレーム、フィクスチャ、テストコマンド。';
+  String get connectionDiagnosticsExplainer => 'フレーム・記録・試験命令';
 
   @override
   String get diagnosticsTitle => 'MeshCore 無線機の診断';
@@ -2991,7 +2977,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get batteryTitle => 'バッテリー';
 
   @override
-  String get batteryConfigSubtitle => '充電量・消費レート・残り時間の推定';
+  String get batteryConfigSubtitle => '充電・消費・残り時間';
 
   @override
   String get batteryAwaiting => 'デバイスからのバッテリー値を待機中…';
@@ -3332,7 +3318,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get traceManual => '手動';
 
   @override
-  String get traceRoundTrip => '往復 (こちらに戻す)';
+  String get traceRoundTrip => '往復';
 
   @override
   String get traceNoRoute => '経路なし 、 先にメッセージを送ってください';
@@ -3472,12 +3458,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHubInfo => 'このアプリについて';
 
   @override
-  String get settingsNotifDeniedPermanent =>
-      '通知が永続的に拒否されました。バックグラウンドサービスには常駐通知が必要です。';
+  String get settingsNotifDeniedPermanent => '通知が恒久的に拒否';
 
   @override
-  String get settingsNotifDeniedTransient =>
-      'バックグラウンド接続には通知の許可が必要です。設定で許可してください。';
+  String get settingsNotifDeniedTransient => '接続維持には通知の許可が必要';
 
   @override
   String get deviceAdvertPropagatesHint =>
@@ -3600,7 +3584,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapsWifiOnly => 'Wi-Fi のみでダウンロード';
 
   @override
-  String get mapsWifiOnlyHint => 'パックは数百 MB になることがあります。';
+  String get mapsWifiOnlyHint => 'パックは数百 MB になる場合あり';
 
   @override
   String get mapsOutsidePacks => 'オフライン地図の範囲外では、地図に接続が必要です。';
@@ -3893,7 +3877,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String deviceActiveChannelSub(String name) {
-    return '使用中: $name · チャンネルとキー';
+    return 'チャンネルと鍵';
   }
 
   @override
@@ -4137,6 +4121,27 @@ class AppLocalizationsJa extends AppLocalizations {
   String get networksTitle => 'ネットワーク';
 
   @override
+  String get networksEdit => '編集';
+
+  @override
+  String get networksTxPower => '送信出力';
+
+  @override
+  String get networksCodingRate => '符号化率';
+
+  @override
+  String get networksSpreading => '拡散率';
+
+  @override
+  String get networksBandwidth => '帯域幅';
+
+  @override
+  String get networksAdvanced => '無線機の設定';
+
+  @override
+  String get networksNameTaken => '同じ名前のネットワークが既にあります。';
+
+  @override
   String get networksEmpty =>
       'ネットワークはまだありません。ネットワークとは、MeshCore 無線機同士で合わせる無線設定のことです。';
 
@@ -4159,8 +4164,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get networksPrivateSwitch => '専用周波数';
 
   @override
-  String get networksPrivateHelp =>
-      '公開プリセットが使わない周波数を使います。この周波数の無線機は公開メッシュを聞けず、公開メッシュからも聞こえません。';
+  String get networksPrivateHelp => 'プリセット外の周波数';
 
   @override
   String get networksFrequency => '周波数 (MHz)';
@@ -4290,7 +4294,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placePrecision1000 => '約1 km';
 
   @override
-  String get placeRadioRefused => 'MeshCore 無線機が受け付けなかったため、この場所は送信されていません。';
+  String get placeRadioRefused => '無線機が拒否しました';
 
   @override
   String get placeChannelTitle => 'チャンネル';
@@ -4628,8 +4632,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get airtimeCutoffTitle => '上限で停止';
 
   @override
-  String get airtimeCutoffSubtitle =>
-      '時間あたりの上限を超える送信を止めます。警告だけでは止まりません。静かな時間の1通は、混んだ時間の20通より価値があります。';
+  String get airtimeCutoffSubtitle => '時間上限を超える送信を拒否';
 
   @override
   String get airtimeLeftInHour => 'この1時間の残り';
@@ -4890,7 +4893,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get checkinOneMessage => 'チェックインは1通のみで、繰り返しません。';
+  String get checkinOneMessage => '1 通のみ、繰り返しなし';
 
   @override
   String get checkinWatching => '応答待ち';
@@ -5189,7 +5192,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get geofenceExplainerShort => '到着・出発を知らせる範囲';
+  String get geofenceExplainerShort => '到着・退出の通知';
 
   @override
   String get coverageTitle => 'カバレッジ';
@@ -5275,7 +5278,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fieldExportDone(String path) {
-    return '現地記録を書き出しました。パスはクリップボードにあります: $path';
+    return '記録を保存。パスをコピー';
   }
 
   @override
@@ -5289,7 +5292,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gpxExportTrackName => 'MeshMore の軌跡';
 
   @override
-  String get gpxExportEmpty => 'まだ軌跡がありません。位置はアプリの動作中に記録されるため、書き出せるものがありません。';
+  String get gpxExportEmpty => '軌跡はまだありません';
 
   @override
   String get gpxExportShared => '軌跡を共有できます。';
@@ -5306,8 +5309,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsHistoryExportRow => 'すべての履歴を書き出す';
 
   @override
-  String get settingsHistoryExportSubtitle =>
-      'すべての会話をまとめた暗号化ファイルを1つ作成します。保存先はあなたが選びます。';
+  String get settingsHistoryExportSubtitle => '全会話を 1 つの暗号化ファイルに';
 
   @override
   String get settingsHistoryExportTitle => 'バックアップのパスフレーズ';
@@ -5550,13 +5552,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsUnitsMetric => 'メートル・キロメートル';
 
   @override
-  String get settingsUnitsMetricHint => 'MeshCore のツールが報告する距離そのままです。';
+  String get settingsUnitsMetricHint => '無線機の報告どおり';
 
   @override
   String get settingsUnitsImperial => 'フィート・マイル';
 
   @override
-  String get settingsUnitsImperialHint => 'MeshCore 無線機が報告するメートルから換算します。';
+  String get settingsUnitsImperialHint => '無線機のメートルから換算';
 
   @override
   String get settingsClock24 => '24時間表示';
@@ -5583,7 +5585,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsPhotoColorTitle => '写真をカラーで送る';
 
   @override
-  String get settingsPhotoColorSub => 'オフにするとグレースケールで送信し、データ量は約3分の1になります。';
+  String get settingsPhotoColorSub => 'グレー：データ 3 分の 1';
 
   @override
   String get settingsAppGroupData => 'データ';
@@ -5621,7 +5623,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get mapCanvasSemantics => 'マップ上のマーカーをタップすると開きます';
+  String get mapCanvasSemantics => 'マーカーをタップで開く';
 
   @override
   String get gridLegendSignalOnly => '中抜き · 位置なし';
@@ -6077,7 +6079,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get autoAddMaxHops => 'ホップ上限';
 
   @override
-  String get autoAddMaxHopsHint => '0 = 無制限 · 1 = 直接のみ · N = N−1 ホップまで';
+  String get autoAddMaxHopsHint => '0 = すべて、N = ホップ数';
 
   @override
   String get autoAddUnknown => 'MeshCore 無線機の設定を読み取り中…';
@@ -6151,7 +6153,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceContactsImportBad => '連絡先リンクではありません。';
 
   @override
-  String get deviceContactsImportDone => '無線機に送信しました。無線機が確認すると一覧に表示されます。';
+  String get deviceContactsImportDone => '送信済み。無線機が確認';
 
   @override
   String get diagnosticsRestartRadio => '無線機を再起動';
@@ -6161,10 +6163,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'この無線機を今すぐ再起動しますか？起動の間リンクは数秒切れ、無線機に溜まっていたものは失われます。';
 
   @override
-  String get diagnosticsRestartSent => '再起動を送信しました。リンクは切れ、自動的に戻ります。';
+  String get diagnosticsRestartSent => '再起動を送信。接続は切れます';
 
   @override
-  String get diagnosticsRestartNoReply => '再起動に応答はありません。確認ではなく送信のみです。';
+  String get diagnosticsRestartNoReply => '再起動を送信。確認なし';
 
   @override
   String get settingsSecuritySection => 'MeshCore 無線機へのアクセス';
@@ -6238,10 +6240,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get forwardNoTarget => '転送先がありません。チャンネルも連絡先もありません。';
 
   @override
-  String get forwardDone => 'その会話の入力欄に入れました。送信前に編集できます。';
+  String get forwardDone => '入力欄へ転送しました';
 
   @override
-  String get forwardFailed => '下書きを書けませんでした。この端末では暗号化ストアを開けません。';
+  String get forwardFailed => '下書き未保存：保管庫が閉鎖';
 
   @override
   String get placeConfirmToSender => '送信者に確認を送る';
@@ -6687,7 +6689,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get geofenceReshapeGone => 'そのフェンスは削除済みのため、新しい形は保存されませんでした。';
+  String get geofenceReshapeGone => 'そのフェンスはありません';
 
   @override
   String mediaReceivedForeign(int n) {

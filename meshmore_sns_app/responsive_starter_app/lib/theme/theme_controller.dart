@@ -40,10 +40,36 @@ class ThemeController extends ChangeNotifier {
   /// choice about *everything* that plays, so the app needs its own trim.
   double _cueVolume = 1.0;
 
+  /// The operating system's own accessibility switches, mirrored in here.
+  ///
+  /// The app has a switch for each, and so does Android. Honouring only the app's
+  /// meant a reader who turned on "Remove animations" in system settings still
+  /// got a sweeping radar, a rising toast and pulsing markers, and one who turned
+  /// on high contrast still got the quiet skin. Set from `MediaQuery` at the root
+  /// (`main.dart`), never persisted: they are the platform's, not ours.
+  bool _osReduceMotion = false;
+  bool _osHighContrast = false;
+
+  /// True when either the app's switch or the platform's is on.
+  bool get reduceMotion => _reduceMotion || _osReduceMotion;
+  bool get highContrast => _highContrast || _osHighContrast;
+
+  /// The platform's reduce-motion setting changed. No-op when it did not
+  /// change, so a rebuild per frame cannot notify in a loop.
+  void setOsReduceMotion(bool v) {
+    if (v == _osReduceMotion) return;
+    _osReduceMotion = v;
+    notifyListeners();
+  }
+
+  void setOsHighContrast(bool v) {
+    if (v == _osHighContrast) return;
+    _osHighContrast = v;
+    notifyListeners();
+  }
+
   MmThemePreset get preset => _preset;
   double get fontScale => _fontScale;
-  bool get highContrast => _highContrast;
-  bool get reduceMotion => _reduceMotion;
   bool get audioMaster => _audioMaster;
   bool get visualHapticOnly => _visualHapticOnly;
   double get cueVolume => _cueVolume;
@@ -56,8 +82,25 @@ class ThemeController extends ChangeNotifier {
   ThemeData get theme {
     final MmSkin skin =
         mmSkinFor(_highContrast ? MmThemePreset.seele : _preset);
-    return buildMmTheme(skin.color,
+    final ThemeData base = buildMmTheme(skin.color,
         fontFamily: skin.type.displayFamily, shape: skin.shape);
+    if (!reduceMotion) return base;
+    // Reduce motion is about the whole app, not the two views that remembered to
+    // ask: a ripple that spreads across a control and a page that slides in are
+    // both motion. No ink, and a page transition that draws nothing.
+    return base.copyWith(
+      splashFactory: NoSplash.splashFactory,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: _NoTransitionBuilder(),
+          TargetPlatform.iOS: _NoTransitionBuilder(),
+          TargetPlatform.linux: _NoTransitionBuilder(),
+          TargetPlatform.macOS: _NoTransitionBuilder(),
+          TargetPlatform.windows: _NoTransitionBuilder(),
+          TargetPlatform.fuchsia: _NoTransitionBuilder(),
+        },
+      ),
+    );
   }
 
   /// Load persisted preferences. Safe to call once at startup.
@@ -131,4 +174,22 @@ class ThemeController extends ChangeNotifier {
     notifyListeners();
     await _save((SharedPreferences p) => Prefs.setDouble(p, _kCueVolume, c));
   }
+}
+
+/// A page transition that draws the new page and nothing else.
+///
+/// The route still takes its own transition duration, but nothing moves and
+/// nothing fades, so the page appears at once. Used only when motion is reduced.
+class _NoTransitionBuilder extends PageTransitionsBuilder {
+  const _NoTransitionBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) =>
+      child;
 }

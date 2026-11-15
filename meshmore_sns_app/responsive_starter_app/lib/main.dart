@@ -715,9 +715,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         // instead of re-linearising it, and caps the product at the largest
         // scale the accessibility floor test builds.
         final MediaQueryData mq = MediaQuery.of(context);
+        // The platform's accessibility switches, mirrored into the controller so
+        // every view that already asks it for reduce-motion gets the platform's
+        // answer too. Pushed after the frame: a notifier cannot fire during a
+        // build, and `MediaQuery` can change while one is running.
+        final bool osReduceMotion = mq.disableAnimations;
+        final bool osHighContrast = mq.highContrast;
+        if (osReduceMotion != tc.reduceMotion || osHighContrast != tc.highContrast) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            tc.setOsReduceMotion(osReduceMotion);
+            tc.setOsHighContrast(osHighContrast);
+          });
+        }
         return MediaQuery(
           data: mq.copyWith(
             textScaler: MmTextScaler(os: mq.textScaler, user: tc.fontScale),
+            // Flutter's own widgets read this: scroll physics, implicit
+            // animations and the focus highlight all quieten for it.
+            disableAnimations: tc.reduceMotion,
           ),
           child: child ?? const SizedBox.shrink(),
         );

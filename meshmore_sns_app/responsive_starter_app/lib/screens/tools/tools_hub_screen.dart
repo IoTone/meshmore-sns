@@ -87,25 +87,10 @@ class ToolsHubScreen extends StatelessWidget {
                 onTap: () => context.push('/settings/tools/history'),
               ),
             ),
-            // Check-in is a field-safety action rather than an engineering
-            // tool, and it lives here because the alarm screen carries exactly
-            // one control and must not offer a second way to send (`/sos`,
-            // `sos_screen.dart`). It sits first: a user looking for it is in a
-            // hurry, and a tester looking for a tool is not.
-            Padding(
-              padding: EdgeInsets.only(bottom: skin.space.rowGap),
-              child: MmListRow(
-                key: const ValueKey<String>('tools-checkin'),
-                leading: Icon(Icons.check_circle_outline, color: skin.color.accent),
-                title: Text(l.checkinTitle),
-                subtitle: Text(l.checkinOneMessage,
-                    style: TextStyle(
-                        color: skin.color.fgMuted,
-                        fontSize: skin.type.sizeBody)),
-                trailing: Icon(Icons.chevron_right, color: skin.color.fgMuted),
-                onTap: () => context.push('/checkin'),
-              ),
-            ),
+            // Check-in is NOT here. It is a field-safety action, and it has a
+            // row on Settings -> Safety where a reader looking for it during an
+            // incident would look. Two rows to one destination is the
+            // duplication the settings audit removed: one action, one place.
             // Two tools answer a question a user asks; the rest are
             // engineering, so they sit under their own label instead of in
             // the same undifferentiated list.

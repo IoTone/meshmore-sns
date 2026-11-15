@@ -156,11 +156,34 @@ List<HexCell> hexField({
 
   (int, int) cellOf(double lat, double lon) {
     final ({double x, double y}) m = toMetres(lat, lon);
-    // Nearest row first, then the column within that row's offset.
-    final int row = (m.y / pitchY).round();
-    final double offset = row.isOdd ? width / 2 : 0;
-    final int col = ((m.x - offset) / width).round();
-    return (col, row);
+    // The cell whose **centre** is nearest, not "round the row, then round the
+    // column". Those are not the same lattice assignment: a row is 0.75·H from
+    // its neighbours, so a point near the top of one hexagon is nearest to a
+    // centre in the row above and half a column across. Rounding each axis
+    // independently put real nodes in cells they were not drawn inside — the
+    // owner's "do repeaters fall between the hexagons?" — so nine candidates
+    // (three rows by three columns) are compared and the nearest wins. Nine
+    // distance comparisons per node is nothing next to the work of drawing the
+    // field, and it makes the assignment and the shapes agree by construction.
+    final int rowNear = (m.y / pitchY).round();
+    int bestCol = 0;
+    int bestRow = 0;
+    double bestDist = double.infinity;
+    for (int row = rowNear - 1; row <= rowNear + 1; row++) {
+      final double offset = row.isOdd ? width / 2 : 0;
+      final int colNear = ((m.x - offset) / width).round();
+      for (int col = colNear - 1; col <= colNear + 1; col++) {
+        final double dx = m.x - (col * width + offset);
+        final double dy = m.y - row * pitchY;
+        final double d = dx * dx + dy * dy;
+        if (d < bestDist) {
+          bestDist = d;
+          bestCol = col;
+          bestRow = row;
+        }
+      }
+    }
+    return (bestCol, bestRow);
   }
 
   final Map<(int, int), List<String>> buckets = <(int, int), List<String>>{};

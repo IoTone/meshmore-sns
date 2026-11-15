@@ -62,12 +62,15 @@ void main() {
 
   test('the classification names exactly the transmitters', () {
     // The codec's own transmitters; anything else is a local request.
-    for (final int op in <int>[0x02, 0x03, 0x07, 0x0E, 0x19, 0x1B, 0x24, 0x27,
+    for (final int op in <int>[0x02, 0x03, 0x07, 0x19, 0x1B, 0x24, 0x27,
       0x32, 0x37, 0x3E, 0x41]) {
       expect(MeshcoreController.isOverTheAir(op), isTrue,
           reason: '0x${op.toRadixString(16)} transmits and must be charged');
     }
-    for (final int op in <int>[0x01, 0x04, 0x05, 0x0A, 0x14, 0x1F, 0x28]) {
+    // 0x0E is `CMD_SET_ADVERT_LATLON`, which sets the position the radio will
+    // advertise next rather than transmitting anything: charging it made every
+    // auto-publish pay twice for one advert.
+    for (final int op in <int>[0x01, 0x04, 0x05, 0x0A, 0x0E, 0x14, 0x1F, 0x28]) {
       expect(MeshcoreController.isOverTheAir(op), isFalse,
           reason: '0x${op.toRadixString(16)} is a BLE request');
     }

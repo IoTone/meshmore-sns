@@ -340,4 +340,47 @@ reply(broken, "unterminated).
       expect(c.bindings, isEmpty);
     });
   });
+
+  group('a channel row carries a name, not a key', () {
+    // Every channel row has `peerPubKeyHex == null` by design, so the key guard
+    // can never fire there and the name is the only handle the protocol gives.
+    // Without these two the bot answers its own channel replies, and two bots in
+    // one channel ping-pong until their reply budgets are gone.
+    test('our own line in a channel is recognised by our name', () async {
+      final BotController c = make();
+      await c.setEnabled(priv, true);
+      c.ownName = 'WIOld';
+      expect(
+          c.handleInbound(scope: priv, text: 'WIOld: ping', fromName: 'WIOld'),
+          isNull,
+          reason: 'answered its own channel line');
+      expect(c.countersFor(priv).suppressedOwn, 1);
+      // Case and padding are not identity: the name is typed and echoed by
+      // clients that trim differently.
+      expect(
+          c.handleInbound(scope: priv, text: ' wIoLD : ping', fromName: ' wIoLD '),
+          isNull);
+    });
+
+    test('a reply marker is found after the channel sender prefix', () async {
+      // `Name: [bot] Pong` is what our own reply looks like on the wire, so a
+      // marker test on the whole line never matched in a channel.
+      final BotController c = make();
+      await c.setEnabled(priv, true);
+      c.ownName = 'Other';
+      expect(c.handleInbound(scope: priv, text: 'KJ7ABC: [bot] Pong', fromName: 'KJ7ABC'),
+          isNull);
+      expect(c.countersFor(priv).suppressedLoop, 1);
+    });
+
+    test('somebody else asking is still answered', () async {
+      final BotController c = make();
+      await c.setEnabled(priv, true);
+      c.ownName = 'WIOld';
+      expect(c.handleInbound(scope: priv, text: 'KJ7ABC: ping', fromName: 'KJ7ABC'),
+          isNotNull);
+      expect(c.countersFor(priv).suppressedOwn, 0);
+      expect(c.countersFor(priv).suppressedLoop, 0);
+    });
+  });
 }

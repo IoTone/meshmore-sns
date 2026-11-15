@@ -89,13 +89,22 @@ void main() {
     expect(hexArea(r), closeTo(162379, 400),
         reason: 'a 250 m cell is about 0.16 km2, which is what the chip says');
     expect(cells, isNotEmpty);
+    // Measured in the projection's metres, which is the plane the cells are laid
+    // out and drawn in. Degrees of latitude would disagree between rows because
+    // Mercator stretches with latitude, not because the cells differ.
     final Set<double> heights = <double>{
       for (final HexCell c in cells)
-        (hexCorners(c.centre, r).last.latitude -
-                hexCorners(c.centre, r).first.latitude)
+        (mercatorY(hexCorners(c.centre, r).last.latitude) -
+                mercatorY(hexCorners(c.centre, r).first.latitude))
             .abs(),
     };
-    expect(heights.length, 1, reason: 'no cell is drawn at a different size');
+    // Within a hundredth of a millimetre: the same size, allowing for the
+    // rounding of a projected coordinate near the pole end of a degree.
+    final double one = heights.first;
+    for (final double h in heights) {
+      expect(h, closeTo(one, 1e-4),
+          reason: 'a cell is drawn at a different size: $heights');
+    }
   });
 
   test('nodes outside the box are not counted', () {
@@ -350,6 +359,58 @@ void main() {
           width: w * (1 + 2 * kHexFieldPad),
           height: h * (1 + 2 * kHexFieldPad));
       expect(boxCells, greaterThan(screenCells));
+    });
+  });
+
+  group('no node falls between cells', () {
+    test('every node lands inside the hexagon it was counted in', () {
+      // The owner's question: can a repeater sit in a gap, with no hexagon under
+      // it? The lattice assigns a point to the *nearest* cell centre, and the
+      // hexagons are the Voronoi regions of those centres, so there should be no
+      // gap — but "should" is not a measurement, and a lattice whose pitch and
+      // whose drawn corners disagree would leave exactly that: a node counted in
+      // a cell it is not drawn inside.
+      const double r = 250;
+      final List<DensityPoint> points = <DensityPoint>[
+        for (int i = 0; i < 300; i++)
+          (
+            // A deterministic spread over the box, including its edges.
+            lat: box.south + (box.north - box.south) * ((i * 37) % 300) / 300,
+            lon: box.west + (box.east - box.west) * ((i * 71) % 300) / 300,
+            pubKey: 'n$i',
+          ),
+      ];
+      final List<HexCell> cells = hexField(
+        points: points,
+        box: box,
+        circumradiusMetres: r,
+        includeEmpty: true,
+      );
+      int counted = 0;
+      for (final HexCell c in cells) {
+        for (final String key in c.points) {
+          counted++;
+          final DensityPoint p = points.firstWhere((DensityPoint q) => q.pubKey == key);
+          expect(hexContains(c.centre, r, LatLng(p.lat, p.lon)), isTrue,
+              reason: '$key is counted in cell ${c.id} but not drawn inside it');
+        }
+      }
+      expect(counted, points.length,
+          reason: 'every node was counted exactly once');
+    });
+
+    test('a node on a cell boundary is counted once, not twice', () {
+      // A point equidistant from two centres belongs to one cell: the assignment
+      // rounds, so it cannot be counted twice and cannot be dropped.
+      final List<DensityPoint> pts = <DensityPoint>[
+        (lat: 47.61, lon: -122.335, pubKey: 'a'),
+        (lat: 47.61, lon: -122.3349999, pubKey: 'b'),
+      ];
+      final List<HexCell> cells =
+          hexField(points: pts, box: box, circumradiusMetres: 250);
+      final int total =
+          cells.fold(0, (int n, HexCell c) => n + c.points.length);
+      expect(total, 2);
     });
   });
 }

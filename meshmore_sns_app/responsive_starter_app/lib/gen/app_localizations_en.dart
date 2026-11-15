@@ -81,8 +81,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get botTitle => 'Auto-reply bot';
 
   @override
-  String get botSubtitle =>
-      'Answers messages here automatically. Off by default.';
+  String get botSubtitle => 'Auto-replies here. Off by default.';
 
   @override
   String get botOnWire =>
@@ -496,12 +495,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not keep the app running in the background. Open the app to reconnect.';
 
   @override
-  String get settingsTelemetryPoll =>
-      'Fetch temperature and altitude from nodes';
+  String get settingsTelemetryPoll => 'Fetch node temperature and altitude';
 
   @override
-  String get settingsTelemetryPollOn =>
-      'Asks contacts for their temperature and altitude. Costs a little airtime.';
+  String get settingsTelemetryPollOn => 'Costs a little airtime';
 
   @override
   String get settingsTelemetryPollOff =>
@@ -729,8 +726,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get demoBanner => 'DEMO';
 
   @override
-  String get demoTooltip =>
-      'Demo mode. No MeshCore radio. Explore channels, settings and docs without a companion.';
+  String get demoTooltip => 'Demo: no MeshCore radio';
 
   @override
   String get demoModeRow => 'No MeshCore radio';
@@ -768,6 +764,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firstRunConnect => 'Connect your MeshCore radio';
 
   @override
+  String firstRunRadioLinked(String name) {
+    return '$name is connected';
+  }
+
+  @override
+  String get firstRunKeepRadio => 'Keep this MeshCore radio';
+
+  @override
   String get firstRunUnits => 'Feet and miles';
 
   @override
@@ -798,7 +802,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firstRunGrant => 'Allow Bluetooth';
 
   @override
-  String get firstRunSkip => 'Explore in demo mode (no MeshCore radio)';
+  String get firstRunSkip => 'Explore without a MeshCore radio';
 
   @override
   String get firstRunDeniedTransient =>
@@ -845,19 +849,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodesFloodAdvert => 'Flood advert';
 
   @override
-  String get nodesFloodAdvertBody =>
-      'Whole mesh. Neighbours + repeaters. Best for discovery.';
+  String get nodesFloodAdvertBody => 'Whole mesh, through repeaters';
 
   @override
   String get nodesZeroHopAdvert => 'Direct advert';
 
   @override
-  String get nodesZeroHopAdvertBody =>
-      'Direct neighbours only. Not rebroadcast. Quieter on a busy mesh.';
+  String get nodesZeroHopAdvertBody => 'Direct neighbours only';
 
   @override
-  String get nodesFloodAdvertSent =>
-      'Flood advert sent. It crosses the whole mesh. The other node must advertise too before it appears here.';
+  String get nodesFloodAdvertSent => 'Flood advert sent';
 
   @override
   String get nodesZeroHopAdvertSent => 'Sent to radios in direct range only.';
@@ -929,8 +930,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get nodesStatusOffline =>
-      'Not connected. Open Connect a MeshCore radio';
+  String get nodesStatusOffline => 'Not connected';
 
   @override
   String get nodesFarBadge => 'FAR';
@@ -1149,8 +1149,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locTitle => 'Auto-publish location';
 
   @override
-  String get locTileSubtitle =>
-      'Sends the phone\'s position to the MeshCore radio';
+  String get locTileSubtitle => 'MeshCore radio gets position';
 
   @override
   String get deviceGpsIntervalWhy =>
@@ -1160,7 +1159,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locMaster => 'Auto-publish';
 
   @override
-  String get locMasterOn => 'On. Your position goes out with your adverts';
+  String get locMasterOn => 'Position goes out with adverts';
 
   @override
   String get locMasterOff => 'Off';
@@ -1207,7 +1206,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locBeacon => 'Periodic position beacon';
 
   @override
-  String get locBeaconSub => 'Every 60 s. Uses airtime and battery.';
+  String get locBeaconSub => 'Every 60 s, uses airtime';
 
   @override
   String get locBatteryHint =>
@@ -1257,7 +1256,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String voicePickerOnlyMyLanguageHint(String lang) {
-    return 'Limits the list to voices matching the phone\'s current language ($lang). Turn off to see every voice the OS reports.';
+    return 'Only voices for $lang';
   }
 
   @override
@@ -1418,13 +1417,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chatRetentionDropped(int count, int cap) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count older messages are gone',
-      one: '1 older message is gone',
-    );
-    return '$_temp0. Each conversation keeps its newest $cap';
+    return '$count older messages dropped';
   }
 
   @override
@@ -1457,8 +1450,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatRestoreMenu => 'Restore from export…';
 
   @override
-  String get chatRestoreNothing =>
-      'Open the export file with this app, or share it here, and then run restore again.';
+  String get chatRestoreNothing => 'Open an export file first';
 
   @override
   String get chatRestoreTitle => 'Restore a conversation';
@@ -1481,8 +1473,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chatRestoreFailed =>
-      'That file could not be opened with that passphrase, or it is not an export.';
+  String get chatRestoreFailed => 'Wrong passphrase or file';
 
   @override
   String get diagnosticsPlaceStore => 'Places store';
@@ -1614,8 +1605,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dmSpeechMutedByMaster => 'Silenced by the audio mute';
 
   @override
-  String get dmPeerNotInFabric =>
-      'This person has not been heard on the mesh yet.';
+  String get dmPeerNotInFabric => 'Not heard yet';
 
   @override
   String dmComposerHint(String peer) {
@@ -1721,8 +1711,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodeDetailAddDeviceContactDone => 'Added. DMs will route.';
 
   @override
-  String get nodeDetailAddDeviceContactFailed =>
-      'Couldn\'t add the contact. Check the link and try again.';
+  String get nodeDetailAddDeviceContactFailed => 'Could not add the contact';
 
   @override
   String get nodeDetailRemoveDeviceContact => 'Remove from device contacts';
@@ -2035,8 +2024,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get docsProtocolTitle => 'Protocol';
 
   @override
-  String get docsProtocolSub =>
-      'MeshCore companion radio protocol. Frames, opcodes, and flow.';
+  String get docsProtocolSub => 'Companion protocol: frames, opcodes';
 
   @override
   String get docsFirmwareTitle => 'Firmware';
@@ -2053,13 +2041,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get docsAppTitle => 'App';
 
   @override
-  String get docsAppSub => 'How Meshmore SNS works, and how it uses the mesh.';
+  String get docsAppSub => 'How the app works';
 
   @override
   String get docsDevicesTitle => 'Devices';
 
   @override
-  String get docsDevicesSub => 'T1000-E, Wio Tracker L1 Pro, Heltec V3.';
+  String get docsDevicesSub => 'T1000-E, Wio Tracker, Heltec';
 
   @override
   String get docsRefresh => 'Refresh from GitHub';
@@ -2343,6 +2331,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsTitle => 'Channels';
 
   @override
+  String get channelsRadioSettings => 'MeshCore radio settings: Networks';
+
+  @override
+  String get networksIntro => 'Who can hear this MeshCore radio';
+
+  @override
+  String get channelsIntro =>
+      'Who can read your messages: a shared key per thread.';
+
+  @override
   String get channelsHelp =>
       'Channel 0 is the shared public one. A private group needs the same channel number, name and key on every MeshCore radio.';
 
@@ -2454,7 +2452,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsInferPlaces => 'Find place names in messages';
 
   @override
-  String get channelsInferPlacesSub => 'Offer a place named in a message.';
+  String get channelsInferPlacesSub => 'Offer places named in messages';
 
   @override
   String notifTitleChannel(String name) {
@@ -2482,12 +2480,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'From the latest position update. A crossing is only noticed when a fix arrives.';
 
   @override
-  String get settingsBatteryOptimisedTitle =>
-      'Android may stop the link in the background';
+  String get settingsBatteryOptimisedTitle => 'Android may stop the link';
 
   @override
   String get settingsBatteryOptimisedSub =>
-      'Some phones stop optimised apps in the background.';
+      'Some phones stop backgrounded apps';
 
   @override
   String get settingsBatteryAllow => 'Allow';
@@ -2506,8 +2503,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSilencePerChannel => 'Silence a channel';
 
   @override
-  String get notifMutedSub =>
-      'Keeps the messages, stops the alert, the speech and the badge.';
+  String get notifMutedSub => 'Messages kept, alerts stopped';
 
   @override
   String get notifOs => 'Show a notification';
@@ -2525,19 +2521,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifMentionsOnly => 'Only when someone names me';
 
   @override
-  String get notifMentionsOnlySub =>
-      'Whole word or @name. Off means every message alerts.';
+  String get notifMentionsOnlySub => 'Mentions only, off means all';
 
   @override
-  String get notifKeySuffix => 'Also match the last 4 characters of my ID';
+  String get notifKeySuffix => 'Match my ID\'s last 4';
 
   @override
-  String get notifKeySuffixSub =>
-      'Anyone can choose those four characters, so leave this off unless you know the sender.';
+  String get notifKeySuffixSub => 'Four characters anyone can choose';
 
   @override
-  String get notifDeniedBanner =>
-      'Notifications are turned off for this app, so messages will not appear on your lock screen.';
+  String get notifDeniedBanner => 'Notifications are off';
 
   @override
   String get notifQuietBanner =>
@@ -2660,27 +2653,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsClearedDefaultSnack => 'Launch default cleared';
-
-  @override
-  String get channelsKeyShake => 'Shake';
-
-  @override
-  String get channelsShakeTitle => 'Shake to roll dice';
-
-  @override
-  String get channelsShakeBody =>
-      'Shake your phone. Each accepted motion sample feeds the hash. Stop once the ring fills.';
-
-  @override
-  String channelsShakeProgress(int accepted, int target, int pct) {
-    return '$accepted of $target samples · $pct%';
-  }
-
-  @override
-  String get channelsShakeReroll => 'Reroll';
-
-  @override
-  String get channelsShakeTapFallback => 'Tap to roll.';
 
   @override
   String get channelsShareQr => 'Share via QR';
@@ -3031,8 +3003,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceToastInvalidRadio => 'Enter valid numbers for freq/BW/SF/CR';
 
   @override
-  String get deviceLocPermDenied =>
-      'Location permission needed for a phone GPS fix.';
+  String get deviceLocPermDenied => 'Location permission needed';
 
   @override
   String get deviceLocPermDeniedPerm =>
@@ -3046,7 +3017,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectionDiagnosticsExplainer =>
-      'Raw frames, fixtures and test commands.';
+      'Frames, fixtures, test commands';
 
   @override
   String get diagnosticsTitle => 'MeshCore radio diagnostics';
@@ -3113,8 +3084,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get batteryTitle => 'Battery';
 
   @override
-  String get batteryConfigSubtitle =>
-      'Charge, drain rate, and time-to-empty estimate';
+  String get batteryConfigSubtitle => 'Charge, drain, time to empty';
 
   @override
   String get batteryAwaiting =>
@@ -3468,7 +3438,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get traceManual => 'Manual';
 
   @override
-  String get traceRoundTrip => 'Round trip (come back to us)';
+  String get traceRoundTrip => 'Round trip';
 
   @override
   String get traceNoRoute => 'no route. Send it a message first';
@@ -3610,12 +3580,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHubInfo => 'About';
 
   @override
-  String get settingsNotifDeniedPermanent =>
-      'Notifications were permanently denied. The background service needs a persistent notification.';
+  String get settingsNotifDeniedPermanent => 'Notifications permanently denied';
 
   @override
   String get settingsNotifDeniedTransient =>
-      'Keeping the app connected in the background needs notifications. Allow them in Settings.';
+      'Allow notifications to stay connected';
 
   @override
   String get deviceAdvertPropagatesHint =>
@@ -3742,7 +3711,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapsWifiOnly => 'Download over Wi-Fi only';
 
   @override
-  String get mapsWifiOnlyHint => 'A pack can be hundreds of megabytes.';
+  String get mapsWifiOnlyHint => 'Packs can be hundreds of MB';
 
   @override
   String get mapsOutsidePacks =>
@@ -4043,7 +4012,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceActiveChannelSub(String name) {
-    return 'Using: $name · channels and keys';
+    return 'Channels and keys';
   }
 
   @override
@@ -4295,6 +4264,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get networksTitle => 'Networks';
 
   @override
+  String get networksEdit => 'Edit';
+
+  @override
+  String get networksTxPower => 'Transmit power';
+
+  @override
+  String get networksCodingRate => 'Coding rate';
+
+  @override
+  String get networksSpreading => 'Spreading factor';
+
+  @override
+  String get networksBandwidth => 'Bandwidth';
+
+  @override
+  String get networksAdvanced => 'MeshCore radio settings';
+
+  @override
+  String get networksNameTaken => 'Another network already has this name.';
+
+  @override
   String get networksEmpty =>
       'No networks yet. A network is the MeshCore radio settings your radios agree on.';
 
@@ -4317,8 +4307,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get networksPrivateSwitch => 'Private frequency';
 
   @override
-  String get networksPrivateHelp =>
-      'Use a frequency no public preset uses. Radios on it do not hear the public mesh, and the public mesh does not hear them.';
+  String get networksPrivateHelp => 'A frequency no preset uses';
 
   @override
   String get networksFrequency => 'Frequency (MHz)';
@@ -4451,8 +4440,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placePrecision1000 => 'About 1 km';
 
   @override
-  String get placeRadioRefused =>
-      'The MeshCore radio did not take it, so the place is not on the air.';
+  String get placeRadioRefused => 'MeshCore radio refused';
 
   @override
   String get placeChannelTitle => 'Channel';
@@ -4803,8 +4791,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get airtimeCutoffTitle => 'Stop at the limit';
 
   @override
-  String get airtimeCutoffSubtitle =>
-      'Refuse a send that would pass the hourly limit instead of only warning. One message in a quiet hour is worth more than twenty in a busy one.';
+  String get airtimeCutoffSubtitle => 'Refuse over-budget sends';
 
   @override
   String get airtimeLeftInHour => 'Time left this hour';
@@ -5076,8 +5063,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get checkinOneMessage =>
-      'A check-in is one message and does not repeat.';
+  String get checkinOneMessage => 'One message, no repeat';
 
   @override
   String get checkinWatching => 'Waiting for an answer';
@@ -5402,8 +5388,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get geofenceExplainerShort =>
-      'Areas that tell you when you arrive or leave';
+  String get geofenceExplainerShort => 'Arrive and leave alerts';
 
   @override
   String get coverageTitle => 'Coverage';
@@ -5499,7 +5484,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fieldExportDone(String path) {
-    return 'Field record written. The path is on the clipboard: $path';
+    return 'Record written, path copied';
   }
 
   @override
@@ -5513,8 +5498,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get gpxExportTrackName => 'MeshMore trail';
 
   @override
-  String get gpxExportEmpty =>
-      'No trail yet. Positions are recorded while the app runs, so there is nothing to write.';
+  String get gpxExportEmpty => 'No trail recorded yet';
 
   @override
   String get gpxExportShared => 'Trail ready to share.';
@@ -5532,7 +5516,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsHistoryExportSubtitle =>
-      'One encrypted file, with every conversation in it. You choose where it goes.';
+      'One encrypted file, all conversations';
 
   @override
   String get settingsHistoryExportTitle => 'Passphrase for the backup';
@@ -5783,15 +5767,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsUnitsMetric => 'Metres and kilometres';
 
   @override
-  String get settingsUnitsMetricHint =>
-      'How every MeshCore tool reports distance.';
+  String get settingsUnitsMetricHint => 'What the MeshCore radio reports';
 
   @override
   String get settingsUnitsImperial => 'Feet and miles';
 
   @override
   String get settingsUnitsImperialHint =>
-      'Converted from the metres the MeshCore radio reports.';
+      'Converted from MeshCore radio metres';
 
   @override
   String get settingsClock24 => '24-hour clock';
@@ -5818,8 +5801,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPhotoColorTitle => 'Send photos in colour';
 
   @override
-  String get settingsPhotoColorSub =>
-      'Off sends a grey picture, which is about a third of the data.';
+  String get settingsPhotoColorSub => 'Grey: one third the data';
 
   @override
   String get settingsAppGroupData => 'Data';
@@ -5857,7 +5839,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mapCanvasSemantics => 'Tap a marker on the map to open it';
+  String get mapCanvasSemantics => 'Tap a marker to open';
 
   @override
   String get gridLegendSignalOnly => 'Hollow · no position';
@@ -6330,8 +6312,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoAddMaxHops => 'Hop limit';
 
   @override
-  String get autoAddMaxHopsHint =>
-      '0 = no limit · 1 = direct only · N = up to N−1 hops';
+  String get autoAddMaxHopsHint => '0 = all, N = hops';
 
   @override
   String get autoAddUnknown => 'Reading the MeshCore radio\'s policy…';
@@ -6408,8 +6389,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceContactsImportBad => 'That is not a contact link.';
 
   @override
-  String get deviceContactsImportDone =>
-      'Sent to the MeshCore radio. It is in the list when the radio confirms.';
+  String get deviceContactsImportDone => 'Sent, MeshCore radio confirms';
 
   @override
   String get diagnosticsRestartRadio => 'Restart the MeshCore radio';
@@ -6419,12 +6399,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Restart this MeshCore radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.';
 
   @override
-  String get diagnosticsRestartSent =>
-      'Restart sent. The link will drop and come back on its own.';
+  String get diagnosticsRestartSent => 'Restart sent, link will drop';
 
   @override
-  String get diagnosticsRestartNoReply =>
-      'The MeshCore radio takes no reply to a restart, so this is sent, not confirmed.';
+  String get diagnosticsRestartNoReply => 'Restart sent, not confirmed';
 
   @override
   String get settingsSecuritySection => 'MeshCore radio access';
@@ -6500,12 +6478,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Nothing to forward into: no channel and no contact.';
 
   @override
-  String get forwardDone =>
-      'Forwarded into that thread\'s composer, where you can edit it before sending.';
+  String get forwardDone => 'Forwarded to the composer';
 
   @override
-  String get forwardFailed =>
-      'Could not write the draft: the sealed store is not open on this device.';
+  String get forwardFailed => 'Draft not saved: store closed';
 
   @override
   String get placeConfirmToSender => 'Confirm to the sender';
@@ -6964,8 +6940,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get geofenceReshapeGone =>
-      'That fence is gone, so the new shape was not saved.';
+  String get geofenceReshapeGone => 'That fence is gone';
 
   @override
   String mediaReceivedForeign(int n) {

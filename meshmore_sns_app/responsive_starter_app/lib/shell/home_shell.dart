@@ -445,7 +445,9 @@ class _ViewStripState extends State<_ViewStrip> {
         final BuildContext? c = _keys[widget.index].currentContext;
         if (c != null && c.mounted) {
           Scrollable.ensureVisible(c,
-              duration: const Duration(milliseconds: 150));
+              duration: reduceMotionRead(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 150));
         }
       });
     }

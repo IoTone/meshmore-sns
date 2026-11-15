@@ -102,6 +102,9 @@ void main() {
         pace: Duration.zero,
       );
       await maps.load();
+      // The field is drawn only over ground the map has drawn; a test has no
+      // tiles, so it says the ground is there.
+      maps.assumeTilesReady = true;
     });
     addTearDown(() {
       try {

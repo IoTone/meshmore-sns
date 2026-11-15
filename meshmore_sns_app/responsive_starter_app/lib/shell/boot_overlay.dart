@@ -3,6 +3,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import '../theme/mm_skin.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
@@ -56,7 +58,7 @@ class _BootOverlayState extends State<BootOverlay>
   late final AnimationController _spin = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 4),
-  )..repeat();
+  );
   late final AnimationController _fade = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 420),
@@ -92,6 +94,20 @@ class _BootOverlayState extends State<BootOverlay>
     _patienceTimer = Timer(_patience, () {
       if (mounted) _beginFadeOut();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The dial spins for as long as the launch takes, which can be a second or
+    // two of the most visible motion in the app. Reduced motion leaves it at
+    // twelve o'clock: the dial is still drawn, it just does not turn.
+    if (reduceMotionRead(context)) {
+      _spin.stop();
+      _spin.value = 0;
+    } else if (!_fade.isAnimating && !_dismissed) {
+      _spin.repeat();
+    }
   }
 
   @override

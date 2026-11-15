@@ -109,6 +109,18 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
   /// the next launch does not reach for a radio, and a link that answered the
   /// auto-connect before this tap is dropped, because a demo that keeps a live
   /// link is not radio-free.
+  /// Keep the radio that is already linked and leave the flow.
+  ///
+  /// Not [_finishWithDemo]: that one turns demo mode on, and demo mode
+  /// disconnects the link — the opposite of keeping the radio the reader chose
+  /// to keep.
+  Future<void> _finishKeepRadio() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    await context.read<FirstRunController>().markDone();
+    if (mounted) setState(() => _busy = false);
+  }
+
   Future<void> _finishWithDemo() async {
     if (_busy) return;
     setState(() => _busy = true);
@@ -121,6 +133,18 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
 
   Future<void> _openSettings() async {
     await context.read<PermissionsService>().openAppSettingsPage();
+  }
+
+  /// The radio that is already linked, if any: the name the last page shows.
+  ///
+  /// A replayed first run is mounted over a running app, so the reader may
+  /// already have a radio answering. The last page names it instead of asking
+  /// for one.
+  String? get _linkedRadioName {
+    final MeshcoreController mc = context.read<MeshcoreController>();
+    if (!mc.isReady) return null;
+    final String? n = mc.selfInfo?.name;
+    return (n != null && n.isNotEmpty) ? n : mc.pairedName;
   }
 
   @override
@@ -165,6 +189,11 @@ class _FirstRunIntroScreenState extends State<FirstRunIntroScreen> {
                 onBack: () => _goTo(_page - 1),
                   onRadio: _finishWithRadio,
                   onDemo: _finishWithDemo,
+                  // A replayed first run is mounted over a running app, so the
+                  // radio may already be linked and answering. The last page then
+                  // names it and offers to keep it instead of asking for one.
+                  linkedName: _linkedRadioName,
+                  onKeep: _finishKeepRadio,
                   l: l,
                 ),
               ),
@@ -193,6 +222,8 @@ class _Actions extends StatelessWidget {
     required this.onBack,
     required this.onRadio,
     required this.onDemo,
+    required this.onKeep,
+    required this.linkedName,
     required this.l,
   });
 
@@ -204,6 +235,15 @@ class _Actions extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onRadio;
   final VoidCallback onDemo;
+
+  /// The reader already has a radio: keep it and leave the flow. This is not
+  /// [onDemo] — that one turns on demo mode, which *disconnects* the radio the
+  /// reader just chose to keep.
+  final Future<void> Function() onKeep;
+
+  /// The radio already linked, or null when there is none.
+  final String? linkedName;
+
   final AppLocalizations l;
 
   @override
@@ -247,18 +287,46 @@ class _Actions extends StatelessWidget {
           ],
         );
       default:
+        // The radio may already be linked: a replayed first run is mounted over
+        // a running app, and the auto-connect answers before the first frame. A
+        // reader whose radio is linked and answering has already made this
+        // choice, so the page names it and offers to keep it.
+        final String? linked = linkedName;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            if (linked != null) ...<Widget>[
+              Row(
+                children: <Widget>[
+                  const Icon(Icons.bluetooth_connected, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(l.firstRunRadioLinked(linked),
+                        key: const ValueKey<String>('first-run-linked'),
+                        style: Theme.of(context).textTheme.bodyMedium),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
             MmActionRow(
               children: <Widget>[
-                MmAction(
-                  key: const ValueKey<String>('first-run-connect'),
-                  primary: true,
-                  icon: Icons.bluetooth_searching,
-                  label: l.firstRunConnect,
-                  onPressed: busy ? null : onRadio,
-                ),
+                if (linked != null)
+                  MmAction(
+                    key: const ValueKey<String>('first-run-keep-radio'),
+                    primary: true,
+                    icon: Icons.check,
+                    label: l.firstRunKeepRadio,
+                    onPressed: busy ? null : () => onKeep(),
+                  )
+                else
+                  MmAction(
+                    key: const ValueKey<String>('first-run-connect'),
+                    primary: true,
+                    icon: Icons.bluetooth_searching,
+                    label: l.firstRunConnect,
+                    onPressed: busy ? null : onRadio,
+                  ),
               ],
             ),
             SizedBox(height: skin.space.rowGap),
@@ -313,6 +381,43 @@ class _PageDots extends StatelessWidget {
   }
 }
 
+/// A first-run page body that fills its page.
+///
+/// These pages were short columns at the top of a full-height PageView: on a tall
+/// phone the permission explainer and the theme list occupied the upper half and
+/// left the lower half empty, so the flow looked like a half-drawn screen. The
+/// content now fills the page and centres inside it, and still scrolls when it is
+/// taller than the page (320 dp at 200 % text is taller).
+class _PageBody extends StatelessWidget {
+  const _PageBody({required this.children, super.key});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
+    final EdgeInsets pad = EdgeInsets.symmetric(
+        horizontal: skin.space.sectionGap, vertical: skin.space.emptyState);
+    return LayoutBuilder(
+      builder: (BuildContext c, BoxConstraints box) => SingleChildScrollView(
+        key: key,
+        padding: pad,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              minHeight: (box.maxHeight - pad.vertical).clamp(0.0, double.infinity)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            // Centred, so the page's own weight sits in the middle of the screen
+            // rather than hanging from the top edge.
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: children,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _WelcomePage extends StatelessWidget {
   const _WelcomePage({required this.denialNote, required this.onOpenSettings});
 
@@ -325,15 +430,11 @@ class _WelcomePage extends StatelessWidget {
     final ColorScheme cs = th.colorScheme;
     final AppLocalizations l = AppLocalizations.of(context);
     final MmSkin skin = context.skin;
-    return SingleChildScrollView(
-      // The page scrolls. At 320 dp with 200 % text the old single page
-      // overflowed by 2120 px, and a new user with large text could not reach
-      // the button that lets them in.
-      padding: EdgeInsets.symmetric(
-          horizontal: skin.space.sectionGap, vertical: skin.space.emptyState),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
+    // The page scrolls. At 320 dp with 200 % text the old single page
+    // overflowed by 2120 px, and a new user with large text could not reach the
+    // button that lets them in.
+    return _PageBody(
+      children: <Widget>[
           Text(l.firstRunHeader,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
@@ -390,7 +491,6 @@ class _WelcomePage extends StatelessWidget {
             ),
           ],
         ],
-      ),
     );
   }
 }
@@ -411,10 +511,8 @@ class _ThemePage extends StatelessWidget {
     // is a Column that overflows the moment the header alone is taller than the
     // space — at 320 dp with 200 % text it was 70 px over, and the first row a
     // reader could not reach was the theme list itself.
-    return ListView(
+    return _PageBody(
       key: const ValueKey<String>('first-run-themes'),
-      padding: EdgeInsets.symmetric(
-          horizontal: skin.space.rowInset, vertical: skin.space.emptyState),
       children: <Widget>[
         Padding(
           padding: EdgeInsets.symmetric(horizontal: skin.space.labelToControl),
@@ -478,12 +576,8 @@ class _PrefsPage extends StatelessWidget {
     final MmSkin skin = context.skin;
     final ColorScheme cs = Theme.of(context).colorScheme;
     final FormatPrefs fmt = context.watch<FormatPrefs>();
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(
-          horizontal: skin.space.sectionGap, vertical: skin.space.emptyState),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
+    return _PageBody(
+      children: <Widget>[
           Text(l.firstRunPrefsTitle,
               style: TextStyle(
                   color: cs.onSurface,
@@ -521,8 +615,7 @@ class _PrefsPage extends StatelessWidget {
             onChanged: fmt.setClock24,
           ),
           _PhotoColourSwitch(l: l),
-        ],
-      ),
+      ],
     );
   }
 }

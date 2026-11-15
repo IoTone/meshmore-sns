@@ -461,8 +461,11 @@ class MapsController extends ChangeNotifier with SafeNotifier {
   /// Bytes for one tile: the store first, the network if we must.
   /// Stale view tiles are revalidated (If-None-Match) when online and
   /// shown as-is when not; pack tiles are never refetched by viewing.
-  Future<Uint8List?> loadTile(MapSource src, int z, int x, int y) async =>
-      (await loadTileDetailed(src, z, x, y)).bytes;
+  Future<Uint8List?> loadTile(MapSource src, int z, int x, int y) async {
+    final TileLoad t = await loadTileDetailed(src, z, x, y);
+    if (t.bytes != null) _noteReady(src, z, x, y);
+    return t.bytes;
+  }
 
   /// [loadTile] plus the one distinction the vector layer needs: "the
   /// server has nothing here" (draw an empty tile) versus "could not reach
@@ -532,6 +535,64 @@ class MapsController extends ChangeNotifier with SafeNotifier {
       if (t.bytes != null) got++;
     }
     return got;
+  }
+
+  /// Which tiles the map has actually drawn, so an overlay can refuse to be
+  /// the only thing on a black screen.
+  ///
+  /// The density hexagons are vector shapes over the basemap: with no basemap
+  /// under them they floated over the background colour, which reads as a
+  /// rendering fault rather than as "the tiles have not arrived". `loadTile`
+  /// records every tile it served (from the store, a pack, or the network), and
+  /// the map asks what share of the tiles it is looking at are ready.
+  ///
+  /// Bounded and cleared with the view cache: this is a hint about right now,
+  /// not a record of everything ever fetched.
+  final Set<String> _tilesDrawn = <String>{};
+  static const int _tilesDrawnCap = 4096;
+
+  /// Bumped when a tile is added to [_tilesDrawn]. An overlay memoises on it, so
+  /// a cell appears when the tile under it does and the field is not re-filtered
+  /// for nothing.
+  int _tilesReadyRevision = 0;
+  int get tilesReadyRevision => _tilesReadyRevision;
+
+  void _noteReady(MapSource src, int z, int x, int y) {
+    if (_tilesDrawn.length >= _tilesDrawnCap) _tilesDrawn.clear();
+    if (_tilesDrawn.add(TileStore.keyOf(src.id, z, x, y))) {
+      _tilesReadyRevision++;
+    }
+  }
+
+  /// Test seam: treat every tile as served.
+  ///
+  /// The density field is drawn only over ground the map has drawn, so a widget
+  /// test with no tiles has no field at all. A test that is about the field
+  /// rather than about tiles sets this instead of standing up a tile server.
+  @visibleForTesting
+  bool assumeTilesReady = false;
+
+  /// Whether this tile has been served to the map since the app started.
+  bool tileReady(MapSource src, int z, int x, int y) =>
+      assumeTilesReady ||
+      _tilesDrawn.contains(TileStore.keyOf(src.id, z, x, y));
+
+  /// How much of [box] at [z] the map has already drawn, 0..1.
+  ///
+  /// One tile range, no per-cell bookkeeping: an overlay asks once per rebuild
+  /// whether the ground under it exists, and the answer costs one set lookup per
+  /// visible tile (a dozen at street zoom).
+  double tileCoverage(MapSource src, GeoBox box, int z) {
+    final TileRange r = tileRange(box, z);
+    final int total = r.count;
+    if (total <= 0) return 1;
+    int ready = 0;
+    for (int x = r.minX; x <= r.maxX; x++) {
+      for (int y = r.minY; y <= r.maxY; y++) {
+        if (tileReady(src, z, x, y)) ready++;
+      }
+    }
+    return ready / total;
   }
 
   /// A source may require a longer life than the server advertises.
@@ -642,49 +703,6 @@ class MapsController extends ChangeNotifier with SafeNotifier {
       hi = hi == null ? p.maxZoom : math.max(hi, p.maxZoom);
     }
     return lo == null || hi == null ? null : (minZoom: lo, maxZoom: hi);
-  }
-
-  /// Keep the parents of these tiles on disk so a zoom out has something to
-  /// draw. Bounded and deduplicated: a viewport of forty tiles is eight
-  /// ancestors at the first level up, and nothing runs while a real tile is
-  /// fetching.
-  Future<int> prefetchParents(MapSource src, Iterable<(int, int, int)> tiles,
-      {int maxUp = 2, int limit = 12, int? generation}) async {
-    if (!online || _gated(src.id) || usedBytes >= budgetBytes) return 0;
-    final Set<(int, int, int)> parents = <(int, int, int)>{};
-    for (final (int z, int x, int y) in tiles) {
-      for (int up = 1; up <= math.min(maxUp, z); up++) {
-        final TileAncestorCoord? a = ancestorOf(z, x, y, up);
-        if (a != null) parents.add((a.z, a.x, a.y));
-      }
-    }
-    return prefetch(src, parents, limit: limit, generation: generation);
-  }
-
-  /// The next zoom level *in* for these tiles, so a zoom in draws detail rather
-  /// than a blur of upscaled parents. Bounded to the tiles given, which the
-  /// caller scopes to the middle of the viewport: prefetching every child of a
-  /// full screen of tiles is four times the screen, and it is not what a reader
-  /// is about to look at.
-  Future<int> prefetchChildren(MapSource src, Iterable<(int, int, int)> tiles,
-      {int maxDown = 1, int limit = 16, int? generation}) async {
-    if (!online || _gated(src.id) || usedBytes >= budgetBytes) return 0;
-    final int maxZ = src.maxNativeZoom;
-    final Set<(int, int, int)> kids = <(int, int, int)>{};
-    for (final (int z, int x, int y) in tiles) {
-      if (z >= maxZ) continue;
-      for (int down = 1; down <= maxDown; down++) {
-        final int cz = z + down;
-        if (cz > maxZ) break;
-        final int factor = 1 << down;
-        for (int dx = 0; dx < factor; dx++) {
-          for (int dy = 0; dy < factor; dy++) {
-            kids.add((cz, x * factor + dx, y * factor + dy));
-          }
-        }
-      }
-    }
-    return prefetch(src, kids, limit: limit, generation: generation);
   }
 
   void _scheduleTrim() {

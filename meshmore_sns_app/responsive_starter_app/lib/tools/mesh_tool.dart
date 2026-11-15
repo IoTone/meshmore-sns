@@ -225,7 +225,12 @@ abstract class MeshTool extends ChangeNotifier with SafeNotifier {
       }
     });
     try {
-      await mc.send(frame);
+      // Several of these tools send an over-the-air frame (Discover floods a
+      // request every repeater answers, Trace walks a path), so they answer to
+      // the same hour budget as a message. They used to take `send`'s default,
+      // which is ungated: pressing the button charged the meter and never
+      // consulted it, so the ceiling was reachable by pressing a button.
+      await mc.send(frame, gated: true);
       final MeshcoreInbound f =
           await got.future.timeout(timeout, onTimeout: () {
         throw const ToolException(ToolFailure.noConfirm);

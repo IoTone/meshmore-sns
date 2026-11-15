@@ -168,18 +168,32 @@ class VectorSkinPalette {
       building: mix(t.surfaceAlt, t.base, .40),
       streetArea: mix(t.surface, t.surfaceAlt, .50),
       boundary: t.line,
-      casing: mix(t.line, t.base, .30),
-      motorway: mix(t.fgMuted, t.fg, .85),
-      trunk: mix(t.fgMuted, t.fg, .75),
-      primary: mix(t.fgMuted, t.fg, .65),
-      secondary: mix(t.fgMuted, t.fg, .55),
-      tertiary: mix(t.fgMuted, t.fg, .45),
-      minor: mix(t.fgMuted, t.fg, .35),
-      service: mix(t.fgMuted, t.fg, .25),
-      path: mix(t.fgMuted, t.fg, .20),
-      rail: mix(t.fgMuted, t.line, .40),
+      // The road network is the *ground* the data is drawn on, not a subject of
+      // its own, and it used to be mixed most of the way toward the foreground
+      // text colour — a motorway at 85 % of `fg` was the brightest thing on the
+      // map in every skin, so a thread of node markers sat under a web of pale
+      // lines. The ramp starts from the quiet rule colour instead and reaches
+      // only a third of the way to the muted text colour at its loudest, so a
+      // ring road reads as structure and a pin reads as data.
+      //
+      // The mix reaches 70 % of the way to the muted text colour at most, where
+      // it used to reach 85 % of the way to the *foreground* colour, so the whole
+      // network sits a full step below the labels and a second step below the
+      // node pins. The floor matters as much as the ceiling: the map guard holds
+      // every road at 2.6:1 against its ground, because a road that cannot be
+      // seen is not a quieter road, it is a missing one.
+      casing: mix(t.line, t.base, .35),
+      motorway: mix(t.line, t.fgMuted, .70),
+      trunk: mix(t.line, t.fgMuted, .64),
+      primary: mix(t.line, t.fgMuted, .60),
+      secondary: mix(t.line, t.fgMuted, .56),
+      tertiary: mix(t.line, t.fgMuted, .52),
+      minor: mix(t.line, t.fgMuted, .48),
+      service: mix(t.line, t.fgMuted, .44),
+      path: mix(t.line, t.fgMuted, .40),
+      rail: mix(t.line, t.fgMuted, .42),
       waterLabel: mix(t.fgMuted, t.link, .35),
-      streetLabel: mix(t.fgMuted, t.fg, .55),
+      streetLabel: mix(t.fgMuted, t.fg, .45),
       placeMinor: t.fgMuted,
       placeMajor: t.fg,
       halo: t.base,

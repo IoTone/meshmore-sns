@@ -129,11 +129,12 @@ void main() {
     await show(3);
     // One line: what went, then the rule that caused it. The wording moved
     // to plain language, so this matches the sentence rather than a layout.
-    expect(find.textContaining('3 older messages are gone'), findsOneWidget);
-    expect(find.textContaining('newest 250'), findsOneWidget);
+    expect(find.textContaining('3 older messages dropped'), findsOneWidget);
 
     await show(1);
-    expect(find.textContaining('1 older message is gone'), findsOneWidget);
+    // One message, one line: the count is the fact, not a sentence about the
+    // rule.
+    expect(find.textContaining('1 older message'), findsOneWidget);
   });
 
   testWidgets('the chat thread carries the notice from the controller',
@@ -174,7 +175,7 @@ void main() {
       await mc.sendChannelText('m$i');
     }
     await t.pumpAndSettle();
-    expect(find.textContaining('1 older message is gone'), findsOneWidget);
+    expect(find.textContaining('1 older message'), findsOneWidget);
 
     mc.dispose();
     await t.pumpWidget(const SizedBox());

@@ -48,7 +48,11 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     final Duration spentBefore = meter.spent;
-    final Uint8List probe = Uint8List.fromList(<int>[0x99, 0x01, 0x02]);
+    // A real transmitter (0x03, send channel message), because the refusal is
+    // about airtime: a frame that spends none — a local prefs write — is never
+    // refused, since refusing it would leave a spent meter unable to configure
+    // the radio.
+    final Uint8List probe = Uint8List.fromList(<int>[0x03, 0x01, 0x02]);
     await expectLater(
         c.send(probe, gated: true), throwsA(isA<AirtimeRefused>()));
 

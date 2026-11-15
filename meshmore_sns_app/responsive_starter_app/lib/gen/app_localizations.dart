@@ -203,7 +203,7 @@ abstract class AppLocalizations {
   /// No description provided for @botSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Answers messages here automatically. Off by default.'**
+  /// **'Auto-replies here. Off by default.'**
   String get botSubtitle;
 
   /// No description provided for @botOnWire.
@@ -947,13 +947,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsTelemetryPoll.
   ///
   /// In en, this message translates to:
-  /// **'Fetch temperature and altitude from nodes'**
+  /// **'Fetch node temperature and altitude'**
   String get settingsTelemetryPoll;
 
   /// No description provided for @settingsTelemetryPollOn.
   ///
   /// In en, this message translates to:
-  /// **'Asks contacts for their temperature and altitude. Costs a little airtime.'**
+  /// **'Costs a little airtime'**
   String get settingsTelemetryPollOn;
 
   /// No description provided for @settingsTelemetryPollOff.
@@ -1349,7 +1349,7 @@ abstract class AppLocalizations {
   /// No description provided for @demoTooltip.
   ///
   /// In en, this message translates to:
-  /// **'Demo mode. No MeshCore radio. Explore channels, settings and docs without a companion.'**
+  /// **'Demo: no MeshCore radio'**
   String get demoTooltip;
 
   /// No description provided for @demoModeRow.
@@ -1418,6 +1418,18 @@ abstract class AppLocalizations {
   /// **'Connect your MeshCore radio'**
   String get firstRunConnect;
 
+  /// No description provided for @firstRunRadioLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is connected'**
+  String firstRunRadioLinked(String name);
+
+  /// No description provided for @firstRunKeepRadio.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this MeshCore radio'**
+  String get firstRunKeepRadio;
+
   /// No description provided for @firstRunUnits.
   ///
   /// In en, this message translates to:
@@ -1475,7 +1487,7 @@ abstract class AppLocalizations {
   /// No description provided for @firstRunSkip.
   ///
   /// In en, this message translates to:
-  /// **'Explore in demo mode (no MeshCore radio)'**
+  /// **'Explore without a MeshCore radio'**
   String get firstRunSkip;
 
   /// No description provided for @firstRunDeniedTransient.
@@ -1553,7 +1565,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesFloodAdvertBody.
   ///
   /// In en, this message translates to:
-  /// **'Whole mesh. Neighbours + repeaters. Best for discovery.'**
+  /// **'Whole mesh, through repeaters'**
   String get nodesFloodAdvertBody;
 
   /// No description provided for @nodesZeroHopAdvert.
@@ -1565,13 +1577,13 @@ abstract class AppLocalizations {
   /// No description provided for @nodesZeroHopAdvertBody.
   ///
   /// In en, this message translates to:
-  /// **'Direct neighbours only. Not rebroadcast. Quieter on a busy mesh.'**
+  /// **'Direct neighbours only'**
   String get nodesZeroHopAdvertBody;
 
   /// No description provided for @nodesFloodAdvertSent.
   ///
   /// In en, this message translates to:
-  /// **'Flood advert sent. It crosses the whole mesh. The other node must advertise too before it appears here.'**
+  /// **'Flood advert sent'**
   String get nodesFloodAdvertSent;
 
   /// No description provided for @nodesZeroHopAdvertSent.
@@ -1697,7 +1709,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesStatusOffline.
   ///
   /// In en, this message translates to:
-  /// **'Not connected. Open Connect a MeshCore radio'**
+  /// **'Not connected'**
   String get nodesStatusOffline;
 
   /// No description provided for @nodesFarBadge.
@@ -2087,7 +2099,7 @@ abstract class AppLocalizations {
   /// No description provided for @locTileSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Sends the phone\'s position to the MeshCore radio'**
+  /// **'MeshCore radio gets position'**
   String get locTileSubtitle;
 
   /// No description provided for @deviceGpsIntervalWhy.
@@ -2105,7 +2117,7 @@ abstract class AppLocalizations {
   /// No description provided for @locMasterOn.
   ///
   /// In en, this message translates to:
-  /// **'On. Your position goes out with your adverts'**
+  /// **'Position goes out with adverts'**
   String get locMasterOn;
 
   /// No description provided for @locMasterOff.
@@ -2183,7 +2195,7 @@ abstract class AppLocalizations {
   /// No description provided for @locBeaconSub.
   ///
   /// In en, this message translates to:
-  /// **'Every 60 s. Uses airtime and battery.'**
+  /// **'Every 60 s, uses airtime'**
   String get locBeaconSub;
 
   /// No description provided for @locBatteryHint.
@@ -2255,7 +2267,7 @@ abstract class AppLocalizations {
   /// No description provided for @voicePickerOnlyMyLanguageHint.
   ///
   /// In en, this message translates to:
-  /// **'Limits the list to voices matching the phone\'s current language ({lang}). Turn off to see every voice the OS reports.'**
+  /// **'Only voices for {lang}'**
   String voicePickerOnlyMyLanguageHint(String lang);
 
   /// No description provided for @voicePickerFilteredCount.
@@ -2519,7 +2531,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatRetentionDropped.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 older message is gone} other{{count} older messages are gone}}. Each conversation keeps its newest {cap}'**
+  /// **'{count} older messages dropped'**
   String chatRetentionDropped(int count, int cap);
 
   /// No description provided for @chatHistoryUnreadableTitle.
@@ -2573,7 +2585,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatRestoreNothing.
   ///
   /// In en, this message translates to:
-  /// **'Open the export file with this app, or share it here, and then run restore again.'**
+  /// **'Open an export file first'**
   String get chatRestoreNothing;
 
   /// No description provided for @chatRestoreTitle.
@@ -2603,7 +2615,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatRestoreFailed.
   ///
   /// In en, this message translates to:
-  /// **'That file could not be opened with that passphrase, or it is not an export.'**
+  /// **'Wrong passphrase or file'**
   String get chatRestoreFailed;
 
   /// No description provided for @diagnosticsPlaceStore.
@@ -2789,7 +2801,7 @@ abstract class AppLocalizations {
   /// No description provided for @dmPeerNotInFabric.
   ///
   /// In en, this message translates to:
-  /// **'This person has not been heard on the mesh yet.'**
+  /// **'Not heard yet'**
   String get dmPeerNotInFabric;
 
   /// No description provided for @dmComposerHint.
@@ -2969,7 +2981,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailAddDeviceContactFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t add the contact. Check the link and try again.'**
+  /// **'Could not add the contact'**
   String get nodeDetailAddDeviceContactFailed;
 
   /// No description provided for @nodeDetailRemoveDeviceContact.
@@ -3503,7 +3515,7 @@ abstract class AppLocalizations {
   /// No description provided for @docsProtocolSub.
   ///
   /// In en, this message translates to:
-  /// **'MeshCore companion radio protocol. Frames, opcodes, and flow.'**
+  /// **'Companion protocol: frames, opcodes'**
   String get docsProtocolSub;
 
   /// No description provided for @docsFirmwareTitle.
@@ -3533,7 +3545,7 @@ abstract class AppLocalizations {
   /// No description provided for @docsAppSub.
   ///
   /// In en, this message translates to:
-  /// **'How Meshmore SNS works, and how it uses the mesh.'**
+  /// **'How the app works'**
   String get docsAppSub;
 
   /// No description provided for @docsDevicesTitle.
@@ -3545,7 +3557,7 @@ abstract class AppLocalizations {
   /// No description provided for @docsDevicesSub.
   ///
   /// In en, this message translates to:
-  /// **'T1000-E, Wio Tracker L1 Pro, Heltec V3.'**
+  /// **'T1000-E, Wio Tracker, Heltec'**
   String get docsDevicesSub;
 
   /// No description provided for @docsRefresh.
@@ -3956,6 +3968,24 @@ abstract class AppLocalizations {
   /// **'Channels'**
   String get channelsTitle;
 
+  /// No description provided for @channelsRadioSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshCore radio settings: Networks'**
+  String get channelsRadioSettings;
+
+  /// No description provided for @networksIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can hear this MeshCore radio'**
+  String get networksIntro;
+
+  /// No description provided for @channelsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can read your messages: a shared key per thread.'**
+  String get channelsIntro;
+
   /// No description provided for @channelsHelp.
   ///
   /// In en, this message translates to:
@@ -4139,7 +4169,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsInferPlacesSub.
   ///
   /// In en, this message translates to:
-  /// **'Offer a place named in a message.'**
+  /// **'Offer places named in messages'**
   String get channelsInferPlacesSub;
 
   /// OS notification title for a channel message.
@@ -4181,13 +4211,13 @@ abstract class AppLocalizations {
   /// App settings row shown when this app is still on the battery-optimisation list, which lets an OEM stop the foreground service.
   ///
   /// In en, this message translates to:
-  /// **'Android may stop the link in the background'**
+  /// **'Android may stop the link'**
   String get settingsBatteryOptimisedTitle;
 
   /// Explains the consequence and the action beside it.
   ///
   /// In en, this message translates to:
-  /// **'Some phones stop optimised apps in the background.'**
+  /// **'Some phones stop backgrounded apps'**
   String get settingsBatteryOptimisedSub;
 
   /// The action that opens the OS request to stop optimising this app.
@@ -4223,7 +4253,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifMutedSub.
   ///
   /// In en, this message translates to:
-  /// **'Keeps the messages, stops the alert, the speech and the badge.'**
+  /// **'Messages kept, alerts stopped'**
   String get notifMutedSub;
 
   /// Per-channel: post an OS notification.
@@ -4259,25 +4289,25 @@ abstract class AppLocalizations {
   /// Explains the mentions-only mode.
   ///
   /// In en, this message translates to:
-  /// **'Whole word or @name. Off means every message alerts.'**
+  /// **'Mentions only, off means all'**
   String get notifMentionsOnlySub;
 
   /// Per-channel opt-in: treat the public key's hex suffix as a mention.
   ///
   /// In en, this message translates to:
-  /// **'Also match the last 4 characters of my ID'**
+  /// **'Match my ID\'s last 4'**
   String get notifKeySuffix;
 
   /// Warns about the key-suffix opt-in.
   ///
   /// In en, this message translates to:
-  /// **'Anyone can choose those four characters, so leave this off unless you know the sender.'**
+  /// **'Four characters anyone can choose'**
   String get notifKeySuffixSub;
 
   /// Shown when the OS notification permission is denied.
   ///
   /// In en, this message translates to:
-  /// **'Notifications are turned off for this app, so messages will not appear on your lock screen.'**
+  /// **'Notifications are off'**
   String get notifDeniedBanner;
 
   /// Shown when one of the app's notification channels is below high importance.
@@ -4495,42 +4525,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Launch default cleared'**
   String get channelsClearedDefaultSnack;
-
-  /// No description provided for @channelsKeyShake.
-  ///
-  /// In en, this message translates to:
-  /// **'Shake'**
-  String get channelsKeyShake;
-
-  /// No description provided for @channelsShakeTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Shake to roll dice'**
-  String get channelsShakeTitle;
-
-  /// No description provided for @channelsShakeBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Shake your phone. Each accepted motion sample feeds the hash. Stop once the ring fills.'**
-  String get channelsShakeBody;
-
-  /// No description provided for @channelsShakeProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'{accepted} of {target} samples · {pct}%'**
-  String channelsShakeProgress(int accepted, int target, int pct);
-
-  /// No description provided for @channelsShakeReroll.
-  ///
-  /// In en, this message translates to:
-  /// **'Reroll'**
-  String get channelsShakeReroll;
-
-  /// No description provided for @channelsShakeTapFallback.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to roll.'**
-  String get channelsShakeTapFallback;
 
   /// No description provided for @channelsShareQr.
   ///
@@ -5153,7 +5147,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceLocPermDenied.
   ///
   /// In en, this message translates to:
-  /// **'Location permission needed for a phone GPS fix.'**
+  /// **'Location permission needed'**
   String get deviceLocPermDenied;
 
   /// No description provided for @deviceLocPermDeniedPerm.
@@ -5177,7 +5171,7 @@ abstract class AppLocalizations {
   /// No description provided for @connectionDiagnosticsExplainer.
   ///
   /// In en, this message translates to:
-  /// **'Raw frames, fixtures and test commands.'**
+  /// **'Frames, fixtures, test commands'**
   String get connectionDiagnosticsExplainer;
 
   /// No description provided for @diagnosticsTitle.
@@ -5303,7 +5297,7 @@ abstract class AppLocalizations {
   /// No description provided for @batteryConfigSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Charge, drain rate, and time-to-empty estimate'**
+  /// **'Charge, drain, time to empty'**
   String get batteryConfigSubtitle;
 
   /// No description provided for @batteryAwaiting.
@@ -5921,7 +5915,7 @@ abstract class AppLocalizations {
   /// No description provided for @traceRoundTrip.
   ///
   /// In en, this message translates to:
-  /// **'Round trip (come back to us)'**
+  /// **'Round trip'**
   String get traceRoundTrip;
 
   /// No description provided for @traceNoRoute.
@@ -6143,13 +6137,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsNotifDeniedPermanent.
   ///
   /// In en, this message translates to:
-  /// **'Notifications were permanently denied. The background service needs a persistent notification.'**
+  /// **'Notifications permanently denied'**
   String get settingsNotifDeniedPermanent;
 
   /// No description provided for @settingsNotifDeniedTransient.
   ///
   /// In en, this message translates to:
-  /// **'Keeping the app connected in the background needs notifications. Allow them in Settings.'**
+  /// **'Allow notifications to stay connected'**
   String get settingsNotifDeniedTransient;
 
   /// No description provided for @deviceAdvertPropagatesHint.
@@ -6377,7 +6371,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsWifiOnlyHint.
   ///
   /// In en, this message translates to:
-  /// **'A pack can be hundreds of megabytes.'**
+  /// **'Packs can be hundreds of MB'**
   String get mapsWifiOnlyHint;
 
   /// No description provided for @mapsOutsidePacks.
@@ -6917,7 +6911,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceActiveChannelSub.
   ///
   /// In en, this message translates to:
-  /// **'Using: {name} · channels and keys'**
+  /// **'Channels and keys'**
   String deviceActiveChannelSub(String name);
 
   /// No description provided for @locationSourceDevice.
@@ -7323,6 +7317,48 @@ abstract class AppLocalizations {
   /// **'Networks'**
   String get networksTitle;
 
+  /// No description provided for @networksEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get networksEdit;
+
+  /// No description provided for @networksTxPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Transmit power'**
+  String get networksTxPower;
+
+  /// No description provided for @networksCodingRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Coding rate'**
+  String get networksCodingRate;
+
+  /// No description provided for @networksSpreading.
+  ///
+  /// In en, this message translates to:
+  /// **'Spreading factor'**
+  String get networksSpreading;
+
+  /// No description provided for @networksBandwidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Bandwidth'**
+  String get networksBandwidth;
+
+  /// No description provided for @networksAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'MeshCore radio settings'**
+  String get networksAdvanced;
+
+  /// No description provided for @networksNameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Another network already has this name.'**
+  String get networksNameTaken;
+
   /// No description provided for @networksEmpty.
   ///
   /// In en, this message translates to:
@@ -7368,7 +7404,7 @@ abstract class AppLocalizations {
   /// No description provided for @networksPrivateHelp.
   ///
   /// In en, this message translates to:
-  /// **'Use a frequency no public preset uses. Radios on it do not hear the public mesh, and the public mesh does not hear them.'**
+  /// **'A frequency no preset uses'**
   String get networksPrivateHelp;
 
   /// No description provided for @networksFrequency.
@@ -7591,7 +7627,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeRadioRefused.
   ///
   /// In en, this message translates to:
-  /// **'The MeshCore radio did not take it, so the place is not on the air.'**
+  /// **'MeshCore radio refused'**
   String get placeRadioRefused;
 
   /// No description provided for @placeChannelTitle.
@@ -8155,7 +8191,7 @@ abstract class AppLocalizations {
   /// No description provided for @airtimeCutoffSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Refuse a send that would pass the hourly limit instead of only warning. One message in a quiet hour is worth more than twenty in a busy one.'**
+  /// **'Refuse over-budget sends'**
   String get airtimeCutoffSubtitle;
 
   /// No description provided for @airtimeLeftInHour.
@@ -8575,7 +8611,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkinOneMessage.
   ///
   /// In en, this message translates to:
-  /// **'A check-in is one message and does not repeat.'**
+  /// **'One message, no repeat'**
   String get checkinOneMessage;
 
   /// No description provided for @checkinWatching.
@@ -9097,7 +9133,7 @@ abstract class AppLocalizations {
   /// No description provided for @geofenceExplainerShort.
   ///
   /// In en, this message translates to:
-  /// **'Areas that tell you when you arrive or leave'**
+  /// **'Arrive and leave alerts'**
   String get geofenceExplainerShort;
 
   /// No description provided for @coverageTitle.
@@ -9241,7 +9277,7 @@ abstract class AppLocalizations {
   /// No description provided for @fieldExportDone.
   ///
   /// In en, this message translates to:
-  /// **'Field record written. The path is on the clipboard: {path}'**
+  /// **'Record written, path copied'**
   String fieldExportDone(String path);
 
   /// No description provided for @gpxExportExplainer.
@@ -9265,7 +9301,7 @@ abstract class AppLocalizations {
   /// No description provided for @gpxExportEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No trail yet. Positions are recorded while the app runs, so there is nothing to write.'**
+  /// **'No trail recorded yet'**
   String get gpxExportEmpty;
 
   /// Snackbar after the trail file was handed to the share sheet.
@@ -9295,7 +9331,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsHistoryExportSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'One encrypted file, with every conversation in it. You choose where it goes.'**
+  /// **'One encrypted file, all conversations'**
   String get settingsHistoryExportSubtitle;
 
   /// No description provided for @settingsHistoryExportTitle.
@@ -9673,7 +9709,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsUnitsMetricHint.
   ///
   /// In en, this message translates to:
-  /// **'How every MeshCore tool reports distance.'**
+  /// **'What the MeshCore radio reports'**
   String get settingsUnitsMetricHint;
 
   /// No description provided for @settingsUnitsImperial.
@@ -9685,7 +9721,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsUnitsImperialHint.
   ///
   /// In en, this message translates to:
-  /// **'Converted from the metres the MeshCore radio reports.'**
+  /// **'Converted from MeshCore radio metres'**
   String get settingsUnitsImperialHint;
 
   /// No description provided for @settingsClock24.
@@ -9739,7 +9775,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsPhotoColorSub.
   ///
   /// In en, this message translates to:
-  /// **'Off sends a grey picture, which is about a third of the data.'**
+  /// **'Grey: one third the data'**
   String get settingsPhotoColorSub;
 
   /// No description provided for @settingsAppGroupData.
@@ -9799,7 +9835,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapCanvasSemantics.
   ///
   /// In en, this message translates to:
-  /// **'Tap a marker on the map to open it'**
+  /// **'Tap a marker to open'**
   String get mapCanvasSemantics;
 
   /// No description provided for @gridLegendSignalOnly.
@@ -10579,7 +10615,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoAddMaxHopsHint.
   ///
   /// In en, this message translates to:
-  /// **'0 = no limit · 1 = direct only · N = up to N−1 hops'**
+  /// **'0 = all, N = hops'**
   String get autoAddMaxHopsHint;
 
   /// No description provided for @autoAddUnknown.
@@ -10717,7 +10753,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsImportDone.
   ///
   /// In en, this message translates to:
-  /// **'Sent to the MeshCore radio. It is in the list when the radio confirms.'**
+  /// **'Sent, MeshCore radio confirms'**
   String get deviceContactsImportDone;
 
   /// No description provided for @diagnosticsRestartRadio.
@@ -10735,13 +10771,13 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsRestartSent.
   ///
   /// In en, this message translates to:
-  /// **'Restart sent. The link will drop and come back on its own.'**
+  /// **'Restart sent, link will drop'**
   String get diagnosticsRestartSent;
 
   /// No description provided for @diagnosticsRestartNoReply.
   ///
   /// In en, this message translates to:
-  /// **'The MeshCore radio takes no reply to a restart, so this is sent, not confirmed.'**
+  /// **'Restart sent, not confirmed'**
   String get diagnosticsRestartNoReply;
 
   /// No description provided for @settingsSecuritySection.
@@ -10879,13 +10915,13 @@ abstract class AppLocalizations {
   /// No description provided for @forwardDone.
   ///
   /// In en, this message translates to:
-  /// **'Forwarded into that thread\'s composer, where you can edit it before sending.'**
+  /// **'Forwarded to the composer'**
   String get forwardDone;
 
   /// No description provided for @forwardFailed.
   ///
   /// In en, this message translates to:
-  /// **'Could not write the draft: the sealed store is not open on this device.'**
+  /// **'Draft not saved: store closed'**
   String get forwardFailed;
 
   /// No description provided for @placeConfirmToSender.
@@ -11611,7 +11647,7 @@ abstract class AppLocalizations {
   /// No description provided for @geofenceReshapeGone.
   ///
   /// In en, this message translates to:
-  /// **'That fence is gone, so the new shape was not saved.'**
+  /// **'That fence is gone'**
   String get geofenceReshapeGone;
 
   /// Names pictures that arrived in AEIC, MeshCore Open's neural codec, which this build does not ship. Without this line an arriving picture looks like nobody sending one.

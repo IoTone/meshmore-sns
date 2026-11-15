@@ -162,19 +162,32 @@ class MeshNetwork {
       this.spreadingFactor == spreadingFactor &&
       this.pathHashSize == pathHashSize;
 
+  /// A copy with any field changed.
+  ///
+  /// Every radio field is here, not only the name: a network is a written-down
+  /// agreement, and a typo in the frequency is the one thing a reader will need
+  /// to correct without deleting the members and starting again. The result is
+  /// validated like any other, so an edit cannot produce a network the radio
+  /// would refuse.
   MeshNetwork copyWith({
     String? name,
+    double? frequencyMhz,
+    double? bandwidthKhz,
+    int? spreadingFactor,
+    int? codingRate,
+    int? txPowerDbm,
+    int? pathHashSize,
     List<NetworkMember>? members,
   }) =>
       MeshNetwork(
         id: id,
         name: name ?? this.name,
-        frequencyMhz: frequencyMhz,
-        bandwidthKhz: bandwidthKhz,
-        spreadingFactor: spreadingFactor,
-        codingRate: codingRate,
-        txPowerDbm: txPowerDbm,
-        pathHashSize: pathHashSize,
+        frequencyMhz: frequencyMhz ?? this.frequencyMhz,
+        bandwidthKhz: bandwidthKhz ?? this.bandwidthKhz,
+        spreadingFactor: spreadingFactor ?? this.spreadingFactor,
+        codingRate: codingRate ?? this.codingRate,
+        txPowerDbm: txPowerDbm ?? this.txPowerDbm,
+        pathHashSize: pathHashSize ?? this.pathHashSize,
         members: members ?? this.members,
       );
 

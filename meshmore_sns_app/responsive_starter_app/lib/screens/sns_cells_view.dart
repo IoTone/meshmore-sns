@@ -16,6 +16,7 @@ import '../meshcore/message_heat.dart';
 import '../meshcore/own_location.dart';
 import '../sns/sns_frame.dart';
 import '../theme/mm_skin.dart';
+import '../theme/theme_controller.dart';
 import '../theme/viz_palette.dart';
 import '../ui/mm_shape.dart';
 
@@ -146,9 +147,24 @@ class _SnsCellsViewState extends State<SnsCellsView>
   /// The wall clock the painter reads, advanced every frame.
   int _nowMs = DateTime.now().millisecondsSinceEpoch;
 
+  /// The last second a still field repainted on.
+  int _lastStillSecond = 0;
+
+  /// True when the reader (or the platform) asked for less motion. The wave then
+  /// stops travelling and the clock drops back to the heat's own rate.
+  bool _reduceMotion = false;
+
   void _onTick(Duration _) {
     if (!mounted) return;
     final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (_reduceMotion) {
+      // One repaint a second is all a still field needs: the heat is a colour
+      // that decays over minutes, and nothing else moves.
+      if (nowMs ~/ 1000 == _lastStillSecond) return;
+      _lastStillSecond = nowMs ~/ 1000;
+      setState(() => _nowMs = nowMs);
+      return;
+    }
     // The heat itself is sampled once a second; the clock is not.
     //
     // This returned for every frame inside the same second, so everything the
@@ -245,6 +261,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
     // screen — the owner's "it should not completely take away the entire UX".
     // The notice is drawn over the dial instead, and the lattice stays.
     final bool quiet = heat.isEmpty && _toasts.isEmpty;
+    _reduceMotion = context.watch<ThemeController>().reduceMotion;
     final List<DiscoveredNode> source =
         widget.filteredNodes ?? mc.nodes;
     final List<DiscoveredNode> nodes = <DiscoveredNode>[
@@ -284,6 +301,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
                 toasts: _toasts,
                 flashPubKey: _flashPubKey,
                 nowMs: now,
+                reduceMotion: _reduceMotion,
                 toastLifeMs: _toastLifeMs,
                 accent: viz.accent,
                 hot: viz.hot,
@@ -408,6 +426,7 @@ class _SnsCellsPainter extends CustomPainter {
     required this.toasts,
     required this.flashPubKey,
     required this.nowMs,
+    required this.reduceMotion,
     required this.toastLifeMs,
     required this.accent,
     required this.hot,
@@ -446,6 +465,10 @@ class _SnsCellsPainter extends CustomPainter {
   final List<_Toast> toasts;
   final String? flashPubKey;
   final int nowMs;
+
+  /// Motion is off: the wave holds still and a toast appears and goes without
+  /// rising. The field is still drawn — the setting is about movement.
+  final bool reduceMotion;
   final int toastLifeMs;
   final Color accent;
   final Color hot;
@@ -475,10 +498,18 @@ class _SnsCellsPainter extends CustomPainter {
   /// The heat maps are rebuilt once a second as new instances, so their identity
   /// is the part of the key that changes on a tick; everything else changes on a
   /// resize, a frame-scale change or a theme change.
+  /// Everything the recorded backdrop is drawn from.
+  ///
+  /// Including `textScale` and `label`, because the field paints the quiet line
+  /// and the cell counts with both: with no heat the maps are `const {}` and
+  /// their identity never changes, so a recorded picture would survive an
+  /// accessibility text-size change or a theme change forever and the labels
+  /// would stay at the old size and colour.
   String _fieldSignature(Size size) => '${size.width}x${size.height}|'
       '$_hexW|$_hexH|$_gridOriginX|$_gridOriginY|'
       '${identityHashCode(heat)}|${identityHashCode(heatCounts)}|$quiet|'
-      '$quietLabel|$bg|$accent|$hot|$cool|${type.sizeSm}|${type.monoFamily}';
+      '$quietLabel|$bg|$accent|$hot|$cool|$label|$textScale|'
+      '${type.sizeSm}|${type.sizeMicro}|${type.monoFamily}';
 
   /// Where everything is on this frame, computed once.
   ///
@@ -590,7 +621,11 @@ class _SnsCellsPainter extends CustomPainter {
     final int rowStart = ((-_gridOriginY) / rowStride).floor() - 2;
     final int cols = (size.width / hexW).ceil() + 4;
     final int rows = (size.height / rowStride).ceil() + 4;
-    final double bandY = heatWaveY(nowMs, size.height, hexH);
+    // One fixed angle when motion is reduced: the band is part of how the field
+    // looks, so it stays, but it does not travel.
+    final double bandY = reduceMotion
+        ? heatWaveY(kHeatWavePeriodMs ~/ 4, size.height, hexH)
+        : heatWaveY(nowMs, size.height, hexH);
     // One cell tall on each side of the band's centre. A wider band read as fog
     // over the field rather than as a wave crossing it: the hexagons inside it
     // blurred into one bright smear.
@@ -817,13 +852,16 @@ class _SnsCellsPainter extends CustomPainter {
     for (final _Toast t in toasts) {
       final double age = (nowMs - t.createdMs) / toastLifeMs;
       if (age >= 1.0) continue;
-      final double opacity = age < 0.15
-          ? age / 0.15 // fade in
-          : (1.0 - (age - 0.15) / 0.85).clamp(0.0, 1.0); // hold + out
+      final double opacity = reduceMotion
+          ? 1.0
+          : age < 0.15
+              ? age / 0.15 // fade in
+              : (1.0 - (age - 0.15) / 0.85).clamp(0.0, 1.0); // hold + out
       final bool located = t.lat != null && t.lon != null;
       if (located) {
         final Offset anchor = _project(t.lat!, t.lon!);
-        final Offset pos = anchor.translate(0, -18 - age * 24);
+        final Offset pos =
+            anchor.translate(0, reduceMotion ? -18 : -18 - age * 24);
         _drawToast(canvas, pos, t.text, opacity, t.isChannel);
       } else {
         // Top-banner stack — newest highest. Slide in from the right
@@ -945,6 +983,7 @@ class _SnsCellsPainter extends CustomPainter {
       old.toasts != toasts ||
       old.flashPubKey != flashPubKey ||
       old.nowMs != nowMs ||
+      old.reduceMotion != reduceMotion ||
       old.toastLifeMs != toastLifeMs ||
       old.accent != accent ||
       old.hot != hot ||

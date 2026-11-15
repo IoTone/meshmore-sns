@@ -109,18 +109,17 @@ void main() {
     mc.dispose();
   });
 
-  testWidgets('check-in is reachable from the hub, not the alarm screen',
+  testWidgets('check-in is not duplicated in the tools hub',
       (WidgetTester t) async {
+    // It lives on Settings -> Safety, which is where a reader in a hurry looks.
+    // Two rows to one destination is the duplication the settings audit removed;
+    // the alarm screen still carries exactly one control of its own.
     final MeshcoreController mc = MeshcoreController(
         transportFactory: () async => FakeMeshcoreTransport());
     final ToolsController tools = ToolsController(mc);
     await t.pumpWidget(_host(mc, tools, const ToolsHubScreen()));
     await t.pumpAndSettle();
-
-    expect(find.byKey(const ValueKey<String>('tools-checkin')), findsOneWidget);
-    await t.tap(find.byKey(const ValueKey<String>('tools-checkin')));
-    await t.pumpAndSettle();
-    expect(find.text('check-in page'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('tools-checkin')), findsNothing);
     tools.dispose();
     mc.dispose();
   });

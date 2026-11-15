@@ -20,7 +20,6 @@ void main() {
 
   /// Strings that keep a bare "radio", each for a reason.
   const Map<String, String> allowed = <String, String>{
-    'docsProtocolSub': 'the protocol is called the MeshCore companion radio protocol',
     'mapKeyClient': 'a legend mark under a heading that already names the radio',
     'rxViaSecondary': 'a profile label, two words wide',
   };

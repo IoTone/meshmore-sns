@@ -325,6 +325,10 @@ class _StreetMapViewState extends State<StreetMapView> {
   List<Polygon<HexCell>> _hexPolygons = const <Polygon<HexCell>>[];
   String _hexKey = '';
 
+  /// The polygon list's own key: the field key plus how much of the basemap has
+  /// been drawn at this zoom, so a cell appears when its tile does.
+  String _hexPolyKey = '';
+
   /// The hexagon's circumradius, in metres, for the current zoom: a cell that is
   /// legible as a shape at street zoom and does not become a mosaic at a city
   /// view. Unlike the squares this replaces, the *ground* area stays fixed while
@@ -414,19 +418,22 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// fact to say out loud rather than a tile that has not arrived.
   bool _outsidePacks = false;
 
-  /// Warm the tiles the next gesture will need, and only those.
+  /// Warm the zoom the reader is on, and nothing else.
   ///
-  /// The scopes, in the order a reader meets them:
+  /// This used to warm three scopes: the ring around this viewport, the two
+  /// ancestor levels a zoom out would draw from, and the children of the middle
+  /// for a zoom in. Two thirds of that work was for a gesture that may never
+  /// come, and it was spent out of the same queue as the tiles the reader is
+  /// actually looking at — so the picture on screen arrived later so that a
+  /// hypothetical pinch could arrive sooner.
   ///
-  ///  * **this zoom, one tile beyond the viewport** — the pan that is about to
-  ///    happen, and never more than a screenful plus a ring;
-  ///  * **the next zoom in, for the middle of the viewport** — a zoom in lands
-  ///    on the centre, and fetching every child of a full screen is four times
-  ///    the screen for a fifth of the benefit;
-  ///  * **the zoom out levels up to two steps** — a zoom out draws from parents
-  ///    immediately instead of showing blank until the finer tiles fail.
+  /// The rule now is one zoom level: this viewport and one tile beyond it, at
+  /// the zoom on screen, first in the queue. A zoom out draws the ancestors it
+  /// already has on disk (`basemap.dart` upscales an ancestor while a tile
+  /// loads) and a zoom in shows the upscaled parent for a moment, which is what
+  /// the tile pyramid is for.
   ///
-  /// Everything here runs on one generation token: [MapsController.cancelPrefetch]
+  /// The whole warm-up runs on one generation token: [MapsController.cancelPrefetch]
   /// bumps it, and a loop from an older view stops at its next tile instead of
   /// finishing a list nobody is looking at.
   Future<void> _warmAround() async {
@@ -454,24 +461,8 @@ class _StreetMapViewState extends State<StreetMapView> {
         ring.add((z, x, y));
       }
     }
-    // One budget for the whole warm-up, not one per phase: three phases with
-    // their own limits enqueued more after a settle than the thing they replaced
-    // (46 against 36), which is the "queue gets bogged" report with a fresh coat
-    // of paint.
-    int left = kMaxWarmTiles;
-    final int gotRing =
-        await maps.prefetch(kOsmVector, ring, limit: left, generation: generation);
-    left -= gotRing;
-    if (left > 0) {
-      // R114 — parents, so a zoom out draws a coarser picture straight away.
-      left -= await maps.prefetchParents(kOsmVector, ring,
-          limit: math.min(left, 8), generation: generation);
-    }
-    if (left > 0) {
-      // Children of the middle, so a zoom in has detail rather than a blur.
-      await maps.prefetchChildren(kOsmVector, centreTiles(r),
-          limit: left, generation: generation);
-    }
+    await maps.prefetch(kOsmVector, ring,
+        limit: kMaxWarmTiles, generation: generation);
   }
 
   /// The self marker's bearing comes from the **phone's magnetometer**
@@ -1011,52 +1002,48 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// caught.
   /// The box the field covers: the viewport, unless no node is in it.
   ///
-  /// The box the lattice is built over: the viewport, and a third of a screen
-  /// more on every side.
+  /// A stable signature of the nodes the field describes.
   ///
-  /// Two things were wrong with building it exactly to the viewport and only
-  /// when a node was inside it. A pan to ground with no node on it — which is
-  /// most of a walk around the edge of a mesh — rebuilt the field around the
-  /// nodes instead, off screen, so the map looked like it had to load a new
-  /// lattice before it could draw one. And a field built to the viewport's own
-  /// edges leaves the ground a zoom-out exposes bare until the next build. The
-  /// margin means a pan or a zoom step lands inside cells that already exist, and
-  /// the field is replaced when the one it was built for no longer covers what
-  /// the reader is looking at.
-  GeoBox _fieldBox(List<DensityPoint> points) {
-    final GeoBox? visible = _visibleBox();
-    if (visible == null) return _nodeBox(points);
-    final double dLat = (visible.north - visible.south) * kHexFieldPad;
-    final double dLon = (visible.east - visible.west) * kHexFieldPad;
-    // Clamped to the projection's own limits. A world view is already ±85, and
-    // a third of the world on top of it put the box at 285 degrees north, which
-    // `LatLngBounds` asserts on — the field's polygons could not be built at all.
-    return GeoBox(
-      south: math.max(-85.0, visible.south - dLat),
-      north: math.min(85.0, visible.north + dLat),
-      west: math.max(-180.0, visible.west - dLon),
-      east: math.min(180.0, visible.east + dLon),
-    );
-  }
-
-  /// A cheap fingerprint of the points the field is built from.
-  ///
-  /// Not a hash of the whole list: a rolling mix of each point's key and
-  /// position, which is enough to notice a node appearing, moving or leaving
-  /// and cheap enough to run on every build.
-  static int _densitySignature(List<DensityPoint> points) {
-    int h = 17;
+  /// The memo key has to change when a node moves inside the box, and a list of
+  /// records does not hash by value. Cheap and ordered: a collision reuses one
+  /// field for one build, which the next node frame corrects.
+  String _densitySignature(List<DensityPoint> points) {
+    int h = 0;
     for (final DensityPoint p in points) {
       h = h * 31 + p.pubKey.hashCode;
       h = h * 31 + p.lat.hashCode;
       h = h * 31 + p.lon.hashCode;
     }
-    return h;
+    return '$h';
   }
 
-  /// A box around the nodes themselves, for the first frame — before the map has
-  /// been laid out there is no viewport yet, and a fixed box around a centre that
-  /// may be the world's origin put the field in the wrong hemisphere.
+  /// The box the lattice is built over.
+  ///
+  /// The viewport, when a node is inside it: the field is then the shape of the
+  /// ground the reader is looking at, and it is drawn no further than the basemap
+  /// goes.
+  ///
+  /// The nodes' own box when the viewport holds none of them. Without that
+  /// fallback, switching the layer on over a map panned away from every node drew
+  /// a lattice of empty cells and nothing else, which reads as a switch that did
+  /// nothing; the layer's job is to show the mesh it describes.
+  ///
+  /// No margin either way. The field used to be built a third of a screen past
+  /// the viewport so that a pan landed on cells that already existed, but those
+  /// margin cells sit over ground whose tiles have not arrived, and a lattice
+  /// over the background colour reads as a rendering fault rather than as a
+  /// reading.
+  GeoBox _fieldBox(List<DensityPoint> points) {
+    final GeoBox? visible = _visibleBox();
+    if (visible == null) return _nodeBox(points);
+    final bool any = points.any((DensityPoint p) =>
+        p.lat >= visible.south &&
+        p.lat <= visible.north &&
+        p.lon >= visible.west &&
+        p.lon <= visible.east);
+    return any ? visible : _nodeBox(points);
+  }
+
   GeoBox _nodeBox(List<DensityPoint> points) {
     double south = 90, west = 180, north = -90, east = -180;
     for (final DensityPoint p in points) {
@@ -1846,6 +1833,15 @@ class _StreetMapViewState extends State<StreetMapView> {
     // The field is memoised on the inputs that change the picture: the box, the
     // cell size, the nodes in it, and the skin (the fill and the edge come from
     // the palette). Everything else that rebuilds this screen reuses it.
+    // A hexagon is an overlay on the basemap, so one is drawn only where the
+    // basemap under it exists. The owner's rule: no raw hexagons over black.
+    // A cell over a tile that has not arrived is a lattice floating on the
+    // background colour, which reads as a rendering fault rather than as a
+    // reading of anything; a partly loaded view therefore shows the field over
+    // the part that is there and nothing over the part that is not.
+    final MapsController? mapsForReady =
+        Provider.of<MapsController?>(context, listen: false);
+    final int hexZoom = _zoom.round().clamp(0, kOsmVector.maxNativeZoom);
     final GeoBox fieldBox = _fieldBox(densityPoints);
     final String hexKey = densityPoints.isEmpty
         ? ''
@@ -1861,45 +1857,43 @@ class _StreetMapViewState extends State<StreetMapView> {
               box: fieldBox,
               circumradiusMetres: _hexRadiusMetres,
               includeEmpty: true,
-              // The bound is the viewport, computed from the same radius the
-              // cells are drawn at. It was a constant 800, which is about right
-              // for a phone and short on a tablet: `includeEmpty` emits the
-              // lattice in row order, so the cells a constant drops are the last
-              // rows, and the bottom of a large map simply had no field.
-              // Sized to the box AND to the radius the cells are actually drawn
-              // at. The cap used to be computed from `kHexRadiusPx`, and the
-              // drawn radius is that quantised, which can be ~19 % smaller: the
-              // lattice then held up to 40 % more cells than the cap allowed,
-              // `includeEmpty` emits in row order, and the rows it dropped were
-              // the outer ones — a bare band at the edge of the screen that only
-              // filled in when something else rebuilt the field. A tenth of a
-              // margin covers the half-cell offsets at the edges.
-              maxCells: math.max(
-                hexCellsForViewport(
-                  width: MediaQuery.sizeOf(context).width *
-                      (1 + 2 * kHexFieldPad),
-                  height: MediaQuery.sizeOf(context).height *
-                      (1 + 2 * kHexFieldPad),
-                  radiusPx: drawnRadiusPx,
-                ) +
-                    ((MediaQuery.sizeOf(context).width +
-                                MediaQuery.sizeOf(context).height) /
-                            8)
-                        .ceil(),
-                400,
-              ),
+              // The bound is the viewport at the radius the cells are actually
+              // drawn at: `includeEmpty` emits the lattice in row order, so a
+              // bound short of the viewport drops the last rows and the bottom of
+              // the map simply has no field.
+              maxCells: hexCellsForViewport(
+                    width: MediaQuery.sizeOf(context).width,
+                    height: MediaQuery.sizeOf(context).height,
+                    radiusPx: drawnRadiusPx,
+                  ) +
+                  8,
             );
+    }
+
+    // A cell is drawn only where its own tile has been drawn, so the field is
+    // the shape of the loaded map rather than a lattice over black. Filtered on
+    // every build because the readiness set grows while tiles stream in; the
+    // polygons are only rebuilt when that set has changed for this zoom.
+    final int readyRev = mapsForReady?.tilesReadyRevision ?? 0;
+    bool mappable(HexCell c) =>
+        mapsForReady == null ||
+        mapsForReady.tileReady(kOsmVector, hexZoom,
+            lonToTileX(c.centre.longitude, hexZoom),
+            latToTileY(c.centre.latitude, hexZoom));
+    final List<HexCell> hexes = _hexCache.where(mappable).toList(growable: false);
+    final String polyKey = '$hexKey|$readyRev|${context.skin.preset.name}';
+    if (polyKey != _hexPolyKey) {
+      _hexPolyKey = polyKey;
       _hexPolygons = <Polygon<HexCell>>[
-        for (final HexCell c in _hexCache)
+        for (final HexCell c in hexes)
           Polygon<HexCell>(
-            // The cell's own corners, drawn with the longitude scale the
-            // lattice laid it out with. Recomputing them per latitude made a
-            // wide view separate its columns by up to forty percent.
+            // The cell's own corners, drawn with the projection scale the
+            // lattice laid it out with.
             //
             // Clamped to the projection's limit: at a wide zoom a cell is
             // hundreds of kilometres across, so one whose centre is near the
-            // pole reaches past 90 degrees and `LatLngBounds` asserts, which
-            // took the whole layer down.
+            // pole reaches past 90 degrees and `LatLngBounds` asserts, which took
+            // the whole layer down.
             points: <LatLng>[
               for (final LatLng p in c.corners)
                 LatLng(p.latitude.clamp(-85.0, 85.0), p.longitude),
@@ -1919,7 +1913,6 @@ class _StreetMapViewState extends State<StreetMapView> {
           ),
       ];
     }
-    final List<HexCell> hexes = _hexCache;
     // The tap handler reads this, and it is the same list the layer draws, so
     // the cell that opens is the cell that was tapped.
     _densityCells = hexes;

@@ -13,6 +13,8 @@ import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart' show MmThemePreset;
+import 'package:meshmore_sns_app/ui/mm_pixel_icon.dart';
 
 import '../meshcore/fake_transport.dart';
 
@@ -141,6 +143,73 @@ void main() {
     await show(message());
     expect(find.byKey(ackKey), findsNothing);
     await drain(t, mc);
+  });
+
+  testWidgets('DR Pop draws its own signal glyph, the other skins a Material one',
+      (WidgetTester t) async {
+    // The DR Pop chat rows are Mondrian blocks with a five-by-five invader
+    // sprite, so a Material glyph beside them reads as a different application.
+    // The friendly-ack row carries the skin's own drawing instead.
+    Future<MeshcoreController> openWith(MmThemePreset preset) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = MeshcoreController(
+        transportFactory: () async => fake,
+        connection:
+            MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await mc.connect();
+      fake.emit(selfInfoFrame());
+      await t.pumpWidget(MultiProvider(
+        providers: <ChangeNotifierProvider<ChangeNotifier>>[
+          ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+          ChangeNotifierProvider<ThemeController>.value(
+              value: ThemeController()..setPreset(preset)),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: LocaleController.supported,
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: Builder(
+            builder: (BuildContext c) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => showChatActions(
+                      c,
+                      message(
+                          snrDb: 12.5,
+                          hopCount: 3,
+                          pathHashes: <String>['4490', 'DF7C'])),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      return mc;
+    }
+
+    final MeshcoreController pop = await openWith(MmThemePreset.drPop);
+    expect(find.byType(PixelBarsIcon), findsOneWidget);
+    expect(find.byIcon(Icons.wifi_tethering), findsNothing);
+    await t.tapAt(const Offset(4, 4));
+    await t.pumpAndSettle();
+    await drain(t, pop);
+
+    final MeshcoreController studio = await openWith(MmThemePreset.studio);
+    expect(find.byIcon(Icons.wifi_tethering), findsOneWidget);
+    expect(find.byType(PixelBarsIcon), findsNothing);
+    await t.tapAt(const Offset(4, 4));
+    await t.pumpAndSettle();
+    await drain(t, studio);
   });
 
   testWidgets('the sheet offers a reply to the sender and a plain quote',

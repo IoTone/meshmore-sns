@@ -188,6 +188,24 @@ class _NetworkDetailScreenState extends State<NetworkDetailScreen> {
                 child: Text(l.networksApplyNeedsRadio, style: muted),
               ),
             const SizedBox(height: 24),
+            MmActionRow(
+              children: <Widget>[
+                MmAction(
+                  key: const Key('network-edit'),
+                  icon: Icons.edit_outlined,
+                  label: l.networksEdit,
+                  onPressed: () async {
+                    await Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (BuildContext _) =>
+                            NetworkEditScreen(initial: n),
+                      ),
+                    );
+                    await _load();
+                  },
+                ),
+              ],
+            ),
             Text(l.networksMembers(n.members.length),
                 style: Theme.of(context).textTheme.titleSmall),
             if (n.members.isEmpty)

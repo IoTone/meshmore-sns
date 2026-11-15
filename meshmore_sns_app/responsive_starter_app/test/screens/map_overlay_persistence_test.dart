@@ -65,6 +65,9 @@ Future<MeshcoreController> _pump(WidgetTester t, FakeMeshcoreTransport fake,
       pace: Duration.zero,
     );
     await maps.load();
+    // The field is drawn only over ground the map has drawn, and a test has no
+    // tiles.
+    maps.assumeTilesReady = true;
   });
   addTearDown(() {
     try {

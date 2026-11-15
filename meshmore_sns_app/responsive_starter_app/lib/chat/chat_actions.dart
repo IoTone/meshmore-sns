@@ -15,6 +15,7 @@ import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../theme/mm_skin.dart';
+import '../theme/mm_tokens.dart' show MmThemePreset;
 import 'friendly_ack.dart';
 import 'reactions.dart';
 import '../screens/delivery_status_icon.dart';
@@ -22,6 +23,7 @@ import '../screens/delivery_status_icon.dart';
 // forward is the same question a tool asks: which conversation?
 import '../screens/tools/tool_pickers.dart';
 import '../ui/mm_confirm.dart';
+import '../ui/mm_pixel_icon.dart';
 import '../ui/mm_shape.dart';
 import '../util/clock_model.dart';
 import '../util/mm_format.dart';
@@ -172,7 +174,14 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
               pathHashes: m.pathHashes))
             ListTile(
               key: const ValueKey<String>('chat-action-friendly-ack'),
-              leading: const Icon(Icons.wifi_tethering),
+              // DR Pop draws its chat rows as Mondrian blocks with a
+              // five-by-five invader sprite, so a Material glyph here reads as a
+              // different application. The pixel bars are the same signal drawn
+              // in that skin's own language.
+              leading: context.skin.preset == MmThemePreset.drPop
+                  ? PixelBarsIcon(
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant)
+                  : const Icon(Icons.wifi_tethering),
               title: Text(l.actionFriendlyAck),
               enabled: canCompose,
               onTap: canCompose

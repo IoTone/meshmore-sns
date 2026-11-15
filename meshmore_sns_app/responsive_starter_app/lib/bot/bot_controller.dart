@@ -110,6 +110,14 @@ class BotController extends ChangeNotifier {
   /// wiring layer once `SelfInfo` lands.
   String? ownPubKeyHex;
 
+  /// The name this radio advertises, which is the only identity a channel line
+  /// carries.
+  ///
+  /// A channel message has no key on it: the sender is a plain-text prefix in
+  /// the payload, so `fromPubKeyHex` is null for every channel row and the key
+  /// guard above can never fire there. Set beside [ownPubKeyHex].
+  String? ownName;
+
   Map<String, BotBinding> get bindings =>
       Map<String, BotBinding>.unmodifiable(_bindings);
 
@@ -286,10 +294,33 @@ class BotController extends ChangeNotifier {
   ///
   /// Returns the **labelled** outbound text, or null. Every null path
   /// increments a counter, so silence is always explainable.
+  /// True when [fromName] is this node's own advertised name.
+  ///
+  /// A channel line names its sender in text, so a name match is the only
+  /// identity a channel gives. Case and surrounding space are ignored: the name
+  /// is typed by people and echoed back by clients that trim differently.
+  bool _isOursByName(String? fromName) {
+    final String? mine = ownName;
+    if (mine == null || mine.trim().isEmpty) return false;
+    final String n = (fromName ?? '').trim();
+    if (n.isEmpty) return false;
+    return n.toLowerCase() == mine.trim().toLowerCase();
+  }
+
+  /// The message body of a channel line: after the `Name: ` prefix.
+  ///
+  /// One place, because the bot's loop breaker and its reply marker have to
+  /// agree about where a channel message starts.
+  static String _bodyOf(String text) {
+    final int i = text.indexOf(': ');
+    return i > 0 && i < 40 ? text.substring(i + 2) : text;
+  }
+
   String? handleInbound({
     required BotScope scope,
     required String text,
     String? fromPubKeyHex,
+    String? fromName,
   }) {
     final BotBinding b = bindingFor(scope);
     if (!b.enabled) return null;
@@ -319,7 +350,18 @@ class BotController extends ChangeNotifier {
         fromPubKeyHex != null &&
         _sameNode(own, fromPubKeyHex)) {
       suppress = BotSuppression.ownMessage;
-    } else if (looksLikeBot(text)) {
+    } else if (_isOursByName(fromName)) {
+      // A channel row carries no key — `ChatMessage.peerPubKeyHex` is null for
+      // every one, by design, because a channel line's sender is a plain-text
+      // name. So the key check above can never fire on a channel, and the only
+      // handle on the sender is that name. Without this, a bot bound to a
+      // channel would answer its own reply.
+      suppress = BotSuppression.ownMessage;
+    } else if (looksLikeBot(_bodyOf(text))) {
+      // The loop breaker reads the body, not the line. A channel line is
+      // `Name: [bot] Pong`, so a marker test on the whole line never matched a
+      // channel reply and two bots in one channel would ping-pong to the end of
+      // their reply budgets.
       suppress = BotSuppression.loopBreaker;
     }
 

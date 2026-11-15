@@ -332,11 +332,17 @@ class _ChatScreenState extends State<ChatScreen>
 
   void _jumpToNewest() {
     if (!_scroll.hasClients) return;
-    _scroll.animateTo(
-      _scroll.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOut,
-    );
+    // A scroll is motion: with motion reduced the thread jumps instead of
+    // gliding, which is the same destination without the travel.
+    if (reduceMotionRead(context)) {
+      _scroll.jumpTo(_scroll.position.maxScrollExtent);
+    } else {
+      _scroll.animateTo(
+        _scroll.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    }
     // _onScroll will null out the counter once we settle at bottom,
     // but flip the state synchronously so the pill disappears on tap
     // instead of after the animation.
@@ -595,7 +601,9 @@ class _ChatScreenState extends State<ChatScreen>
       Scrollable.ensureVisible(
         target,
         alignment: 0.4,
-        duration: const Duration(milliseconds: 220),
+        duration: reduceMotionRead(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 220),
       );
       return;
     }
@@ -712,10 +720,16 @@ class _ChatScreenState extends State<ChatScreen>
         _input.selection = TextSelection.collapsed(offset: _input.text.length);
         break;
       case ChatAction.friendlyAck:
-        // Sent, not drafted: the measurements belong to this reception, and a
-        // reader who edits them is quoting numbers about a packet that is no
-        // longer the one on the screen.
-        await mc.sendFriendlyAck(m);
+        // Composed, never sent: an acknowledgement is a message like any other,
+        // so it lands in the composer where the reader can add a word, drop a
+        // number, or decide not to send it at all.
+        final String line = mc.friendlyAckLineFor(m);
+        setState(() {
+          _input.text = line;
+          _input.selection = TextSelection.collapsed(offset: line.length);
+        });
+        final String? key = _draftKey;
+        if (key != null) unawaited(DraftStore.save(key, line));
         break;
       case ChatAction.copy:
         await copyMessageToClipboard(context, m);

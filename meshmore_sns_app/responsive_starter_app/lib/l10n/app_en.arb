@@ -42,7 +42,7 @@
   "dashboardPubkeyAwaiting": "my pubkey · awaiting device",
   "dashboardPubkeyHint": "Tap to copy. This is what someone else needs to add you as a contact.",
   "botTitle": "Auto-reply bot",
-  "botSubtitle": "Answers messages here automatically. Off by default.",
+  "botSubtitle": "Auto-replies here. Off by default.",
   "botOnWire": "Replies are sent with a [bot] prefix, so the person on the other end can tell a machine wrote them.",
   "botRefusedPublicSlot": "Not available on the public channel.",
   "botRefusedPublicPsk": "This channel still uses the public key, so it is public whatever its number. Give it a private key first.",
@@ -266,8 +266,8 @@
   "settingsBackgroundOn": "Messages arrive while the app is closed. After a phone restart, open the app to reconnect.",
   "settingsBackgroundOff": "Messages arrive when you open the app",
   "settingsBackgroundFailed": "Could not keep the app running in the background. Open the app to reconnect.",
-  "settingsTelemetryPoll": "Fetch temperature and altitude from nodes",
-  "settingsTelemetryPollOn": "Asks contacts for their temperature and altitude. Costs a little airtime.",
+  "settingsTelemetryPoll": "Fetch node temperature and altitude",
+  "settingsTelemetryPollOn": "Costs a little airtime",
   "settingsTelemetryPollOff": "Nothing is asked automatically. Open a node to ask it once.",
   "settingsLanguage": "LANGUAGE",
   "settingsLanguageSystem": "System default",
@@ -361,7 +361,7 @@
   "dashboardAudioMute": "Mute alert sounds",
   "dashboardAudioUnmute": "Unmute alert sounds",
   "demoBanner": "DEMO",
-  "demoTooltip": "Demo mode. No MeshCore radio. Explore channels, settings and docs without a companion.",
+  "demoTooltip": "Demo: no MeshCore radio",
   "demoModeRow": "No MeshCore radio",
   "demoModeSubtitle": "Explore the app offline",
   "firstRunHeader": "MESHMORE · WELCOME",
@@ -373,6 +373,15 @@
   "firstRunPrefsTitle": "A few choices",
   "firstRunPrefsBody": "These are the ones that change every screen. The rest can wait.",
   "firstRunConnect": "Connect your MeshCore radio",
+  "firstRunRadioLinked": "{name} is connected",
+  "@firstRunRadioLinked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "firstRunKeepRadio": "Keep this MeshCore radio",
   "firstRunUnits": "Feet and miles",
   "firstRunTitle": "What this app will ask for",
   "firstRunBleTitle": "Bluetooth",
@@ -382,7 +391,7 @@
   "firstRunOfflineTitle": "Offline is fine",
   "firstRunOfflineBody": "Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no MeshCore radio traffic.",
   "firstRunGrant": "Allow Bluetooth",
-  "firstRunSkip": "Explore in demo mode (no MeshCore radio)",
+  "firstRunSkip": "Explore without a MeshCore radio",
   "firstRunDeniedTransient": "Bluetooth is off for this app. Continue offline, or allow it in Settings.",
   "firstRunDeniedPermanent": "Bluetooth is blocked for this app. Allow it in Settings, or keep using the app offline.",
   "firstRunOpenSettings": "Open OS settings",
@@ -419,10 +428,10 @@
   "nodesAdvertise": "Advertise",
   "nodesSyncContacts": "Sync contacts",
   "nodesFloodAdvert": "Flood advert",
-  "nodesFloodAdvertBody": "Whole mesh. Neighbours + repeaters. Best for discovery.",
+  "nodesFloodAdvertBody": "Whole mesh, through repeaters",
   "nodesZeroHopAdvert": "Direct advert",
-  "nodesZeroHopAdvertBody": "Direct neighbours only. Not rebroadcast. Quieter on a busy mesh.",
-  "nodesFloodAdvertSent": "Flood advert sent. It crosses the whole mesh. The other node must advertise too before it appears here.",
+  "nodesZeroHopAdvertBody": "Direct neighbours only",
+  "nodesFloodAdvertSent": "Flood advert sent",
   "nodesZeroHopAdvertSent": "Sent to radios in direct range only.",
   "nodesSearchHint": "name, short ID, or pub key…",
   "nodesFilterStarred": "Starred",
@@ -459,7 +468,7 @@
       }
     }
   },
-  "nodesStatusOffline": "Not connected. Open Connect a MeshCore radio",
+  "nodesStatusOffline": "Not connected",
   "nodesFarBadge": "FAR",
   "nodesEmptyFiltered": "No nodes match this filter.",
   "nodesEmptyReady": "No nodes yet. A node appears once it announces itself.",
@@ -593,10 +602,10 @@
   },
   "deviceGpsIntervalFixedByFirmware": "Set on the MeshCore radio",
   "locTitle": "Auto-publish location",
-  "locTileSubtitle": "Sends the phone's position to the MeshCore radio",
+  "locTileSubtitle": "MeshCore radio gets position",
   "deviceGpsIntervalWhy": "This firmware build decides how often the sensors are read, so the app cannot change it.",
   "locMaster": "Auto-publish",
-  "locMasterOn": "On. Your position goes out with your adverts",
+  "locMasterOn": "Position goes out with adverts",
   "locMasterOff": "Off",
   "locInterval": "Periodic interval",
   "locMovement": "Smart broadcast (on movement)",
@@ -637,7 +646,7 @@
   "locPublishNowSub": "Send your position once, now.",
   "locLastPublishedLabel": "Last published",
   "locBeacon": "Periodic position beacon",
-  "locBeaconSub": "Every 60 s. Uses airtime and battery.",
+  "locBeaconSub": "Every 60 s, uses airtime",
   "locBatteryHint": "Streaming GPS reacts faster and uses more battery.",
   "@globeFooter": {
     "placeholders": {
@@ -669,7 +678,7 @@
   "voicePicker": "Voice",
   "voicePickerEmpty": "No voices reported by the platform engine. Using the system default.",
   "voicePickerOnlyMyLanguage": "Only show my language",
-  "voicePickerOnlyMyLanguageHint": "Limits the list to voices matching the phone's current language ({lang}). Turn off to see every voice the OS reports.",
+  "voicePickerOnlyMyLanguageHint": "Only voices for {lang}",
   "@voicePickerOnlyMyLanguageHint": {
     "placeholders": {
       "lang": {
@@ -817,7 +826,7 @@
   "chatManageChannels": "Manage channels",
   "chatTtsMuted": "TTS muted for this channel",
   "chatTtsActive": "TTS reading this channel",
-  "chatRetentionDropped": "{count, plural, =1{1 older message is gone} other{{count} older messages are gone}}. Each conversation keeps its newest {cap}",
+  "chatRetentionDropped": "{count} older messages dropped",
   "@chatRetentionDropped": {
     "placeholders": {
       "count": {
@@ -843,12 +852,12 @@
   },
   "chatHistoryRestoreAction": "Restore from an export",
   "chatRestoreMenu": "Restore from export…",
-  "chatRestoreNothing": "Open the export file with this app, or share it here, and then run restore again.",
+  "chatRestoreNothing": "Open an export file first",
   "chatRestoreTitle": "Restore a conversation",
   "chatRestorePassphrase": "Passphrase for the export",
   "chatRestoreConfirm": "Restore",
   "chatRestoreDone": "{count, plural, =1{1 message restored} other{{count} messages restored}}",
-  "chatRestoreFailed": "That file could not be opened with that passphrase, or it is not an export.",
+  "chatRestoreFailed": "Wrong passphrase or file",
   "@chatRestoreDone": {
     "placeholders": {
       "count": {
@@ -949,7 +958,7 @@
   "dmSpeechAlways": "Always speak",
   "dmSpeechNever": "Never speak",
   "dmSpeechMutedByMaster": "Silenced by the audio mute",
-  "dmPeerNotInFabric": "This person has not been heard on the mesh yet.",
+  "dmPeerNotInFabric": "Not heard yet",
   "dmComposerHint": "Message {peer}",
   "@dmComposerHint": {
     "placeholders": {
@@ -1010,7 +1019,7 @@
   "nodeDetailNotDeviceContact": "Not in the MeshCore radio's contacts, so DMs may not route.",
   "nodeDetailAddDeviceContact": "Add to device contacts",
   "nodeDetailAddDeviceContactDone": "Added. DMs will route.",
-  "nodeDetailAddDeviceContactFailed": "Couldn't add the contact. Check the link and try again.",
+  "nodeDetailAddDeviceContactFailed": "Could not add the contact",
   "nodeDetailRemoveDeviceContact": "Remove from device contacts",
   "nodeDetailRemoveDeviceContactConfirm": "Remove “{name}” from the MeshCore radio's contacts? You can add them again later.",
   "@nodeDetailRemoveDeviceContactConfirm": {
@@ -1234,7 +1243,7 @@
   "docsHubSubtitle": "Protocol, firmware, app and field notes, offline.",
   "docsHubFooter": "Documentation is cached on-device for offline reading. Tap a doc, then ↻ to pull the latest. Upstream: meshcore-dev/MeshCore.",
   "docsProtocolTitle": "Protocol",
-  "docsProtocolSub": "MeshCore companion radio protocol. Frames, opcodes, and flow.",
+  "docsProtocolSub": "Companion protocol: frames, opcodes",
   "docsFirmwareTitle": "Firmware",
   "docsFirmwareSub": "MeshCore firmware overview (README).",
   "docsFirmwareSubVersion": "MeshCore firmware. Matched to {version}.",
@@ -1246,9 +1255,9 @@
     }
   },
   "docsAppTitle": "App",
-  "docsAppSub": "How Meshmore SNS works, and how it uses the mesh.",
+  "docsAppSub": "How the app works",
   "docsDevicesTitle": "Devices",
-  "docsDevicesSub": "T1000-E, Wio Tracker L1 Pro, Heltec V3.",
+  "docsDevicesSub": "T1000-E, Wio Tracker, Heltec",
   "docsRefresh": "Refresh from GitHub",
   "docsUpdated": "Updated to the latest version",
   "docsUpToDate": "Already up to date",
@@ -1482,6 +1491,9 @@
     }
   },
   "channelsTitle": "Channels",
+  "channelsRadioSettings": "MeshCore radio settings: Networks",
+  "networksIntro": "Who can hear this MeshCore radio",
+  "channelsIntro": "Who can read your messages: a shared key per thread.",
   "channelsHelp": "Channel 0 is the shared public one. A private group needs the same channel number, name and key on every MeshCore radio.",
   "channelsOfflineHint": "Connect a MeshCore radio (Diagnostics) to edit channels.",
   "channelCreateCreated": "Channel created.",
@@ -1554,7 +1566,7 @@
   },
   "channelsName": "Channel name",
   "channelsInferPlaces": "Find place names in messages",
-  "channelsInferPlacesSub": "Offer a place named in a message.",
+  "channelsInferPlacesSub": "Offer places named in messages",
   "notifTitleChannel": "Message on {name}",
   "@notifTitleChannel": {
     "description": "OS notification title for a channel message.",
@@ -1586,11 +1598,11 @@
   "@notifBodyFence": {
     "description": "OS notification body for a fence crossing. States the limit: fences are evaluated against the position fixes the app already has, so a crossing can lag the walk."
   },
-  "settingsBatteryOptimisedTitle": "Android may stop the link in the background",
+  "settingsBatteryOptimisedTitle": "Android may stop the link",
   "@settingsBatteryOptimisedTitle": {
     "description": "App settings row shown when this app is still on the battery-optimisation list, which lets an OEM stop the foreground service."
   },
-  "settingsBatteryOptimisedSub": "Some phones stop optimised apps in the background.",
+  "settingsBatteryOptimisedSub": "Some phones stop backgrounded apps",
   "@settingsBatteryOptimisedSub": {
     "description": "Explains the consequence and the action beside it."
   },
@@ -1605,7 +1617,7 @@
   "notifMutedNoticeHere": "Silenced. These switches apply when it is turned back on.",
   "notifMuted": "Silence this channel",
   "settingsSilencePerChannel": "Silence a channel",
-  "notifMutedSub": "Keeps the messages, stops the alert, the speech and the badge.",
+  "notifMutedSub": "Messages kept, alerts stopped",
   "@notifSectionTitle": {
     "description": "Section heading in the channel editor for the per-channel notification bundle."
   },
@@ -1629,19 +1641,19 @@
   "@notifMentionsOnly": {
     "description": "Per-channel: alert only when the message names this device."
   },
-  "notifMentionsOnlySub": "Whole word or @name. Off means every message alerts.",
+  "notifMentionsOnlySub": "Mentions only, off means all",
   "@notifMentionsOnlySub": {
     "description": "Explains the mentions-only mode."
   },
-  "notifKeySuffix": "Also match the last 4 characters of my ID",
+  "notifKeySuffix": "Match my ID's last 4",
   "@notifKeySuffix": {
     "description": "Per-channel opt-in: treat the public key's hex suffix as a mention."
   },
-  "notifKeySuffixSub": "Anyone can choose those four characters, so leave this off unless you know the sender.",
+  "notifKeySuffixSub": "Four characters anyone can choose",
   "@notifKeySuffixSub": {
     "description": "Warns about the key-suffix opt-in."
   },
-  "notifDeniedBanner": "Notifications are turned off for this app, so messages will not appear on your lock screen.",
+  "notifDeniedBanner": "Notifications are off",
   "notifQuietBanner": "Notifications for this app are set to silent in Android settings, so alerts will not make a sound.",
   "@notifQuietBanner": {
     "description": "Shown when one of the app's notification channels is below high importance."
@@ -1708,10 +1720,6 @@
     }
   },
   "channelsClearedDefaultSnack": "Launch default cleared",
-  "channelsKeyShake": "Shake",
-  "channelsShakeTitle": "Shake to roll dice",
-  "channelsShakeBody": "Shake your phone. Each accepted motion sample feeds the hash. Stop once the ring fills.",
-  "channelsShakeProgress": "{accepted} of {target} samples · {pct}%",
   "@channelsShakeProgress": {
     "placeholders": {
       "accepted": {
@@ -1725,8 +1733,6 @@
       }
     }
   },
-  "channelsShakeReroll": "Reroll",
-  "channelsShakeTapFallback": "Tap to roll.",
   "channelsShareQr": "Share via QR",
   "channelsQrTitle": "Share channel {idx}",
   "@channelsQrTitle": {
@@ -1932,11 +1938,11 @@
   "deviceToastInvalidLatLon": "Enter valid lat (−90.90) and lon (−180.180)",
   "deviceToastAdvertLocSet": "Advert location set",
   "deviceToastInvalidRadio": "Enter valid numbers for freq/BW/SF/CR",
-  "deviceLocPermDenied": "Location permission needed for a phone GPS fix.",
+  "deviceLocPermDenied": "Location permission needed",
   "deviceLocPermDeniedPerm": "Location permission permanently denied. Open OS settings to grant it.",
   "deviceOpenSettings": "Open settings",
   "connectionDiagnosticsRow": "Diagnostics and tools",
-  "connectionDiagnosticsExplainer": "Raw frames, fixtures and test commands.",
+  "connectionDiagnosticsExplainer": "Frames, fixtures, test commands",
   "diagnosticsTitle": "MeshCore radio diagnostics",
   "diagnosticsRawFrameLog": "RAW FRAME LOG (newest first)",
   "diagnosticsDisconnect": "Disconnect",
@@ -1957,7 +1963,7 @@
   "otherSentSnack": "OTHER PARAMS sent. Device-side write may take a moment.",
   "otherAwaitingDevice": "Awaiting device",
   "batteryTitle": "Battery",
-  "batteryConfigSubtitle": "Charge, drain rate, and time-to-empty estimate",
+  "batteryConfigSubtitle": "Charge, drain, time to empty",
   "batteryAwaiting": "Waiting for a battery reading from the device…",
   "batteryReset": "Reset history",
   "batteryResetConfirm": "Clear all stored battery history? The runtime estimate will rebuild as new readings arrive.",
@@ -2182,7 +2188,7 @@
   "pingLastStatus": "LAST STATUS",
   "traceToNode": "To a node",
   "traceManual": "Manual",
-  "traceRoundTrip": "Round trip (come back to us)",
+  "traceRoundTrip": "Round trip",
   "traceNoRoute": "no route. Send it a message first",
   "tracePath": "path {path}",
   "@tracePath": {
@@ -2338,8 +2344,8 @@
   "rangeCopyCsv": "Copy CSV",
   "rangeFlood": "flood",
   "settingsHubInfo": "About",
-  "settingsNotifDeniedPermanent": "Notifications were permanently denied. The background service needs a persistent notification.",
-  "settingsNotifDeniedTransient": "Keeping the app connected in the background needs notifications. Allow them in Settings.",
+  "settingsNotifDeniedPermanent": "Notifications permanently denied",
+  "settingsNotifDeniedTransient": "Allow notifications to stay connected",
   "deviceAdvertPropagatesHint": "Takes effect the next time the MeshCore radio announces itself.",
   "settingsHubMaps": "Offline maps",
   "mapsTitle": "Offline maps",
@@ -2417,7 +2423,7 @@
     }
   },
   "mapsWifiOnly": "Download over Wi-Fi only",
-  "mapsWifiOnlyHint": "A pack can be hundreds of megabytes.",
+  "mapsWifiOnlyHint": "Packs can be hundreds of MB",
   "mapsOutsidePacks": "Outside your offline maps, the map needs a connection.",
   "mapsLayers": "Event maps",
   "mapsNoLayersShort": "No event maps added",
@@ -2589,7 +2595,7 @@
   "locGroupBeacon": "Beacon",
   "locGroupManual": "Manual",
   "deviceManageChannels": "Manage channels",
-  "deviceActiveChannelSub": "Using: {name} · channels and keys",
+  "deviceActiveChannelSub": "Channels and keys",
   "@deviceActiveChannelSub": {
     "placeholders": {
       "name": {
@@ -2817,6 +2823,13 @@
   "diagnosticsSoakCopied": "Soak results copied",
   "nodesClearSearch": "Clear search",
   "networksTitle": "Networks",
+  "networksEdit": "Edit",
+  "networksTxPower": "Transmit power",
+  "networksCodingRate": "Coding rate",
+  "networksSpreading": "Spreading factor",
+  "networksBandwidth": "Bandwidth",
+  "networksAdvanced": "MeshCore radio settings",
+  "networksNameTaken": "Another network already has this name.",
   "networksEmpty": "No networks yet. A network is the MeshCore radio settings your radios agree on.",
   "networksNew": "New network",
   "networksName": "Name",
@@ -2824,7 +2837,7 @@
   "networksPreset": "Settings the members share",
   "networksPathHash": "Path hash size",
   "networksPrivateSwitch": "Private frequency",
-  "networksPrivateHelp": "Use a frequency no public preset uses. Radios on it do not hear the public mesh, and the public mesh does not hear them.",
+  "networksPrivateHelp": "A frequency no preset uses",
   "networksFrequency": "Frequency (MHz)",
   "networksFrequencyInvalid": "Enter a frequency from 150 to 2500 MHz.",
   "networksFrequencyPublic": "That frequency, bandwidth and spreading factor belong to the public preset {preset}. Pick a different frequency.",
@@ -2936,7 +2949,7 @@
   "placePrecisionExact": "Exact",
   "placePrecision100": "About 100 m",
   "placePrecision1000": "About 1 km",
-  "placeRadioRefused": "The MeshCore radio did not take it, so the place is not on the air.",
+  "placeRadioRefused": "MeshCore radio refused",
   "placeChannelTitle": "Channel",
   "placeSentOn": "Sent on {channel}",
   "@placeSentOn": {
@@ -3196,7 +3209,7 @@
     }
   },
   "airtimeCutoffTitle": "Stop at the limit",
-  "airtimeCutoffSubtitle": "Refuse a send that would pass the hourly limit instead of only warning. One message in a quiet hour is worth more than twenty in a busy one.",
+  "airtimeCutoffSubtitle": "Refuse over-budget sends",
   "airtimeLeftInHour": "Time left this hour",
   "airtimeLeftValue": "$left of $budget",
   "@airtimeLeftValue": {
@@ -3417,7 +3430,7 @@
       }
     }
   },
-  "checkinOneMessage": "A check-in is one message and does not repeat.",
+  "checkinOneMessage": "One message, no repeat",
   "checkinWatching": "Waiting for an answer",
   "checkinOverdue": "Overdue. The deadline passed and no answer came back.",
   "checkinAnsweredDirect": "Answered, by direct message.",
@@ -3652,7 +3665,7 @@
       }
     }
   },
-  "geofenceExplainerShort": "Areas that tell you when you arrive or leave",
+  "geofenceExplainerShort": "Arrive and leave alerts",
   "coverageTitle": "Coverage",
   "coverageCountsTitle": "Coverage",
   "coverageBeforeStart": "This records where you are and who answered. It stays on this device, and closing the app ends the record.",
@@ -3723,7 +3736,7 @@
   "@fieldExportShared": {
     "description": "Snackbar after the field record was handed to the share sheet."
   },
-  "fieldExportDone": "Field record written. The path is on the clipboard: {path}",
+  "fieldExportDone": "Record written, path copied",
   "@fieldExportDone": {
     "placeholders": {
       "path": {
@@ -3734,7 +3747,7 @@
   "gpxExportExplainer": "The trail as a GPX track any mapping app can read. It is plain text, not encrypted, unlike your messages.",
   "gpxExportAction": "Share trail as GPX",
   "gpxExportTrackName": "MeshMore trail",
-  "gpxExportEmpty": "No trail yet. Positions are recorded while the app runs, so there is nothing to write.",
+  "gpxExportEmpty": "No trail recorded yet",
   "gpxExportShared": "Trail ready to share.",
   "@gpxExportShared": {
     "description": "Snackbar after the trail file was handed to the share sheet."
@@ -3749,7 +3762,7 @@
   },
   "chatSearchAction": "Search messages",
   "settingsHistoryExportRow": "Export all history",
-  "settingsHistoryExportSubtitle": "One encrypted file, with every conversation in it. You choose where it goes.",
+  "settingsHistoryExportSubtitle": "One encrypted file, all conversations",
   "settingsHistoryExportTitle": "Passphrase for the backup",
   "settingsHistoryExportConfirm": "Export",
   "settingsHistoryExportShared": "History ready to share.",
@@ -3947,9 +3960,9 @@
   "settingsAppGroupReading": "Units and time",
   "settingsUnits": "Distance units",
   "settingsUnitsMetric": "Metres and kilometres",
-  "settingsUnitsMetricHint": "How every MeshCore tool reports distance.",
+  "settingsUnitsMetricHint": "What the MeshCore radio reports",
   "settingsUnitsImperial": "Feet and miles",
-  "settingsUnitsImperialHint": "Converted from the metres the MeshCore radio reports.",
+  "settingsUnitsImperialHint": "Converted from MeshCore radio metres",
   "settingsClock24": "24-hour clock",
   "settingsClock24On": "14:32",
   "settingsClock12On": "2:32 PM",
@@ -3958,7 +3971,7 @@
   "settingsFahrenheitOn": "70 °F",
   "settingsAppGroupSound": "Reading and sound",
   "settingsPhotoColorTitle": "Send photos in colour",
-  "settingsPhotoColorSub": "Off sends a grey picture, which is about a third of the data.",
+  "settingsPhotoColorSub": "Grey: one third the data",
   "settingsAppGroupData": "Data",
   "settingsAppGroupSystem": "System",
   "aboutReplayIntro": "Replay the first-run screens",
@@ -4003,7 +4016,7 @@
       }
     }
   },
-  "mapCanvasSemantics": "Tap a marker on the map to open it",
+  "mapCanvasSemantics": "Tap a marker to open",
   "gridLegendSignalOnly": "Hollow · no position",
   "gridLegendRingsShort": "Rings · distance",
   "gridLegendSelfShort": "Centre · you",
@@ -4307,7 +4320,7 @@
   "autoAddRoomServer": "Room servers",
   "autoAddSensor": "Sensors",
   "autoAddMaxHops": "Hop limit",
-  "autoAddMaxHopsHint": "0 = no limit · 1 = direct only · N = up to N−1 hops",
+  "autoAddMaxHopsHint": "0 = all, N = hops",
   "autoAddUnknown": "Reading the MeshCore radio's policy…",
   "autoAddManage": "Manage the table",
   "nodeAdvertPath": "Last advert came via",
@@ -4330,11 +4343,11 @@
   "deviceContactsImport": "Import a link",
   "deviceContactsImportHint": "Paste a meshcore:// link",
   "deviceContactsImportBad": "That is not a contact link.",
-  "deviceContactsImportDone": "Sent to the MeshCore radio. It is in the list when the radio confirms.",
+  "deviceContactsImportDone": "Sent, MeshCore radio confirms",
   "diagnosticsRestartRadio": "Restart the MeshCore radio",
   "diagnosticsRestartConfirm": "Restart this MeshCore radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.",
-  "diagnosticsRestartSent": "Restart sent. The link will drop and come back on its own.",
-  "diagnosticsRestartNoReply": "The MeshCore radio takes no reply to a restart, so this is sent, not confirmed.",
+  "diagnosticsRestartSent": "Restart sent, link will drop",
+  "diagnosticsRestartNoReply": "Restart sent, not confirmed",
   "settingsSecuritySection": "MeshCore radio access",
   "settingsPinIntro": "A pairing PIN gates a new Bluetooth pairing to this MeshCore radio. The radio still keeps its own list of bonded devices.",
   "settingsPinCurrent": "Pairing PIN",
@@ -4357,8 +4370,8 @@
   "repeaterSignOutDone": "Signed out.",
   "actionForward": "Forward",
   "forwardNoTarget": "Nothing to forward into: no channel and no contact.",
-  "forwardDone": "Forwarded into that thread's composer, where you can edit it before sending.",
-  "forwardFailed": "Could not write the draft: the sealed store is not open on this device.",
+  "forwardDone": "Forwarded to the composer",
+  "forwardFailed": "Draft not saved: store closed",
   "placeConfirmToSender": "Confirm to the sender",
   "placeRefuteToSender": "Refute to the sender",
   "placeSentDirect": "Sent to the sender as a direct message.",
@@ -4737,7 +4750,7 @@
       }
     }
   },
-  "geofenceReshapeGone": "That fence is gone, so the new shape was not saved.",
+  "geofenceReshapeGone": "That fence is gone",
   "mediaReceivedForeign": "{n} more arrived in a codec this build does not carry, so they cannot be shown here.",
   "@mediaReceivedForeign": {
     "description": "Names pictures that arrived in AEIC, MeshCore Open's neural codec, which this build does not ship. Without this line an arriving picture looks like nobody sending one.",

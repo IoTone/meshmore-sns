@@ -113,26 +113,7 @@ class DashboardScreen extends StatelessWidget {
         // are the same on every preset, and building it here made a
         // storage-full warning visible on this one layout only.
 
-        // Status slab — colour-inverts to error on alert. The audio toggle
-        // sits beside it rather than inside it: a mute is not a link state,
-        // and an accidental mute inside a status display reads as a change
-        // to the link.
-        Row(
-          // Centred, not top-aligned: an `IconButton` beside a taller panel
-          // reads as floating above it, which is what the owner saw as "the
-          // speaker is not properly spaced in the middle".
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Expanded(child: _statusSlab(context, mc, l, cs, st, statusColor)),
-            Padding(
-              padding: EdgeInsets.only(left: context.skin.space.labelToControl),
-              child: const MmAudioToggle(),
-            ),
-          ],
-        ),
-
         if (hasPeers) ...<Widget>[
-          _blockGap(context),
           Text(
               mc.state == MeshcoreConnectionState.ready
                   ? l.dashboardPeersInRange
@@ -159,6 +140,27 @@ class DashboardScreen extends StatelessWidget {
                       mc.nodes.length, _contactsLabel(mc)),
               style: TextStyle(color: cs.onSurfaceVariant)),
         ],
+
+        // Status slab — colour-inverts to error on alert. The audio toggle
+        // sits beside it rather than inside it: a mute is not a link state, and
+        // an accidental mute inside a status display reads as a change to the
+        // link. It sits *after* the numeral because that is this skin's own
+        // arrangement: the monolith leads with the number, and the slab answers
+        // "linked to what" underneath it.
+        _blockGap(context),
+        Row(
+          // Centred, not top-aligned: an `IconButton` beside a taller panel
+          // reads as floating above it, which is what the owner saw as "the
+          // speaker is not properly spaced in the middle".
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Expanded(child: _statusSlab(context, mc, l, cs, st, statusColor)),
+            Padding(
+              padding: EdgeInsets.only(left: context.skin.space.labelToControl),
+              child: const MmAudioToggle(),
+            ),
+          ],
+        ),
 
         if (hasRadio) _blockGap(context),
         if (hasRadio)
@@ -230,7 +232,7 @@ class DashboardScreen extends StatelessWidget {
                 _RegionRow(selfInfo: selfInfo, l: l, cs: cs),
               ],
               if (mc.pairedName != null) ...<Widget>[
-                SizedBox(height: context.skin.space.step(3)),
+                SizedBox(height: context.skin.space.labelToControl),
                 Text(l.dashboardPaired(mc.pairedName!),
                     style: TextStyle(color: cs.onSurfaceVariant)),
               ],

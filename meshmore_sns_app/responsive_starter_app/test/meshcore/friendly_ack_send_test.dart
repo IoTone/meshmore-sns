@@ -45,7 +45,12 @@ Uint8List rfLogGrpTxt({
   required int rssi,
   required List<int> path,
   int hashSize = 2,
+  int? channelHash,
 }) {
+  // A Public-channel packet carries the Public channel's own hash, which is what
+  // the app compares a capture against before lending its measurements to a row.
+  final int hash = channelHash ??
+      MeshcoreChannelCrypto.channelHashFromPsk(List<int>.from(kPublicChannelPsk));
   final int header =
       kRouteFlood | (kPayloadTypeGrpTxt << kPktPayloadTypeShift);
   final int hops = path.length ~/ hashSize;
@@ -57,7 +62,7 @@ Uint8List rfLogGrpTxt({
     header,
     pathLen,
     ...path,
-    0x00, 0x01, 0x02, // GRO_TXT payload stub: channel hash + MAC
+    hash, 0x01, 0x02, // GRP_TXT payload stub: channel hash + MAC
   ]);
 }
 
@@ -85,15 +90,14 @@ void main() {
     expect(row.hopCount, 3, reason: 'a flood reports 0xFF, so the count is the capture');
     expect(row.pathHashes, <String>['4490', 'DF7C', '7F47']);
 
-    expect(await mc.sendFriendlyAck(row), isTrue);
-    await Future<void>.delayed(Duration.zero);
-    final ChatMessage ack =
-        mc.messagesFor(0).firstWhere((ChatMessage m) => m.outgoing);
+    // The line is composed for the composer, never sent by the action: the
+    // reader decides when it goes.
     expect(
-        ack.text,
+        mc.friendlyAckLineFor(row),
         '@[Half Live] ack: SNR 12.5 dB, RSSI -38 dBm, 3 hops via 4490, DF7C, 7F47',
         reason: 'the line other clients parse, naming the reader');
-    expect(ack.hidden, isFalse, reason: 'a friendly ack is a message, not a gesture');
+    expect(mc.messagesFor(0).length, 1,
+        reason: 'composing an ack puts nothing on the air');
   });
 
   test('a message with no capture reports only what the frame carried', () async {
@@ -117,10 +121,7 @@ void main() {
     expect(row.hopCount, 2);
     expect(row.pathHashes, isEmpty);
 
-    expect(await mc.sendFriendlyAck(row), isTrue);
-    await Future<void>.delayed(Duration.zero);
-    expect(
-        mc.messagesFor(0).firstWhere((ChatMessage m) => m.outgoing).text,
+    expect(mc.friendlyAckLineFor(row),
         '@[St. Joseph] ack: SNR 9.3 dB, 2 hops');
   });
 
@@ -150,5 +151,44 @@ void main() {
     expect(first.pathHashes, <String>['AABB']);
     expect(second.rssiDbm, -38);
     expect(second.pathHashes, <String>['4490']);
+  });
+
+  test('a capture on another channel is never lent to this row', () async {
+    // The message frame carries no route, so the RSSI and the path come from the
+    // RF-log capture of the same packet. The capture carries the packet's own
+    // channel hash, and comparing it is what stops a `#cos` row reporting the
+    // signal of a packet heard on `#public`.
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    addTearDown(mc.dispose);
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    // A GRP_TXT capture with a channel hash that is not slot 0's.
+    Uint8List otherChannel(int hash) => Uint8List.fromList(<int>[
+          0x88,
+          (6.25 * 4).round(),
+          (-90) & 0xFF,
+          kRouteFlood | (kPayloadTypeGrpTxt << kPktPayloadTypeShift),
+          2 | ((2 - 1) << kPathHashSizeShift),
+          0xAA, 0xBB, 0xCC, 0xDD,
+          hash, 0x00, 0x01,
+        ]);
+    // Slot 0's PSK is the public one; use a hash that cannot be it.
+    final int publicHash = MeshcoreChannelCrypto.channelHashFromPsk(
+        List<int>.from(kPublicChannelPsk));
+    fake.emit(otherChannel((publicHash + 7) & 0xFF));
+    fake.emit(channelMsgV3(text: 'A: hi', snrDb: 6.25));
+    await Future<void>.delayed(Duration.zero);
+
+    final ChatMessage row = mc.messagesFor(0).first;
+    expect(row.snrDb, 6.25, reason: 'the SNR comes with the message itself');
+    expect(row.rssiDbm, isNull,
+        reason: 'the capture was on another channel, so it is not this row\'s');
+    expect(row.pathHashes, isEmpty);
   });
 }
