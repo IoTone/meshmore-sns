@@ -71,7 +71,25 @@ void main() {
   }
 
   group('storage', () {
-    testWidgets('a store that is not in the tree is absent, not a zero',
+    testWidgets('the airtime cutoff is a switch with the hour stated beside it',
+      (WidgetTester t) async {
+    final _Host h = await _pump(t);
+    final Finder cutoff =
+        find.byKey(const ValueKey<String>('settings-airtime-cutoff'));
+    expect(cutoff, findsOneWidget,
+        reason: 'the owner asked for a cutoff a reader can switch on');
+    expect(find.byKey(const ValueKey<String>('settings-airtime-left')),
+        findsOneWidget,
+        reason: 'and the time left in the hour stated under it');
+    expect(h.mc.airtimeCutoff, isTrue);
+    await t.tap(cutoff);
+    await t.pump();
+    expect(h.mc.airtimeCutoff, isFalse,
+        reason: 'the switch must reach the controller');
+    await h.dispose(t);
+  });
+
+  testWidgets('a store that is not in the tree is absent, not a zero',
         (WidgetTester t) async {
       final _Host host = await _pump(t);
       final AppLocalizations l = strings(t);
