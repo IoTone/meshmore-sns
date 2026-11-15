@@ -67,8 +67,6 @@ class CommandLedger {
   /// an answer to a command this app never registered.
   int get unclaimed => _unclaimed;
 
-  int get pendingCount => _entries.length;
-
   bool get isEmpty => _entries.isEmpty;
 
   /// Ids in the order they will be answered.

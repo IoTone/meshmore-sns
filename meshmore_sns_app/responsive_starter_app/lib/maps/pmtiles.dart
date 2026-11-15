@@ -109,7 +109,6 @@ class PmHeader {
   int get leafLength => _u64(0x30);
   int get dataOffset => _u64(0x38);
   int get dataLength => _u64(0x40);
-  int get addressedTiles => _u64(0x48);
 
   PmCompression _comp(int o) {
     final int v = _d.getUint8(o);

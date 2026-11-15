@@ -83,7 +83,6 @@ final class AppErrors {
   static List<AppErrorRecord> get previous =>
       List<AppErrorRecord>.unmodifiable(_previous);
 
-  static bool _persistQueued = false;
   static Future<void>? _pendingWrite;
 
   static void record(Object error, StackTrace? stack,
@@ -97,7 +96,6 @@ final class AppErrors {
     // Fire and forget: the caller is usually an error path that must not wait on
     // a disk write, and losing one row to a process death is the case the row
     // exists to explain.
-    _persistQueued = true;
     _pendingWrite = _persist();
     unawaited(_pendingWrite!);
   }
@@ -111,7 +109,8 @@ final class AppErrors {
       // A store that cannot be written is not worth a second failure on the
       // error path.
     } finally {
-      _persistQueued = false;
+      // Nothing to clear: the write is tracked by `_pendingWrite`, which a test
+      // awaits rather than polling a flag.
     }
   }
 
@@ -150,12 +149,7 @@ final class AppErrors {
   static void clear() {
     _records.clear();
     _previous.clear();
-    _persistQueued = false;
   }
-
-  /// Whether a write is still queued. Tests read this instead of sleeping.
-  @visibleForTesting
-  static bool get persistQueued => _persistQueued;
 
   /// The write in flight, if any. A test awaits this rather than polling a flag
   /// that could clear between the last byte and the assertion.

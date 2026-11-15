@@ -38,10 +38,6 @@ class ChannelDatagram {
 
   bool get isFlood => pathLen == kPathLenFlood;
 
-  /// The blob's budget as the radio measures it: `MAX_FRAME_SIZE` minus the
-  /// push header, `MyMesh.cpp:594`.
-  static int get maxBlobBytes => ChannelDataLimits.firmwareFramePayloadMax;
-
   int get byteCount => blob.length;
 
   @override

@@ -1328,9 +1328,6 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// The policy's allowance, or null when the policy has no cap.
   Duration? get airtimeBudget => _airtime.budget;
 
-  /// Room left in the window, or null when there is no cap.
-  Duration? get airtimeRemaining => _airtime.remaining;
-
   AirtimePolicy get airtimePolicy => _airtime.policy;
 
   /// Whether the meter refuses a send past the budget or only counts it.
