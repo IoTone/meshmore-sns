@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -48,6 +49,25 @@ class SnsCellsView extends StatefulWidget {
 
   @override
   State<SnsCellsView> createState() => _SnsCellsViewState();
+}
+
+/// How long the heat field's wave takes to cross the screen.
+///
+/// Eight seconds: one crossing is slow enough to read as a sweep passing over the
+/// field rather than as a flicker, and short enough that the field is never still
+/// for long enough to look frozen.
+const int kHeatWavePeriodMs = 8000;
+
+/// Where the heat field's wave is, in pixels, for [nowMs].
+///
+/// Above the top edge by one band at the start and past the bottom by one at the
+/// end, so the band enters and leaves instead of appearing in place. This is the
+/// whole of the view's motion — the drawing only reads it — so it is a plain
+/// function a test can pin, and it advances at frame resolution rather than once
+/// a second, which is what made the field look frozen.
+double heatWaveY(int nowMs, double height, double hexH) {
+  final double phase = (nowMs % kHeatWavePeriodMs) / kHeatWavePeriodMs;
+  return -hexH * 2 + (height + hexH * 4) * phase;
 }
 
 class _Toast {
@@ -123,19 +143,23 @@ class _SnsCellsViewState extends State<SnsCellsView>
 
   void _resetView() => _transform.value = Matrix4.identity();
 
-  /// The wall clock the painter reads, advanced once a second.
+  /// The wall clock the painter reads, advanced every frame.
   int _nowMs = DateTime.now().millisecondsSinceEpoch;
-  int _lastPaintSecond = 0;
 
   void _onTick(Duration _) {
     if (!mounted) return;
     final int nowMs = DateTime.now().millisecondsSinceEpoch;
-    final int second = nowMs ~/ 1000;
-    // One repaint a second: the heat is a slow colour and the field is static
-    // between samples. The frame clock existed for a CRT sweep that no longer
-    // exists, and it was most of why this view felt slow.
-    if (second == _lastPaintSecond) return;
-    _lastPaintSecond = second;
+    // The heat itself is sampled once a second; the clock is not.
+    //
+    // This returned for every frame inside the same second, so everything the
+    // painter moves — a toast rising and fading over 3.5 s, the wave crossing
+    // the field — advanced in one-second steps. That is the "super low FPS"
+    // the owner saw on the message bubbles.
+    //
+    // It advances every frame now, because the wave is always running. What
+    // makes that affordable is not this clock: the field is recorded into a
+    // picture once and blitted, and only the band the wave is in is built per
+    // frame (see `_SnsCellsPainter`).
     setState(() => _nowMs = nowMs);
   }
 
@@ -436,16 +460,40 @@ class _SnsCellsPainter extends CustomPainter {
 
   static const double _mPerDegLat = 111320.0;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = bg);
+  /// The field as it was last recorded, with the key it was recorded for.
+  ///
+  /// The backdrop — the ground, the lattice, the heat fills and the counts —
+  /// changes once a second at most, while the wave moves every frame. Building
+  /// a thousand-hexagon path per frame to redraw an unchanged backdrop is what
+  /// makes a moving overlay expensive, so the backdrop is recorded once and
+  /// drawn as one picture, and only the wave's own band is built per frame.
+  static ui.Picture? _fieldPicture;
+  static String _fieldKey = '';
+
+  /// What the recorded picture depends on, as one string.
+  ///
+  /// The heat maps are rebuilt once a second as new instances, so their identity
+  /// is the part of the key that changes on a tick; everything else changes on a
+  /// resize, a frame-scale change or a theme change.
+  String _fieldSignature(Size size) => '${size.width}x${size.height}|'
+      '$_hexW|$_hexH|$_gridOriginX|$_gridOriginY|'
+      '${identityHashCode(heat)}|${identityHashCode(heatCounts)}|$quiet|'
+      '$quietLabel|$bg|$accent|$hot|$cool|${type.sizeSm}|${type.monoFamily}';
+
+  /// Where everything is on this frame, computed once.
+  ///
+  /// The fit-to-content extent, the pixel scale, the cell size and the lattice
+  /// origin are needed by the recorded backdrop *and* by the per-frame motion
+  /// pass, so they are worked out once here rather than twice. It is a walk over
+  /// the heat cells and the nodes, which is a few hundred comparisons: cheap
+  /// enough to redo every frame, and far cheaper than rebuilding the field.
+  void _computeGeometry(Size size) {
     final Offset centre = size.center(Offset.zero);
     final double mPerDegLon =
         _mPerDegLat * math.cos(selfLat * math.pi / 180).abs();
 
-    // Fit-to-content range: cover the farthest active cell / node,
-    // clamped to a sane window so a single distant peer doesn't zoom
-    // us out to nothing.
+    // Fit-to-content range: cover the farthest active cell / node, clamped to a
+    // sane window so a single distant peer does not zoom us out to nothing.
     double maxOffset = 600; // metres, minimum half-extent
     void considerLatLon(double lat, double lon) {
       final double dN = (lat - selfLat) * _mPerDegLat;
@@ -455,8 +503,7 @@ class _SnsCellsPainter extends CustomPainter {
     }
 
     heat.forEach((String key, double _) {
-      final ({int latBucket, int lonBucket})? b =
-          CoverageStore.parseKey(key);
+      final ({int latBucket, int lonBucket})? b = CoverageStore.parseKey(key);
       if (b == null) return;
       final ({double lat, double lon}) c =
           CoverageStore.cellCentre(b.latBucket, b.lonBucket);
@@ -466,18 +513,127 @@ class _SnsCellsPainter extends CustomPainter {
       considerLatLon(n.latitude!, n.longitude!);
     }
     final double half = snsHalfExtentMeters(maxOffset, maxHalfMeters);
-    final double pxPerMeter =
-        (math.min(size.width, size.height) * 0.46) / half;
+    final double pxPerMeter = (math.min(size.width, size.height) * 0.46) / half;
+    final double cellPx = CoverageStore.cellDeg * _mPerDegLat * pxPerMeter;
 
-    Offset project(double lat, double lon) {
-      final double dN = (lat - selfLat) * _mPerDegLat;
-      final double dE = (lon - selfLon) * mPerDegLon;
-      return Offset(
-          centre.dx + dE * pxPerMeter, centre.dy - dN * pxPerMeter);
+    // The cell size snaps to a multiple of 16 logical pixels, and a pointy-top
+    // hexagon is `√3/2` as wide as it is tall: both pitches used the cell size,
+    // so every hexagon sat in a square box — fifteen percent wider than the
+    // lattice had room for, which made the field lean and row neighbours overlap.
+    final int step = math.max(1, (16 / cellPx).ceil());
+    final double hexH = cellPx * step;
+    final double hexW = hexH * 0.8660254037844386;
+
+    // The lattice origin: the south-west corner of the geographic cell that holds
+    // us, projected to pixels, so a cell's address and its screen position agree.
+    final double selfCellLon =
+        (selfLon / CoverageStore.cellDeg).floor() * CoverageStore.cellDeg;
+    final double selfCellLat =
+        (selfLat / CoverageStore.cellDeg).floor() * CoverageStore.cellDeg;
+
+    _centre = centre;
+    _mPerDegLon = mPerDegLon;
+    _pxPerMeter = pxPerMeter;
+    _hexH = hexH;
+    _hexW = hexW;
+    _gridOriginX = centre.dx + (selfCellLon - selfLon) * mPerDegLon * pxPerMeter;
+    _gridOriginY =
+        centre.dy - (selfCellLat - selfLat) * _mPerDegLat * pxPerMeter;
+  }
+
+  late Offset _centre;
+  late double _mPerDegLon;
+  late double _pxPerMeter;
+  late double _hexH;
+  late double _hexW;
+  late double _gridOriginX;
+  late double _gridOriginY;
+
+  /// A place on the screen, from the geometry the field was laid out with.
+  Offset _project(double lat, double lon) => Offset(
+        _centre.dx + (lon - selfLon) * _mPerDegLon * _pxPerMeter,
+        _centre.dy - (lat - selfLat) * _mPerDegLat * _pxPerMeter,
+      );
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _computeGeometry(size);
+    final String signature = _fieldSignature(size);
+    if (signature != _fieldKey || _fieldPicture == null) {
+      _fieldPicture?.dispose();
+      _fieldPicture = _recordField(size);
+      _fieldKey = signature;
     }
+    canvas.drawPicture(_fieldPicture!);
+    _paintNodesAndToasts(canvas, size);
+  }
 
-    final double cellPx =
-        CoverageStore.cellDeg * _mPerDegLat * pxPerMeter;
+  /// The backdrop: ground, lattice, heat fills, counts, and the quiet line.
+  ui.Picture _recordField(Size size) {
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    _paintField(canvas, size);
+    return recorder.endRecording();
+  }
+
+  /// The wave: a band of green light crossing the field top to bottom on a loop.
+  ///
+  /// Its position is a function of the clock alone, and it is one path over the
+  /// rows it currently crosses rather than a second pass over the whole lattice.
+  /// The heat fill says *where* the traffic is and the wave says the field is
+  /// live, which is a different question from the one the colours answer.
+  void _paintWave(Canvas canvas, Size size) {
+    final double hexW = _hexW;
+    final double hexH = _hexH;
+    final double rowStride = hexH * 0.75;
+    final int colStart = ((-_gridOriginX) / hexW).floor() - 2;
+    final int rowStart = ((-_gridOriginY) / rowStride).floor() - 2;
+    final int cols = (size.width / hexW).ceil() + 4;
+    final int rows = (size.height / rowStride).ceil() + 4;
+    final double bandY = heatWaveY(nowMs, size.height, hexH);
+    // One cell tall on each side of the band's centre. A wider band read as fog
+    // over the field rather than as a wave crossing it: the hexagons inside it
+    // blurred into one bright smear.
+    final double bandH = hexH * 1.1;
+    final Path wave = Path();
+    for (int row = rowStart; row < rowStart + rows; row++) {
+      final double cy = _gridOriginY + row * rowStride + hexH / 2;
+      if ((cy - bandY).abs() > bandH) continue;
+      for (int col = colStart; col < colStart + cols; col++) {
+        final double cx =
+            _gridOriginX + (col + (row.isOdd ? 0.5 : 0)) * hexW + hexW / 2;
+        _addHexagon(wave, Offset(cx, cy), hexW / 2, hexH / 2);
+      }
+    }
+    if (wave.getBounds().isEmpty) return;
+    // A vertical gradient rather than a per-cell alpha: the band has to fade at
+    // both of its own edges, and one shader does that for every cell in it.
+    canvas.drawPath(
+      wave,
+      Paint()
+        ..blendMode = BlendMode.plus
+        ..shader = ui.Gradient.linear(
+          Offset(size.width / 2, bandY - bandH),
+          Offset(size.width / 2, bandY + bandH),
+          <Color>[
+            accent.withValues(alpha: 0.0),
+            accent.withValues(alpha: 0.07),
+            accent.withValues(alpha: 0.26),
+            accent.withValues(alpha: 0.07),
+            accent.withValues(alpha: 0.0),
+          ],
+          // A tight ramp: the band has an edge you can see move, rather than a
+          // gradient that fades out over half the screen.
+          <double>[0.0, 0.3, 0.5, 0.7, 1.0],
+        ),
+    );
+  }
+
+  void _paintField(Canvas canvas, Size size) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = bg);
+    final Offset centre = _centre;
+    final double mPerDegLon = _mPerDegLon;
+    final double pxPerMeter = _pxPerMeter;
 
     // A quiet channel says so here, over its own dial, instead of replacing it.
     if (quiet) {
@@ -497,17 +653,8 @@ class _SnsCellsPainter extends CustomPainter {
           Offset(centre.dx - tp.width / 2, centre.dy - tp.height / 2));
     }
 
-    // The lattice origin: the south-west corner of the geographic cell that
-    // holds us, projected to pixels, so a cell's address and its screen
-    // position agree.
-    final double selfCellLon =
-        (selfLon / CoverageStore.cellDeg).floor() * CoverageStore.cellDeg;
-    final double gridOriginX =
-        centre.dx + (selfCellLon - selfLon) * mPerDegLon * pxPerMeter;
-    final double selfCellLat =
-        (selfLat / CoverageStore.cellDeg).floor() * CoverageStore.cellDeg;
-    final double gridOriginY =
-        centre.dy - (selfCellLat - selfLat) * _mPerDegLat * pxPerMeter;
+    final double gridOriginX = _gridOriginX;
+    final double gridOriginY = _gridOriginY;
 
     // --- Heat field ---
     //
@@ -523,9 +670,8 @@ class _SnsCellsPainter extends CustomPainter {
     // 0.75 of the cell height, one flat fill per occupied cell and nothing
     // else. No lattice, no blur, no motion beyond the colour the heat itself
     // supplies.
-    final int step = math.max(1, (16 / cellPx).ceil());
-    final double hexW = cellPx * step;
-    final double hexH = cellPx * step;
+    final double hexH = _hexH;
+    final double hexW = _hexW;
     final Map<(int, int), double> gridHeat = <(int, int), double>{};
     final Map<(int, int), int> gridCount = <(int, int), int>{};
     // A heat key is a sender identity. Its cell comes from the sender's own
@@ -573,14 +719,19 @@ class _SnsCellsPainter extends CustomPainter {
     final int rowStart = ((-gridOriginY) / rowStride).floor() - 2;
     final int cols = (size.width / hexW).ceil() + 4;
     final int rows = (size.height / rowStride).ceil() + 4;
+    // One path for the whole field and one stroke for it. A draw call per cell
+    // was a thousand-odd draws a frame, which is what a wave or a rising toast
+    // then had to share the frame with.
+    final Path lattice = Path();
     for (int row = rowStart; row < rowStart + rows; row++) {
       final double cy = gridOriginY + row * rowStride + hexH / 2;
       for (int col = colStart; col < colStart + cols; col++) {
         final double cx =
             gridOriginX + (col + (row.isOdd ? 0.5 : 0)) * hexW + hexW / 2;
-        canvas.drawPath(_hexagon(Offset(cx, cy), hexW / 2, hexH / 2), latticeStroke);
+        _addHexagon(lattice, Offset(cx, cy), hexW / 2, hexH / 2);
       }
     }
+    canvas.drawPath(lattice, latticeStroke);
 
     for (final MapEntry<(int, int), double> e in gridHeat.entries) {
       final (int col, int row) = e.key;
@@ -611,10 +762,16 @@ class _SnsCellsPainter extends CustomPainter {
               .withValues(alpha: 0.7),
       );
     }
+  }
+
+  /// The wave, the nodes, the self pin and the toasts: everything that moves.
+  void _paintNodesAndToasts(Canvas canvas, Size size) {
+    final Offset centre = _centre;
+    _paintWave(canvas, size);
 
     // --- Nodes ---
     for (final DiscoveredNode n in nodes) {
-      final Offset p = project(n.latitude!, n.longitude!);
+      final Offset p = _project(n.latitude!, n.longitude!);
       final bool flashing = n.pubKeyHex == flashPubKey;
       if (flashing) {
         // Expanding ring pulse around the active node.
@@ -665,7 +822,7 @@ class _SnsCellsPainter extends CustomPainter {
           : (1.0 - (age - 0.15) / 0.85).clamp(0.0, 1.0); // hold + out
       final bool located = t.lat != null && t.lon != null;
       if (located) {
-        final Offset anchor = project(t.lat!, t.lon!);
+        final Offset anchor = _project(t.lat!, t.lon!);
         final Offset pos = anchor.translate(0, -18 - age * 24);
         _drawToast(canvas, pos, t.text, opacity, t.isChannel);
       } else {
@@ -680,14 +837,29 @@ class _SnsCellsPainter extends CustomPainter {
   }
 
   /// A pointy-top hexagon of half-width [hw] and half-height [hh].
-  static Path _hexagon(Offset c, double hw, double hh) => Path()
-    ..moveTo(c.dx, c.dy - hh)
-    ..lineTo(c.dx + hw, c.dy - hh / 2)
-    ..lineTo(c.dx + hw, c.dy + hh / 2)
-    ..lineTo(c.dx, c.dy + hh)
-    ..lineTo(c.dx - hw, c.dy + hh / 2)
-    ..lineTo(c.dx - hw, c.dy - hh / 2)
-    ..close();
+  static Path _hexagon(Offset c, double hw, double hh) {
+    final Path p = Path();
+    _addHexagon(p, c, hw, hh);
+    return p;
+  }
+
+  /// The same hexagon, added to [into] as one more subpath.
+  ///
+  /// The field is one path: a thousand `drawPath` calls a frame is what made a
+  /// moving overlay expensive here, and a path with a thousand subpaths is one
+  /// stroke.
+  static void _addHexagon(Path into, Offset c, double hw, double hh) {
+    into
+      ..moveTo(c.dx, c.dy - hh)
+      ..lineTo(c.dx + hw, c.dy - hh / 2)
+      ..lineTo(c.dx + hw, c.dy + hh / 2)
+      ..lineTo(c.dx, c.dy + hh)
+      ..lineTo(c.dx - hw, c.dy + hh / 2)
+      ..lineTo(c.dx - hw, c.dy - hh / 2)
+      ..close();
+  }
+
+
 
   /// line, and an occasional horizontal "tear" band that offsets a
   /// slice of the frame. Kept subtle — the heat data is the point,
