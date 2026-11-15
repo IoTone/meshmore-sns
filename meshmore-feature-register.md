@@ -480,15 +480,21 @@ and the ~1 GB bundle. The upstream gate `kImageCodecBitstreamPathAvailable` is
 claims false, so the path is live there. This remains a separate piece of work
 with a stated size rather than an unknown.
 
+### First run (2026-11-15)
+
+| Row | State |
+| --- | --- |
+| First-run flow | **BUILT.** Three pages in `lib/screens/first_run_intro_screen.dart`: what the app asks for with the existing Grant and Skip path, a theme picker of all eleven presets that re-skins live as the choice is made, and the three decisions that change every screen afterwards (units, 24-hour clock, photos in colour, off by default). Replay from About opens on page 1 with the reader's current choices rather than resetting them. `test/screens/first_run_intro_screen_test.dart` holds the advance and back path, the live theme tap, the persisted unit, Skip never touching BLE, and 320 dp at 200 % text in every preset |
+
 ### Still open after this pass
 
 | Item | State |
 | --- | --- |
 | Notification with the app closed, 5 and 30 minutes | **Not run.** The steps are in `docs/MISSING-WORK.md` §9. The code defects that made it likely to fail are fixed (`6feb9a69`), so the test now measures the platform rather than the app |
 | Rename the Heltec to `h0` | One field in Device configuration, needs the app pointed at that radio rather than at `m0` |
-| Duty-cycle cutoff toggle with the time left in the hour | **Not built** (owner ruling 2026-11-06, register §9). `MeshcoreController.airtimeRemaining` exists (`meshcore_controller.dart:1323`), so it is a switch and a line |
+| Duty-cycle cutoff toggle with the time left in the hour | **BUILT 2026-11-15.** `mm.airtime.cutoff` in `lib/meshcore/airtime_prefs.dart` (default on), enforced in `MeshcoreController.send` only when `gated`, and shown in App settings as a switch plus a countdown row (`app_settings_screen.dart`, keys `settings-airtime-cutoff` and `settings-airtime-left`). Separate from the policy on purpose: the policy says what the channel's budget is, the switch says whether this app enforces it |
 | Radio rename persistence | Above: the write succeeds and does not survive a power cycle on 1.17.1 |
-| Geofence cue and notification | The spec asks for `geofenceEnter`/`geofenceExit` and an OS notification (`meshmore-sns-geofence-tracking.md:110-116`). The code plays `CueKind.alert` (`main.dart:346`) and posts nothing. See `docs/INDEX.md` for the contradiction row |
+| Geofence cue and notification | **Cues BUILT 2026-11-15, notification still not.** `CueKind.geofenceEnter` and `CueKind.geofenceExit` exist (`lib/cue/cue_service.dart`), every theme ships both files (`geofence_cues_test`), enter rises and exit falls, and `main.dart` chooses by `GeofenceAlert.isEntry`. The OS notification the spec also asks for is still not posted. See `docs/INDEX.md` for the contradiction row |
 | Place destination channel | A dropped place goes to the active channel and the app never says so, and `Place` has no channel field (`lib/places/place.dart`). See `docs/INDEX.md` |
 
 ### Documented corrections
