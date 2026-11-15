@@ -641,12 +641,22 @@ DRONE_PEAK_DB = -6.0
 # near zero. The owner's report was exactly that — "the forest sound is super
 # muted and subtle" — so the quiet-in-the-ear packs get makeup gain and the
 # bright ones are left alone. Soft clipping keeps the peak legal afterwards.
-THEME_GAIN_DB = {
-    "forest": 7.0,
-    "seele": 5.0,
-    "umber": 5.0,
-    "recon": 4.0,
-    "studio": 2.0,
+# Per-theme *harmonic* trim, not a gain trim.
+#
+# The first attempt at this was makeup gain plus a tanh limiter, and the owner's
+# report was exact: the forest cues sounded deep fried. A low sine pushed 7 dB
+# into a limiter is a square wave with the harmonics that implies, which is
+# distortion, not loudness.
+#
+# What actually raises perceived level at an unchanged peak is harmonic content:
+# a tone with an audible octave reads louder than a pure sine at the same peak,
+# and it stays clean. So the quiet-in-the-ear themes get their second harmonic
+# mixed in before the normalisation, and the normalisation does the rest.
+THEME_HARMONIC_DB = {
+    "forest": -8.0,
+    "seele": -11.0,
+    "umber": -11.0,
+    "recon": -14.0,
 }
 
 # The shortest a cue may be, in seconds. These are perception floors, not
@@ -822,27 +832,36 @@ def _synth_one(theme_key, cue_key):
     for i in range(max(0, len(samples) - fade_n), len(samples)):
         k = (len(samples) - i) / fade_n
         samples[i] = int(samples[i] * k)
-    # Peak-normalise, then the theme's own makeup gain, then soft-clip so a
-    # boosted cue cannot exceed full scale. The clip is a tanh, which rounds the
-    # peaks instead of squaring them off, so a boosted cue keeps its shape.
+    samples = _enrich(samples, THEME_HARMONIC_DB.get(theme_key)
+                      if kind != "hum" else None)
+    # Peak-normalise. No clipping, no makeup gain: a limited low sine is the
+    # deep-fried sound the owner reported, and the harmonic enrichment lives in
+    # [_enrich] where it belongs, before this step.
     target = DRONE_PEAK_DB if kind == "hum" else TARGET_PEAK_DB
-    out = _normalize(samples, target)
-    # The drone is exempt: it loops for the whole scan window, so makeup gain
-    # there would put a continuous tone under everything.
-    gain_db = 0.0 if kind == "hum" else THEME_GAIN_DB.get(theme_key, 0.0)
-    if gain_db:
-        g = 10 ** (gain_db / 20.0)
-        ceiling = 32767.0
-        out = [_soft_clip(v * g, ceiling) for v in out]
+    return _normalize(samples, target)
+
+
+def _enrich(samples, octave_db):
+    """Mixes in an octave of the cue's own waveform.
+
+    A tone with a second harmonic reads louder at the same peak than a pure
+    sine, and it stays clean. The octave is derived from the signal itself by
+    half-wave rectification and smoothing, which is a cheap way to get the
+    second harmonic without re-synthesising the cue.
+    """
+    if octave_db is None:
+        return samples
+    gain = 10 ** (octave_db / 20.0)
+    out = []
+    prev = 0.0
+    for v in samples:
+        x = v / 32767.0
+        # |x| carries a strong second harmonic of a symmetric waveform.
+        h = abs(x)
+        prev = prev * 0.35 + h * 0.65
+        y = x + gain * (prev - 0.4)
+        out.append(int(max(-32767, min(32767, y * 32767))))
     return out
-
-
-def _soft_clip(v, ceiling):
-    """tanh limiting: linear below ~70 % of the ceiling, rounded above it."""
-    x = v / ceiling
-    if -0.7 < x < 0.7:
-        return int(v)
-    return int(ceiling * math.tanh(x))
 
 
 def _write_wav(path, samples):

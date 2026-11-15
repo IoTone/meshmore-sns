@@ -49,27 +49,27 @@ void main() {
         senderName: 'Sam', emoji: '👍', hash: 'abcd2345');
     expect(line, '@[Sam]👍\nabcd2345');
 
-    final ({String hash, String emoji, String? senderName, bool isOpen})? p =
+    final ({String hash, String emoji, String? author, bool isOpen})? p =
         Reactions.parse(line);
     expect(p, isNotNull);
     expect(p!.hash, 'abcd2345');
     expect(p.emoji, '👍');
-    expect(p.senderName, 'Sam');
+    expect(p.author, 'Sam');
     expect(p.isOpen, isFalse);
   });
 
   test('a direct reaction has no name, because the envelope carries it', () {
     final String line = Reactions.encodeDirect(emoji: '❤️', hash: 'abcd2345');
     expect(line, '❤️\nabcd2345');
-    final ({String hash, String emoji, String? senderName, bool isOpen})? p =
+    final ({String hash, String emoji, String? author, bool isOpen})? p =
         Reactions.parse(line);
     expect(p, isNotNull);
     expect(p!.emoji, '❤️');
-    expect(p.senderName, isNull);
+    expect(p.author, isNull);
   });
 
   test('MeshCore Open\'s shorthand is read, and marked as theirs', () {
-    final ({String hash, String emoji, String? senderName, bool isOpen})? p =
+    final ({String hash, String emoji, String? author, bool isOpen})? p =
         Reactions.parse('r:1a2b:03');
     expect(p, isNotNull);
     expect(p!.hash, '1a2b');
@@ -89,7 +89,7 @@ void main() {
     for (final String emoji in Reactions.palette) {
       final String line =
           Reactions.encodeChannel(senderName: 'Kim', emoji: emoji, hash: '0abc2345');
-      final ({String hash, String emoji, String? senderName, bool isOpen})? p =
+      final ({String hash, String emoji, String? author, bool isOpen})? p =
           Reactions.parse(line);
       expect(p, isNotNull, reason: '$emoji did not parse');
       expect(p!.emoji, emoji);

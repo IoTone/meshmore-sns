@@ -24,12 +24,12 @@ void main() {
     // write and what the reader needs to pick the right message.
     final String line =
         Reactions.encodeChannel(senderName: 'Sam', emoji: '👍', hash: hash);
-    final ({String hash, String emoji, String? senderName, bool isOpen})? rx =
+    final ({String hash, String emoji, String? author, bool isOpen})? rx =
         Reactions.parse(line);
     expect(rx, isNotNull);
     expect(rx!.hash, hash, reason: 'the reaction points at the target');
     expect(rx.emoji, '👍');
-    expect(rx.senderName, 'Sam',
+    expect(rx.author, 'Sam',
         reason: "the line names the target's author, not the reactor");
   });
 
@@ -51,8 +51,8 @@ void main() {
     final String lineB = Reactions.encodeChannel(
         senderName: 'Kim', emoji: '👍', hash: a);
     expect(Reactions.parse(lineA)!.hash, Reactions.parse(lineB)!.hash);
-    expect(Reactions.parse(lineA)!.senderName, 'Sam');
-    expect(Reactions.parse(lineB)!.senderName, 'Kim');
+    expect(Reactions.parse(lineA)!.author, 'Sam');
+    expect(Reactions.parse(lineB)!.author, 'Kim');
   });
 
   test('reactions survive a JSON round trip with the message', () {

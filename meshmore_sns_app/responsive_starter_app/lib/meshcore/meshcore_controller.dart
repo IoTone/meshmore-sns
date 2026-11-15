@@ -3530,6 +3530,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return true;
   }
 
+  /// The body of a channel message: after the `Name: ` prefix, when there is
+  /// one. A reaction line arrives wrapped in that prefix like any other line.
+  static String _reactionBodyOf(String text) {
+    final int i = text.indexOf(': ');
+    return i > 0 && i < 40 ? text.substring(i + 2) : text;
+  }
+
   /// Reactions heard for a message this window no longer holds.
   int _reactionsWithoutTarget = 0;
   int get reactionsWithoutTarget => _reactionsWithoutTarget;
@@ -3542,7 +3549,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   bool _applyReaction(
     int channelIdx,
     String? peerHex,
-    ({String hash, String emoji, String? senderName, bool isOpen}) rx,
+    ({String hash, String emoji, String? author, bool isOpen}) rx,
   ) {
     for (int i = _messages.length - 1; i >= 0; i--) {
       final ChatMessage m = _messages[i];
@@ -3557,12 +3564,16 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       // carried beside it, so two people who typed the same words at the same
       // second are told apart here rather than colliding.
       if (peerHex == null &&
-          rx.senderName != null &&
-          rx.senderName != _senderNameOf(m)) {
+          rx.author != null &&
+          rx.author != _senderNameOf(m)) {
         continue;
       }
       final List<String?> who = m.reactions.putIfAbsent(rx.emoji, () => <String?>[]);
-      final String? tag = rx.senderName;
+      // Who reacted is the sender prefix of the reaction line, not the author
+      // named inside it: that field says whose message was reacted to.
+      final String? tag = peerHex == null
+          ? parseChannelSenderName(_reactionBodyOf(m.text))
+          : null;
       if (!who.contains(tag)) who.add(tag);
       _persistChat();
       _invalidateMessagesCache(m.channelIdx);
@@ -3601,8 +3612,11 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       // than appended: a thread of one-emoji lines is not what a reader wants.
       // The hash is salted with the sender's name in a channel, which is what
       // the line itself carries (`@[name]emoji\nhash`).
-      final ({String hash, String emoji, String? senderName, bool isOpen})? rx =
-          Reactions.parse(cm.text);
+      // Parse the **body**, after the `Name: ` prefix a channel message carries.
+      // Parsing the whole line never matched, which is why real reactions from
+      // other clients arrived as ordinary messages.
+      final ({String hash, String emoji, String? author, bool isOpen})? rx =
+          Reactions.parse(_reactionBodyOf(cm.text));
       if (rx != null && _applyReaction(cm.channelIdx, null, rx)) {
         notifyListeners();
         return;

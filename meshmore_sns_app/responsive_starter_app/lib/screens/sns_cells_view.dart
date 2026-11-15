@@ -1,7 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -16,7 +15,6 @@ import '../meshcore/message_heat.dart';
 import '../meshcore/own_location.dart';
 import '../sns/sns_frame.dart';
 import '../theme/mm_skin.dart';
-import '../theme/theme_controller.dart';
 import '../theme/viz_palette.dart';
 import '../ui/mm_shape.dart';
 
@@ -129,10 +127,10 @@ class _SnsCellsViewState extends State<SnsCellsView>
     if (!mounted) return;
     final int nowMs = DateTime.now().millisecondsSinceEpoch;
     final int second = nowMs ~/ 1000;
-    // Reduce-motion removes the sweep and the fades, so the frame clock buys
-    // nothing there and the view goes back to one repaint a second.
-    final bool still = context.read<ThemeController>().reduceMotion;
-    if (still && second == _lastPaintSecond) return;
+    // One repaint a second: the heat is a slow colour and the field is static
+    // between samples. The frame clock existed for a CRT sweep that no longer
+    // exists, and it was most of why this view felt slow.
+    if (second == _lastPaintSecond) return;
     _lastPaintSecond = second;
     setState(() => _nowMs = nowMs);
   }
@@ -476,11 +474,6 @@ class _SnsCellsPainter extends CustomPainter {
     final double cellPx =
         CoverageStore.cellDeg * _mPerDegLat * pxPerMeter;
 
-    // The CRT sweep line position — shared by the grid (for the
-    // local magnification/glow as the beam passes) and the glitch
-    // overlay (which draws the band itself).
-    final double sweepY = ((nowMs % 3200) / 3200.0) * size.height;
-
     // A quiet channel says so here, over its own dial, instead of replacing it.
     if (quiet) {
       final TextPainter tp = TextPainter(
@@ -499,26 +492,9 @@ class _SnsCellsPainter extends CustomPainter {
           Offset(centre.dx - tp.width / 2, centre.dy - tp.height / 2));
     }
 
-    // --- Reference grid (always on, CRT phosphor glow) ---
-    // Aligned to the geographic cell lattice so heat squares sit
-    // inside grid cells. When cells are too small to read, step by
-    // a multiple so lines stay ~16 px+ apart instead of vanishing.
-    //
-    // Uses the accent colour (not onSurfaceVariant) so it's visible
-    // on monochromatic/terminal themes where surface-variant is
-    // nearly the background. Each line is drawn as a soft blurred
-    // glow + a crisp bright core = phosphor look. Near the sweep
-    // line, horizontal lines bow apart (a passing "lens"
-    // magnification) and everything brightens.
-    final int step = math.max(1, (16 / cellPx).ceil());
-    final double gridPx = cellPx * step;
-
-    // Pixel-space origin of the displayed grid lattice: the SW corner
-    // of the geographic cell that contains self, projected to pixels.
-    // Lines (and heat squares) live on `{origin + k * gridPx}`. Shared
-    // by the grid drawing AND the heat fill so heat snaps to — and
-    // fills — the same squares the lines outline, instead of floating
-    // as fixed-size blobs near the grid corners.
+    // The lattice origin: the south-west corner of the geographic cell that
+    // holds us, projected to pixels, so a cell's address and its screen
+    // position agree.
     final double selfCellLon =
         (selfLon / CoverageStore.cellDeg).floor() * CoverageStore.cellDeg;
     final double gridOriginX =
@@ -527,168 +503,83 @@ class _SnsCellsPainter extends CustomPainter {
         (selfLat / CoverageStore.cellDeg).floor() * CoverageStore.cellDeg;
     final double gridOriginY =
         centre.dy - (selfCellLat - selfLat) * _mPerDegLat * pxPerMeter;
-    final bool latticeOk = gridPx.isFinite && gridPx >= 2;
 
-    if (latticeOk) {
-      const double bandHalf = 34.0; // sweep influence radius (px)
-      final Paint glow = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.0
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.6);
-      final Paint core = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.8;
-
-      // Vertical lines (no displacement — beam is horizontal — but
-      // brighten the segment that crosses the sweep band).
-      double x0 = gridOriginX;
-      x0 -= (x0 / gridPx).ceil() * gridPx;
-      for (double x = x0; x < size.width; x += gridPx) {
-        glow.color = accent.withValues(alpha: 0.10);
-        core.color = accent.withValues(alpha: 0.32);
-        canvas.drawLine(Offset(x, 0), Offset(x, size.height), glow);
-        canvas.drawLine(Offset(x, 0), Offset(x, size.height), core);
-        // Energised segment where the beam crosses.
-        canvas.drawLine(
-            Offset(x, sweepY - bandHalf),
-            Offset(x, sweepY + bandHalf),
-            Paint()
-              ..strokeWidth = 1.4
-              ..color = accent.withValues(alpha: 0.55)
-              ..maskFilter =
-                  const MaskFilter.blur(BlurStyle.normal, 1.5));
-      }
-
-      // Horizontal lines — displaced away from the sweep centre
-      // within the band (magnification), brighter the closer they
-      // are to the beam.
-      double y0 = gridOriginY;
-      y0 -= (y0 / gridPx).ceil() * gridPx;
-      for (double y = y0; y < size.height; y += gridPx) {
-        final double d = y - sweepY;
-        double yy = y;
-        double bright = 0.0;
-        if (d.abs() < bandHalf) {
-          final double t = 1.0 - d.abs() / bandHalf; // 0..1 at centre
-          // Push the line away from the beam centre — lattice spreads
-          // = magnified — by up to ~10 px right at the beam.
-          yy = y + d.sign * t * 10.0;
-          bright = t;
-        }
-        glow.color = accent.withValues(alpha: 0.10 + 0.30 * bright);
-        core.color = accent.withValues(alpha: 0.32 + 0.45 * bright);
-        canvas.drawLine(Offset(0, yy), Offset(size.width, yy), glow);
-        canvas.drawLine(Offset(0, yy), Offset(size.width, yy), core);
-      }
-    }
-
-    // --- Heat cells ---
-    // Glitch clock: a coarse time quantum (~7 fps) drives the
-    // RGB-split phase so hot cells shimmer like a degrading CRT feed
-    // without thrashing every frame.
-    final double splitPhase =
-        math.sin(nowMs / 220.0); // -1..1, ~0.7 Hz
-
-    // Snap heat into the displayed grid lattice and fill whole grid
-    // squares. When zoomed out (e.g. senders spread across WA + BC),
-    // many fine geographic cells fall inside one visible grid square;
-    // we keep the hottest so the square reads as a solid filled cell
-    // aligned to the grid lines, rather than a small blob hovering
-    // near a grid corner.
+    // --- Heat field ---
+    //
+    // Hexagons on a real hex lattice, colour only. What was here drew a square
+    // reference grid plus a per-cell hexagon inscribed in a square, ran a
+    // blurred stroke around every cell, and animated a CRT sweep, a lens
+    // distortion and a chromatic split on top. On a phone that is hundreds of
+    // blurred paths per frame, which the owner measured as one frame every
+    // three seconds, and the inscribed hexagons overlapped their neighbours
+    // because a hexagon does not fit inside a square that sits beside another.
+    //
+    // This is the map's density field instead: odd-r offset rows, spacing
+    // 0.75 of the cell height, one flat fill per occupied cell and nothing
+    // else. No lattice, no blur, no motion beyond the colour the heat itself
+    // supplies.
+    final int step = math.max(1, (16 / cellPx).ceil());
+    final double hexW = cellPx * step;
+    final double hexH = cellPx * step;
     final Map<(int, int), double> gridHeat = <(int, int), double>{};
     final Map<(int, int), int> gridCount = <(int, int), int>{};
-    final List<({Offset centre, double hotness, int count})> looseHeat =
-        <({Offset centre, double hotness, int count})>[];
-    heat.forEach((String key, double hotness) {
-      final ({int latBucket, int lonBucket})? b =
-          CoverageStore.parseKey(key);
-      if (b == null) return;
-      final ({double lat, double lon}) c =
-          CoverageStore.cellCentre(b.latBucket, b.lonBucket);
-      final Offset cc = project(c.lat, c.lon);
-      final int count = heatCounts[key] ?? 0;
-      if (latticeOk) {
-        final int col = ((cc.dx - gridOriginX) / gridPx).floor();
-        final int row = ((cc.dy - gridOriginY) / gridPx).floor();
-        final (int, int) k = (col, row);
-        final double prev = gridHeat[k] ?? 0.0;
-        if (hotness > prev) gridHeat[k] = hotness;
-        gridCount[k] = (gridCount[k] ?? 0) + count; // sum over merged cells
-      } else {
-        looseHeat.add((centre: cc, hotness: hotness, count: count));
-      }
-    });
-
-    // The halo first: a hot cell bleeds into the cells around it, so the
-    // picture reads as a temperature rather than as a filled square. Drawn
-    // under the solid cells, with a falloff wide enough to reach a neighbour.
-    for (final MapEntry<(int, int), double> e in gridHeat.entries) {
-      if (e.value < 0.15) continue;
-      final Rect r = Rect.fromLTWH(gridOriginX + e.key.$1 * gridPx,
-          gridOriginY + e.key.$2 * gridPx, gridPx, gridPx);
-      final Offset c = r.center;
-      final double radius = gridPx * 1.9;
-      canvas.drawCircle(
-        c,
-        radius,
-        Paint()
-          ..shader = RadialGradient(
-            colors: <Color>[
-              Color.lerp(cool, hot, e.value)!
-                  .withValues(alpha: 0.20 * e.value.clamp(0.0, 1.0)),
-              // The same colour at zero alpha rather than a literal black: the
-              // falloff has to end in the ground, whatever the ground is.
-              cool.withValues(alpha: 0),
-            ],
-          ).createShader(Rect.fromCircle(center: c, radius: radius)),
-      );
+    // A heat key is a sender identity. Its cell comes from the sender's own
+    // recorded position, which the painter already has in `nodes`.
+    final Map<String, (int, int)> cellOf = <String, (int, int)>{
+      for (final DiscoveredNode n in nodes)
+        n.pubKeyHex: (
+          ((n.latitude! * _mPerDegLat - selfLat * _mPerDegLat) *
+                      pxPerMeter -
+                  (gridOriginY - centre.dy)) ~/
+              (hexH * 0.75),
+          ((n.longitude! - selfLon) * mPerDegLon * pxPerMeter -
+                  (gridOriginX - centre.dx)) ~/
+              hexW,
+        ),
+    };
+    for (final MapEntry<String, double> e in heat.entries) {
+      final (int, int)? cell = cellOf[e.key];
+      if (cell == null) continue;
+      final double v = gridHeat[cell] ?? 0;
+      if (e.value > v) gridHeat[cell] = e.value;
+      gridCount[cell] = (gridCount[cell] ?? 0) + 1;
     }
 
-    void drawHeatRect(Rect r, double hotness) {
-      // white (cool) → red (hot). Floor the alpha at 0.40 so even a
-      // single fresh message reads as a solid patch rather than a
-      // ghost; ramp to near-opaque when hot.
+    // Heat with no cell to sit in: a sender we cannot place still happened.
+    final List<({Offset centre, double hotness, int count})> looseHeat =
+        <({Offset centre, double hotness, int count})>[
+      for (final MapEntry<String, double> e in heat.entries)
+        if (!cellOf.containsKey(e.key))
+          (centre: centre, hotness: e.value.clamp(0.0, 1.0), count: 1),
+    ];
+
+    for (final MapEntry<(int, int), double> e in gridHeat.entries) {
+      final (int col, int row) = e.key;
+      // Odd-r offset: every other row shifts half a cell, which is what makes
+      // hexagons interlock instead of leaving a seam.
+      final double cx = gridOriginX +
+          (col + (row.isOdd ? 0.5 : 0)) * hexW +
+          hexW / 2;
+      final double cy = gridOriginY + row * hexH * 0.75 + hexH / 2;
+      final Path hex = _hexagon(Offset(cx, cy), hexW / 2, hexH / 2);
+      final double hotness = e.value.clamp(0.0, 1.0);
       final Color fill = Color.lerp(cool, hot, hotness)!
           .withValues(alpha: (0.40 + 0.50 * hotness).clamp(0.0, 0.92));
-      canvas.drawRect(r, Paint()..color = fill);
-
-      // RGB-split / chromatic aberration on hot cells — draw a red
-      // ghost and a cyan ghost offset opposite ways, amount tied to
-      // hotness + the split phase. Reads as a glitchy "signal hot"
-      // cue and intensifies as the cell heats up.
-      if (hotness > 0.6) {
-        final double s = splitPhase * (1.0 + hotness * 2.5);
-        final Paint redGhost = Paint()
-          ..color = kCellHeatHot.withValues(alpha: 0.30 * hotness)
-          ..blendMode = BlendMode.screen;
-        final Paint cyanGhost = Paint()
-          ..color = kCellHeatCool.withValues(alpha: 0.22 * hotness)
-          ..blendMode = BlendMode.screen;
-        canvas.drawRect(r.shift(Offset(s, 0)), redGhost);
-        canvas.drawRect(r.shift(Offset(-s, 0)), cyanGhost);
+      canvas.drawPath(hex, Paint()..color = fill);
+      final int count = gridCount[e.key] ?? 0;
+      if (count > 0 && hexW >= 16) {
+        _drawCount(canvas, Offset(cx, cy), '$count', hotness > 0.55);
       }
     }
-
-    gridHeat.forEach(((int, int) k, double hotness) {
-      final Rect r = Rect.fromLTWH(
-        gridOriginX + k.$1 * gridPx,
-        gridOriginY + k.$2 * gridPx,
-        gridPx,
-        gridPx,
-      );
-      drawHeatRect(r, hotness);
-      // Last-hour message count, centred, when the square is big enough
-      // to fit a legible digit.
-      final int count = gridCount[k] ?? 0;
-      if (count > 0 && gridPx >= 16) {
-        _drawCount(canvas, r.center, '$count', hotness > 0.55);
-      }
-    });
-    // Degenerate lattice fallback — fixed-size centred squares.
+    // A message from a sender we cannot place: no cell, so a small hexagon at
+    // the centre rather than a square at an invented address.
     for (final ({Offset centre, double hotness, int count}) h in looseHeat) {
-      drawHeatRect(
-        Rect.fromCenter(center: h.centre, width: 12, height: 12),
-        h.hotness,
+      final Path hex = _hexagon(h.centre, 7, 8);
+      canvas.drawPath(
+        hex,
+        Paint()
+          ..color = Color.lerp(cool, hot, h.hotness)!
+              .withValues(alpha: 0.7),
       );
     }
 
@@ -727,8 +618,8 @@ class _SnsCellsPainter extends CustomPainter {
         selfPaint);
     canvas.drawCircle(centre, 4, Paint()..color = self);
 
-    // --- Glitch overlay: CRT scanlines + sweep + occasional tear ---
-    _drawGlitch(canvas, size);
+    // Motion was removed on purpose: the heat is a colour, and a colour does
+    // not need a CRT sweep to read.
 
     // --- Toasts (drawn on top of scanlines so text stays crisp) ---
     // Located messages (DMs from a positioned sender) toast *over
@@ -759,58 +650,19 @@ class _SnsCellsPainter extends CustomPainter {
     }
   }
 
-  /// CRT-style glitch layer: static scanlines, a sweeping bright
+  /// A pointy-top hexagon of half-width [hw] and half-height [hh].
+  static Path _hexagon(Offset c, double hw, double hh) => Path()
+    ..moveTo(c.dx, c.dy - hh)
+    ..lineTo(c.dx + hw, c.dy - hh / 2)
+    ..lineTo(c.dx + hw, c.dy + hh / 2)
+    ..lineTo(c.dx, c.dy + hh)
+    ..lineTo(c.dx - hw, c.dy + hh / 2)
+    ..lineTo(c.dx - hw, c.dy - hh / 2)
+    ..close();
+
   /// line, and an occasional horizontal "tear" band that offsets a
   /// slice of the frame. Kept subtle — the heat data is the point,
   /// the glitch is flavour.
-  void _drawGlitch(Canvas canvas, Size size) {
-    // Static scanlines — dark horizontal lines every 3px.
-    final Paint scan = Paint()
-      ..color = Colors.black.withValues(alpha: 0.10)
-      ..strokeWidth = 1.0;
-    for (double y = 0; y < size.height; y += 3.0) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), scan);
-    }
-
-    // Sweeping scan line — one brighter band travelling top→bottom
-    // on a ~3.2 s loop.
-    final double sweepT = (nowMs % 3200) / 3200.0;
-    final double sweepY = sweepT * size.height;
-    final Paint sweep = Paint()
-      ..shader = ui.Gradient.linear(
-        Offset(0, sweepY - 14),
-        Offset(0, sweepY + 14),
-        <Color>[
-          accent.withValues(alpha: 0.0),
-          accent.withValues(alpha: 0.16),
-          accent.withValues(alpha: 0.0),
-        ],
-        <double>[0.0, 0.5, 1.0],
-      );
-    canvas.drawRect(
-        Rect.fromLTWH(0, sweepY - 14, size.width, 28), sweep);
-
-    // Occasional tear — every few seconds, a thin horizontal slice
-    // gets a bright offset bar (RGB-split coloured). Driven by a
-    // coarse time hash so it fires irregularly, not on a metronome.
-    final int tearWindow = nowMs ~/ 700;
-    final int tearHash = Object.hash(tearWindow, 0x5eed);
-    if (tearHash % 5 == 0) {
-      final double ty =
-          (tearHash >> 3 & 0xFF) / 255.0 * size.height;
-      final double th = 2.0 + (tearHash >> 11 & 0x3);
-      canvas.drawRect(
-          Rect.fromLTWH(0, ty, size.width, th),
-          Paint()
-            ..color = kCellHeatHot.withValues(alpha: 0.18)
-            ..blendMode = BlendMode.screen);
-      canvas.drawRect(
-          Rect.fromLTWH(0, ty + th, size.width, th),
-          Paint()
-            ..color = kCellHeatCool.withValues(alpha: 0.14)
-            ..blendMode = BlendMode.screen);
-    }
-  }
 
 
 

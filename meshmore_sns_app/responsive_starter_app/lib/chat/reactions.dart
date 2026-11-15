@@ -82,7 +82,7 @@ abstract final class Reactions {
 
   /// A parsed reaction: which message it names, what it says, and who said it
   /// when the line named them.
-  static ({String hash, String emoji, String? senderName, bool isOpen})? parse(
+  static ({String hash, String emoji, String? author, bool isOpen})? parse(
       String text) {
     // MeshCore One, channel form.
     final RegExpMatch? channel = RegExp(r'^@\[(.+?)](.+?)\n([0-9a-tv-zA-TV-Z]{8})$')
@@ -91,7 +91,7 @@ abstract final class Reactions {
       return (
         hash: channel.group(3)!.toLowerCase(),
         emoji: channel.group(2)!,
-        senderName: channel.group(1),
+        author: channel.group(1),
         isOpen: false,
       );
     }
@@ -102,7 +102,18 @@ abstract final class Reactions {
       return (
         hash: direct.group(2)!.toLowerCase(),
         emoji: direct.group(1)!,
-        senderName: null,
+        author: null,
+        isOpen: false,
+      );
+    }
+    // The legacy ordering: `emoji@[author]\nhash`.
+    final RegExpMatch? legacy =
+        RegExp(r'^(.+?)@\[(.+?)]\n([0-9a-tv-zA-TV-Z]{8})$').firstMatch(text.trim());
+    if (legacy != null && _isEmoji(legacy.group(1)!)) {
+      return (
+        hash: legacy.group(3)!.toLowerCase(),
+        emoji: legacy.group(1)!,
+        author: legacy.group(2),
         isOpen: false,
       );
     }
@@ -112,7 +123,7 @@ abstract final class Reactions {
     final RegExpMatch? open =
         RegExp(r'^r:([0-9a-f]{4}):([0-9a-f]{2})$').firstMatch(text.trim());
     if (open != null) {
-      return (hash: open.group(1)!, emoji: '•', senderName: null, isOpen: true);
+      return (hash: open.group(1)!, emoji: '•', author: null, isOpen: true);
     }
     return null;
   }
@@ -125,6 +136,7 @@ abstract final class Reactions {
   /// keeps an ordinary one-line message from being read as a reaction.
   static bool _isEmoji(String emoji) {
     if (emoji.isEmpty) return false;
+    if (emoji.runes.length > 4) return false;
     final int first = emoji.runes.first;
     final bool high = first >= 0x2000;
     final bool carrying = emoji.runes.any((int r) => r == 0xFE0F || r == 0x20E3);
