@@ -279,6 +279,7 @@ void main() {
     '/settings/tools/soak',
     '/settings/tools/range',
     '/settings/chat',
+    '/settings/voice',
     '/settings/location',
     '/settings/geofences',
     '/settings/places',

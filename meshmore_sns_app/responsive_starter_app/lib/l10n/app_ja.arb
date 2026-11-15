@@ -2623,7 +2623,7 @@
   "photoModeNeedsCodec": "ニューラルコーデックが必要",
   "photoModeOnRequest": "要求時に全体",
   "photoModePreview": "プレビューのみ",
-  "photoModeTitle": "写真のモード",
+  "photoModeTitle": "写真モード",
   "photoModeSettings": "写真設定",
   "photoModeLinePreview": "プレビューのみ・画像は送信しません",
   "photoModeLine": "{mode} · {cost}",
@@ -2635,9 +2635,8 @@
     }
   },
   "photoSettingsTitle": "写真",
-  "chatMediaTitle": "チャット・写真・音声",
+  "chatMediaTitle": "チャットと写真",
   "chatMediaMessages": "メッセージ",
-  "voiceUnavailable": "この端末では音声合成を利用できません。",
   "chatMediaRetentionBody": "チャンネルごとに最新 {count} 件。",
 
   "@chatMediaRetentionBody": {

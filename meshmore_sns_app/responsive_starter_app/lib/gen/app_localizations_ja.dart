@@ -5616,7 +5616,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get photoModePreview => 'プレビューのみ';
 
   @override
-  String get photoModeTitle => '写真のモード';
+  String get photoModeTitle => '写真モード';
 
   @override
   String get photoModeSettings => '写真設定';
@@ -5633,13 +5633,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get photoSettingsTitle => '写真';
 
   @override
-  String get chatMediaTitle => 'チャット・写真・音声';
+  String get chatMediaTitle => 'チャットと写真';
 
   @override
   String get chatMediaMessages => 'メッセージ';
-
-  @override
-  String get voiceUnavailable => 'この端末では音声合成を利用できません。';
 
   @override
   String chatMediaRetentionBody(int count) {

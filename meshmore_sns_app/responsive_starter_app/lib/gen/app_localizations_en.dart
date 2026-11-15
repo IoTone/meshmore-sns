@@ -5846,13 +5846,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photoSettingsTitle => 'Photos';
 
   @override
-  String get chatMediaTitle => 'Chat, photos & voice';
+  String get chatMediaTitle => 'Chat & photos';
 
   @override
   String get chatMediaMessages => 'Messages';
-
-  @override
-  String get voiceUnavailable => 'Speech is not available on this device.';
 
   @override
   String chatMediaRetentionBody(int count) {

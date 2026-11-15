@@ -354,6 +354,23 @@ class AppSettingsScreen extends StatelessWidget {
             ),
             SizedBox(height: context.skin.space.sectionGap),
             MmSectionHeader(l.settingsAppGroupSound),
+            // Spoken messages: how the app reads incoming messages aloud. This is
+            // a reading preference — rate, pitch, which engine — and it belongs
+            // with the other reading and sound controls, not with what a message
+            // costs to send.
+            ListTile(
+              dense: true,
+              leading: const Icon(Icons.record_voice_over_outlined),
+              title: Text(l.voiceSettingsTitle),
+              subtitle: Text(
+                '${l.voiceRate} ${tts.rate.toStringAsFixed(1)}× · '
+                '${l.voicePitch} ${tts.pitch.toStringAsFixed(1)}'
+                '${tts.voice == null ? '' : ' · ${tts.voice!.name}'}',
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/voice'),
+            ),
             // R4 — language picker. Tap-to-open bottom sheet with
             // System / English / 日本語; the choice is persisted by
             // LocaleController and re-skins the whole tree live.

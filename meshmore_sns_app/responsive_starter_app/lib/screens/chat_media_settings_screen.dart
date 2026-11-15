@@ -1,28 +1,29 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../meshcore/chat_store.dart';
 import '../gen/app_localizations.dart';
 import '../theme/mm_skin.dart';
-import '../tts/tts_controller.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import 'photo_settings_screen.dart';
-import 'voice_settings_screen.dart' show prettyVoiceName, voiceSettingsRows;
 
-/// Chat and media: one page for everything a message is.
+/// Chat and photos: one page for what a message is and what a picture costs.
 ///
-/// There were three pages — a chat menu that held a little, App settings that
-/// held the photo rows, and a voice page — so "where do I change how long a
-/// message is kept" had no answer, and the photo mode lived three taps from the
-/// composer that uses it. A message, a photograph and a voice note are the same
-/// decision from the reader's side: how much of what I have goes on the air.
+/// The photo rows used to live in App settings, three rows between the location
+/// row and the system group, which is where a preference goes when nobody has
+/// decided where it belongs. History retention had no home at all. Both are the
+/// same question from the reader's side — how much of what I have goes out — so
+/// they are one page, and App settings points here rather than repeating it.
 ///
-/// Sections are Messages, Photos, Voice. Every one of them is *here*: nothing on
-/// this page links to a second settings page for the same thing, which is what
-/// makes one path possible to state.
+/// Sections are Messages and Photos. Nothing on this page links to a second
+/// settings page for the same thing, which is what makes one path possible to
+/// state.
+///
+/// What is deliberately NOT here: the spoken-voice settings (rate, pitch, which
+/// engine). Those are how the app *reads to you*, not what a message costs to
+/// send, and they belong with the other reading and sound preferences.
 class ChatMediaSettingsScreen extends StatelessWidget {
   const ChatMediaSettingsScreen({super.key});
 
@@ -55,9 +56,6 @@ class ChatMediaSettingsScreen extends StatelessWidget {
                     height: 1.4),
               ),
             ),
-            SizedBox(height: skin.space.sectionGap),
-            MmSectionHeader(l.voiceSettingsTitle),
-            const _VoiceSection(),
           ],
         ),
       ),
@@ -83,83 +81,6 @@ class _RetentionRow extends StatelessWidget {
       title: Text(l.chatMediaRetentionTitle),
       subtitle: Text(l.chatMediaRetentionBody(ChatStore.cap),
           style: TextStyle(color: cs.onSurfaceVariant)),
-    );
-  }
-}
-
-/// The voice rows, inline.
-///
-/// The same widget the voice page draws, so the two cannot disagree. The voice
-/// screen still exists for a deep link from a diagnostic, but this page is the
-/// one the settings hub opens.
-class _VoiceSection extends StatefulWidget {
-  const _VoiceSection();
-
-  @override
-  State<_VoiceSection> createState() => _VoiceSectionState();
-}
-
-class _VoiceSectionState extends State<_VoiceSection> {
-  List<TtsVoice> _voices = const <TtsVoice>[];
-  bool _loading = true;
-  bool _onlyCurrent = true;
-  final Map<String, bool> _offline = <String, bool>{};
-  TtsController? _tts;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final TtsController? tts = Provider.of<TtsController?>(context);
-    if (identical(tts, _tts)) return;
-    _tts = tts;
-    _load();
-  }
-
-  Future<void> _load() async {
-    final TtsController? tts = _tts;
-    if (tts == null) {
-      if (mounted) setState(() => _loading = false);
-      return;
-    }
-    final List<TtsVoice> all = await tts.listVoices();
-    if (!mounted) return;
-    setState(() {
-      _voices = all;
-      _loading = false;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l = AppLocalizations.of(context);
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    final TtsController? tts = _tts;
-    if (tts == null) {
-      return Padding(
-        padding: EdgeInsets.symmetric(
-            horizontal: context.skin.space.screenEdge,
-            vertical: context.skin.space.rowGap),
-        child: Text(l.voiceUnavailable,
-            style: TextStyle(color: cs.onSurfaceVariant)),
-      );
-    }
-    final String phoneLang = Localizations.localeOf(context).toLanguageTag();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: voiceSettingsRows(
-        context: context,
-        l: l,
-        cs: cs,
-        tc: tts,
-        allVoices: _voices,
-        onlyCurrent: _onlyCurrent,
-        phoneLang: phoneLang,
-        langOf: (String tag) => tag.replaceAll('_', '-').split('-').first,
-        onOnlyCurrentChanged: (bool v) => setState(() => _onlyCurrent = v),
-        loadingVoices: _loading,
-        offline: _offline,
-        prettyName: prettyVoiceName,
-      ),
     );
   }
 }

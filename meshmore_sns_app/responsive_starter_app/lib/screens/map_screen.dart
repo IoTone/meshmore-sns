@@ -7,6 +7,8 @@ import '../gen/app_localizations.dart';
 import '../places/place_history_sheet.dart';
 import '../places/place_store.dart';
 import '../places/place_wiring.dart';
+import '../theme/mm_skin.dart';
+import '../ui/mm_shape.dart';
 import 'street_map_view.dart';
 
 /// R61 — the **Map** primary view: the street map as its own swipe page.
@@ -89,13 +91,13 @@ class MapScreen extends StatelessWidget {
                                 const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                             decoration: BoxDecoration(
                               color: Theme.of(ctx).colorScheme.tertiary,
-                              borderRadius: BorderRadius.circular(7),
+                              borderRadius: BorderRadius.circular(kRadiusSm),
                             ),
                             child: Text(
                               '$count',
                               style: TextStyle(
                                 color: Theme.of(ctx).colorScheme.onTertiary,
-                                fontSize: 9,
+                                fontSize: ctx.skin.type.sizeMicro,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

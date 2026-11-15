@@ -3994,9 +3994,8 @@
     }
   },
   "photoSettingsTitle": "Photos",
-  "chatMediaTitle": "Chat, photos & voice",
+  "chatMediaTitle": "Chat & photos",
   "chatMediaMessages": "Messages",
-  "voiceUnavailable": "Speech is not available on this device.",
   "chatMediaRetentionBody": "The newest {count} messages per channel.",
 
   "@chatMediaRetentionBody": {
