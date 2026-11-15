@@ -652,11 +652,14 @@ DRONE_PEAK_DB = -6.0
 # a tone with an audible octave reads louder than a pure sine at the same peak,
 # and it stays clean. So the quiet-in-the-ear themes get their second harmonic
 # mixed in before the normalisation, and the normalisation does the rest.
-THEME_HARMONIC_DB = {
-    "forest": -8.0,
-    "seele": -11.0,
-    "umber": -11.0,
-    "recon": -14.0,
+THEME_SUSTAIN = {
+    # Multiplier on the theme's own decay exponent. Below 1 keeps the note alive
+    # for longer, which raises RMS at an unchanged peak with no distortion: this
+    # replaces a harmonic trick that added a discrete click at the attack.
+    "forest": 0.45,
+    "seele": 0.60,
+    "umber": 0.60,
+    "recon": 0.75,
 }
 
 # The shortest a cue may be, in seconds. These are perception floors, not
@@ -810,6 +813,11 @@ def _synth_ticks(th, cue, scale=1.0):
 
 def _synth_one(theme_key, cue_key):
     th = THEMES[theme_key]
+    # A quiet-in-the-ear theme keeps its note longer instead of being louder at
+    # the attack: same peak, more of it audible, no distortion.
+    sustain = THEME_SUSTAIN.get(theme_key)
+    if sustain is not None:
+        th = dict(th, decay=th["decay"] * sustain)
     # A theme may override a cue's whole character (NERV's Mission
     # Control set); otherwise the shared motif applies.
     cue = th.get("cues", {}).get(cue_key, CUES[cue_key])
@@ -832,8 +840,6 @@ def _synth_one(theme_key, cue_key):
     for i in range(max(0, len(samples) - fade_n), len(samples)):
         k = (len(samples) - i) / fade_n
         samples[i] = int(samples[i] * k)
-    samples = _enrich(samples, THEME_HARMONIC_DB.get(theme_key)
-                      if kind != "hum" else None)
     # Peak-normalise. No clipping, no makeup gain: a limited low sine is the
     # deep-fried sound the owner reported, and the harmonic enrichment lives in
     # [_enrich] where it belongs, before this step.

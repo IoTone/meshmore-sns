@@ -1320,13 +1320,6 @@ class _GridLegend extends StatelessWidget {
           row(Icons.touch_app, l.gridLegendTapShort),
           _LegendLines(lines: <String>[
             l.gridLegendRings(scaleValueDisplay),
-            l.gridLegendSelf,
-            l.gridLegendNorth,
-            l.gridLegendDot,
-            l.gridLegendKnown,
-            l.gridLegendFavourite,
-            l.gridLegendRipple,
-            l.gridLegendTap,
           ]),
           const SizedBox(height: 6),
         ],
@@ -1844,16 +1837,10 @@ class _TreeLegend extends StatelessWidget {
           row(Icons.more_horiz, l.treeFloodShort, colour: cs.onSurfaceVariant),
           row(Icons.arrow_forward, l.treeArrowShort),
           _LegendLines(lines: <String>[
-            l.meshTreeLegendDesc,
-            l.meshTreeLegendSelf,
-            l.meshTreeLegendRepeater,
-            l.meshTreeLegendRoom,
-            l.meshTreeLegendChat,
-            l.meshTreeLegendSensor,
+            // The two that add a consequence; "You — pinned at the centre"
+            // restated the row above it and is gone.
             l.meshTreeLegendFlood,
             l.meshTreeLegendFloat,
-            l.meshTreeLegendArrow,
-            l.meshTreeLegendInteract,
           ]),
         ],
       ),
@@ -1914,11 +1901,8 @@ class _FujiLegend extends StatelessWidget {
           row(Icons.help_outline, l.fujiUnknownShort,
               colour: cs.onSurfaceVariant),
           _LegendLines(lines: <String>[
-            l.fujiLegendDesc,
-            l.fujiLegendMe,
-            l.fujiLegendRefs,
-            l.fujiLegendPeers,
-            l.fujiLegendUnknown,
+            // The rows above already name every mark; only the one rule a
+            // reader cannot infer survives here.
             l.fujiLegendAutoQuery,
           ]),
         ],

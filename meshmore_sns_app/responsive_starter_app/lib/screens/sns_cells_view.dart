@@ -553,6 +553,26 @@ class _SnsCellsPainter extends CustomPainter {
           (centre: centre, hotness: e.value.clamp(0.0, 1.0), count: 1),
     ];
 
+    // The lattice, always on and cheap: one hairline hexagon per cell, no blur,
+    // no glow, no motion. Without it the view is a scatter of dots on black
+    // when no message has arrived, which reads as broken rather than as quiet.
+    final Paint latticeStroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.7
+      ..color = accent.withValues(alpha: 0.18);
+    final int cols = (size.width / hexW).ceil() + 2;
+    final int rows = (size.height / (hexH * 0.75)).ceil() + 2;
+    for (int row = -1; row < rows; row++) {
+      for (int col = -1; col < cols; col++) {
+        final double cx =
+            gridOriginX + (col + (row.isOdd ? 0.5 : 0)) * hexW + hexW / 2;
+        final double cy = gridOriginY + row * hexH * 0.75 + hexH / 2;
+        if (cx < -hexW || cx > size.width + hexW) continue;
+        if (cy < -hexH || cy > size.height + hexH) continue;
+        canvas.drawPath(_hexagon(Offset(cx, cy), hexW / 2, hexH / 2), latticeStroke);
+      }
+    }
+
     for (final MapEntry<(int, int), double> e in gridHeat.entries) {
       final (int col, int row) = e.key;
       // Odd-r offset: every other row shifts half a cell, which is what makes

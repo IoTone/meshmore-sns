@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -703,6 +704,34 @@ class AppLocalizationsJa extends AppLocalizations {
   String get firstRunHeader => 'MESHMORE · ようこそ';
 
   @override
+  String get firstRunBack => '戻る';
+
+  @override
+  String get firstRunNext => '次へ';
+
+  @override
+  String get firstRunSkipShort => 'スキップ';
+
+  @override
+  String get firstRunThemeTitle => 'テーマを選ぶ';
+
+  @override
+  String get firstRunThemeBody =>
+      'テーマごとに色・書体・効果音が変わります。あとから「外観とアクセシビリティ」で変更できます。';
+
+  @override
+  String get firstRunPrefsTitle => 'いくつかの設定';
+
+  @override
+  String get firstRunPrefsBody => 'すべての画面に関わる設定だけです。残りはあとで構いません。';
+
+  @override
+  String get firstRunConnect => 'MeshCore 無線機に接続';
+
+  @override
+  String get firstRunUnits => 'フィートとマイル';
+
+  @override
   String get firstRunTitle => 'このアプリが求めるもの';
 
   @override
@@ -925,27 +954,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get gridLegendSelf => '中央 = 自分。十字 = 南北 / 東西の目安。';
-
-  @override
-  String get gridLegendNorth => '上が北です。円の上は端末の向きではなく真北を示します。';
-
-  @override
-  String get gridLegendDot => '点は受信したノードです。明るいほど新しく、1日かけて消えていきます。';
-
-  @override
-  String get gridLegendKnown => 'ゆっくり広がる輪は、直接やり取りしたことのあるノードです。';
-
-  @override
-  String get gridLegendFavourite => '別色での速い点滅 = お気に入りのノード。';
-
-  @override
-  String get gridLegendRipple => '中央からの波紋は、送信者が分からないチャンネルのメッセージです。';
-
-  @override
-  String get gridLegendTap => 'ノードをタップで詳細 + メッセージ / お気に入り。';
-
-  @override
   String get gridViewRadial => 'レーダー';
 
   @override
@@ -965,22 +973,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get fujiLegendTitle => 'Fujiさん';
-
-  @override
-  String get fujiLegendDesc =>
-      '標高測量。√スケール軸で有名な建造物と高さを比較。自分の標高はデバイスGPSテレメトリまたは電話の位置情報から取得。';
-
-  @override
-  String get fujiLegendMe => '破線 = あなた。標高が判明していればその位置に、未取得なら地面に「ALT?」表示。';
-
-  @override
-  String get fujiLegendRefs => 'シルエット = 実世界の基準（人 → 富士山）でスケール感を示す。';
-
-  @override
-  String get fujiLegendPeers => '点はノードです。問い合わせた標高に置かれます。';
-
-  @override
-  String get fujiLegendUnknown => '地面沿いの縞帯は、まだ標高が分からないノードです。';
 
   @override
   String get fujiLegendAutoQuery => '自動問い合わせは標高をゆっくり集めます。タップでやり直します。';
@@ -2156,32 +2148,11 @@ class AppLocalizationsJa extends AppLocalizations {
       '無線がどの経路で各コンタクトに到達するかの有向グラフ。各エッジは、実際に送信に使う経路上のリピーターです。';
 
   @override
-  String get meshTreeLegendSelf => 'あなた — 中央に固定。';
-
-  @override
-  String get meshTreeLegendRepeater => '四角はリピーターです。他のラジオのメッセージを中継します。';
-
-  @override
-  String get meshTreeLegendRoom => 'ひし形はルームサーバです。名前付きのルームを提供するラジオです。';
-
-  @override
-  String get meshTreeLegendChat => '円は、直接メッセージできるノードです。';
-
-  @override
-  String get meshTreeLegendSensor => '小さく暗い円はセンサーです。計測値だけを送ります。';
-
-  @override
   String get meshTreeLegendFlood =>
       '破線で自分とつながる = フラッドルーティングのコンタクト。到達可能だが固定経路なし。';
 
   @override
   String get meshTreeLegendFloat => '浮遊（エッジなし）— advert のみで受信、経路不明。';
-
-  @override
-  String get meshTreeLegendArrow => '矢印は自分から目的ピアへ向かう。';
-
-  @override
-  String get meshTreeLegendInteract => 'ノードをタップで詳細、「中央に戻す」で表示を戻します。';
 
   @override
   String get nodeDetailHopsKv => 'ホップ数';
@@ -4032,7 +4003,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String diagnosticsFramingLine(
-      String truncated, String trailing, Object empty) {
+    String truncated,
+    String trailing,
+    Object empty,
+  ) {
     return '不完全なフレーム: 途中で切れた $truncated 件、余りのバイトがある $trailing 件、空の $empty 件';
   }
 
@@ -4207,7 +4181,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  ) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · パスハッシュ $ph';
   }
 
@@ -5584,9 +5563,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get gridLegendSignalOnly => '中抜き · 位置なし';
-
-  @override
-  String get gridLegendMore => '凡例の全文';
 
   @override
   String get gridLegendRingsShort => '同心円 · 距離';

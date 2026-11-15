@@ -39,7 +39,6 @@ void main() {
     // Copy fixture and export fixtures: file-shaped verbs.
     'lib/screens/diagnostics_screen.dart': 2,
     // The first-run intro's Grant / Continue / Skip steps.
-    'lib/screens/first_run_intro_screen.dart': 2,
     // The map-pack dialogs (delete, download) and the tile budget.
     'lib/screens/maps/maps_screen.dart': 6,
     'lib/screens/maps/maps_self_test_screen.dart': 2,

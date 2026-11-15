@@ -109,6 +109,11 @@ abstract class HapticBackend {
 /// Default audio: the two built-in `SystemSound` types. Cheap, asset-
 /// free, present on every platform. Per-concept packs (audioplayers +
 /// short WAVs per theme) supersede this when authored.
+/// An audio pack that can be prepared ahead of the first play.
+abstract interface class WarmableAudioPack {
+  Future<void> warm();
+}
+
 class SystemSoundAudioPack implements AudioPack {
   const SystemSoundAudioPack();
   @override
@@ -462,6 +467,18 @@ class CueService {
     assert(slot == null || isSignature(slot),
         'playSignature expects a signature slot, got $slot');
     return play(slot ?? CueKind.dmIn);
+  }
+
+  /// Warms the current theme's cues into the player.
+  ///
+  /// The first play of any asset costs a decode and a player start, which on a
+  /// phone is a hundred milliseconds or more — long enough that the owner heard
+  /// the cue arrive after the press rather than with it. Loading them at startup
+  /// and after a theme change moves that cost off the tap.
+  Future<void> warm() async {
+    final AudioPack p = audio;
+    if (p is! WarmableAudioPack) return;
+    await (p as WarmableAudioPack).warm();
   }
 
   /// Begin the sustained scanning drone (loops [CueKind.scanStart] for

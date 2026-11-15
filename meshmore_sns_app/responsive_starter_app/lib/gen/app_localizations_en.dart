@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -738,6 +739,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firstRunHeader => 'MESHMORE · WELCOME';
 
   @override
+  String get firstRunBack => 'Back';
+
+  @override
+  String get firstRunNext => 'Next';
+
+  @override
+  String get firstRunSkipShort => 'Skip';
+
+  @override
+  String get firstRunThemeTitle => 'Choose a theme';
+
+  @override
+  String get firstRunThemeBody =>
+      'Each theme is its own colours, type and sounds. Pick one now, change it any time in Appearance.';
+
+  @override
+  String get firstRunPrefsTitle => 'A few choices';
+
+  @override
+  String get firstRunPrefsBody =>
+      'These are the ones that change every screen. The rest can wait.';
+
+  @override
+  String get firstRunConnect => 'Connect your MeshCore radio';
+
+  @override
+  String get firstRunUnits => 'Feet and miles';
+
+  @override
   String get firstRunTitle => 'What this app will ask for';
 
   @override
@@ -973,34 +1003,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get gridLegendSelf =>
-      'Centre marker = you. Cross-hair = N-S / E-W guide.';
-
-  @override
-  String get gridLegendNorth =>
-      'North is up: the top of the circle is true north, not the direction the phone is facing.';
-
-  @override
-  String get gridLegendDot =>
-      'A dot is a node we have heard. Brighter means more recent; it fades out over a day.';
-
-  @override
-  String get gridLegendKnown =>
-      'A slow growing halo is a node we have messaged directly.';
-
-  @override
-  String get gridLegendFavourite =>
-      'Rapid blink in alt-colour = a favourited node.';
-
-  @override
-  String get gridLegendRipple =>
-      'A ripple from the centre is a channel message from someone we cannot name.';
-
-  @override
-  String get gridLegendTap =>
-      'Tap a node to see details + Message / Favourite.';
-
-  @override
   String get gridViewRadial => 'Radar';
 
   @override
@@ -1021,26 +1023,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fujiLegendTitle => 'FUJIさん';
-
-  @override
-  String get fujiLegendDesc =>
-      'Altitude survey. Heights on a √-scaled axis against famous landmarks. Your altitude comes from device GPS telemetry or the phone fix.';
-
-  @override
-  String get fujiLegendMe =>
-      'Dashed line = you. At your altitude, or pinned to the ground with ALT? until it resolves.';
-
-  @override
-  String get fujiLegendRefs =>
-      'Silhouettes = real-world references (person → Mt Fuji) for scale.';
-
-  @override
-  String get fujiLegendPeers =>
-      'Dots are nodes, plotted at their altitude once asked.';
-
-  @override
-  String get fujiLegendUnknown =>
-      'A striped band along the ground is a node with no altitude yet.';
 
   @override
   String get fujiLegendAutoQuery =>
@@ -1516,8 +1498,7 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other:
           '$count earlier transfers were dropped to make room, so those pictures stopped',
-      one:
-          'One earlier transfer was dropped to make room, so that picture stopped',
+      one: 'One earlier transfer was dropped to make room, so that picture stopped',
     );
     return '$_temp0';
   }
@@ -2254,39 +2235,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'A directed graph of how the radio reaches each contact. Each edge is a repeater on the route the radio actually sends by.';
 
   @override
-  String get meshTreeLegendSelf => 'You — pinned at the centre.';
-
-  @override
-  String get meshTreeLegendRepeater =>
-      'A square is a repeater: a radio that passes other radios\' messages.';
-
-  @override
-  String get meshTreeLegendRoom =>
-      'A diamond is a room server: a radio that hosts named rooms.';
-
-  @override
-  String get meshTreeLegendChat =>
-      'A circle is a node you can message directly.';
-
-  @override
-  String get meshTreeLegendSensor =>
-      'A small dim circle is a sensor: it only reports readings.';
-
-  @override
   String get meshTreeLegendFlood =>
       'Dashed edge to you = flood-routed contact. Reachable, but with no fixed path.';
 
   @override
   String get meshTreeLegendFloat =>
       'Floating (no edges) — heard via advert only; route unknown.';
-
-  @override
-  String get meshTreeLegendArrow =>
-      'Arrows point away from us, toward the destination peer.';
-
-  @override
-  String get meshTreeLegendInteract =>
-      'Tap a node for details, or Recenter to reset the view.';
 
   @override
   String get nodeDetailHopsKv => 'hops';
@@ -4199,7 +4153,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosticsFramingLine(
-      String truncated, String trailing, Object empty) {
+    String truncated,
+    String trailing,
+    Object empty,
+  ) {
     return 'incomplete frames: $truncated cut short, $trailing with bytes left over, $empty empty';
   }
 
@@ -4379,7 +4336,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph) {
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  ) {
     return '$freq MHz · $bw kHz · SF$sf · CR$cr · path hash $ph';
   }
 
@@ -5832,9 +5794,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridLegendSignalOnly => 'Hollow · no position';
-
-  @override
-  String get gridLegendMore => 'Full legend';
 
   @override
   String get gridLegendRingsShort => 'Rings · distance';

@@ -19,7 +19,7 @@ import 'cue_service.dart';
 /// full bespoke set — none fall through to a generic motif); if a file is
 /// missing at runtime (asset bundling slipped, etc.) we silently fall back
 /// to the system click via [SystemSoundAudioPack].
-class AssetAudioPack implements AudioPack {
+class AssetAudioPack implements AudioPack, WarmableAudioPack {
   AssetAudioPack({
     required this.theme,
     AudioPlayer? player,
@@ -141,6 +141,34 @@ class AssetAudioPack implements AudioPack {
     } catch (_) {
       // Asset missing / platform error — the scan just runs silent.
       // (No system-sound fallback: it can't loop.)
+    }
+  }
+
+  @override
+  /// Decodes the cues that matter most into the low-latency player.
+  ///
+  /// `audioplayers` in low-latency mode keeps a SoundPool of loaded samples, but
+  /// only once something has been played. Playing each cue once at zero volume
+  /// is the cheapest way to fill it: the pool keeps the decode, and the audible
+  /// play later is a start rather than a load.
+  @override
+  Future<void> warm() async {
+    for (final CueKind kind in <CueKind>[
+      CueKind.messageIn,
+      CueKind.dmIn,
+      CueKind.send,
+      CueKind.navNext,
+      CueKind.navPrev,
+      CueKind.discovery,
+      CueKind.alert,
+    ]) {
+      try {
+        await _player.play(AssetSource(assetPathFor(theme.preset, kind)),
+            volume: 0);
+        await _player.stop();
+      } catch (_) {
+        // A missing asset is the play path's problem, not the warm-up's.
+      }
     }
   }
 

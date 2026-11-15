@@ -63,7 +63,7 @@ import 'app_localizations_ja.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ja')
+    Locale('ja'),
   ];
 
   /// No description provided for @appName.
@@ -1364,6 +1364,60 @@ abstract class AppLocalizations {
   /// **'MESHMORE · WELCOME'**
   String get firstRunHeader;
 
+  /// No description provided for @firstRunBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get firstRunBack;
+
+  /// No description provided for @firstRunNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get firstRunNext;
+
+  /// No description provided for @firstRunSkipShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get firstRunSkipShort;
+
+  /// No description provided for @firstRunThemeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a theme'**
+  String get firstRunThemeTitle;
+
+  /// No description provided for @firstRunThemeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Each theme is its own colours, type and sounds. Pick one now, change it any time in Appearance.'**
+  String get firstRunThemeBody;
+
+  /// No description provided for @firstRunPrefsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A few choices'**
+  String get firstRunPrefsTitle;
+
+  /// No description provided for @firstRunPrefsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'These are the ones that change every screen. The rest can wait.'**
+  String get firstRunPrefsBody;
+
+  /// No description provided for @firstRunConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect your MeshCore radio'**
+  String get firstRunConnect;
+
+  /// No description provided for @firstRunUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Feet and miles'**
+  String get firstRunUnits;
+
   /// No description provided for @firstRunTitle.
   ///
   /// In en, this message translates to:
@@ -1778,48 +1832,6 @@ abstract class AppLocalizations {
   /// **'Rings are distance bands. With GPS at both ends the outer ring is the Range scale above (about {value} now). Without GPS they are signal bands: near, mid, far.'**
   String gridLegendRings(String value);
 
-  /// No description provided for @gridLegendSelf.
-  ///
-  /// In en, this message translates to:
-  /// **'Centre marker = you. Cross-hair = N-S / E-W guide.'**
-  String get gridLegendSelf;
-
-  /// No description provided for @gridLegendNorth.
-  ///
-  /// In en, this message translates to:
-  /// **'North is up: the top of the circle is true north, not the direction the phone is facing.'**
-  String get gridLegendNorth;
-
-  /// No description provided for @gridLegendDot.
-  ///
-  /// In en, this message translates to:
-  /// **'A dot is a node we have heard. Brighter means more recent; it fades out over a day.'**
-  String get gridLegendDot;
-
-  /// No description provided for @gridLegendKnown.
-  ///
-  /// In en, this message translates to:
-  /// **'A slow growing halo is a node we have messaged directly.'**
-  String get gridLegendKnown;
-
-  /// No description provided for @gridLegendFavourite.
-  ///
-  /// In en, this message translates to:
-  /// **'Rapid blink in alt-colour = a favourited node.'**
-  String get gridLegendFavourite;
-
-  /// No description provided for @gridLegendRipple.
-  ///
-  /// In en, this message translates to:
-  /// **'A ripple from the centre is a channel message from someone we cannot name.'**
-  String get gridLegendRipple;
-
-  /// No description provided for @gridLegendTap.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap a node to see details + Message / Favourite.'**
-  String get gridLegendTap;
-
   /// No description provided for @gridViewRadial.
   ///
   /// In en, this message translates to:
@@ -1861,36 +1873,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'FUJIさん'**
   String get fujiLegendTitle;
-
-  /// No description provided for @fujiLegendDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Altitude survey. Heights on a √-scaled axis against famous landmarks. Your altitude comes from device GPS telemetry or the phone fix.'**
-  String get fujiLegendDesc;
-
-  /// No description provided for @fujiLegendMe.
-  ///
-  /// In en, this message translates to:
-  /// **'Dashed line = you. At your altitude, or pinned to the ground with ALT? until it resolves.'**
-  String get fujiLegendMe;
-
-  /// No description provided for @fujiLegendRefs.
-  ///
-  /// In en, this message translates to:
-  /// **'Silhouettes = real-world references (person → Mt Fuji) for scale.'**
-  String get fujiLegendRefs;
-
-  /// No description provided for @fujiLegendPeers.
-  ///
-  /// In en, this message translates to:
-  /// **'Dots are nodes, plotted at their altitude once asked.'**
-  String get fujiLegendPeers;
-
-  /// No description provided for @fujiLegendUnknown.
-  ///
-  /// In en, this message translates to:
-  /// **'A striped band along the ground is a node with no altitude yet.'**
-  String get fujiLegendUnknown;
 
   /// No description provided for @fujiLegendAutoQuery.
   ///
@@ -3812,36 +3794,6 @@ abstract class AppLocalizations {
   /// **'A directed graph of how the radio reaches each contact. Each edge is a repeater on the route the radio actually sends by.'**
   String get meshTreeLegendDesc;
 
-  /// No description provided for @meshTreeLegendSelf.
-  ///
-  /// In en, this message translates to:
-  /// **'You — pinned at the centre.'**
-  String get meshTreeLegendSelf;
-
-  /// No description provided for @meshTreeLegendRepeater.
-  ///
-  /// In en, this message translates to:
-  /// **'A square is a repeater: a radio that passes other radios\' messages.'**
-  String get meshTreeLegendRepeater;
-
-  /// No description provided for @meshTreeLegendRoom.
-  ///
-  /// In en, this message translates to:
-  /// **'A diamond is a room server: a radio that hosts named rooms.'**
-  String get meshTreeLegendRoom;
-
-  /// No description provided for @meshTreeLegendChat.
-  ///
-  /// In en, this message translates to:
-  /// **'A circle is a node you can message directly.'**
-  String get meshTreeLegendChat;
-
-  /// No description provided for @meshTreeLegendSensor.
-  ///
-  /// In en, this message translates to:
-  /// **'A small dim circle is a sensor: it only reports readings.'**
-  String get meshTreeLegendSensor;
-
   /// No description provided for @meshTreeLegendFlood.
   ///
   /// In en, this message translates to:
@@ -3853,18 +3805,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Floating (no edges) — heard via advert only; route unknown.'**
   String get meshTreeLegendFloat;
-
-  /// No description provided for @meshTreeLegendArrow.
-  ///
-  /// In en, this message translates to:
-  /// **'Arrows point away from us, toward the destination peer.'**
-  String get meshTreeLegendArrow;
-
-  /// No description provided for @meshTreeLegendInteract.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap a node for details, or Recenter to reset the view.'**
-  String get meshTreeLegendInteract;
 
   /// No description provided for @nodeDetailHopsKv.
   ///
@@ -7153,7 +7093,10 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'incomplete frames: {truncated} cut short, {trailing} with bytes left over, {empty} empty'**
   String diagnosticsFramingLine(
-      String truncated, String trailing, Object empty);
+    String truncated,
+    String trailing,
+    Object empty,
+  );
 
   /// No description provided for @diagnosticsForgetShort.
   ///
@@ -7460,7 +7403,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{freq} MHz · {bw} kHz · SF{sf} · CR{cr} · path hash {ph}'**
   String networksSummary(
-      String freq, String bw, String sf, String cr, String ph);
+    String freq,
+    String bw,
+    String sf,
+    String cr,
+    String ph,
+  );
 
   /// No description provided for @networksMembers.
   ///
@@ -9748,12 +9696,6 @@ abstract class AppLocalizations {
   /// **'Hollow · no position'**
   String get gridLegendSignalOnly;
 
-  /// No description provided for @gridLegendMore.
-  ///
-  /// In en, this message translates to:
-  /// **'Full legend'**
-  String get gridLegendMore;
-
   /// No description provided for @gridLegendRingsShort.
   ///
   /// In en, this message translates to:
@@ -11474,8 +11416,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

@@ -299,7 +299,7 @@ Future<void> startApp() async {
         Provider<CueService>(
           create: (BuildContext ctx) {
             final ThemeController tc = ctx.read<ThemeController>();
-            return CueService(
+            final CueService cues = CueService(
               theme: tc,
               // R12 per-theme audio: pull WAV cues from
               // assets/audio/<themeKey>/<cue>.wav at play time.
@@ -308,6 +308,12 @@ Future<void> startApp() async {
               // pattern resolved off the active preset at play time.
               haptic: SystemHapticBackend(theme: tc),
             );
+            // Fill the player before anything plays, and again when the theme
+            // changes: a cue that arrives after the tap reads as a broken app,
+            // and the decode is the whole of that delay.
+            unawaited(cues.warm());
+            tc.addListener(() => unawaited(cues.warm()));
+            return cues;
           },
         ),
         ChangeNotifierProvider<DemoMode>.value(value: demo),
