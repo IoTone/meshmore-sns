@@ -75,6 +75,35 @@ String placeSourceText(AppLocalizations l, PlaceProvenance provenance) =>
       PlaceProvenance.inferred => l.placeSourceInferred,
     };
 
+/// The channel line a place shows, or null when this device does not know the
+/// slot.
+///
+/// A place is ordinary channel text, so the slot is the whole of its audience:
+/// a report on #field is read by everyone on #field and nobody else. The row
+/// records the slot it was sent on or seen on ([Place.channelIdx]), and this
+/// turns it into a sentence. A slot whose channel has since been renamed away
+/// still prints its number rather than vanishing, because "it went somewhere I
+/// no longer have" is the honest answer.
+String? placeChannelText(
+  AppLocalizations l,
+  Place place,
+  List<MapEntry<int, String>> channels,
+) {
+  final int? idx = place.channelIdx;
+  if (idx == null) return null;
+  String? name;
+  for (final MapEntry<int, String> c in channels) {
+    if (c.key == idx) {
+      name = c.value;
+      break;
+    }
+  }
+  final String label = name ?? 'CH $idx';
+  return place.provenance == PlaceProvenance.received
+      ? l.placeArrivedOn(label)
+      : l.placeSentOn(label);
+}
+
 /// What "share this place" hands to another app: the label, the coordinates,
 /// and a link that opens them on a map.
 ///

@@ -11,6 +11,7 @@ import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/perms/location_service.dart';
 import 'package:meshmore_sns_app/screens/elevation_profile_view.dart';
 import 'package:meshmore_sns_app/screens/grid_screen.dart';
 import 'package:meshmore_sns_app/screens/mesh_tree_view.dart';
@@ -242,5 +243,54 @@ void main() {
     mc.dispose();
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 2));
+  });
+
+  // The chart states where its heights come from, and stops calling itself
+  // Fuji. Both were live defects: the header read "MESHMORE :: FUJIさん" in the
+  // English bundle, a stray honorific from an earlier name for the view, and
+  // nothing on screen said that a peer's height is its own telemetry while our
+  // line is the phone's GPS fix, which is the difference that decides how much
+  // the chart can be trusted.
+  testWidgets('the altitude view states where each height came from',
+      (WidgetTester t) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await t.binding.setSurfaceSize(const Size(400, 900));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    // The chart draws nothing without an altitude anywhere, and the only
+    // altitude it can have for itself is the phone's GPS. That is also the
+    // provenance the legend has to state, so the fix is what puts the chart on
+    // screen in the first place.
+    final NoopLocationService loc = NoopLocationService(
+        next: PhoneFix(
+            latitude: 47.6, longitude: -122.3, altitudeMeters: 92));
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+      locationService: loc,
+    );
+    await t.pumpWidget(host(const ElevationProfileView(), mc, 1.0));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    fake.emit(advertFrame(name: 'NeedsAlt', firstPubByte: 0x71));
+    // The view asks for its own fix in its first frame, which is the path the
+    // test lets do the work rather than calling the controller twice.
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 200));
+
+    final AppLocalizations l =
+        AppLocalizations.of(t.element(find.byType(ElevationProfileView)));
+    expect(find.text(l.elevationAltitudesFrom), findsOneWidget);
+    expect(find.textContaining('さん'), findsNothing,
+        reason: 'the English bundle still carries the old Japanese honorific');
+
+    mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    // Two timers outlive the frame: the view's own poll indicator runs for two
+    // seconds, and a phone fix records a coverage cell whose own timer runs for
+    // five. Let both land before the tree goes away, or the harness reports a
+    // pending timer.
+    await t.pump(const Duration(seconds: 7));
   });
 }

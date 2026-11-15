@@ -9,6 +9,8 @@ import 'package:meshcore/meshcore.dart' show MeshcoreConnectionState;
 import '../gen/app_localizations.dart';
 import '../meshcore/failure.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../meshcore/paired_device_history.dart';
+import '../meshcore/radio_switch.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
@@ -117,8 +119,101 @@ class ConnectScreen extends StatelessWidget {
             label: l.diagnosticsTitle,
             onPressed: () => context.push('/settings/diagnostics'),
           ),
+          // D8.9 — one session, and changing it is explicit. The list is the
+          // radios this phone has paired, newest first, and the one in use is
+          // marked rather than offered: a row that switches to the radio you
+          // are already on is a control that does nothing.
+          if (mc.pairedHistory.length > 1) ...<Widget>[
+            const SizedBox(height: 24),
+            Text(l.radioSwitchTitle,
+                style: mmSectionLabelStyle(skin)),
+            const SizedBox(height: 6),
+            for (final PairedDeviceHistoryEntry e in mc.pairedHistory)
+              _PairedRadioRow(
+                entry: e,
+                current: e.remoteId == mc.pairedRemoteId,
+                onSwitch: () => _switchTo(context, mc, e),
+              ),
+          ],
         ],
       ),
+      ),
+    );
+  }
+
+  /// Switch, and say what happened.
+  ///
+  /// The refusal is the interesting case: a message still waiting for an answer
+  /// belongs to the link it was sent on, so the switch is refused rather than
+  /// leaving that row to time out into a failure the app cannot prove.
+  Future<void> _switchTo(
+    BuildContext context,
+    MeshcoreController mc,
+    PairedDeviceHistoryEntry entry,
+  ) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final RadioSwitchOutcome outcome =
+        await switchRadio(mc, remoteId: entry.remoteId, name: entry.name);
+    if (!context.mounted) return;
+    final String message = switch (outcome) {
+      RadioSwitchOutcome.switched => l.radioSwitchDone(entry.name),
+      RadioSwitchOutcome.sameRadio => l.radioSwitchSame,
+      RadioSwitchOutcome.refusedUnsettled => l.radioSwitchWaiting,
+    };
+    ScaffoldMessenger.maybeOf(context)
+        ?.showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+/// One paired radio, with the one action it can take.
+class _PairedRadioRow extends StatelessWidget {
+  const _PairedRadioRow({
+    required this.entry,
+    required this.current,
+    required this.onSwitch,
+  });
+
+  final PairedDeviceHistoryEntry entry;
+  final bool current;
+  final VoidCallback onSwitch;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = context.skin;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: <Widget>[
+          Icon(
+            current ? Icons.bluetooth_connected : Icons.bluetooth,
+            size: 18,
+            color: current ? skin.color.link : skin.color.fgMuted,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              entry.name,
+              key: ValueKey<String>('radio-switch-name-${entry.remoteId}'),
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: skin.color.fg,
+                fontSize: skin.type.sizeBody,
+              ),
+            ),
+          ),
+          if (current)
+            Text(l.radioSwitchCurrent,
+                style: TextStyle(
+                    color: skin.color.fgMuted, fontSize: skin.type.sizeSm))
+          else
+            MmAction(
+              key: ValueKey<String>('radio-switch-${entry.remoteId}'),
+              dense: true,
+              label: l.radioSwitchAction,
+              onPressed: onSwitch,
+            ),
+        ],
       ),
     );
   }

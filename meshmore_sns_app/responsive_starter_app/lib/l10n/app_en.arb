@@ -497,7 +497,7 @@
   "gridViewElevation": "Altitude",
   "fujiLegendTitle": "ALTITUDE",
   "fujiLegendAutoQuery": "Altitudes arrive slowly. Tap the box to ask again.",
-  "elevationProfileTitle": "MESHMORE :: FUJIさん",
+  "elevationProfileTitle": "MESHMORE :: ALTITUDE",
   "elevationProfileAltLabel": "Altitude",
   "elevationProfileMeLabel": "Me",
   "elevationProfileUnknownLabel": "altitude unknown",
@@ -2938,6 +2938,35 @@
   "placePrecision1000": "About 1 km",
   "placeRadioRefused": "The MeshCore radio did not take it, so the place is not on the air.",
   "placeGoesTo": "Goes to {channel}",
+  "placeChannelTitle": "Channel",
+  "placeSentOn": "Sent on {channel}",
+  "@placeSentOn": {
+    "description": "The channel line on a place this device reported.",
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "placeArrivedOn": "Arrived on {channel}",
+  "@placeArrivedOn": {
+    "description": "The channel line on a place that arrived from another node.",
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "placeImportAction": "Import a place",
+  "placeImportTitle": "Import a place",
+  "placeImportExplainer": "Paste a place somebody shared: a name, a coordinate pair or a map link. Nothing is sent until you choose the type and the life.",
+  "placeImportField": "Shared place",
+  "placeImportHint": "51.50074, -0.12460 or a map link",
+  "placeImportGo": "Read it",
+  "placeImportEmpty": "There is nothing to read.",
+  "placeImportNoCoordinates": "No coordinates in that text.",
+  "placeImportOutOfRange": "Those coordinates are not on the earth.",
+  "placeImportLabelCut": "The name was longer than a report can carry, so it was shortened.",
   "placeSent": "Place tagged. It expires on its own.",
   "placeBudgetRefused": "You have sent {n} in the last hour. The next one can go at {time}.",
   "@placeBudgetRefused": {
@@ -4159,6 +4188,7 @@
   "elevationAskNodes": "Ask nodes for altitude",
   "elevationAsking": "Asking…",
   "elevationNotADistance": "Dots line up side to side, not by distance.",
+  "elevationAltitudesFrom": "Each height is that node's own telemetry. Yours is the phone's GPS.",
   "meshbookEmptyDetail": "Messages on this channel fill it. The window is the last 24 hours.",
   "locTriggerManual": "you asked",
   "locTriggerPeriodic": "on the timer",
@@ -4564,6 +4594,35 @@
   "elevationEmpty": "Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.",
   "mapOverlaysTitle": "Layers",
   "connectTitle": "Connect a MeshCore radio",
+  "radioSwitchTitle": "Paired radios",
+  "@radioSwitchTitle": {
+    "description": "Heading over the list of radios this phone has paired, on the connect screen."
+  },
+  "radioSwitchCurrent": "In use",
+  "@radioSwitchCurrent": {
+    "description": "Marks the radio the app is paired with now, in place of a switch action."
+  },
+  "radioSwitchAction": "Switch",
+  "@radioSwitchAction": {
+    "description": "Moves the one session to this radio."
+  },
+  "radioSwitchDone": "Switching to {name}.",
+  "@radioSwitchDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    },
+    "description": "Confirmation after the link was torn down and the new radio is connecting."
+  },
+  "radioSwitchSame": "That radio is already the one in use.",
+  "@radioSwitchSame": {
+    "description": "The row was for the radio already paired, so nothing was touched."
+  },
+  "radioSwitchWaiting": "Not switched. A message is still waiting for an answer, and that answer belongs to the radio it was sent on.",
+  "@radioSwitchWaiting": {
+    "description": "The switch was refused because a send is unsettled. Names why waiting is the honest answer rather than a rule for its own sake."
+  },
   "mapKeyTitle": "Map key",
   "mapKeyRepeater": "Repeater",
   "mapKeyClient": "Client radio",

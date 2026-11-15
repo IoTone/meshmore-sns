@@ -978,7 +978,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fujiLegendAutoQuery => '高度はゆっくり届きます。枠をタップすると再び問い合わせます。';
 
   @override
-  String get elevationProfileTitle => 'MESHMORE :: Fujiさん';
+  String get elevationProfileTitle => 'MESHMORE :: 高度';
 
   @override
   String get elevationProfileAltLabel => '高度';
@@ -4302,6 +4302,50 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get placeChannelTitle => 'チャンネル';
+
+  @override
+  String placeSentOn(String channel) {
+    return '送信したチャンネル: $channel';
+  }
+
+  @override
+  String placeArrivedOn(String channel) {
+    return '受信したチャンネル: $channel';
+  }
+
+  @override
+  String get placeImportAction => '場所を取り込む';
+
+  @override
+  String get placeImportTitle => '場所を取り込む';
+
+  @override
+  String get placeImportExplainer =>
+      '共有された場所を貼り付けてください。名前、緯度経度、地図リンクのどれでも読めます。種類と有効期間を選ぶまで送信はしません。';
+
+  @override
+  String get placeImportField => '共有された場所';
+
+  @override
+  String get placeImportHint => '51.50074, -0.12460 または地図リンク';
+
+  @override
+  String get placeImportGo => '読み取る';
+
+  @override
+  String get placeImportEmpty => '読み取れる内容がありません。';
+
+  @override
+  String get placeImportNoCoordinates => 'このテキストに緯度経度がありません。';
+
+  @override
+  String get placeImportOutOfRange => 'この緯度経度は地球上の位置ではありません。';
+
+  @override
+  String get placeImportLabelCut => '名前が報告に載る長さを超えていたため、短くしました。';
+
+  @override
   String get placeSent => 'タグ付けしました。期限が来ると自動で消えます。';
 
   @override
@@ -5892,6 +5936,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get elevationNotADistance => '点は横並びで、距離の順ではありません。';
 
   @override
+  String get elevationAltitudesFrom =>
+      '各高度はそのノード自身のテレメトリです。自分の高度は電話の GPS によるものです。';
+
+  @override
   String get meshbookEmptyDetail => 'このチャンネルの発言が記録されます。対象は直近24時間です。';
 
   @override
@@ -6482,6 +6530,27 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get connectTitle => 'MeshCore 無線機に接続';
+
+  @override
+  String get radioSwitchTitle => 'ペアリング済みの無線機';
+
+  @override
+  String get radioSwitchCurrent => '使用中';
+
+  @override
+  String get radioSwitchAction => '切り替え';
+
+  @override
+  String radioSwitchDone(String name) {
+    return '$name に切り替えています。';
+  }
+
+  @override
+  String get radioSwitchSame => 'その無線機はすでに使用中です。';
+
+  @override
+  String get radioSwitchWaiting =>
+      '切り替えませんでした。応答待ちのメッセージがあり、その応答は送信した無線機に属します。';
 
   @override
   String get mapKeyTitle => '地図の凡例';

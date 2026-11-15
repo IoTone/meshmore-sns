@@ -1883,7 +1883,7 @@ abstract class AppLocalizations {
   /// No description provided for @elevationProfileTitle.
   ///
   /// In en, this message translates to:
-  /// **'MESHMORE :: FUJIさん'**
+  /// **'MESHMORE :: ALTITUDE'**
   String get elevationProfileTitle;
 
   /// No description provided for @elevationProfileAltLabel.
@@ -7600,6 +7600,84 @@ abstract class AppLocalizations {
   /// **'Goes to {channel}'**
   String placeGoesTo(Object channel);
 
+  /// No description provided for @placeChannelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel'**
+  String get placeChannelTitle;
+
+  /// The channel line on a place this device reported.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent on {channel}'**
+  String placeSentOn(String channel);
+
+  /// The channel line on a place that arrived from another node.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrived on {channel}'**
+  String placeArrivedOn(String channel);
+
+  /// No description provided for @placeImportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a place'**
+  String get placeImportAction;
+
+  /// No description provided for @placeImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a place'**
+  String get placeImportTitle;
+
+  /// No description provided for @placeImportExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a place somebody shared: a name, a coordinate pair or a map link. Nothing is sent until you choose the type and the life.'**
+  String get placeImportExplainer;
+
+  /// No description provided for @placeImportField.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared place'**
+  String get placeImportField;
+
+  /// No description provided for @placeImportHint.
+  ///
+  /// In en, this message translates to:
+  /// **'51.50074, -0.12460 or a map link'**
+  String get placeImportHint;
+
+  /// No description provided for @placeImportGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Read it'**
+  String get placeImportGo;
+
+  /// No description provided for @placeImportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There is nothing to read.'**
+  String get placeImportEmpty;
+
+  /// No description provided for @placeImportNoCoordinates.
+  ///
+  /// In en, this message translates to:
+  /// **'No coordinates in that text.'**
+  String get placeImportNoCoordinates;
+
+  /// No description provided for @placeImportOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Those coordinates are not on the earth.'**
+  String get placeImportOutOfRange;
+
+  /// No description provided for @placeImportLabelCut.
+  ///
+  /// In en, this message translates to:
+  /// **'The name was longer than a report can carry, so it was shortened.'**
+  String get placeImportLabelCut;
+
   /// No description provided for @placeSent.
   ///
   /// In en, this message translates to:
@@ -10252,6 +10330,12 @@ abstract class AppLocalizations {
   /// **'Dots line up side to side, not by distance.'**
   String get elevationNotADistance;
 
+  /// No description provided for @elevationAltitudesFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Each height is that node\'s own telemetry. Yours is the phone\'s GPS.'**
+  String get elevationAltitudesFrom;
+
   /// No description provided for @meshbookEmptyDetail.
   ///
   /// In en, this message translates to:
@@ -11277,6 +11361,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connect a MeshCore radio'**
   String get connectTitle;
+
+  /// Heading over the list of radios this phone has paired, on the connect screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Paired radios'**
+  String get radioSwitchTitle;
+
+  /// Marks the radio the app is paired with now, in place of a switch action.
+  ///
+  /// In en, this message translates to:
+  /// **'In use'**
+  String get radioSwitchCurrent;
+
+  /// Moves the one session to this radio.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get radioSwitchAction;
+
+  /// Confirmation after the link was torn down and the new radio is connecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Switching to {name}.'**
+  String radioSwitchDone(String name);
+
+  /// The row was for the radio already paired, so nothing was touched.
+  ///
+  /// In en, this message translates to:
+  /// **'That radio is already the one in use.'**
+  String get radioSwitchSame;
+
+  /// The switch was refused because a send is unsettled. Names why waiting is the honest answer rather than a rule for its own sake.
+  ///
+  /// In en, this message translates to:
+  /// **'Not switched. A message is still waiting for an answer, and that answer belongs to the radio it was sent on.'**
+  String get radioSwitchWaiting;
 
   /// No description provided for @mapKeyTitle.
   ///

@@ -15,14 +15,24 @@ import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
 
-/// R45 — exploratory altitude-profile view. **Not** meant to be
-/// useful (most peers plot in the "?" band until each one's
-/// telemetry has been queried). Meant to be *interesting*: a NERV-
-/// style targeting HUD with iconic real-world references drawn at
-/// their true heights and our node pinned at the altitude reported
-/// by the paired device's GPS (via the CMD_SEND_TELEMETRY_REQ /
-/// 0x8B path, populated automatically on every ready transition).
-/// Phone-GPS altitude is used only as a last-resort fallback.
+/// R45 — the altitude profile: every node we hold an altitude for, drawn
+/// against real-world references at their true heights.
+///
+/// Where each altitude comes from, because the chart is only as honest as its
+/// sources:
+///
+///   - a peer's altitude is that node's own telemetry (`0x8B`), read from the
+///     controller's cache. The advert has no altitude slot in this firmware, so
+///     a peer that has never answered a telemetry request has no altitude and
+///     is drawn on the unknown band rather than guessed at;
+///   - our own line is the phone's GPS fix, which is the only altitude source
+///     the app has for itself: the MeshCore `SelfInfo` carries lat/lon and
+///     never altitude, and a device's self-telemetry often omits the GPS
+///     triplet. It is a last resort and it is labelled as ours, not as the
+///     radio's.
+///
+/// The horizontal axis is a stagger so the dots do not overlap. It is not a
+/// distance and the view says so on screen.
 ///
 /// Reference set (handpicked for an order-of-magnitude spread):
 ///   - Person ........... 1.7 m
@@ -337,18 +347,32 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
         ),
         // What this chart is not: the horizontal axis is a stagger so the
         // dots do not overlap, not a distance. The legend says the dots are
-        // nodes; only this says the x-position means nothing.
+        // nodes; only this says the x-position means nothing. The second line
+        // says where the heights came from, because a chart of altitudes is
+        // only as good as its sources and the two sources are different.
         Positioned(
           left: 12,
           right: 12,
           bottom: 8,
           child: IgnorePointer(
-            child: Text(
-              l.elevationNotADistance,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: context.skin.type.sizeMicro),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  l.elevationNotADistance,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeMicro),
+                ),
+                Text(
+                  l.elevationAltitudesFrom,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeMicro),
+                ),
+              ],
             ),
           ),
         ),

@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../gen/app_localizations.dart';
 import '../geofence/geofence_controller.dart';
 import '../geofence/geofence_create_sheet.dart';
+import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_components.dart';
 import '../theme/mm_skin.dart';
 import 'place.dart';
@@ -136,6 +137,17 @@ class PlaceDetailSheet extends StatelessWidget {
             Text(placeSourceText(l, place.provenance),
                 style:
                     TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+            // Where it went, or where it came from. A place is channel text, so
+            // the slot is its whole audience, and the sheet used to leave the
+            // reader to guess which one.
+            if (placeChannelText(
+                    l, place, context.read<MeshcoreController?>()?.channels ??
+                        const <MapEntry<int, String>>[])
+                case final String channelLine)
+              Text(channelLine,
+                  key: const ValueKey<String>('place-channel-line'),
+                  style: TextStyle(
+                      color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
             if (photos != null)
               Padding(
                 padding: EdgeInsets.only(top: skin.space.step(3)),

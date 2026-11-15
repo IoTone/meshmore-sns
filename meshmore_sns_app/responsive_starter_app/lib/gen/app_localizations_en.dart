@@ -1029,7 +1029,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Altitudes arrive slowly. Tap the box to ask again.';
 
   @override
-  String get elevationProfileTitle => 'MESHMORE :: FUJIさん';
+  String get elevationProfileTitle => 'MESHMORE :: ALTITUDE';
 
   @override
   String get elevationProfileAltLabel => 'Altitude';
@@ -4463,6 +4463,51 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get placeChannelTitle => 'Channel';
+
+  @override
+  String placeSentOn(String channel) {
+    return 'Sent on $channel';
+  }
+
+  @override
+  String placeArrivedOn(String channel) {
+    return 'Arrived on $channel';
+  }
+
+  @override
+  String get placeImportAction => 'Import a place';
+
+  @override
+  String get placeImportTitle => 'Import a place';
+
+  @override
+  String get placeImportExplainer =>
+      'Paste a place somebody shared: a name, a coordinate pair or a map link. Nothing is sent until you choose the type and the life.';
+
+  @override
+  String get placeImportField => 'Shared place';
+
+  @override
+  String get placeImportHint => '51.50074, -0.12460 or a map link';
+
+  @override
+  String get placeImportGo => 'Read it';
+
+  @override
+  String get placeImportEmpty => 'There is nothing to read.';
+
+  @override
+  String get placeImportNoCoordinates => 'No coordinates in that text.';
+
+  @override
+  String get placeImportOutOfRange => 'Those coordinates are not on the earth.';
+
+  @override
+  String get placeImportLabelCut =>
+      'The name was longer than a report can carry, so it was shortened.';
+
+  @override
   String get placeSent => 'Place tagged. It expires on its own.';
 
   @override
@@ -6137,6 +6182,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Dots line up side to side, not by distance.';
 
   @override
+  String get elevationAltitudesFrom =>
+      'Each height is that node\'s own telemetry. Yours is the phone\'s GPS.';
+
+  @override
   String get meshbookEmptyDetail =>
       'Messages on this channel fill it. The window is the last 24 hours.';
 
@@ -6751,6 +6800,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectTitle => 'Connect a MeshCore radio';
+
+  @override
+  String get radioSwitchTitle => 'Paired radios';
+
+  @override
+  String get radioSwitchCurrent => 'In use';
+
+  @override
+  String get radioSwitchAction => 'Switch';
+
+  @override
+  String radioSwitchDone(String name) {
+    return 'Switching to $name.';
+  }
+
+  @override
+  String get radioSwitchSame => 'That radio is already the one in use.';
+
+  @override
+  String get radioSwitchWaiting =>
+      'Not switched. A message is still waiting for an answer, and that answer belongs to the radio it was sent on.';
 
   @override
   String get mapKeyTitle => 'Map key';

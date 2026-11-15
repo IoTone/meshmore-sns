@@ -33,6 +33,13 @@ final class _FakeSender implements PlaceSender {
   @override
   Uint8List? get reporterKey => null;
 
+  /// The slot the fake radio sends on. Null models a sender with no
+  /// channel of its own, which is what a direct-message sender is.
+  int? channel;
+
+  @override
+  int? get destinationChannelIdx => channel;
+
   /// Whether the fake radio takes the line. A test sets this to model a
   /// refusal, which must not be reported as a sent place.
   bool accepts = true;
