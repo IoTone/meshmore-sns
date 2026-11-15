@@ -14,6 +14,10 @@ import 'package:meshcore/meshcore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'failure.dart';
 import 'link_acquire.dart';
+// A cycle on purpose: the tree's memo is keyed on this controller's identity,
+// so the controller is the only thing that can drop it. Dart resolves the
+// cycle; nothing here is initialised from `mesh_graph.dart` at load time.
+import 'mesh_graph.dart';
 
 import 'airtime.dart';
 import 'airtime_prefs.dart';
@@ -5936,7 +5940,14 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         _nodes.putIfAbsent(hex, () => _nodeFromContact(c));
         added = true;
       }
-      if (added) notifyListeners();
+      if (added) {
+        // The prefix cache is keyed on this revision, and a tree built before
+        // the persisted table finished loading would otherwise keep a partial
+        // prefix map until the next advert. Every other write to `_nodes` goes
+        // through `_nodesChanged`; this one did not.
+        _nodesChanged();
+        notifyListeners();
+      }
     }();
   }
 
@@ -7047,6 +7058,9 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   @override
   void dispose() {
     _manualDisconnect = true;
+    // The tree's memo is process-wide and keyed on this controller's identity,
+    // so it is dropped with the controller rather than retained by a dead one.
+    MeshGraph.clearCache();
     // The live position stream outlives a radio, not the app.
     unawaited(stopOwnLocationStream());
     _reconnectGen++; // invalidate any pending scheduled retry

@@ -155,6 +155,14 @@ class MeshGraph {
   static MeshGraph? _cached;
   static String? _cachedSignature;
 
+  /// Drop the memo. Called from `MeshcoreController.dispose`, so a controller
+  /// that is gone does not leave its graph retained, and a new controller
+  /// cannot match a dead one's signature through a reused `identityHashCode`.
+  static void clearCache() {
+    _cached = null;
+    _cachedSignature = null;
+  }
+
   /// Everything [_build] reads, and nothing else.
   ///
   /// `lastHeardUnix` is deliberately absent: it moves on every advert and every
