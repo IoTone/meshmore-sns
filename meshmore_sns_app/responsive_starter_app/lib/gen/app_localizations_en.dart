@@ -2476,6 +2476,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'An alarm is repeating. Open the app to stop it.';
 
   @override
+  String get notifBodyFence =>
+      'From the latest position update. A crossing is only noticed when a fix arrives.';
+
+  @override
+  String get settingsBatteryOptimisedTitle =>
+      'Android may stop the link in the background';
+
+  @override
+  String get settingsBatteryOptimisedSub =>
+      'Some phones stop background apps that are optimised. Allow this app to run without optimisation and messages keep arriving.';
+
+  @override
+  String get settingsBatteryAllow => 'Allow';
+
+  @override
   String get notifSectionTitle => 'Notifications';
 
   @override

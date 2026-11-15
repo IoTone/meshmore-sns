@@ -21,7 +21,15 @@ class _Strings implements NotificationStrings {
         NotificationClass.channel => 'on $name',
         NotificationClass.direct => 'from $name',
         NotificationClass.sos => 'SOS',
+        NotificationClass.geofence => 'fence',
       };
+
+  @override
+  String fenceCrossed(String label, {required bool entry}) =>
+      entry ? 'entered $label' : 'left $label';
+
+  @override
+  String fenceCrossedBody() => 'from the latest position update';
 
   @override
   String sosBody() => 'SOS body without coordinates';

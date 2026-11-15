@@ -4166,6 +4166,30 @@ abstract class AppLocalizations {
   /// **'An alarm is repeating. Open the app to stop it.'**
   String get notifAlarmRunningBody;
 
+  /// OS notification body for a fence crossing. States the limit: fences are evaluated against the position fixes the app already has, so a crossing can lag the walk.
+  ///
+  /// In en, this message translates to:
+  /// **'From the latest position update. A crossing is only noticed when a fix arrives.'**
+  String get notifBodyFence;
+
+  /// App settings row shown when this app is still on the battery-optimisation list, which lets an OEM stop the foreground service.
+  ///
+  /// In en, this message translates to:
+  /// **'Android may stop the link in the background'**
+  String get settingsBatteryOptimisedTitle;
+
+  /// Explains the consequence and the action beside it.
+  ///
+  /// In en, this message translates to:
+  /// **'Some phones stop background apps that are optimised. Allow this app to run without optimisation and messages keep arriving.'**
+  String get settingsBatteryOptimisedSub;
+
+  /// The action that opens the OS request to stop optimising this app.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get settingsBatteryAllow;
+
   /// Section heading in the channel editor for the per-channel notification bundle.
   ///
   /// In en, this message translates to:

@@ -51,6 +51,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- The one-tap request to stop Android optimising this app. Without it
+         the system refuses ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, so the
+         row under the background switch would offer an action that does
+         nothing. The app's core function is a persistent connection to a
+         device, which is the case the permission exists for. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:label="@string/app_name"
