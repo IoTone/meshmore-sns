@@ -168,8 +168,10 @@ void main() {
     expect(find.byKey(const ValueKey<String>('geofence-radius')), findsNothing);
     expect(find.byKey(const ValueKey<String>('geofence-shape-preview')),
         findsOneWidget);
+    // No note about what the sheet cannot do: the sheet asks for a name, and a
+    // limitation explained inside it is a sentence the reader did not ask for.
     expect(find.byKey(const ValueKey<String>('geofence-polygon-note')),
-        findsOneWidget);
+        findsNothing);
     expect(find.text('3 corners'), findsOneWidget);
     // The name is still the thing being asked for.
     expect(find.byKey(const ValueKey<String>('geofence-name')), findsOneWidget);

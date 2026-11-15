@@ -164,8 +164,9 @@ void main() {
     expect(find.text('Public'), findsOneWidget); // slot 0
     expect(find.text('— empty —'), findsWidgets); // empty slots
 
-    // Open the editor for slot 1 (empty → "Set").
-    await t.tap(find.text('Set').first);
+    // Open the editor for slot 1: slot 0 is Public, so the first empty slot is
+    // the second Edit.
+    await t.tap(find.text('Edit').at(1));
     await t.pumpAndSettle();
     expect(find.text('Channel 1'), findsOneWidget);
 
@@ -192,7 +193,7 @@ void main() {
     fake.emit(channelInfoFrame(idx: 0, name: 'Public'));
     await t.pumpAndSettle();
 
-    await t.tap(find.text('Set').first);
+    await t.tap(find.text('Edit').at(1));
     await t.pumpAndSettle();
     await t.tap(find.text('#tag'));
     await t.pumpAndSettle();

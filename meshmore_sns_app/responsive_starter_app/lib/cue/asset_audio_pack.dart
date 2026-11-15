@@ -110,6 +110,13 @@ class AssetAudioPack implements AudioPack, WarmableAudioPack {
     final String path = assetPathFor(p, kind);
     final double volume = theme.cueVolume;
     try {
+      final AudioPlayer? prepared = await _prepared(kind);
+      if (prepared != null) {
+        await prepared.setVolume(volume);
+        await prepared.seek(Duration.zero);
+        await prepared.resume();
+        return;
+      }
       await _ensureReady();
       // `AssetSource` paths are rooted at `assets/` by audioplayers
       // convention; passing `audio/seele/messageIn.wav` resolves to
@@ -144,31 +151,60 @@ class AssetAudioPack implements AudioPack, WarmableAudioPack {
     }
   }
 
-  @override
-  /// Decodes the cues that matter most into the low-latency player.
+  /// A prepared player per cue, so a tap is a start rather than a load.
   ///
-  /// `audioplayers` in low-latency mode keeps a SoundPool of loaded samples, but
-  /// only once something has been played. Playing each cue once at zero volume
-  /// is the cheapest way to fill it: the pool keeps the decode, and the audible
-  /// play later is a start rather than a load.
+  /// A MediaPlayer holds one source at a time, so the only way to pre-load a
+  /// cue is to keep a player that already has it. The first design warmed the
+  /// shared playback player by playing each cue at zero volume and stopping it,
+  /// which both left that player at volume 0 and stopped whatever was playing —
+  /// the owner heard silence. Each kind gets its own idle player instead, source
+  /// set once, resumed on play.
+  final Map<CueKind, AudioPlayer> _warmPlayers = <CueKind, AudioPlayer>{};
+  MmThemePreset? _warmPreset;
+
+  /// The kinds worth the memory: the ones a reader hears in normal use.
+  static const List<CueKind> _warmKinds = <CueKind>[
+    CueKind.messageIn,
+    CueKind.dmIn,
+    CueKind.send,
+    CueKind.navNext,
+    CueKind.navPrev,
+    CueKind.discovery,
+    CueKind.alert,
+  ];
+
+  Future<AudioPlayer?> _prepared(CueKind kind) async {
+    final MmThemePreset preset = theme.preset;
+    if (_warmPreset != preset) {
+      // A theme change invalidates every prepared source.
+      for (final AudioPlayer p in _warmPlayers.values) {
+        p.dispose().catchError((Object _) {});
+      }
+      _warmPlayers.clear();
+      _warmPreset = preset;
+    }
+    if (!_warmKinds.contains(kind)) return null;
+    final AudioPlayer? existing = _warmPlayers[kind];
+    if (existing != null) return existing;
+    final AudioPlayer player = AudioPlayer();
+    try {
+      await player.setAudioContext(_cueContext);
+      await player.setPlayerMode(PlayerMode.mediaPlayer);
+      await player.setReleaseMode(ReleaseMode.stop);
+      await player.setSource(AssetSource(assetPathFor(preset, kind)));
+      _warmPlayers[kind] = player;
+      return player;
+    } catch (_) {
+      await player.dispose().catchError((Object _) {});
+      return null;
+    }
+  }
+
   @override
   Future<void> warm() async {
-    for (final CueKind kind in <CueKind>[
-      CueKind.messageIn,
-      CueKind.dmIn,
-      CueKind.send,
-      CueKind.navNext,
-      CueKind.navPrev,
-      CueKind.discovery,
-      CueKind.alert,
-    ]) {
-      try {
-        await _player.play(AssetSource(assetPathFor(theme.preset, kind)),
-            volume: 0);
-        await _player.stop();
-      } catch (_) {
-        // A missing asset is the play path's problem, not the warm-up's.
-      }
+    _warmPreset = null; // force a rebuild against the current preset
+    for (final CueKind kind in _warmKinds) {
+      await _prepared(kind);
     }
   }
 

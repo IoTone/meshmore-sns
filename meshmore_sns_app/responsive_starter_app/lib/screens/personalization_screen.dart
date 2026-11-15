@@ -198,6 +198,19 @@ class PersonalizationScreen extends StatelessWidget {
                                 .colorScheme
                                 .onSurfaceVariant),
                       ),
+                      // Measured on the owner's handset: the media stream sat
+                      // at two of fifteen while notifications were loud, so
+                      // every cue was inaudible and the app looked broken. The
+                      // slider above cannot fix that, and nothing else on this
+                      // screen says which stream a cue uses.
+                      Text(
+                        l.personalizationCueStreamNote,
+                        style: TextStyle(
+                            fontSize: context.skin.type.sizeSm,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant),
+                      ),
                     ],
                   ),
                 ),

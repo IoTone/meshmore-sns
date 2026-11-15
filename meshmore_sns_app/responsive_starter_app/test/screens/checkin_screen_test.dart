@@ -99,7 +99,10 @@ void main() {
             findsOneWidget,
             reason: 'preset ${preset.name}');
       }
-      expect(find.text('A check-in is one message and does not repeat.'),
+      expect(
+          find.text(
+              'One message with a deadline. The app marks it overdue here; '
+              'the radio keeps no timer.'),
           findsOneWidget);
       await t.pumpWidget(const SizedBox());
     }

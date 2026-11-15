@@ -185,15 +185,6 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
         child: ListView(
           padding: EdgeInsets.all(skin.space.step(5)),
           children: <Widget>[
-            Text(
-              l.geofenceExplainer,
-              key: const ValueKey<String>('geofence-explainer'),
-              style: TextStyle(
-                  color: skin.color.fgMuted,
-                  fontSize: skin.type.sizeBody,
-                  height: 1.5),
-            ),
-            SizedBox(height: skin.space.step(4)),
             MmSectionHeader(l.geofenceAddSection),
             Wrap(
               spacing: skin.space.step(2),
@@ -253,10 +244,15 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
                 ),
               ),
             if (fences.fences.isEmpty)
-              Text(l.geofenceEmpty,
-                  key: const ValueKey<String>('geofence-empty'),
+              // The one thing a reader cannot infer from an empty list: a fence
+              // fires once on the way in and once on the way out, so walking its
+              // edge does not produce a stream of alerts.
+              Text(l.geofenceExplainer,
+                  key: const ValueKey<String>('geofence-explainer'),
                   style: TextStyle(
-                      color: skin.color.fgMuted, fontSize: skin.type.sizeSm))
+                      color: skin.color.fgMuted,
+                      fontSize: skin.type.sizeBody,
+                      height: 1.5))
             else if (_visible(fences).isEmpty)
               Text(l.geofenceNoMatches,
                   key: const ValueKey<String>('geofence-no-matches'),

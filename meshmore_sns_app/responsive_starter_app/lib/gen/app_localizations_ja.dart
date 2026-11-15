@@ -678,6 +678,10 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get personalizationCueStreamNote =>
+      '効果音はメディア音量で再生されます。聞こえないときはメディア音量を上げてください。通知音だけが大きい場合があります。';
+
+  @override
   String get personalizationCuePreview => 'このテーマの音を聞く';
 
   @override
@@ -1727,7 +1731,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceContactsRemoveAll => 'すべて削除';
+  String get deviceContactsRemoveAll => '無線機からすべて削除';
 
   @override
   String deviceContactsRemoveAllConfirm(int count) {
@@ -2340,9 +2344,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsEdit => '編集';
 
   @override
-  String get channelsSet => '設定';
-
-  @override
   String channelsSetSnack(int idx) {
     return 'スロット $idx を保存しました';
   }
@@ -2519,9 +2520,6 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get channelsClearConfirmBody =>
       'ラジオに空のチャンネルはないので、このチャンネルは公開の名前と鍵に戻ります。他のラジオも同じにしないと、ここで通信できません。';
-
-  @override
-  String get channelsClearConfirmAction => 'クリア';
 
   @override
   String channelsClearSnack(int idx) {
@@ -3510,7 +3508,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapsPacks => '地域ダウンロード';
 
   @override
-  String get mapsAddPack => '地域をダウンロード';
+  String get mapsAddPack => 'ダウンロードする地域を選ぶ';
 
   @override
   String get mapsNoPacks => '地域はまだありません。';
@@ -4817,12 +4815,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get checkinSend => 'チェックインを送信';
 
   @override
-  String get checkinOneMessage => 'チェックインは1通のみで、繰り返しません。';
-
-  @override
   String checkinUntil(String time) {
     return '期限 $time';
   }
+
+  @override
+  String get checkinOneMessage => 'チェックインは1通のみで、繰り返しません。';
 
   @override
   String get checkinWatching => '応答待ち';
@@ -5017,10 +5015,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get geofenceCanvasTitle => 'このフェンスを保存';
 
   @override
-  String get geofencePolygonNote =>
-      '描いた形のまま保存されます。ここでは名前を変えられますが、形の変更はまだできません。';
-
-  @override
   String get geofenceDrawTitle => 'フェンスを描く';
 
   @override
@@ -5073,9 +5067,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get geofenceListSection => 'フェンス';
-
-  @override
-  String get geofenceEmpty => 'フェンスはまだありません。';
 
   @override
   String get geofenceInsideNow => '内側にいます';
@@ -5467,7 +5458,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get mapReportPlace => 'ここに場所を保存';
+  String get mapReportPlace => 'ここに場所を報告';
 
   @override
   String get settingsAppGroupRadio => '接続とバックグラウンド';
@@ -5844,7 +5835,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get sosUseDefaults => '既定に戻す';
+  String get sosUseDefaults => '宛先をリセット';
 
   @override
   String wxMicroclimateFromChat(Object ago) {

@@ -356,6 +356,7 @@
   "personalizationAudioMasterEnabled": "On by default; augmentation only",
   "personalizationCueVolume": "Cue volume",
   "personalizationCueVolumeSubtitle": "{percent} % of the phone's media volume",
+  "personalizationCueStreamNote": "Cues play on the media stream. If you hear nothing, raise the phone media volume. A notification sound can be loud while this is quiet.",
   "personalizationCuePreview": "Hear this theme",
   "dashboardAudioMute": "Mute alert sounds",
   "dashboardAudioUnmute": "Unmute alert sounds",
@@ -1084,7 +1085,7 @@
       }
     }
   },
-  "deviceContactsRemoveAll": "Remove all",
+  "deviceContactsRemoveAll": "Remove all from the radio",
   "deviceContactsRemoveAllConfirm": "Remove all {count} contacts? You only need them to send direct messages, and you can add anyone back later.",
   "@deviceContactsRemoveAllConfirm": {
     "placeholders": {
@@ -1528,7 +1529,6 @@
     }
   },
   "channelsEdit": "Edit",
-  "channelsSet": "Set",
   "channelsSetSnack": "Slot {idx} saved",
   "@channelsSetSnack": {
     "placeholders": {
@@ -1665,7 +1665,6 @@
     }
   },
   "channelsClearConfirmBody": "The radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.",
-  "channelsClearConfirmAction": "Clear",
   "channelsClearSnack": "Channel {idx} reset to the public defaults",
   "@channelsClearSnack": {
     "placeholders": {
@@ -2352,7 +2351,7 @@
   "mapsViewKeep": "Keep viewed",
   "mapsClearView": "Clear viewed tiles",
   "mapsPacks": "Region downloads",
-  "mapsAddPack": "Download a region",
+  "mapsAddPack": "Choose a region to download",
   "mapsNoPacks": "No regions yet.",
   "mapsArchives": "Region files",
   "mapsNoArchives": "No region files yet.",
@@ -3344,7 +3343,6 @@
     }
   },
   "checkinSend": "Send check-in",
-  "checkinOneMessage": "A check-in is one message and does not repeat.",
   "checkinUntil": "Deadline {time}",
   "@checkinUntil": {
     "placeholders": {
@@ -3353,6 +3351,7 @@
       }
     }
   },
+  "checkinOneMessage": "A check-in is one message and does not repeat.",
   "checkinWatching": "Waiting for an answer",
   "checkinOverdue": "Overdue — the deadline passed and no answer came back.",
   "checkinAnsweredDirect": "Answered, by direct message.",
@@ -3509,7 +3508,6 @@
     }
   },
   "geofenceCanvasTitle": "Save this fence",
-  "geofencePolygonNote": "A drawn fence keeps its shape. Renaming is offered here; reshaping is not yet.",
   "geofenceDrawTitle": "Draw a fence",
   "geofenceDrawHint": "Tap the map to add a corner. Drag a corner to move it.",
   "geofenceDrawDone": "Done",
@@ -3534,7 +3532,6 @@
   "geofenceNeedsFix": "A fence needs your position. Connect the radio or allow location first.",
   "geofenceAddHere": "Add a fence here",
   "geofenceListSection": "Your fences",
-  "geofenceEmpty": "No fences yet.",
   "geofenceInsideNow": "You are inside",
   "geofenceOutsideNow": "You are outside",
   "geofenceDelete": "Delete fence",
@@ -3849,7 +3846,7 @@
   "placeTtlMinutes": "{count} min",
   "placeTtlHours": "{count} h",
   "placeTtlDays": "{count} d",
-  "mapReportPlace": "Save a place here",
+  "mapReportPlace": "Report a place here",
   "@sosDestinationContactsLimit": {
     "placeholders": {
       "count": {
@@ -4118,7 +4115,7 @@
   "diagnosticsPositionNone": "none",
   "sosWordsOptional": "Optional — the default is used if you clear it.",
   "sosHoldSummary": "Hold to send the words above to {channel}, with your name and position.",
-  "sosUseDefaults": "Use defaults",
+  "sosUseDefaults": "Reset the destination",
   "wxMicroclimateFromChat": "Read from this channel's messages; newest {ago}.",
   "wxMicroclimateFromChatNoMessages": "Nothing measured yet: this reads reports people write in this channel, and only ones with a number and a unit.",
   "elevationAskNodes": "Ask nodes for altitude",

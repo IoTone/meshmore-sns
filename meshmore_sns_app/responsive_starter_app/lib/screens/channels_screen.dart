@@ -279,9 +279,7 @@ class ChannelsScreen extends StatelessWidget {
                     MmAction(
                       dense: true,
                       onPressed: ready ? () => edit(idx) : null,
-                      label: known.containsKey(idx)
-                          ? l.channelsEdit
-                          : l.channelsSet,
+                      label: l.channelsEdit,
                     ),
                   ],
                 ),
@@ -733,7 +731,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                 title: l.channelsClearConfirmTitle(widget.idx),
                 body: l.channelsClearConfirmBody,
                 cancelLabel: l.channelsCancel,
-                confirmLabel: l.channelsClearConfirmAction,
+                confirmLabel: l.channelsClear,
                 destructive: true,
               );
               if (!ok) return;

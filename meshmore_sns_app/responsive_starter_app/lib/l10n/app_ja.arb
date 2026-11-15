@@ -327,6 +327,7 @@
   "personalizationAudioMasterEnabled": "既定で ON; 補助としてのみ",
   "personalizationCueVolume": "通知音の音量",
   "personalizationCueVolumeSubtitle": "スマートフォンのメディア音量の {percent} %",
+  "personalizationCueStreamNote": "効果音はメディア音量で再生されます。聞こえないときはメディア音量を上げてください。通知音だけが大きい場合があります。",
   "personalizationCuePreview": "このテーマの音を聞く",
   "dashboardAudioMute": "アラート音をミュート",
   "dashboardAudioUnmute": "アラート音のミュート解除",
@@ -1004,7 +1005,7 @@
       }
     }
   },
-  "deviceContactsRemoveAll": "すべて削除",
+  "deviceContactsRemoveAll": "無線機からすべて削除",
   "deviceContactsRemoveAllConfirm": "連絡先 {count} 件をすべて削除しますか？連絡先は直接メッセージを送るときだけ必要で、後から追加し直せます。",
   "@deviceContactsRemoveAllConfirm": {
     "placeholders": {
@@ -1430,7 +1431,6 @@
     }
   },
   "channelsEdit": "編集",
-  "channelsSet": "設定",
   "channelsSetSnack": "スロット {idx} を保存しました",
   "@channelsSetSnack": {
     "placeholders": {
@@ -1506,7 +1506,6 @@
     }
   },
   "channelsClearConfirmBody": "ラジオに空のチャンネルはないので、このチャンネルは公開の名前と鍵に戻ります。他のラジオも同じにしないと、ここで通信できません。",
-  "channelsClearConfirmAction": "クリア",
   "channelsClearSnack": "チャンネル {idx} を公開の既定値に戻しました",
   "@channelsClearSnack": {
     "placeholders": {
@@ -1919,7 +1918,7 @@
   "mapsViewKeep": "閲覧分の保持",
   "mapsClearView": "閲覧済みタイルを消去",
   "mapsPacks": "地域ダウンロード",
-  "mapsAddPack": "地域をダウンロード",
+  "mapsAddPack": "ダウンロードする地域を選ぶ",
   "mapsNoPacks": "地域はまだありません。",
   "mapsArchives": "地域ファイル",
   "mapsNoArchives": "地域ファイルはまだありません。",
@@ -2326,8 +2325,8 @@
     }
   },
   "checkinSend": "チェックインを送信",
-  "checkinOneMessage": "チェックインは1通のみで、繰り返しません。",
   "checkinUntil": "期限 {time}",
+  "checkinOneMessage": "チェックインは1通のみで、繰り返しません。",
   "checkinWatching": "応答待ち",
   "checkinOverdue": "期限切れ — 期限を過ぎ、応答はありませんでした。",
   "checkinAnsweredDirect": "応答あり（直接メッセージ）。",
@@ -2398,7 +2397,6 @@
     }
   },
   "geofenceCanvasTitle": "このフェンスを保存",
-  "geofencePolygonNote": "描いた形のまま保存されます。ここでは名前を変えられますが、形の変更はまだできません。",
   "geofenceDrawTitle": "フェンスを描く",
   "geofenceDrawHint": "地図をタップして角を追加します。角はドラッグで移動できます。",
   "geofenceDrawDone": "完了",
@@ -2416,7 +2414,6 @@
   "geofenceNeedsFix": "フェンスには現在地が必要です。先に無線を接続するか位置情報を許可してください。",
   "geofenceAddHere": "ここにフェンスを追加",
   "geofenceListSection": "フェンス",
-  "geofenceEmpty": "フェンスはまだありません。",
   "geofenceInsideNow": "内側にいます",
   "geofenceOutsideNow": "外側にいます",
   "geofenceDelete": "フェンスを削除",
@@ -2519,7 +2516,7 @@
   "placeTtlMinutes": "{count}分",
   "placeTtlHours": "{count}時間",
   "placeTtlDays": "{count}日",
-  "mapReportPlace": "ここに場所を保存",
+  "mapReportPlace": "ここに場所を報告",
   "@sosDestinationContactsLimit": {
     "placeholders": {
       "count": {
@@ -2657,7 +2654,7 @@
   "diagnosticsPositionNone": "なし",
   "sosWordsOptional": "任意 — 空にすると既定の文言で送信します。",
   "sosHoldSummary": "長押しで、上の文言を名前と位置とともに {channel} へ送信します。",
-  "sosUseDefaults": "既定に戻す",
+  "sosUseDefaults": "宛先をリセット",
   "wxMicroclimateFromChatNoMessages": "まだ測定値はありません。このチャンネルに書かれた報告のうち、数値と単位があるものだけを読み取ります。",
   "wxMicroclimateFromChat": "このチャンネルのメッセージから読み取り。最新 {ago}。",
   "elevationAskNodes": "各ノードに高度を問い合わせる",

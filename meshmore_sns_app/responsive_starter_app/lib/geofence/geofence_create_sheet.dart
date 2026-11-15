@@ -183,19 +183,7 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
                 ),
               ],
             ),
-            if (widget.isPolygon)
-              Padding(
-                padding: EdgeInsets.only(top: skin.space.rowGap),
-                child: Text(
-                  l.geofencePolygonNote,
-                  key: const ValueKey<String>('geofence-polygon-note'),
-                  style: TextStyle(
-                      color: skin.color.fgMuted,
-                      fontSize: skin.type.sizeSm,
-                      height: 1.4),
-                ),
-              )
-            else
+            if (!widget.isPolygon)
               Slider(
                 key: const ValueKey<String>('geofence-radius'),
                 value: _index.toDouble(),

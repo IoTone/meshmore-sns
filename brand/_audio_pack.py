@@ -652,6 +652,28 @@ DRONE_PEAK_DB = -6.0
 # a tone with an audible octave reads louder than a pure sine at the same peak,
 # and it stays clean. So the quiet-in-the-ear themes get their second harmonic
 # mixed in before the normalisation, and the normalisation does the rest.
+# Phone speakers do not reproduce the low end.
+#
+# A handset speaker rolls off steeply below about 300 Hz, so forest's G3 (196 Hz)
+# fundamental is nearly inaudible however loud the file is: the cue plays, the
+# AudioTrack delivers frames, and the owner hears nothing. Peak-normalising a
+# tone nobody's speaker can make is not loudness.
+#
+# Each theme therefore carries an audible harmonic ladder at frequencies the
+# speaker can produce, mixed from the same waveform so the character holds: the
+# fundamental stays for headphones and decent speakers, and the octave and
+# twelfth carry the cue on a phone. Levels are in dB relative to the fundamental.
+THEME_SPEAKER_LADDER = {
+    # Tuned against a measured handset spectrum: the octave at -3 dB lands the
+    # audible band within 2 dB of studio's (whose fundamental already sits at
+    # 388 Hz), so forest reads as loud as a bright theme on a phone speaker
+    # without changing what it sounds like on headphones.
+    "forest": ((2, -3.0), (3, -6.0)),
+    "umber": ((2, -4.0), (3, -8.0)),
+    "seele": ((2, -4.0), (3, -9.0)),
+    "recon": ((2, -6.0),),
+}
+
 THEME_SUSTAIN = {
     # Multiplier on the theme's own decay exponent. Below 1 keeps the note alive
     # for longer, which raises RMS at an unchanged peak with no distortion: this
@@ -715,6 +737,7 @@ def _synth_score(th, cue, scale=1.0):
     theme's timbre. The default cue shape."""
     base, timbre, decay = th["base"], th["timbre"], th["decay"]
     stutter = th.get("stutter", False)
+    ladder = th.get("ladder", ())
     samples = []
     for ratio, dur in cue["score"]:
         dur = dur * scale
@@ -723,6 +746,11 @@ def _synth_score(th, cue, scale=1.0):
         for i in range(n):
             t = i / SR
             s = timbre(f, t) * _exp_env(t, dur, decay)
+            # The speaker ladder: harmonics of this note, at the same envelope
+            # and phase, so the note is the same note on a phone speaker.
+            for mult, db in ladder:
+                s += (10 ** (db / 20.0)) * _sine(f * mult, t) * \
+                    _exp_env(t, dur, decay)
             if stutter:
                 s *= _stutter(t, dur)
             s = cue["amp"] * s
@@ -818,6 +846,11 @@ def _synth_one(theme_key, cue_key):
     sustain = THEME_SUSTAIN.get(theme_key)
     if sustain is not None:
         th = dict(th, decay=th["decay"] * sustain)
+    # The speaker ladder: the same timbre, with the octave and twelfth lifted so
+    # a phone speaker has something above its roll-off to reproduce.
+    ladder = THEME_SPEAKER_LADDER.get(theme_key)
+    if ladder is not None:
+        th = dict(th, ladder=ladder)
     # A theme may override a cue's whole character (NERV's Mission
     # Control set); otherwise the shared motif applies.
     cue = th.get("cues", {}).get(cue_key, CUES[cue_key])

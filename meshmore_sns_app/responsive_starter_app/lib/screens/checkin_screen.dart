@@ -93,10 +93,6 @@ class _CheckinScreenState extends State<CheckinScreen> {
                 onPressed: ready && sos.canArm ? () => _send(sos) : null,
               ),
               SizedBox(height: skin.space.step(3)),
-              Text(l.checkinOneMessage,
-                  style: TextStyle(
-                      color: skin.color.fgMuted,
-                      fontSize: skin.type.sizeSm)),
               if (_sent)
                 Text(l.checkinSent,
                     key: const ValueKey<String>('checkin-sent'),
@@ -126,7 +122,8 @@ class _WatchRow extends StatelessWidget {
     final MmSkin skin = context.skin;
     final String stamp = formatUntil(watch.checkin.until);
     final (String pill, String copy) = switch (watch.state) {
-      CheckinState.pending => (l.checkinOneMessage, l.checkinOneMessage),
+      // The pill names the state; the body says the one thing that state means.
+      CheckinState.pending => (l.checkinWatching, ''),
       CheckinState.watching => (l.checkinWatching, ''),
       CheckinState.overdue => (l.checkinOverdue, l.checkinOverdue),
       CheckinState.answered => switch (watch.answer) {
@@ -157,10 +154,6 @@ class _WatchRow extends StatelessWidget {
               style: TextStyle(
                   color: skin.color.fg, fontSize: skin.type.sizeBody)),
         ],
-        SizedBox(height: skin.space.step(2)),
-        Text(l.checkinOneMessage,
-            style:
-                TextStyle(color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
       ],
     );
   }

@@ -243,9 +243,9 @@ void main() {
     // A long-press was the only way in, and the empty state had to teach it in
     // a sentence (UX audit C7). It is a named control in the map's own column
     // now — still shown here, not only in a menu.
-    // The label names the act: "Tag a place" was a word a reader had to decode,
-    // and it sat one cell above another pin.
-    expect(find.byTooltip('Save a place here'), findsOneWidget);
+    // The label names the act and its reach: a place reported here is broadcast
+    // to the mesh, so the control says "report", not "save".
+    expect(find.byTooltip('Report a place here'), findsOneWidget);
 
     await t.tap(find.byKey(const ValueKey<String>('map-report-place')));
     await t.pumpAndSettle();

@@ -267,9 +267,13 @@ class MapsController extends ChangeNotifier with SafeNotifier {
       _store ??= TileStore(Directory.systemTemp, clock: _clock);
     }
     _ready.complete();
-    await sweepExpired();
-    _sweep = Timer.periodic(const Duration(hours: 1), (_) => sweepExpired());
+    // The map is usable as soon as the store and the prefs are in. Expiry
+    // sweeping and the view trim walk the tile directories, which is real file
+    // I/O and grows with the cache, and holding the first frame behind it is
+    // part of why the map took a moment to appear. Housekeeping runs after the
+    // map has drawn.
     notifyListeners();
+    unawaited(_housekeep());
     unawaited(_pump());
   }
 
@@ -995,6 +999,16 @@ class MapsController extends ChangeNotifier with SafeNotifier {
 
   /// Delete every pack and layer past its keep-for, and view tiles
   /// idle past theirs. Runs at load and hourly.
+  /// The post-load chores: expiry sweep, the view trim, and the hourly timer.
+  Future<void> _housekeep() async {
+    try {
+      await sweepExpired();
+      _sweep = Timer.periodic(const Duration(hours: 1), (_) => sweepExpired());
+    } catch (_) {
+      // A failed sweep must not take the map with it.
+    }
+  }
+
   Future<void> sweepExpired() async {
     if (!loaded) return;
     final int now = _now;

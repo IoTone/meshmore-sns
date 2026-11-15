@@ -1316,6 +1316,12 @@ abstract class AppLocalizations {
   /// **'{percent} % of the phone\'s media volume'**
   String personalizationCueVolumeSubtitle(Object percent);
 
+  /// No description provided for @personalizationCueStreamNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Cues play on the media stream. If you hear nothing, raise the phone media volume. A notification sound can be loud while this is quiet.'**
+  String get personalizationCueStreamNote;
+
   /// No description provided for @personalizationCuePreview.
   ///
   /// In en, this message translates to:
@@ -3101,7 +3107,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsRemoveAll.
   ///
   /// In en, this message translates to:
-  /// **'Remove all'**
+  /// **'Remove all from the radio'**
   String get deviceContactsRemoveAll;
 
   /// No description provided for @deviceContactsRemoveAllConfirm.
@@ -4112,12 +4118,6 @@ abstract class AppLocalizations {
   /// **'Edit'**
   String get channelsEdit;
 
-  /// No description provided for @channelsSet.
-  ///
-  /// In en, this message translates to:
-  /// **'Set'**
-  String get channelsSet;
-
   /// No description provided for @channelsSetSnack.
   ///
   /// In en, this message translates to:
@@ -4441,12 +4441,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.'**
   String get channelsClearConfirmBody;
-
-  /// No description provided for @channelsClearConfirmAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear'**
-  String get channelsClearConfirmAction;
 
   /// No description provided for @channelsClearSnack.
   ///
@@ -6209,7 +6203,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsAddPack.
   ///
   /// In en, this message translates to:
-  /// **'Download a region'**
+  /// **'Choose a region to download'**
   String get mapsAddPack;
 
   /// No description provided for @mapsNoPacks.
@@ -8452,17 +8446,17 @@ abstract class AppLocalizations {
   /// **'Send check-in'**
   String get checkinSend;
 
-  /// No description provided for @checkinOneMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'A check-in is one message and does not repeat.'**
-  String get checkinOneMessage;
-
   /// No description provided for @checkinUntil.
   ///
   /// In en, this message translates to:
   /// **'Deadline {time}'**
   String checkinUntil(String time);
+
+  /// No description provided for @checkinOneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A check-in is one message and does not repeat.'**
+  String get checkinOneMessage;
 
   /// No description provided for @checkinWatching.
   ///
@@ -8800,12 +8794,6 @@ abstract class AppLocalizations {
   /// **'Save this fence'**
   String get geofenceCanvasTitle;
 
-  /// No description provided for @geofencePolygonNote.
-  ///
-  /// In en, this message translates to:
-  /// **'A drawn fence keeps its shape. Renaming is offered here; reshaping is not yet.'**
-  String get geofencePolygonNote;
-
   /// No description provided for @geofenceDrawTitle.
   ///
   /// In en, this message translates to:
@@ -8907,12 +8895,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your fences'**
   String get geofenceListSection;
-
-  /// No description provided for @geofenceEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No fences yet.'**
-  String get geofenceEmpty;
 
   /// No description provided for @geofenceInsideNow.
   ///
@@ -9529,7 +9511,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapReportPlace.
   ///
   /// In en, this message translates to:
-  /// **'Save a place here'**
+  /// **'Report a place here'**
   String get mapReportPlace;
 
   /// No description provided for @settingsAppGroupRadio.
@@ -10189,7 +10171,7 @@ abstract class AppLocalizations {
   /// No description provided for @sosUseDefaults.
   ///
   /// In en, this message translates to:
-  /// **'Use defaults'**
+  /// **'Reset the destination'**
   String get sosUseDefaults;
 
   /// No description provided for @wxMicroclimateFromChat.

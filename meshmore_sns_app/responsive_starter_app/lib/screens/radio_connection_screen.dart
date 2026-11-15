@@ -53,7 +53,6 @@ class RadioConnectionScreen extends StatelessWidget {
                 key: const ValueKey<String>('connection-diagnostics-row'),
                 leading: const Icon(Icons.memory),
                 title: Text(l.connectionDiagnosticsRow),
-                subtitle: Text(l.connectionDiagnosticsExplainer),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push('/settings/diagnostics'),
               ),

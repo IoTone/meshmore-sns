@@ -713,6 +713,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get personalizationCueStreamNote =>
+      'Cues play on the media stream. If you hear nothing, raise the phone media volume. A notification sound can be loud while this is quiet.';
+
+  @override
   String get personalizationCuePreview => 'Hear this theme';
 
   @override
@@ -1807,7 +1811,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deviceContactsRemoveAll => 'Remove all';
+  String get deviceContactsRemoveAll => 'Remove all from the radio';
 
   @override
   String deviceContactsRemoveAllConfirm(int count) {
@@ -2434,9 +2438,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsEdit => 'Edit';
 
   @override
-  String get channelsSet => 'Set';
-
-  @override
   String channelsSetSnack(int idx) {
     return 'Slot $idx saved';
   }
@@ -2623,9 +2624,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get channelsClearConfirmBody =>
       'The radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.';
-
-  @override
-  String get channelsClearConfirmAction => 'Clear';
 
   @override
   String channelsClearSnack(int idx) {
@@ -3643,7 +3641,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapsPacks => 'Region downloads';
 
   @override
-  String get mapsAddPack => 'Download a region';
+  String get mapsAddPack => 'Choose a region to download';
 
   @override
   String get mapsNoPacks => 'No regions yet.';
@@ -4999,13 +4997,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkinSend => 'Send check-in';
 
   @override
-  String get checkinOneMessage =>
-      'A check-in is one message and does not repeat.';
-
-  @override
   String checkinUntil(String time) {
     return 'Deadline $time';
   }
+
+  @override
+  String get checkinOneMessage =>
+      'A check-in is one message and does not repeat.';
 
   @override
   String get checkinWatching => 'Waiting for an answer';
@@ -5222,10 +5220,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get geofenceCanvasTitle => 'Save this fence';
 
   @override
-  String get geofencePolygonNote =>
-      'A drawn fence keeps its shape. Renaming is offered here; reshaping is not yet.';
-
-  @override
   String get geofenceDrawTitle => 'Draw a fence';
 
   @override
@@ -5282,9 +5276,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geofenceListSection => 'Your fences';
-
-  @override
-  String get geofenceEmpty => 'No fences yet.';
 
   @override
   String get geofenceInsideNow => 'You are inside';
@@ -5696,7 +5687,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mapReportPlace => 'Save a place here';
+  String get mapReportPlace => 'Report a place here';
 
   @override
   String get settingsAppGroupRadio => 'Connection & background';
@@ -6087,7 +6078,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get sosUseDefaults => 'Use defaults';
+  String get sosUseDefaults => 'Reset the destination';
 
   @override
   String wxMicroclimateFromChat(Object ago) {
