@@ -2825,8 +2825,10 @@ class _StreetMapViewState extends State<StreetMapView> {
             ),
           ),
         // The density cell size, stated where the counts are: a count only means
-        // something next to the distance it is a count per.
-        if (hexes.isNotEmpty)
+        // something next to the distance it is a count per. It goes with the
+        // field: a chip naming a cell size over a map with no cells on it is a
+        // label for something that is not there.
+        if (hexes.isNotEmpty && _densityCellsDrawn)
           Positioned(
             left: StreetMapView.controlsInset,
             // 92 dp above the navigation area, not above the glass: the chip
