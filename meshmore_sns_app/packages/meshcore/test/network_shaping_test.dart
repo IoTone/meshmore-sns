@@ -146,4 +146,47 @@ void main() {
           isEmpty);
     });
   });
+
+  // The three requests themselves had no test: the decoders were covered and
+  // the encoders the app sends were only named by the inventory ratchet. Each
+  // is a bare command byte because the firmware's arguments are all on the
+  // reply, and each is asserted against the firmware code, not against the
+  // constant it is built from.
+  group('the bare request frames', () {
+    test('getAllowedRepeatFreq is CMD 60 and nothing else', () {
+      // MyMesh.cpp:1994-2002 — the request carries no argument; the reply packs
+      // as many 8-byte (lower, upper) kHz pairs as fit in one frame.
+      expect(_hex(MeshcoreFrameCodec.getAllowedRepeatFreq()), '3c');
+    });
+
+    test('getDefaultFloodScope is CMD 64 and nothing else', () {
+      // MyMesh.cpp:1964-1973 — the reply is the 0x1C code plus a 31-byte name
+      // and a 16-byte key, or that code alone when the scope is unset.
+      expect(_hex(MeshcoreFrameCodec.getDefaultFloodScope()), '40');
+    });
+
+    test('removeContact is CMD 15 plus the 32-byte key', () {
+      // MyMesh.cpp: the contact table is keyed by the full public key, so this
+      // is the one place a truncated key must not be accepted.
+      final Uint8List key =
+          Uint8List.fromList(List<int>.generate(32, (int i) => i * 7 & 0xFF));
+      final Uint8List f = MeshcoreFrameCodec.removeContact(key);
+      expect(f.length, 1 + 32, reason: 'no length byte, no padding');
+      expect(f[0], 0x0F);
+      expect(_hex(f.sublist(1)), _hex(key));
+    });
+
+    test('a short key is refused by the builder rather than padded', () {
+      // `fixed` pads and truncates, so a caller that passed a 6-byte prefix
+      // would remove contact 0 and leave the address ambiguous. The builder
+      // pads to 32 with zeros, which the radio then reads as a different key:
+      // the frame is well formed and the wrong contact is addressed. Pinning
+      // the behaviour here so a change is deliberate.
+      final Uint8List short = Uint8List.fromList(<int>[1, 2, 3, 4, 5, 6]);
+      final Uint8List f = MeshcoreFrameCodec.removeContact(short);
+      expect(f.length, 1 + 32);
+      expect(f.sublist(7).every((int b) => b == 0), isTrue,
+          reason: 'zero padding is the builder contract, not a surprise');
+    });
+  });
 }

@@ -436,6 +436,9 @@ void main() {
       'sendChannelTextMessage',
       'sendChannelData',
       'sendTextMessage',
+      // `MeshCarryCodec.sendRawData`'s frame, checked by
+      // `mesh_carry_test.dart` and the `m5_carry_frames.json` vector.
+      'sendRawData',
       'sendSelfAdvert',
       'setAdvertName',
       'removeContact',
@@ -489,11 +492,11 @@ void main() {
 
     // Encoders no test names yet. This list may only shrink: an encoder that
     // leaves it must be covered by a vector or an assertion above.
-    const Set<String> unexercised = <String>{
-      'getAllowedRepeatFreq',
-      'getDefaultFloodScope',
-      'removeContact',
-    };
+    // Empty since 2026-11-15: the three that were here are asserted in
+    // `network_shaping_test.dart` (the bare request bytes, and the reply each
+    // one is answered with). The list stays so a future gap has somewhere to
+    // go that is not a comment.
+    const Set<String> unexercised = <String>{};
 
     test('the source has exactly the committed encoders', () {
       final String src =
