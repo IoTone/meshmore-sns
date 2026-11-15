@@ -3322,7 +3322,7 @@
   "sosRefusedTooLong": "Too long to carry a name and a position. Shorten it.",
   "sosRefusedHold": "The hold is not finished.",
   "checkinTitle": "Check-in",
-  "checkinIntro": "One message with a deadline. The app marks it overdue here; the radio keeps no timer.",
+  "checkinIntro": "One message with a deadline. The app marks it overdue here. The radio keeps no timer.",
   "checkinDeadline": "Deadline",
   "checkinMinutes": "{minutes} min",
   "@checkinMinutes": {

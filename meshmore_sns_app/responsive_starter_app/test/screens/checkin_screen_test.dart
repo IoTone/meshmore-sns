@@ -101,8 +101,8 @@ void main() {
       }
       expect(
           find.text(
-              'One message with a deadline. The app marks it overdue here; '
-              'the radio keeps no timer.'),
+              'One message with a deadline. The app marks it overdue here. '
+              'The radio keeps no timer.'),
           findsOneWidget);
       await t.pumpWidget(const SizedBox());
     }
@@ -152,7 +152,7 @@ void main() {
     expect(sos.checkin!.state, CheckinState.overdue);
     expect(find.byKey(const ValueKey<String>('checkin-pill')), findsOneWidget);
     expect(
-        find.text('Overdue — the deadline passed and no answer came back.'),
+        find.text('Overdue. The deadline passed and no answer came back.'),
         findsOneWidget);
     await _settle(t);
   });

@@ -466,6 +466,20 @@ code. What this app does in the meantime: it recognises `0xAE1C` and counts it a
 a picture in a codec this build does not carry, rather than dropping it as an
 unknown datagram.
 
+**Correction, 2026-11-15: the models ARE hosted.** The bundle is
+`huggingface.co/zjs81/aeic-se-onnx`, named by Seeed's own device guides as the
+AEIC-SE codec and installed through the client's App Settings, so the blocker is
+not a host but the port. What a port costs, measured against that checkout on
+2026-11-15: `lib/services/image_codec_service.dart` 1616 lines,
+`image_codec_backend.dart` 885, `image_codec_entropy.dart` 678, `rans_coder.dart`
+498, `entropy_tables.dart` 287 — about 4000 lines of ONNX session management, a
+rANS coder with its CDF tables, a worker isolate, a resumable checksum-verified
+downloader and a memory-pressure policy, plus a `flutter_onnxruntime` dependency
+and the ~1 GB bundle. The upstream gate `kImageCodecBitstreamPathAvailable` is
+`true` (`image_codec_backend.dart:161`) though its own doc comment above it still
+claims false, so the path is live there. This remains a separate piece of work
+with a stated size rather than an unknown.
+
 ### Still open after this pass
 
 | Item | State |

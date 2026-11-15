@@ -125,11 +125,11 @@ void main() {
 
     // Before the radio answers, the smallest board's four. Slot 0 is the
     // controller's seeded Public channel, so three of the four read empty.
-    expect(find.text('— empty —'), findsNWidgets(3));
+    expect(find.text('Empty'), findsNWidgets(3));
 
     fake.emit(deviceInfoFrame(maxChannels: 8));
     await t.pumpAndSettle();
-    expect(find.text('— empty —'), findsNWidgets(7),
+    expect(find.text('Empty'), findsNWidgets(7),
         reason: 'a radio that reports eight slots must show eight, one of '
             'which carries the Public channel');
     mc.dispose();
@@ -162,7 +162,7 @@ void main() {
     await t.pumpAndSettle();
 
     expect(find.text('Public'), findsOneWidget); // slot 0
-    expect(find.text('— empty —'), findsWidgets); // empty slots
+    expect(find.text('Empty'), findsWidgets); // empty slots
 
     // Open the editor for slot 1: slot 0 is Public, so the first empty slot is
     // the second Edit.

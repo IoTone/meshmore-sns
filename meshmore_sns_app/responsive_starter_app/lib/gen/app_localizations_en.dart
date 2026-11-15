@@ -4976,7 +4976,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkinIntro =>
-      'One message with a deadline. The app marks it overdue here; the radio keeps no timer.';
+      'One message with a deadline. The app marks it overdue here. The radio keeps no timer.';
 
   @override
   String get checkinDeadline => 'Deadline';

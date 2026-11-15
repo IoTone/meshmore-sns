@@ -83,7 +83,7 @@ void main() {
     await t.pumpAndSettle();
 
     // The empty thread is one line, and it says which channel it means.
-    expect(find.textContaining('no messages on this channel'), findsOneWidget);
+    expect(find.textContaining('No messages on this channel'), findsOneWidget);
 
     await t.enterText(find.byType(TextField), 'hello mesh');
     // The send control's enabled state follows the text, so a frame has to be

@@ -8413,7 +8413,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkinIntro.
   ///
   /// In en, this message translates to:
-  /// **'One message with a deadline. The app marks it overdue here; the radio keeps no timer.'**
+  /// **'One message with a deadline. The app marks it overdue here. The radio keeps no timer.'**
   String get checkinIntro;
 
   /// No description provided for @checkinDeadline.
