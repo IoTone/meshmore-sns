@@ -107,7 +107,7 @@ abstract class AppLocalizations {
   /// No description provided for @appSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Mesh messaging over radio'**
+  /// **'Mesh messaging over LoRa radio'**
   String get appSubtitle;
 
   /// No description provided for @tabDashboard.
@@ -227,7 +227,7 @@ abstract class AppLocalizations {
   /// No description provided for @botRefusedUnknownPsk.
   ///
   /// In en, this message translates to:
-  /// **'Waiting for the radio to send this channel\'s key.'**
+  /// **'Waiting for the MeshCore radio to send this channel\'s key.'**
   String get botRefusedUnknownPsk;
 
   /// No description provided for @botMode.
@@ -335,7 +335,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashForestNoRoutes.
   ///
   /// In en, this message translates to:
-  /// **'No learned routes yet. The radio has not been told how to reach anyone.'**
+  /// **'No learned routes yet. The MeshCore radio has not been told how to reach anyone.'**
   String get dashForestNoRoutes;
 
   /// No description provided for @dashForestContacts.
@@ -455,7 +455,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardAwaitingDevice.
   ///
   /// In en, this message translates to:
-  /// **'Waiting for the radio…'**
+  /// **'Waiting for the MeshCore radio…'**
   String get dashboardAwaitingDevice;
 
   /// No description provided for @dashboardAwaitingDeviceLocation.
@@ -569,7 +569,7 @@ abstract class AppLocalizations {
   /// No description provided for @linkChipSemantics.
   ///
   /// In en, this message translates to:
-  /// **'Radio {state}'**
+  /// **'MeshCore radio {state}'**
   String linkChipSemantics(String state);
 
   /// No description provided for @actionConnect.
@@ -593,7 +593,7 @@ abstract class AppLocalizations {
   /// No description provided for @blockConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'Hides what this person sends, on this device: messages, notifications and places. The radio still receives and relays the packet, and the mesh does not learn about the block.'**
+  /// **'Hides what this person sends, on this device: messages, notifications and places. The MeshCore radio still receives and relays the packet, and the mesh does not learn about the block.'**
   String get blockConfirmBody;
 
   /// No description provided for @blockConfirmGo.
@@ -785,7 +785,7 @@ abstract class AppLocalizations {
   /// No description provided for @pairPermissionBody.
   ///
   /// In en, this message translates to:
-  /// **'The app needs Nearby devices to find your radio and talk to it. Nothing is paired yet.'**
+  /// **'The app needs Nearby devices to find your MeshCore radio and talk to it. Nothing is paired yet.'**
   String get pairPermissionBody;
 
   /// No description provided for @pairPermissionAllow.
@@ -809,13 +809,13 @@ abstract class AppLocalizations {
   /// No description provided for @pairAdapterBody.
   ///
   /// In en, this message translates to:
-  /// **'Switch Bluetooth on to find your radio. This screen continues by itself once it is on.'**
+  /// **'Switch Bluetooth on to find your MeshCore radio. This screen continues by itself once it is on.'**
   String get pairAdapterBody;
 
   /// No description provided for @pairAdapterUnsupported.
   ///
   /// In en, this message translates to:
-  /// **'This phone reports no usable Bluetooth adapter, so a radio cannot be paired here.'**
+  /// **'This phone reports no usable Bluetooth adapter, so a MeshCore radio cannot be paired here.'**
   String get pairAdapterUnsupported;
 
   /// No description provided for @pairRetry.
@@ -833,7 +833,7 @@ abstract class AppLocalizations {
   /// No description provided for @pairScanBody.
   ///
   /// In en, this message translates to:
-  /// **'A radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.'**
+  /// **'A MeshCore radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.'**
   String get pairScanBody;
 
   /// No description provided for @pairScanning.
@@ -869,7 +869,7 @@ abstract class AppLocalizations {
   /// No description provided for @pairConnectingBody.
   ///
   /// In en, this message translates to:
-  /// **'If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.'**
+  /// **'If the MeshCore radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.'**
   String get pairConnectingBody;
 
   /// No description provided for @pairConfirmTitle.
@@ -881,7 +881,7 @@ abstract class AppLocalizations {
   /// No description provided for @pairConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'{name} answered, so the link and the protocol both work. This radio is now the one the app uses.'**
+  /// **'{name} answered, so the link and the protocol both work. This MeshCore radio is now the one the app uses.'**
   String pairConfirmBody(String name);
 
   /// No description provided for @pairConfirmNode.
@@ -1031,7 +1031,7 @@ abstract class AppLocalizations {
   /// No description provided for @termsLead.
   ///
   /// In en, this message translates to:
-  /// **'This app talks to a mesh radio. There is no account, no cloud and no analytics.'**
+  /// **'This app talks to a mesh MeshCore radio. There is no account, no cloud and no analytics.'**
   String get termsLead;
 
   /// No description provided for @termsSectionLocal.
@@ -1055,7 +1055,7 @@ abstract class AppLocalizations {
   /// No description provided for @termsLeavesBody.
   ///
   /// In en, this message translates to:
-  /// **'Two things leave this device. What you send goes out over the radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.'**
+  /// **'Two things leave this device. What you send goes out over the MeshCore radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.'**
   String get termsLeavesBody;
 
   /// No description provided for @termsSectionPermissions.
@@ -1067,7 +1067,7 @@ abstract class AppLocalizations {
   /// No description provided for @termsPermissionsBody.
   ///
   /// In en, this message translates to:
-  /// **'Bluetooth connects to the radio. Location is used for your own position and, on older Android, to allow a Bluetooth scan. Notifications are used for messages that arrive while the app is in the background. Refusing any of them leaves the app usable without a radio.'**
+  /// **'Bluetooth connects to the MeshCore radio. Location is used for your own position and, on older Android, to allow a Bluetooth scan. Notifications are used for messages that arrive while the app is in the background. Refusing any of them leaves the app usable without a radio.'**
   String get termsPermissionsBody;
 
   /// No description provided for @termsSectionRetention.
@@ -1193,7 +1193,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutReportProblemSub.
   ///
   /// In en, this message translates to:
-  /// **'Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.'**
+  /// **'Opens the issue tracker with the app and MeshCore radio details filled in. Nothing is sent unless you send it there.'**
   String get aboutReportProblemSub;
 
   /// No description provided for @creditsTitle.
@@ -1463,7 +1463,7 @@ abstract class AppLocalizations {
   /// No description provided for @firstRunOfflineBody.
   ///
   /// In en, this message translates to:
-  /// **'Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no radio traffic.'**
+  /// **'Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no MeshCore radio traffic.'**
   String get firstRunOfflineBody;
 
   /// No description provided for @firstRunGrant.
@@ -2033,7 +2033,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceGpsDisabledHint.
   ///
   /// In en, this message translates to:
-  /// **'Off. The radio does not read its GPS, so it keeps announcing the last position set.'**
+  /// **'Off. The MeshCore radio does not read its GPS, so it keeps announcing the last position set.'**
   String get deviceGpsDisabledHint;
 
   /// No description provided for @deviceGpsUnknown.
@@ -2075,7 +2075,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceGpsIntervalFixedByFirmware.
   ///
   /// In en, this message translates to:
-  /// **'Set on the radio'**
+  /// **'Set on the MeshCore radio'**
   String get deviceGpsIntervalFixedByFirmware;
 
   /// No description provided for @locTitle.
@@ -2087,7 +2087,7 @@ abstract class AppLocalizations {
   /// No description provided for @locTileSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Sends the phone\'s position to the radio'**
+  /// **'Sends the phone\'s position to the MeshCore radio'**
   String get locTileSubtitle;
 
   /// No description provided for @deviceGpsIntervalWhy.
@@ -2387,7 +2387,7 @@ abstract class AppLocalizations {
   /// No description provided for @bootConnecting.
   ///
   /// In en, this message translates to:
-  /// **'CONNECTING TO RADIO…'**
+  /// **'CONNECTING TO MeshCore radio…'**
   String get bootConnecting;
 
   /// No description provided for @bootHandshaking.
@@ -2471,7 +2471,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventMsgSent.
   ///
   /// In en, this message translates to:
-  /// **'sent · the radio acknowledged it'**
+  /// **'sent · the MeshCore radio acknowledged it'**
   String get eventMsgSent;
 
   /// No description provided for @eventDeviceInfo.
@@ -2657,7 +2657,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatSendNotSent.
   ///
   /// In en, this message translates to:
-  /// **'Not sent. The radio is not connected. Your message is back in the box.'**
+  /// **'Not sent. The MeshCore radio is not connected. Your message is back in the box.'**
   String get chatSendNotSent;
 
   /// No description provided for @chatSend.
@@ -2669,13 +2669,13 @@ abstract class AppLocalizations {
   /// No description provided for @chatBudgetNear.
   ///
   /// In en, this message translates to:
-  /// **'Nearly at the limit: the radio counts its own name in these bytes'**
+  /// **'Nearly at the limit: the MeshCore radio counts its own name in these bytes'**
   String chatBudgetNear(int remaining);
 
   /// No description provided for @chatBudgetTooLong.
   ///
   /// In en, this message translates to:
-  /// **'Too long by {over} bytes. The radio would cut the rest without telling you'**
+  /// **'Too long by {over} bytes. The MeshCore radio would cut the rest without telling you'**
   String chatBudgetTooLong(int over);
 
   /// No description provided for @chatMessageActions.
@@ -2951,7 +2951,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailNotDeviceContact.
   ///
   /// In en, this message translates to:
-  /// **'Not in the radio\'s contacts, so DMs may not route.'**
+  /// **'Not in the MeshCore radio\'s contacts, so DMs may not route.'**
   String get nodeDetailNotDeviceContact;
 
   /// No description provided for @nodeDetailAddDeviceContact.
@@ -2981,13 +2981,13 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailRemoveDeviceContactConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Remove “{name}” from the radio\'s contacts? You can add them again later.'**
+  /// **'Remove “{name}” from the MeshCore radio\'s contacts? You can add them again later.'**
   String nodeDetailRemoveDeviceContactConfirm(String name);
 
   /// No description provided for @nodeDetailRemoveDeviceContactDone.
   ///
   /// In en, this message translates to:
-  /// **'Removed from your radio\'s contacts.'**
+  /// **'Removed from your MeshCore radio\'s contacts.'**
   String get nodeDetailRemoveDeviceContactDone;
 
   /// No description provided for @deviceContactsTitle.
@@ -3005,25 +3005,25 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsSyncing.
   ///
   /// In en, this message translates to:
-  /// **'Syncing contacts from the radio…'**
+  /// **'Syncing contacts from the MeshCore radio…'**
   String get deviceContactsSyncing;
 
   /// No description provided for @deviceContactsEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Your radio has no contacts.'**
+  /// **'Your MeshCore radio has no contacts.'**
   String get deviceContactsEmpty;
 
   /// No description provided for @deviceContactsCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} of {max} contacts on the radio'**
+  /// **'{count} of {max} contacts on the MeshCore radio'**
   String deviceContactsCount(int count, int max);
 
   /// No description provided for @deviceContactsCountOnly.
   ///
   /// In en, this message translates to:
-  /// **'{count} contacts on the radio'**
+  /// **'{count} contacts on the MeshCore radio'**
   String deviceContactsCountOnly(int count);
 
   /// No description provided for @deviceContactsFullHelp.
@@ -3101,7 +3101,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsRemoveAll.
   ///
   /// In en, this message translates to:
-  /// **'Remove all from the radio'**
+  /// **'Remove all from the MeshCore radio'**
   String get deviceContactsRemoveAll;
 
   /// No description provided for @deviceContactsRemoveAllConfirm.
@@ -3113,7 +3113,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsRemoveAllDone.
   ///
   /// In en, this message translates to:
-  /// **'Removed {count} contacts from the radio.'**
+  /// **'Removed {count} contacts from the MeshCore radio.'**
   String deviceContactsRemoveAllDone(int count);
 
   /// No description provided for @deviceContactsFlood.
@@ -3731,19 +3731,19 @@ abstract class AppLocalizations {
   /// No description provided for @meshTreeLearnRoutes.
   ///
   /// In en, this message translates to:
-  /// **'Ask the radio for routes'**
+  /// **'Ask the MeshCore radio for routes'**
   String get meshTreeLearnRoutes;
 
   /// No description provided for @meshTreeLearning.
   ///
   /// In en, this message translates to:
-  /// **'Asking the radio…'**
+  /// **'Asking the MeshCore radio…'**
   String get meshTreeLearning;
 
   /// No description provided for @meshTreeNoRoutes.
   ///
   /// In en, this message translates to:
-  /// **'This radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.'**
+  /// **'This MeshCore radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.'**
   String get meshTreeNoRoutes;
 
   /// No description provided for @meshTreeHopsDirect.
@@ -3791,7 +3791,7 @@ abstract class AppLocalizations {
   /// No description provided for @meshTreeLegendDesc.
   ///
   /// In en, this message translates to:
-  /// **'A directed graph of how the radio reaches each contact. Each edge is a repeater on the route the radio actually sends by.'**
+  /// **'A directed graph of how the MeshCore radio reaches each contact. Each edge is a repeater on the route it actually sends by.'**
   String get meshTreeLegendDesc;
 
   /// No description provided for @meshTreeLegendFlood.
@@ -3905,7 +3905,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailTelemetryQuerying.
   ///
   /// In en, this message translates to:
-  /// **'Asking the radio for readings…'**
+  /// **'Asking the MeshCore radio for readings…'**
   String get nodeDetailTelemetryQuerying;
 
   /// No description provided for @nodeDetailTelemetryNotContact.
@@ -3953,7 +3953,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsHelp.
   ///
   /// In en, this message translates to:
-  /// **'Channel 0 is the shared public one. A private group needs the same channel number, name and key on every radio.'**
+  /// **'Channel 0 is the shared public one. A private group needs the same channel number, name and key on every MeshCore radio.'**
   String get channelsHelp;
 
   /// No description provided for @channelsOfflineHint.
@@ -3995,7 +3995,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelCreateNameKeyedBody.
   ///
   /// In en, this message translates to:
-  /// **'The key comes from the name, so every radio that types the same name joins. Nothing else can read it.'**
+  /// **'The key comes from the name, so every MeshCore radio that types the same name joins. Nothing else can read it.'**
   String get channelCreateNameKeyedBody;
 
   /// No description provided for @channelCreatePublicTitle.
@@ -4007,7 +4007,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelCreatePublicBody.
   ///
   /// In en, this message translates to:
-  /// **'Everyone within radio range on the public channel can read it. Use this only for a channel meant to be open.'**
+  /// **'Everyone within LoRa radio range on the public channel can read it. Use this only for a channel meant to be open.'**
   String get channelCreatePublicBody;
 
   /// No description provided for @channelCreateSlotNote.
@@ -4019,7 +4019,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelCreateNoSlot.
   ///
   /// In en, this message translates to:
-  /// **'Every channel slot on this radio is in use. Free one on the channels screen first.'**
+  /// **'Every channel slot on this MeshCore radio is in use. Free one on the channels screen first.'**
   String get channelCreateNoSlot;
 
   /// No description provided for @channelCreateAdvanced.
@@ -4427,7 +4427,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsClearConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'The radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.'**
+  /// **'The MeshCore radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.'**
   String get channelsClearConfirmBody;
 
   /// No description provided for @channelsClearSnack.
@@ -4649,7 +4649,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification. Most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.'**
+  /// **'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every MeshCore radio. In Japan the radio itself must carry 技適 (giteki) certification. Most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.'**
   String get deviceRegionDisclaimer;
 
   /// No description provided for @presetUsCanada.
@@ -4823,31 +4823,31 @@ abstract class AppLocalizations {
   /// No description provided for @devicePathHashSizeHelp.
   ///
   /// In en, this message translates to:
-  /// **'The hash length this radio stamps on its packets. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the payload budget.'**
+  /// **'The hash length this LoRa radio stamps on its packets. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the payload budget.'**
   String get devicePathHashSizeHelp;
 
   /// No description provided for @devicePathHashUnread.
   ///
   /// In en, this message translates to:
-  /// **'The radio has not said which length it uses yet.'**
+  /// **'The MeshCore radio has not said which length it uses yet.'**
   String get devicePathHashUnread;
 
   /// No description provided for @devicePathHashMismatch.
   ///
   /// In en, this message translates to:
-  /// **'On the radio: {device}. Yours: {form}. Tap Apply to send yours.'**
+  /// **'On the MeshCore radio: {device}. Yours: {form}. Tap Apply to send yours.'**
   String devicePathHashMismatch(String device, String form);
 
   /// No description provided for @deviceRadioApplied.
   ///
   /// In en, this message translates to:
-  /// **'The radio confirmed the change.'**
+  /// **'The MeshCore radio confirmed the change.'**
   String get deviceRadioApplied;
 
   /// No description provided for @deviceRadioRefused.
   ///
   /// In en, this message translates to:
-  /// **'The radio refused {param} (error {code}). Later writes were not sent.'**
+  /// **'The MeshCore radio refused {param} (error {code}). Later writes were not sent.'**
   String deviceRadioRefused(String param, String code);
 
   /// No description provided for @deviceRadioSilent.
@@ -4865,13 +4865,13 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioUnknownState.
   ///
   /// In en, this message translates to:
-  /// **'Cannot change radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.'**
+  /// **'Cannot change MeshCore radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.'**
   String get deviceRadioUnknownState;
 
   /// No description provided for @deviceRadioRevert.
   ///
   /// In en, this message translates to:
-  /// **'Undo radio change'**
+  /// **'Undo MeshCore radio change'**
   String get deviceRadioRevert;
 
   /// No description provided for @deviceRadioReverted.
@@ -4889,7 +4889,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioRevertFailed.
   ///
   /// In en, this message translates to:
-  /// **'Undo did not apply. The radio kept its last values.'**
+  /// **'Undo did not apply. The MeshCore radio kept its last values.'**
   String get deviceRadioRevertFailed;
 
   /// No description provided for @radioHealthTitle.
@@ -4949,13 +4949,13 @@ abstract class AppLocalizations {
   /// No description provided for @radioHealthSource.
   ///
   /// In en, this message translates to:
-  /// **'From the radio'**
+  /// **'From the MeshCore radio'**
   String get radioHealthSource;
 
   /// No description provided for @radioHealthAckTrip.
   ///
   /// In en, this message translates to:
-  /// **'last acknowledgement: {ms} ms round trip (the radio\'s own measure)'**
+  /// **'last acknowledgement: {ms} ms round trip (the MeshCore radio\'s own measure)'**
   String radioHealthAckTrip(int ms);
 
   /// No description provided for @deviceLoadFromDevice.
@@ -4967,7 +4967,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceApplyRadio.
   ///
   /// In en, this message translates to:
-  /// **'Apply radio params'**
+  /// **'Apply MeshCore radio params'**
   String get deviceApplyRadio;
 
   /// No description provided for @deviceConnectFirst.
@@ -5417,7 +5417,7 @@ abstract class AppLocalizations {
   /// No description provided for @batterySpecDraw.
   ///
   /// In en, this message translates to:
-  /// **'Typical draw: ~{ma} mA (radio receiving)'**
+  /// **'Typical draw: ~{ma} mA (LoRa radio receiving)'**
   String batterySpecDraw(int ma);
 
   /// No description provided for @batteryHistoryTitle.
@@ -5477,7 +5477,7 @@ abstract class AppLocalizations {
   /// No description provided for @deliveryUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Sent while the app was closing. Whether the radio transmitted it is not knowable'**
+  /// **'Sent while the app was closing. Whether the MeshCore radio transmitted it is not knowable'**
   String get deliveryUnknown;
 
   /// No description provided for @settingsHubTools.
@@ -5645,55 +5645,55 @@ abstract class AppLocalizations {
   /// No description provided for @toolFailNotConnected.
   ///
   /// In en, this message translates to:
-  /// **'Not connected to a radio.'**
+  /// **'Not connected to a MeshCore radio.'**
   String get toolFailNotConnected;
 
   /// No description provided for @toolFailBusy.
   ///
   /// In en, this message translates to:
-  /// **'Another tool is using the radio. Stop it first.'**
+  /// **'Another tool is using the MeshCore radio. Stop it first.'**
   String get toolFailBusy;
 
   /// No description provided for @toolFailUnsupported.
   ///
   /// In en, this message translates to:
-  /// **'Your radio\'s firmware doesn\'t support this.'**
+  /// **'Your MeshCore radio\'s firmware doesn\'t support this.'**
   String get toolFailUnsupported;
 
   /// No description provided for @toolFailNotFound.
   ///
   /// In en, this message translates to:
-  /// **'The radio doesn\'t have this contact.'**
+  /// **'The MeshCore radio doesn\'t have this contact.'**
   String get toolFailNotFound;
 
   /// No description provided for @toolFailTableFull.
   ///
   /// In en, this message translates to:
-  /// **'The radio is busy (send table full). Try again shortly.'**
+  /// **'The MeshCore radio is busy (send table full). Try again shortly.'**
   String get toolFailTableFull;
 
   /// No description provided for @toolFailRejected.
   ///
   /// In en, this message translates to:
-  /// **'The radio refused the request.'**
+  /// **'The MeshCore radio refused the request.'**
   String get toolFailRejected;
 
   /// No description provided for @toolFailNoConfirm.
   ///
   /// In en, this message translates to:
-  /// **'The radio didn\'t confirm the send.'**
+  /// **'The MeshCore radio didn\'t confirm the send.'**
   String get toolFailNoConfirm;
 
   /// No description provided for @toolFailPublic.
   ///
   /// In en, this message translates to:
-  /// **'Public is refused: everything sent there reaches every radio. Use a private channel or a DM.'**
+  /// **'Public is refused: everything sent there reaches every MeshCore radio. Use a private channel or a DM.'**
   String get toolFailPublic;
 
   /// No description provided for @toolFailUnknownChannel.
   ///
   /// In en, this message translates to:
-  /// **'This channel\'s key hasn\'t been read from the radio yet.'**
+  /// **'This channel\'s key hasn\'t been read from the MeshCore radio yet.'**
   String get toolFailUnknownChannel;
 
   /// No description provided for @toolFailNoTarget.
@@ -5837,7 +5837,7 @@ abstract class AppLocalizations {
   /// No description provided for @pingMethodTelemetry.
   ///
   /// In en, this message translates to:
-  /// **'Asks for readings. The other radio answers only if it shares them with you.'**
+  /// **'Asks for readings. The other MeshCore radio answers only if it shares them with you.'**
   String get pingMethodTelemetry;
 
   /// No description provided for @pingSummary.
@@ -6005,7 +6005,7 @@ abstract class AppLocalizations {
   /// No description provided for @soakPairHint.
   ///
   /// In en, this message translates to:
-  /// **'Pairs with an R59 bot answering on the other radio: echoes show drops, duplicates and reordering.'**
+  /// **'Pairs with an R59 bot answering on the other MeshCore radio: echoes show drops, duplicates and reordering.'**
   String get soakPairHint;
 
   /// No description provided for @soakSummary.
@@ -6125,7 +6125,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceAdvertPropagatesHint.
   ///
   /// In en, this message translates to:
-  /// **'Takes effect the next time the radio announces itself.'**
+  /// **'Takes effect the next time the MeshCore radio announces itself.'**
   String get deviceAdvertPropagatesHint;
 
   /// No description provided for @settingsHubMaps.
@@ -7043,7 +7043,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsMtuRefusedLine.
   ///
   /// In en, this message translates to:
-  /// **'This phone link is {mtu} bytes and a full radio frame needs {need}. Reconnect to try again. A radio that caps the link smaller cannot carry every frame.'**
+  /// **'This phone link is {mtu} bytes and a full LoRa frame needs {need}. Reconnect to try again. A MeshCore radio that caps the link smaller cannot carry every frame.'**
   String diagnosticsMtuRefusedLine(String mtu, String need);
 
   /// No description provided for @diagnosticsDatagramLine.
@@ -7055,7 +7055,7 @@ abstract class AppLocalizations {
   /// No description provided for @rxViaPrimary.
   ///
   /// In en, this message translates to:
-  /// **'the primary radio'**
+  /// **'the primary MeshCore radio'**
   String get rxViaPrimary;
 
   /// No description provided for @rxViaSecondary.
@@ -7067,7 +7067,7 @@ abstract class AppLocalizations {
   /// No description provided for @rxViaUnknown.
   ///
   /// In en, this message translates to:
-  /// **'an unreported radio'**
+  /// **'an unreported MeshCore radio'**
   String get rxViaUnknown;
 
   /// No description provided for @diagnosticsFramesDroppedLine.
@@ -7110,13 +7110,13 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsForgetConfirmTitle.
   ///
   /// In en, this message translates to:
-  /// **'Forget this radio?'**
+  /// **'Forget this MeshCore radio?'**
   String get diagnosticsForgetConfirmTitle;
 
   /// No description provided for @diagnosticsForgetConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'You will need to pair it again, and this clears its bond. Do not do this while the radio is out of reach.'**
+  /// **'You will need to pair it again, and this clears its bond. Do not do this while the MeshCore radio is out of reach.'**
   String get diagnosticsForgetConfirmBody;
 
   /// No description provided for @diagnosticsSectionSend.
@@ -7134,7 +7134,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsReadClock.
   ///
   /// In en, this message translates to:
-  /// **'Read the radio\'s clock'**
+  /// **'Read the MeshCore radio\'s clock'**
   String get diagnosticsReadClock;
 
   /// No description provided for @diagnosticsPullMessage.
@@ -7296,7 +7296,7 @@ abstract class AppLocalizations {
   /// No description provided for @networksEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No networks yet. A network is the radio settings your radios agree on.'**
+  /// **'No networks yet. A network is the MeshCore radio settings your radios agree on.'**
   String get networksEmpty;
 
   /// No description provided for @networksNew.
@@ -7423,13 +7423,13 @@ abstract class AppLocalizations {
   /// No description provided for @networksApply.
   ///
   /// In en, this message translates to:
-  /// **'Apply to this radio'**
+  /// **'Apply to this MeshCore radio'**
   String get networksApply;
 
   /// No description provided for @networksApplyNeedsRadio.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio to apply.'**
+  /// **'Connect a MeshCore radio to apply.'**
   String get networksApplyNeedsRadio;
 
   /// No description provided for @networksApplyTitle.
@@ -7441,13 +7441,13 @@ abstract class AppLocalizations {
   /// No description provided for @networksApplyBodyShared.
   ///
   /// In en, this message translates to:
-  /// **'This radio will switch to {summary}.'**
+  /// **'This MeshCore radio will switch to {summary}.'**
   String networksApplyBodyShared(String summary);
 
   /// No description provided for @networksApplyBodyIsolated.
   ///
   /// In en, this message translates to:
-  /// **'This radio will switch to {summary}. It will stop hearing the public mesh until you switch it back.'**
+  /// **'This MeshCore radio will switch to {summary}. It will stop hearing the public mesh until you switch it back.'**
   String networksApplyBodyIsolated(String summary);
 
   /// No description provided for @networksApplyConfirm.
@@ -7471,7 +7471,7 @@ abstract class AppLocalizations {
   /// No description provided for @networksCurrent.
   ///
   /// In en, this message translates to:
-  /// **'This radio is on this network'**
+  /// **'This MeshCore radio is on this network'**
   String get networksCurrent;
 
   /// No description provided for @networksDelete.
@@ -7561,7 +7561,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeRadioRefused.
   ///
   /// In en, this message translates to:
-  /// **'The radio did not take it, so the place is not on the air.'**
+  /// **'The MeshCore radio did not take it, so the place is not on the air.'**
   String get placeRadioRefused;
 
   /// No description provided for @placeGoesTo.
@@ -7585,7 +7585,7 @@ abstract class AppLocalizations {
   /// No description provided for @placeNoIdentity.
   ///
   /// In en, this message translates to:
-  /// **'Connect a radio first: a place is tagged as you.'**
+  /// **'Connect a MeshCore radio first: a place is tagged as you.'**
   String get placeNoIdentity;
 
   /// No description provided for @placeLabelEmpty.
@@ -7873,49 +7873,49 @@ abstract class AppLocalizations {
   /// No description provided for @failureUnsupportedCommand.
   ///
   /// In en, this message translates to:
-  /// **'The radio does not support that command. Its firmware is older than this app expects. Update the radio or use a command it lists.'**
+  /// **'The MeshCore radio does not support that command. Its firmware is older than this app expects. Update the radio or use a command it lists.'**
   String get failureUnsupportedCommand;
 
   /// No description provided for @failureNotFound.
   ///
   /// In en, this message translates to:
-  /// **'The radio could not find the target: the channel, contact or message is not on it. Refresh the contact list, then retry.'**
+  /// **'The MeshCore radio could not find the target: the channel, contact or message is not on it. Refresh the contact list, then retry.'**
   String get failureNotFound;
 
   /// No description provided for @failureTableFull.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s queue or table is full, so it refused the request. Wait for it to drain, then retry. Nothing was lost.'**
+  /// **'The MeshCore radio\'s queue or table is full, so it refused the request. Wait for it to drain, then retry. Nothing was lost.'**
   String get failureTableFull;
 
   /// No description provided for @failureBadState.
   ///
   /// In en, this message translates to:
-  /// **'The radio is busy with another operation and cannot start this one. Wait for the current operation to finish, then retry.'**
+  /// **'The MeshCore radio is busy with another operation and cannot start this one. Wait for the current operation to finish, then retry.'**
   String get failureBadState;
 
   /// No description provided for @failureFileIoError.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s storage refused the write. Its own log has the detail. Retry once, and if it repeats the radio\'s filesystem needs attention.'**
+  /// **'The MeshCore radio storage refused the write. Its own log has the detail. Retry once, and if it repeats the radio filesystem needs attention.'**
   String get failureFileIoError;
 
   /// No description provided for @failureIllegalArgument.
   ///
   /// In en, this message translates to:
-  /// **'The radio rejected the value or length as invalid. Check the field you changed: one value is outside what this firmware accepts.'**
+  /// **'The MeshCore radio rejected the value or length as invalid. Check the field you changed: one value is outside what this firmware accepts.'**
   String get failureIllegalArgument;
 
   /// No description provided for @failureUnknownDeviceError.
   ///
   /// In en, this message translates to:
-  /// **'The radio refused the request without a reason this app knows. The diagnostics page shows the raw frame.'**
+  /// **'The MeshCore radio refused the request without a reason this app knows. The diagnostics page shows the raw frame.'**
   String get failureUnknownDeviceError;
 
   /// No description provided for @failureBlePermissions.
   ///
   /// In en, this message translates to:
-  /// **'Bluetooth permission was refused, so the app cannot reach the radio. Allow Nearby devices for this app in Android settings, then reconnect.'**
+  /// **'Bluetooth permission was refused, so the app cannot reach the MeshCore radio. Allow Nearby devices for this app in Android settings, then reconnect.'**
   String get failureBlePermissions;
 
   /// No description provided for @failureBluetoothOff.
@@ -7927,25 +7927,25 @@ abstract class AppLocalizations {
   /// No description provided for @failureNoRadioFound.
   ///
   /// In en, this message translates to:
-  /// **'No radio answered the scan. Check that the radio is powered on, in range, and not already connected to another phone.'**
+  /// **'No MeshCore radio answered the scan. Check that it is powered on, in range, and not already connected to another phone.'**
   String get failureNoRadioFound;
 
   /// No description provided for @failurePairingFailed.
   ///
   /// In en, this message translates to:
-  /// **'The pairing did not complete. Enter the PIN shown on the radio screen (screenless radios use 123456), then retry.'**
+  /// **'The pairing did not complete. Enter the PIN shown on the MeshCore radio screen (screenless radios use 123456), then retry.'**
   String get failurePairingFailed;
 
   /// No description provided for @failureStalePairing.
   ///
   /// In en, this message translates to:
-  /// **'The radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.'**
+  /// **'The MeshCore radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.'**
   String get failureStalePairing;
 
   /// No description provided for @failurePairingNotKept.
   ///
   /// In en, this message translates to:
-  /// **'The radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.'**
+  /// **'The MeshCore radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.'**
   String get failurePairingNotKept;
 
   /// No description provided for @failureServiceMissing.
@@ -7957,13 +7957,13 @@ abstract class AppLocalizations {
   /// No description provided for @failureCharacteristicMissing.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s link is missing a characteristic the app needs. Its firmware may be older than this app expects.'**
+  /// **'The MeshCore radio\'s link is missing a characteristic the app needs. Its firmware may be older than this app expects.'**
   String get failureCharacteristicMissing;
 
   /// No description provided for @failureMtuTooSmall.
   ///
   /// In en, this message translates to:
-  /// **'This radio\'s link is {mtu} bytes and a full frame needs {need}. Some firmware asks for the smaller size itself, so this radio cannot carry the largest frames: try newer firmware, or reconnect.'**
+  /// **'This MeshCore radio link is {mtu} bytes and a full frame needs {need}. Some firmware asks for the smaller size itself, so it cannot carry the largest frames: try newer firmware, or reconnect.'**
   String failureMtuTooSmall(String mtu, String need);
 
   /// No description provided for @failureFrameTruncated.
@@ -7987,31 +7987,31 @@ abstract class AppLocalizations {
   /// No description provided for @failureRadioSilent.
   ///
   /// In en, this message translates to:
-  /// **'The radio accepted the request but did not answer in time. It may still have carried it out. Check the radio before retrying.'**
+  /// **'The MeshCore radio accepted the request but did not answer in time. It may still have carried it out. Check the radio before retrying.'**
   String get failureRadioSilent;
 
   /// No description provided for @diagnosticsRadioChangedLine.
   ///
   /// In en, this message translates to:
-  /// **'This radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay. They belong to the app. Contacts, channels and radio settings come from the radio, so they are this one\'s.'**
+  /// **'This MeshCore radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay. They belong to the app. Contacts, channels and radio settings come from the radio, so they are this one\'s.'**
   String diagnosticsRadioChangedLine(String previous, String current);
 
   /// No description provided for @diagnosticsRadioChangedAccept.
   ///
   /// In en, this message translates to:
-  /// **'This is my radio'**
+  /// **'This is my MeshCore radio'**
   String get diagnosticsRadioChangedAccept;
 
   /// No description provided for @failureAirtimeBudget.
   ///
   /// In en, this message translates to:
-  /// **'This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.'**
+  /// **'This phone has used its own MeshCore radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.'**
   String get failureAirtimeBudget;
 
   /// No description provided for @failureLinkTimeout.
   ///
   /// In en, this message translates to:
-  /// **'The phone did not finish opening the radio link in time. Nothing was sent. Retry to open it again.'**
+  /// **'The phone did not finish opening the MeshCore radio link in time. Nothing was sent. Retry to open it again.'**
   String get failureLinkTimeout;
 
   /// No description provided for @diagnosticsHandshakeLine.
@@ -8029,13 +8029,13 @@ abstract class AppLocalizations {
   /// No description provided for @airtimeSpentLine.
   ///
   /// In en, this message translates to:
-  /// **'Radio time this hour: {spent} of {budget}'**
+  /// **'LoRa radio time this hour: {spent} of {budget}'**
   String airtimeSpentLine(String spent, String budget);
 
   /// No description provided for @airtimeSpentLineUnlimited.
   ///
   /// In en, this message translates to:
-  /// **'Radio time this hour: {spent}, with no limit set'**
+  /// **'LoRa radio time this hour: {spent}, with no limit set'**
   String airtimeSpentLineUnlimited(String spent);
 
   /// No description provided for @airtimeRefusedCount.
@@ -8083,7 +8083,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAirtimeHelp.
   ///
   /// In en, this message translates to:
-  /// **'Every frame this app sends is counted. At the limit it stops until the hour rolls on. The radio keeps its own legal limit either way.'**
+  /// **'Every frame this app sends is counted. At the limit it stops until the hour rolls on. The MeshCore radio keeps its own legal limit either way.'**
   String get settingsAirtimeHelp;
 
   /// No description provided for @airtimePolicyOnePercent.
@@ -8155,25 +8155,25 @@ abstract class AppLocalizations {
   /// No description provided for @degradedClockUnset.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s clock has never been set, so times it reports are shown as time unknown until it is.'**
+  /// **'The MeshCore radio\'s clock has never been set, so times it reports are shown as time unknown until it is.'**
   String get degradedClockUnset;
 
   /// No description provided for @degradedBatteryCritical.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s battery is low enough that its transmissions may be cut. Charge it before relying on a long send.'**
+  /// **'The MeshCore radio\'s battery is low enough that its transmissions may be cut. Charge it before relying on a long send.'**
   String get degradedBatteryCritical;
 
   /// No description provided for @degradedRadioAbsent.
   ///
   /// In en, this message translates to:
-  /// **'No radio is connected. Everything already received stays readable. Sending, telemetry and places wait until a radio connects.'**
+  /// **'No MeshCore radio is connected. Everything already received stays readable. Sending, telemetry and places wait until one connects.'**
   String get degradedRadioAbsent;
 
   /// No description provided for @degradedRadioSilent.
   ///
   /// In en, this message translates to:
-  /// **'The radio is paired but has not answered. It may still have carried out the last request. Check the radio before retrying.'**
+  /// **'The MeshCore radio is paired but has not answered. It may still have carried out the last request. Check the radio before retrying.'**
   String get degradedRadioSilent;
 
   /// No description provided for @degradedNoLocation.
@@ -8215,7 +8215,7 @@ abstract class AppLocalizations {
   /// No description provided for @sosInRange.
   ///
   /// In en, this message translates to:
-  /// **'Nobody is notified unless they are in radio range.'**
+  /// **'Nobody is notified unless they are in LoRa radio range.'**
   String get sosInRange;
 
   /// No description provided for @sosHoldToArm.
@@ -8239,7 +8239,7 @@ abstract class AppLocalizations {
   /// No description provided for @sosNoIdentity.
   ///
   /// In en, this message translates to:
-  /// **'The radio has not reported a name yet, so the alarm has no name to send.'**
+  /// **'The MeshCore radio has not reported a name yet, so the alarm has no name to send.'**
   String get sosNoIdentity;
 
   /// No description provided for @sosWords.
@@ -8269,7 +8269,7 @@ abstract class AppLocalizations {
   /// No description provided for @sosEmergencyRepeat.
   ///
   /// In en, this message translates to:
-  /// **'The radio repeats each message once, about two minutes later. If the app closes, the rest stops.'**
+  /// **'The MeshCore radio repeats each message once, about two minutes later. If the app closes, the rest stops.'**
   String get sosEmergencyRepeat;
 
   /// No description provided for @sosContactsNone.
@@ -8359,7 +8359,7 @@ abstract class AppLocalizations {
   /// Active alarm: at least one repeat did not leave the radio.
   ///
   /// In en, this message translates to:
-  /// **'The radio refused a repeat. The schedule continues.'**
+  /// **'The MeshCore radio refused a repeat. The schedule continues.'**
   String get sosSendFailed;
 
   /// No description provided for @sosDefaultWords.
@@ -8443,7 +8443,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkinIntro.
   ///
   /// In en, this message translates to:
-  /// **'One message with a deadline. The app marks it overdue here. The radio keeps no timer.'**
+  /// **'One message with a deadline. The app marks it overdue here. The MeshCore radio keeps no timer.'**
   String get checkinIntro;
 
   /// No description provided for @checkinDeadline.
@@ -8509,7 +8509,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkinNeedsRadio.
   ///
   /// In en, this message translates to:
-  /// **'A check-in needs a connected radio and the radio\'s name.'**
+  /// **'A check-in needs a connected MeshCore radio and its name.'**
   String get checkinNeedsRadio;
 
   /// No description provided for @photoAnnounceLoad.
@@ -8617,13 +8617,13 @@ abstract class AppLocalizations {
   /// No description provided for @mediaAcceptedNotDelivered.
   ///
   /// In en, this message translates to:
-  /// **'The radio accepted these packets. A broadcast carries no delivery promise.'**
+  /// **'The MeshCore radio accepted these packets. A broadcast carries no delivery promise.'**
   String get mediaAcceptedNotDelivered;
 
   /// No description provided for @mediaSendFailed.
   ///
   /// In en, this message translates to:
-  /// **'The radio refused {count} packet(s), so this photo did not finish.'**
+  /// **'The MeshCore radio refused {count} packet(s), so this photo did not finish.'**
   String mediaSendFailed(int count);
 
   /// No description provided for @mediaSend.
@@ -8899,7 +8899,7 @@ abstract class AppLocalizations {
   /// No description provided for @geofenceNeedsFix.
   ///
   /// In en, this message translates to:
-  /// **'A fence needs your position. Connect the radio or allow location first.'**
+  /// **'A fence needs your position. Connect the MeshCore radio or allow location first.'**
   String get geofenceNeedsFix;
 
   /// No description provided for @geofenceAddHere.
@@ -9331,7 +9331,7 @@ abstract class AppLocalizations {
   /// No description provided for @blockedKeysCannotStop.
   ///
   /// In en, this message translates to:
-  /// **'A block is local to this app. The radio still receives and relays the packet. What stops is what this app shows.'**
+  /// **'A block is local to this app. The MeshCore radio still receives and relays the packet. What stops is what this app shows.'**
   String get blockedKeysCannotStop;
 
   /// No description provided for @blockedKeysUnblock.
@@ -9571,7 +9571,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsUnitsImperialHint.
   ///
   /// In en, this message translates to:
-  /// **'Converted from the metres the radio reports.'**
+  /// **'Converted from the metres the MeshCore radio reports.'**
   String get settingsUnitsImperialHint;
 
   /// No description provided for @settingsClock24.
@@ -10021,7 +10021,7 @@ abstract class AppLocalizations {
   /// No description provided for @rawRecordHelp.
   ///
   /// In en, this message translates to:
-  /// **'One record to one contact, addressed over its route. The radio answers OK or ERR. The peer sends nothing back.'**
+  /// **'One record to one contact, addressed over its route. The MeshCore radio answers OK or ERR. The peer sends nothing back.'**
   String get rawRecordHelp;
 
   /// No description provided for @rawRecordNoContact.
@@ -10069,7 +10069,7 @@ abstract class AppLocalizations {
   /// No description provided for @rawRecordNotReady.
   ///
   /// In en, this message translates to:
-  /// **'No radio connected.'**
+  /// **'No MeshCore radio connected.'**
   String get rawRecordNotReady;
 
   /// No description provided for @rawRecordSending.
@@ -10087,25 +10087,25 @@ abstract class AppLocalizations {
   /// No description provided for @rawRecordConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'The app cannot check what these bytes do. {name} receives {count} bytes as one record, and the radio answers OK or ERR.'**
+  /// **'The app cannot check what these bytes do. {name} receives {count} bytes as one record, and the MeshCore radio answers OK or ERR.'**
   String rawRecordConfirmBody(String name, String count);
 
   /// No description provided for @rawRecordSent.
   ///
   /// In en, this message translates to:
-  /// **'The radio accepted it. This is not delivery: a raw record carries no receipt from the peer.'**
+  /// **'The MeshCore radio accepted it. This is not delivery: a raw record carries no receipt from the peer.'**
   String get rawRecordSent;
 
   /// No description provided for @rawRecordRefused.
   ///
   /// In en, this message translates to:
-  /// **'The radio refused it: {reason} (code {code}).'**
+  /// **'The MeshCore radio refused it: {reason} (code {code}).'**
   String rawRecordRefused(String reason, String code);
 
   /// No description provided for @rawRecordNoAnswer.
   ///
   /// In en, this message translates to:
-  /// **'No answer in {seconds} s. The radio may have sent it anyway.'**
+  /// **'No answer in {seconds} s. The MeshCore radio may have sent it anyway.'**
   String rawRecordNoAnswer(String seconds);
 
   /// No description provided for @rawRecordNoRoute.
@@ -10153,7 +10153,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsPositionRadio.
   ///
   /// In en, this message translates to:
-  /// **'radio {lat}, {lon}'**
+  /// **'MeshCore radio {lat}, {lon}'**
   String diagnosticsPositionRadio(Object lat, Object lon);
 
   /// No description provided for @diagnosticsPositionPolicy.
@@ -10249,7 +10249,7 @@ abstract class AppLocalizations {
   /// No description provided for @pingLostMeaning.
   ///
   /// In en, this message translates to:
-  /// **'Lost means no answer within the time the radio estimated for the reply. A node that ignores requests and one that is asleep look the same.'**
+  /// **'Lost means no answer within the time the MeshCore radio estimated for the reply. A node that ignores requests and one that is asleep look the same.'**
   String get pingLostMeaning;
 
   /// No description provided for @contactFilterHint.
@@ -10351,7 +10351,7 @@ abstract class AppLocalizations {
   /// No description provided for @storageClearAllStays.
   ///
   /// In en, this message translates to:
-  /// **'The radio is untouched: its contacts, channels and settings stay, and a sent message is not recalled. Your settings and downloaded map regions stay too.'**
+  /// **'The MeshCore radio is untouched: its contacts, channels and settings stay, and a sent message is not recalled. Your settings and downloaded map regions stay too.'**
   String get storageClearAllStays;
 
   /// No description provided for @storageClearAllTypeWord.
@@ -10369,13 +10369,13 @@ abstract class AppLocalizations {
   /// No description provided for @storageClearAllDone.
   ///
   /// In en, this message translates to:
-  /// **'Deleted. The radio and your settings are untouched.'**
+  /// **'Deleted. The MeshCore radio and your settings are untouched.'**
   String get storageClearAllDone;
 
   /// No description provided for @storageClearAllPartly.
   ///
   /// In en, this message translates to:
-  /// **'{unfinished} of {total} stores did not finish. What is left is listed here. The radio and your settings are untouched.'**
+  /// **'{unfinished} of {total} stores did not finish. What is left is listed here. The MeshCore radio and your settings are untouched.'**
   String storageClearAllPartly(int unfinished, int total);
 
   /// No description provided for @chatMediaPrivateOnly.
@@ -10399,7 +10399,7 @@ abstract class AppLocalizations {
   /// No description provided for @mediaReachUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Reach is the radio\'s own scope, which it has not reported yet. A photo is not acknowledged.'**
+  /// **'Reach is the MeshCore radio\'s own scope, which it has not reported yet. A photo is not acknowledged.'**
   String get mediaReachUnknown;
 
   /// No description provided for @deviceContactsSection.
@@ -10411,7 +10411,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoAddIntro.
   ///
   /// In en, this message translates to:
-  /// **'The radio decides which nodes it keeps. These are its settings, not the app\'s.'**
+  /// **'The MeshCore radio decides which nodes it keeps. These are its settings, not the app\'s.'**
   String get autoAddIntro;
 
   /// No description provided for @autoAddOverwriteOldest.
@@ -10465,7 +10465,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoAddUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Reading the radio\'s policy…'**
+  /// **'Reading the MeshCore radio\'s policy…'**
   String get autoAddUnknown;
 
   /// No description provided for @autoAddManage.
@@ -10483,7 +10483,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeAdvertPathNone.
   ///
   /// In en, this message translates to:
-  /// **'The radio has no advert route for this node.'**
+  /// **'The MeshCore radio has no advert route for this node.'**
   String get nodeAdvertPathNone;
 
   /// No description provided for @nodeAdvertPathReading.
@@ -10531,19 +10531,19 @@ abstract class AppLocalizations {
   /// No description provided for @eventOneKeyRejected.
   ///
   /// In en, this message translates to:
-  /// **'radio refused a message from {key}'**
+  /// **'MeshCore radio refused a message from {key}'**
   String eventOneKeyRejected(Object key);
 
   /// No description provided for @eventRadioRefused.
   ///
   /// In en, this message translates to:
-  /// **'the radio refused that command'**
+  /// **'the MeshCore radio refused that command'**
   String get eventRadioRefused;
 
   /// No description provided for @failureCommandDisabled.
   ///
   /// In en, this message translates to:
-  /// **'This radio has that command switched off, so it refused. Nothing is wrong with the link.'**
+  /// **'This MeshCore radio has that command switched off, so it refused. Nothing is wrong with the link.'**
   String get failureCommandDisabled;
 
   /// No description provided for @nodeShareContact.
@@ -10561,7 +10561,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeShareContactFailed.
   ///
   /// In en, this message translates to:
-  /// **'The radio did not hand over the contact.'**
+  /// **'The MeshCore radio did not hand over the contact.'**
   String get nodeShareContactFailed;
 
   /// No description provided for @shareLinkSheetTitle.
@@ -10597,19 +10597,19 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsImportDone.
   ///
   /// In en, this message translates to:
-  /// **'Sent to the radio. It is in the list when the radio confirms.'**
+  /// **'Sent to the MeshCore radio. It is in the list when the radio confirms.'**
   String get deviceContactsImportDone;
 
   /// No description provided for @diagnosticsRestartRadio.
   ///
   /// In en, this message translates to:
-  /// **'Restart the radio'**
+  /// **'Restart the MeshCore radio'**
   String get diagnosticsRestartRadio;
 
   /// No description provided for @diagnosticsRestartConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Restart this radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.'**
+  /// **'Restart this MeshCore radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.'**
   String get diagnosticsRestartConfirm;
 
   /// No description provided for @diagnosticsRestartSent.
@@ -10621,19 +10621,19 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsRestartNoReply.
   ///
   /// In en, this message translates to:
-  /// **'The radio takes no reply to a restart, so this is sent, not confirmed.'**
+  /// **'The MeshCore radio takes no reply to a restart, so this is sent, not confirmed.'**
   String get diagnosticsRestartNoReply;
 
   /// No description provided for @settingsSecuritySection.
   ///
   /// In en, this message translates to:
-  /// **'Radio access'**
+  /// **'MeshCore radio access'**
   String get settingsSecuritySection;
 
   /// No description provided for @settingsPinIntro.
   ///
   /// In en, this message translates to:
-  /// **'A pairing PIN gates a new Bluetooth pairing to this radio. The radio still keeps its own list of bonded devices.'**
+  /// **'A pairing PIN gates a new Bluetooth pairing to this MeshCore radio. The radio still keeps its own list of bonded devices.'**
   String get settingsPinIntro;
 
   /// No description provided for @settingsPinCurrent.
@@ -10687,7 +10687,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsPinConfirmRemove.
   ///
   /// In en, this message translates to:
-  /// **'Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list.'**
+  /// **'Remove the pairing PIN? Anyone in range could offer to pair, and the MeshCore radio would still keep its own device list.'**
   String get settingsPinConfirmRemove;
 
   /// No description provided for @repeaterSession.
@@ -10795,7 +10795,7 @@ abstract class AppLocalizations {
   /// No description provided for @dmWaiting.
   ///
   /// In en, this message translates to:
-  /// **'Waiting for the message above to settle. One message per contact at a time keeps the radio able to say which one was answered.'**
+  /// **'Waiting for the message above to settle. One message per contact at a time keeps the MeshCore radio able to say which one was answered.'**
   String get dmWaiting;
 
   /// No description provided for @settingsHubFirmware.
@@ -10813,13 +10813,13 @@ abstract class AppLocalizations {
   /// No description provided for @firmwareIntro.
   ///
   /// In en, this message translates to:
-  /// **'What this radio is running, and what this app will do about it. Nothing on this page installs anything.'**
+  /// **'What this MeshCore radio is running, and what this app will do about it. Nothing on this page installs anything.'**
   String get firmwareIntro;
 
   /// No description provided for @firmwareRadioLabel.
   ///
   /// In en, this message translates to:
-  /// **'Radio firmware'**
+  /// **'MeshCore radio firmware'**
   String get firmwareRadioLabel;
 
   /// No description provided for @firmwareAppLabel.
@@ -10843,13 +10843,13 @@ abstract class AppLocalizations {
   /// No description provided for @firmwareOtaUnknown.
   ///
   /// In en, this message translates to:
-  /// **'not known yet: the radio answers on first contact'**
+  /// **'not known yet: the MeshCore radio answers on first contact'**
   String get firmwareOtaUnknown;
 
   /// No description provided for @firmwareNoInstallWhy.
   ///
   /// In en, this message translates to:
-  /// **'Installing is not offered from the app: an install consumes the radio\'s queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.'**
+  /// **'Installing is not offered from the app: an install consumes the MeshCore radio\'s queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.'**
   String get firmwareNoInstallWhy;
 
   /// No description provided for @firmwareOtaLabel.
@@ -10873,7 +10873,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadio2Note.
   ///
   /// In en, this message translates to:
-  /// **'A second profile takes 96-99 % of the radio\'s transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read. The second profile\'s own parameters are not shown.'**
+  /// **'A second profile takes 96-99 % of the MeshCore radio transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read. The second profile\'s own parameters are not shown.'**
   String get deviceRadio2Note;
 
   /// No description provided for @deviceReadoutQuerying.
@@ -10963,13 +10963,13 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsSectionRadioAlerts.
   ///
   /// In en, this message translates to:
-  /// **'Radio alerts'**
+  /// **'MeshCore radio alerts'**
   String get diagnosticsSectionRadioAlerts;
 
   /// No description provided for @diagnosticsRadioAlertsWhy.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s own buzzer and vibration, for its own rules. Nothing in this app triggers them, and they keep working while the phone is away.'**
+  /// **'The MeshCore radio\'s own buzzer and vibration, for its own rules. Nothing in this app triggers them, and they keep working while the phone is away.'**
   String get diagnosticsRadioAlertsWhy;
 
   /// No description provided for @diagnosticsBuzzer.
@@ -10993,13 +10993,13 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsAlertReading.
   ///
   /// In en, this message translates to:
-  /// **'asking the radio'**
+  /// **'asking the MeshCore radio'**
   String get diagnosticsAlertReading;
 
   /// No description provided for @diagnosticsAlertRead.
   ///
   /// In en, this message translates to:
-  /// **'Ask the radio'**
+  /// **'Ask the MeshCore radio'**
   String get diagnosticsAlertRead;
 
   /// No description provided for @diagnosticsAlertOn.
@@ -11017,31 +11017,31 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsAlertDone.
   ///
   /// In en, this message translates to:
-  /// **'The radio accepted it.'**
+  /// **'The MeshCore radio accepted it.'**
   String get diagnosticsAlertDone;
 
   /// No description provided for @diagnosticsAlertSaid.
   ///
   /// In en, this message translates to:
-  /// **'The radio said: {text}'**
+  /// **'The MeshCore radio said: {text}'**
   String diagnosticsAlertSaid(String text);
 
   /// No description provided for @diagnosticsAlertRefused.
   ///
   /// In en, this message translates to:
-  /// **'The radio refused: {cause}'**
+  /// **'The MeshCore radio refused: {cause}'**
   String diagnosticsAlertRefused(String cause);
 
   /// No description provided for @diagnosticsAlertRefusedSaid.
   ///
   /// In en, this message translates to:
-  /// **'The radio refused: {cause}. It said: {text}'**
+  /// **'The MeshCore radio refused: {cause}. It said: {text}'**
   String diagnosticsAlertRefusedSaid(String cause, String text);
 
   /// No description provided for @diagnosticsAlertSilent.
   ///
   /// In en, this message translates to:
-  /// **'No answer inside six seconds. The radio may still have run it.'**
+  /// **'No answer inside six seconds. The MeshCore radio may still have run it.'**
   String get diagnosticsAlertSilent;
 
   /// No description provided for @diagnosticsAlertSilentPartial.
@@ -11191,7 +11191,7 @@ abstract class AppLocalizations {
   /// No description provided for @mediaStalledTableFull.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s packet table stayed full, so the send stopped. Nothing further was put on air.'**
+  /// **'The MeshCore radio\'s packet table stayed full, so the send stopped. Nothing further was put on air.'**
   String get mediaStalledTableFull;
 
   /// No description provided for @mediaStalledAirtime.
@@ -11383,7 +11383,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatActionsNoRadio.
   ///
   /// In en, this message translates to:
-  /// **'No radio: a reply or quote waits in the box until one is connected.'**
+  /// **'No MeshCore radio: a reply or quote waits in the box until one is connected.'**
   String get chatActionsNoRadio;
 }
 

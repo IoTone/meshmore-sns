@@ -171,7 +171,7 @@ void main() {
 
     fake.emit(cliReply('b1buzzer: on'));
     await answerCli(t, fake, id: 'buzzer', verdict: ok());
-    expect(find.text('Buzzer — The radio said: buzzer: on'), findsOneWidget,
+    expect(find.text('Buzzer — The MeshCore radio said: buzzer: on'), findsOneWidget,
         reason: 'the radio\'s own words, not a parsed paraphrase');
 
     // The second read follows the first, because the app allows one CLI command
@@ -179,7 +179,7 @@ void main() {
     await awaitSent(t, fake, 'v1|get vibration');
     fake.emit(cliReply('v1vibration: off'));
     await answerCli(t, fake, id: 'vibration', verdict: ok());
-    expect(find.text('Vibration — The radio said: vibration: off'),
+    expect(find.text('Vibration — The MeshCore radio said: vibration: off'),
         findsOneWidget);
 
     // The state the radio reported is what disables the redundant choice: it
@@ -220,7 +220,7 @@ void main() {
         reason: 'the read that follows a write is a second get');
     fake.emit(cliReply('b1buzzer: off'));
     await answerCli(t, fake, id: 'buzzer', verdict: ok());
-    expect(find.text('Buzzer — The radio said: buzzer: off'), findsOneWidget);
+    expect(find.text('Buzzer — The MeshCore radio said: buzzer: off'), findsOneWidget);
     await letWindowsExpire(t);
     ctrl.dispose();
   });
@@ -241,7 +241,7 @@ void main() {
 
     // ERR_CODE_BAD_STATE is what the firmware sends for a refused command.
     await answerCli(t, fake, id: 'buzzer', verdict: err(4));
-    expect(find.textContaining('The radio refused'), findsWidgets,
+    expect(find.textContaining('The MeshCore radio refused'), findsWidgets,
         reason: 'the row and the snack both say it');
 
     // The re-read that follows a failed set is answered too, so the screen
@@ -249,7 +249,7 @@ void main() {
     await awaitSent(t, fake, 'b1|get buzzer');
     fake.emit(cliReply('b1buzzer: on'));
     await answerCli(t, fake, id: 'buzzer', verdict: ok());
-    expect(find.text('Buzzer — The radio said: buzzer: on'), findsOneWidget);
+    expect(find.text('Buzzer — The MeshCore radio said: buzzer: on'), findsOneWidget);
     await letWindowsExpire(t);
     ctrl.dispose();
   });

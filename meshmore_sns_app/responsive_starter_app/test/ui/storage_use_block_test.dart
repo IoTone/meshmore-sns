@@ -282,10 +282,10 @@ void main() {
   test("both halves of the answer are reachable", () {
     final AppLocalizations en = lookupAppLocalizations(const Locale("en"));
     expect(StorageUseBlock.clearEverythingMessage(en, 0, 5),
-        "Deleted. The radio and your settings are untouched.");
+        "Deleted. The MeshCore radio and your settings are untouched.");
     expect(
         StorageUseBlock.clearEverythingMessage(en, 2, 5),
-        "2 of 5 stores did not finish. What is left is listed here. The radio "
+        "2 of 5 stores did not finish. What is left is listed here. The MeshCore radio "
         "and your settings are untouched.");
   });
 

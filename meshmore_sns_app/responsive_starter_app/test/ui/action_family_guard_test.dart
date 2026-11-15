@@ -45,7 +45,7 @@ void main() {
     'lib/screens/maps/new_pack_screen.dart': 1,
     // A view's own zoom / centre controls.
     'lib/screens/mesh_tree_view.dart': 1,
-    // Apply to this radio, and the member editor's save.
+    // Apply to this MeshCore radio, and the member editor's save.
     'lib/screens/network_detail_screen.dart': 2,
     // A new network (the app's one FAB) and the editor's save.
     'lib/screens/networks_screen.dart': 2,

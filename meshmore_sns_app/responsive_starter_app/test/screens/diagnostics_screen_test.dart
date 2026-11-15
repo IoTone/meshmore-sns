@@ -95,9 +95,9 @@ void main() {
     await openDeveloper(t);
     // The developer half is a scrolling section: reach the button rather than
     // assuming it fits, which stopped being true when the section grew.
-    await t.ensureVisible(find.text("Read the radio's clock"));
+    await t.ensureVisible(find.text("Read the MeshCore radio's clock"));
     await t.pumpAndSettle();
-    await t.tap(find.text("Read the radio's clock"));
+    await t.tap(find.text("Read the MeshCore radio's clock"));
     await t.pumpAndSettle();
     expect(fake.sent.length, greaterThan(before));
     expect(find.text('Sent get-time'), findsOneWidget);
@@ -248,7 +248,7 @@ void main() {
 
     await t.tap(find.text('Forget'));
     await t.pumpAndSettle();
-    expect(find.text('Forget this radio?'), findsOneWidget);
+    expect(find.text('Forget this MeshCore radio?'), findsOneWidget);
     expect(find.textContaining('You will need to pair it again'), findsOneWidget);
 
     // Cancelling changes nothing.

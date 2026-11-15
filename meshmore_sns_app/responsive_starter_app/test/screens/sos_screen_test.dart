@@ -104,7 +104,7 @@ void main() {
       // §10 items 2 and 3: where it goes, and that nobody is notified.
       expect(find.textContaining('Channel '), findsOneWidget);
       expect(
-          find.text('Nobody is notified unless they are in radio range.'),
+          find.text('Nobody is notified unless they are in LoRa radio range.'),
           findsOneWidget);
       await t.pumpWidget(const SizedBox());
     }

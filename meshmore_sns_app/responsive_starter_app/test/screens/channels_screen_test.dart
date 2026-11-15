@@ -272,13 +272,13 @@ void main() {
     Text find1(String key) => t.widget<Text>(find.text(key));
     expect(
         find1('Channel 0 is the shared public one. A private group needs the '
-                'same channel number, name and key on every radio.')
+                'same channel number, name and key on every MeshCore radio.')
             .style
             ?.fontSize,
         type.sizeBody);
     expect(
         find1('Channel 0 is the shared public one. A private group needs the '
-                'same channel number, name and key on every radio.')
+                'same channel number, name and key on every MeshCore radio.')
             .style
             ?.fontSize,
         12);

@@ -118,7 +118,7 @@ void main() {
     await t.pump(const Duration(seconds: 10));
     await t.pump(const Duration(milliseconds: 500));
     expect(find.text('shell'), findsOneWidget);
-    expect(find.text('CONNECTING TO RADIO…'), findsNothing,
+    expect(find.text('CONNECTING TO MeshCore radio…'), findsNothing,
         reason: 'the launch screen gave the app back');
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));

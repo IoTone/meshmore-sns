@@ -12,7 +12,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appName => 'Meshmore SNS';
 
   @override
-  String get appSubtitle => 'Mesh messaging over radio';
+  String get appSubtitle => 'Mesh messaging over LoRa radio';
 
   @override
   String get tabDashboard => 'Dashboard';
@@ -97,7 +97,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get botRefusedUnknownPsk =>
-      'Waiting for the radio to send this channel\'s key.';
+      'Waiting for the MeshCore radio to send this channel\'s key.';
 
   @override
   String get botMode => 'Reply mode';
@@ -160,7 +160,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashForestNoRoutes =>
-      'No learned routes yet. The radio has not been told how to reach anyone.';
+      'No learned routes yet. The MeshCore radio has not been told how to reach anyone.';
 
   @override
   String get dashForestContacts => 'Contacts';
@@ -222,7 +222,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardNoActivity => 'No activity yet';
 
   @override
-  String get dashboardAwaitingDevice => 'Waiting for the radio…';
+  String get dashboardAwaitingDevice => 'Waiting for the MeshCore radio…';
 
   @override
   String get dashboardAwaitingDeviceLocation => 'Waiting for a location…';
@@ -280,7 +280,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String linkChipSemantics(String state) {
-    return 'Radio $state';
+    return 'MeshCore radio $state';
   }
 
   @override
@@ -294,7 +294,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get blockConfirmBody =>
-      'Hides what this person sends, on this device: messages, notifications and places. The radio still receives and relays the packet, and the mesh does not learn about the block.';
+      'Hides what this person sends, on this device: messages, notifications and places. The MeshCore radio still receives and relays the packet, and the mesh does not learn about the block.';
 
   @override
   String get blockConfirmGo => 'Block';
@@ -402,7 +402,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pairPermissionBody =>
-      'The app needs Nearby devices to find your radio and talk to it. Nothing is paired yet.';
+      'The app needs Nearby devices to find your MeshCore radio and talk to it. Nothing is paired yet.';
 
   @override
   String get pairPermissionAllow => 'Allow Bluetooth';
@@ -415,11 +415,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pairAdapterBody =>
-      'Switch Bluetooth on to find your radio. This screen continues by itself once it is on.';
+      'Switch Bluetooth on to find your MeshCore radio. This screen continues by itself once it is on.';
 
   @override
   String get pairAdapterUnsupported =>
-      'This phone reports no usable Bluetooth adapter, so a radio cannot be paired here.';
+      'This phone reports no usable Bluetooth adapter, so a MeshCore radio cannot be paired here.';
 
   @override
   String get pairRetry => 'Try again';
@@ -429,7 +429,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pairScanBody =>
-      'A radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.';
+      'A MeshCore radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.';
 
   @override
   String get pairScanning => 'Scanning…';
@@ -452,14 +452,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pairConnectingBody =>
-      'If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.';
+      'If the MeshCore radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.';
 
   @override
   String get pairConfirmTitle => 'MeshCore radio connected';
 
   @override
   String pairConfirmBody(String name) {
-    return '$name answered, so the link and the protocol both work. This radio is now the one the app uses.';
+    return '$name answered, so the link and the protocol both work. This MeshCore radio is now the one the app uses.';
   }
 
   @override
@@ -546,7 +546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get termsLead =>
-      'This app talks to a mesh radio. There is no account, no cloud and no analytics.';
+      'This app talks to a mesh MeshCore radio. There is no account, no cloud and no analytics.';
 
   @override
   String get termsSectionLocal => 'WHAT STAYS ON THIS DEVICE';
@@ -560,14 +560,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get termsLeavesBody =>
-      'Two things leave this device. What you send goes out over the radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.';
+      'Two things leave this device. What you send goes out over the MeshCore radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.';
 
   @override
   String get termsSectionPermissions => 'PERMISSIONS AND WHY';
 
   @override
   String get termsPermissionsBody =>
-      'Bluetooth connects to the radio. Location is used for your own position and, on older Android, to allow a Bluetooth scan. Notifications are used for messages that arrive while the app is in the background. Refusing any of them leaves the app usable without a radio.';
+      'Bluetooth connects to the MeshCore radio. Location is used for your own position and, on older Android, to allow a Bluetooth scan. Notifications are used for messages that arrive while the app is in the background. Refusing any of them leaves the app usable without a radio.';
 
   @override
   String get termsSectionRetention => 'HOW MUCH IS KEPT';
@@ -641,7 +641,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutReportProblemSub =>
-      'Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.';
+      'Opens the issue tracker with the app and MeshCore radio details filled in. Nothing is sent unless you send it there.';
 
   @override
   String get creditsTitle => 'Credits';
@@ -792,7 +792,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firstRunOfflineBody =>
-      'Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no radio traffic.';
+      'Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no MeshCore radio traffic.';
 
   @override
   String get firstRunGrant => 'Allow Bluetooth';
@@ -1116,7 +1116,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceGpsDisabledHint =>
-      'Off. The radio does not read its GPS, so it keeps announcing the last position set.';
+      'Off. The MeshCore radio does not read its GPS, so it keeps announcing the last position set.';
 
   @override
   String get deviceGpsUnknown => 'Waiting for device…';
@@ -1143,13 +1143,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deviceGpsIntervalFixedByFirmware => 'Set on the radio';
+  String get deviceGpsIntervalFixedByFirmware => 'Set on the MeshCore radio';
 
   @override
   String get locTitle => 'Auto-publish location';
 
   @override
-  String get locTileSubtitle => 'Sends the phone\'s position to the radio';
+  String get locTileSubtitle =>
+      'Sends the phone\'s position to the MeshCore radio';
 
   @override
   String get deviceGpsIntervalWhy =>
@@ -1331,7 +1332,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bootHeader => 'MESHMORE / SYNCHRONIZING';
 
   @override
-  String get bootConnecting => 'CONNECTING TO RADIO…';
+  String get bootConnecting => 'CONNECTING TO MeshCore radio…';
 
   @override
   String get bootHandshaking => 'HANDSHAKING…';
@@ -1387,7 +1388,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eventMsgSent => 'sent · the radio acknowledged it';
+  String get eventMsgSent => 'sent · the MeshCore radio acknowledged it';
 
   @override
   String eventDeviceInfo(String version) {
@@ -1532,19 +1533,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatSendNotSent =>
-      'Not sent. The radio is not connected. Your message is back in the box.';
+      'Not sent. The MeshCore radio is not connected. Your message is back in the box.';
 
   @override
   String get chatSend => 'Send';
 
   @override
   String chatBudgetNear(int remaining) {
-    return 'Nearly at the limit: the radio counts its own name in these bytes';
+    return 'Nearly at the limit: the MeshCore radio counts its own name in these bytes';
   }
 
   @override
   String chatBudgetTooLong(int over) {
-    return 'Too long by $over bytes. The radio would cut the rest without telling you';
+    return 'Too long by $over bytes. The MeshCore radio would cut the rest without telling you';
   }
 
   @override
@@ -1712,7 +1713,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeDetailNotDeviceContact =>
-      'Not in the radio\'s contacts, so DMs may not route.';
+      'Not in the MeshCore radio\'s contacts, so DMs may not route.';
 
   @override
   String get nodeDetailAddDeviceContact => 'Add to device contacts';
@@ -1729,12 +1730,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nodeDetailRemoveDeviceContactConfirm(String name) {
-    return 'Remove “$name” from the radio\'s contacts? You can add them again later.';
+    return 'Remove “$name” from the MeshCore radio\'s contacts? You can add them again later.';
   }
 
   @override
   String get nodeDetailRemoveDeviceContactDone =>
-      'Removed from your radio\'s contacts.';
+      'Removed from your MeshCore radio\'s contacts.';
 
   @override
   String get deviceContactsTitle => 'MeshCore radio contacts';
@@ -1743,19 +1744,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceContactsRefresh => 'Refresh';
 
   @override
-  String get deviceContactsSyncing => 'Syncing contacts from the radio…';
+  String get deviceContactsSyncing =>
+      'Syncing contacts from the MeshCore radio…';
 
   @override
-  String get deviceContactsEmpty => 'Your radio has no contacts.';
+  String get deviceContactsEmpty => 'Your MeshCore radio has no contacts.';
 
   @override
   String deviceContactsCount(int count, int max) {
-    return '$count of $max contacts on the radio';
+    return '$count of $max contacts on the MeshCore radio';
   }
 
   @override
   String deviceContactsCountOnly(int count) {
-    return '$count contacts on the radio';
+    return '$count contacts on the MeshCore radio';
   }
 
   @override
@@ -1808,7 +1810,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get deviceContactsRemoveAll => 'Remove all from the radio';
+  String get deviceContactsRemoveAll => 'Remove all from the MeshCore radio';
 
   @override
   String deviceContactsRemoveAllConfirm(int count) {
@@ -1817,7 +1819,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceContactsRemoveAllDone(int count) {
-    return 'Removed $count contacts from the radio.';
+    return 'Removed $count contacts from the MeshCore radio.';
   }
 
   @override
@@ -2197,14 +2199,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get meshTreeLearnRoutes => 'Ask the radio for routes';
+  String get meshTreeLearnRoutes => 'Ask the MeshCore radio for routes';
 
   @override
-  String get meshTreeLearning => 'Asking the radio…';
+  String get meshTreeLearning => 'Asking the MeshCore radio…';
 
   @override
   String get meshTreeNoRoutes =>
-      'This radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.';
+      'This MeshCore radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.';
 
   @override
   String get meshTreeHopsDirect => 'Direct';
@@ -2233,7 +2235,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meshTreeLegendDesc =>
-      'A directed graph of how the radio reaches each contact. Each edge is a repeater on the route the radio actually sends by.';
+      'A directed graph of how the MeshCore radio reaches each contact. Each edge is a repeater on the route it actually sends by.';
 
   @override
   String get meshTreeLegendFlood =>
@@ -2302,7 +2304,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nodeDetailRefreshTelemetry => 'Refresh telemetry';
 
   @override
-  String get nodeDetailTelemetryQuerying => 'Asking the radio for readings…';
+  String get nodeDetailTelemetryQuerying =>
+      'Asking the MeshCore radio for readings…';
 
   @override
   String get nodeDetailTelemetryNotContact =>
@@ -2338,7 +2341,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsHelp =>
-      'Channel 0 is the shared public one. A private group needs the same channel number, name and key on every radio.';
+      'Channel 0 is the shared public one. A private group needs the same channel number, name and key on every MeshCore radio.';
 
   @override
   String get channelsOfflineHint =>
@@ -2362,14 +2365,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelCreateNameKeyedBody =>
-      'The key comes from the name, so every radio that types the same name joins. Nothing else can read it.';
+      'The key comes from the name, so every MeshCore radio that types the same name joins. Nothing else can read it.';
 
   @override
   String get channelCreatePublicTitle => 'The public channel';
 
   @override
   String get channelCreatePublicBody =>
-      'Everyone within radio range on the public channel can read it. Use this only for a channel meant to be open.';
+      'Everyone within LoRa radio range on the public channel can read it. Use this only for a channel meant to be open.';
 
   @override
   String channelCreateSlotNote(Object slot) {
@@ -2378,7 +2381,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelCreateNoSlot =>
-      'Every channel slot on this radio is in use. Free one on the channels screen first.';
+      'Every channel slot on this MeshCore radio is in use. Free one on the channels screen first.';
 
   @override
   String get channelCreateAdvanced => 'Slot and key';
@@ -2617,7 +2620,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channelsClearConfirmBody =>
-      'The radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.';
+      'The MeshCore radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.';
 
   @override
   String channelsClearSnack(int idx) {
@@ -2744,7 +2747,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRegionDisclaimer =>
-      'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification. Most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.';
+      'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every MeshCore radio. In Japan the radio itself must carry 技適 (giteki) certification. Most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.';
 
   @override
   String get presetUsCanada => 'USA / Canada';
@@ -2832,23 +2835,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get devicePathHashSizeHelp =>
-      'The hash length this radio stamps on its packets. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the payload budget.';
+      'The hash length this LoRa radio stamps on its packets. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the payload budget.';
 
   @override
   String get devicePathHashUnread =>
-      'The radio has not said which length it uses yet.';
+      'The MeshCore radio has not said which length it uses yet.';
 
   @override
   String devicePathHashMismatch(String device, String form) {
-    return 'On the radio: $device. Yours: $form. Tap Apply to send yours.';
+    return 'On the MeshCore radio: $device. Yours: $form. Tap Apply to send yours.';
   }
 
   @override
-  String get deviceRadioApplied => 'The radio confirmed the change.';
+  String get deviceRadioApplied => 'The MeshCore radio confirmed the change.';
 
   @override
   String deviceRadioRefused(String param, String code) {
-    return 'The radio refused $param (error $code). Later writes were not sent.';
+    return 'The MeshCore radio refused $param (error $code). Later writes were not sent.';
   }
 
   @override
@@ -2863,10 +2866,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRadioUnknownState =>
-      'Cannot change radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.';
+      'Cannot change MeshCore radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.';
 
   @override
-  String get deviceRadioRevert => 'Undo radio change';
+  String get deviceRadioRevert => 'Undo MeshCore radio change';
 
   @override
   String get deviceRadioReverted => 'Previous operating point restored.';
@@ -2876,7 +2879,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRadioRevertFailed =>
-      'Undo did not apply. The radio kept its last values.';
+      'Undo did not apply. The MeshCore radio kept its last values.';
 
   @override
   String get radioHealthTitle => 'MeshCore radio health';
@@ -2914,18 +2917,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get radioHealthSource => 'From the radio';
+  String get radioHealthSource => 'From the MeshCore radio';
 
   @override
   String radioHealthAckTrip(int ms) {
-    return 'last acknowledgement: $ms ms round trip (the radio\'s own measure)';
+    return 'last acknowledgement: $ms ms round trip (the MeshCore radio\'s own measure)';
   }
 
   @override
   String get deviceLoadFromDevice => 'Load from device';
 
   @override
-  String get deviceApplyRadio => 'Apply radio params';
+  String get deviceApplyRadio => 'Apply MeshCore radio params';
 
   @override
   String get deviceConnectFirst =>
@@ -3175,7 +3178,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String batterySpecDraw(int ma) {
-    return 'Typical draw: ~$ma mA (radio receiving)';
+    return 'Typical draw: ~$ma mA (LoRa radio receiving)';
   }
 
   @override
@@ -3216,7 +3219,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deliveryUnknown =>
-      'Sent while the app was closing. Whether the radio transmitted it is not knowable';
+      'Sent while the app was closing. Whether the MeshCore radio transmitted it is not knowable';
 
   @override
   String get settingsHubTools => 'Tools';
@@ -3309,35 +3312,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toolRangeSub => 'Beacon or log, with SNR and distance';
 
   @override
-  String get toolFailNotConnected => 'Not connected to a radio.';
+  String get toolFailNotConnected => 'Not connected to a MeshCore radio.';
 
   @override
-  String get toolFailBusy => 'Another tool is using the radio. Stop it first.';
+  String get toolFailBusy =>
+      'Another tool is using the MeshCore radio. Stop it first.';
 
   @override
   String get toolFailUnsupported =>
-      'Your radio\'s firmware doesn\'t support this.';
+      'Your MeshCore radio\'s firmware doesn\'t support this.';
 
   @override
-  String get toolFailNotFound => 'The radio doesn\'t have this contact.';
+  String get toolFailNotFound =>
+      'The MeshCore radio doesn\'t have this contact.';
 
   @override
   String get toolFailTableFull =>
-      'The radio is busy (send table full). Try again shortly.';
+      'The MeshCore radio is busy (send table full). Try again shortly.';
 
   @override
-  String get toolFailRejected => 'The radio refused the request.';
+  String get toolFailRejected => 'The MeshCore radio refused the request.';
 
   @override
-  String get toolFailNoConfirm => 'The radio didn\'t confirm the send.';
+  String get toolFailNoConfirm =>
+      'The MeshCore radio didn\'t confirm the send.';
 
   @override
   String get toolFailPublic =>
-      'Public is refused: everything sent there reaches every radio. Use a private channel or a DM.';
+      'Public is refused: everything sent there reaches every MeshCore radio. Use a private channel or a DM.';
 
   @override
   String get toolFailUnknownChannel =>
-      'This channel\'s key hasn\'t been read from the radio yet.';
+      'This channel\'s key hasn\'t been read from the MeshCore radio yet.';
 
   @override
   String get toolFailNoTarget => 'Choose a target first.';
@@ -3413,7 +3419,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pingMethodTelemetry =>
-      'Asks for readings. The other radio answers only if it shares them with you.';
+      'Asks for readings. The other MeshCore radio answers only if it shares them with you.';
 
   @override
   String pingSummary(int sent, int replied, int lost) {
@@ -3514,7 +3520,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get soakPairHint =>
-      'Pairs with an R59 bot answering on the other radio: echoes show drops, duplicates and reordering.';
+      'Pairs with an R59 bot answering on the other MeshCore radio: echoes show drops, duplicates and reordering.';
 
   @override
   String soakSummary(int sent, int delivered, int failed) {
@@ -3596,7 +3602,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceAdvertPropagatesHint =>
-      'Takes effect the next time the radio announces itself.';
+      'Takes effect the next time the MeshCore radio announces itself.';
 
   @override
   String get settingsHubMaps => 'Offline maps';
@@ -4116,7 +4122,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosticsMtuRefusedLine(String mtu, String need) {
-    return 'This phone link is $mtu bytes and a full radio frame needs $need. Reconnect to try again. A radio that caps the link smaller cannot carry every frame.';
+    return 'This phone link is $mtu bytes and a full LoRa frame needs $need. Reconnect to try again. A MeshCore radio that caps the link smaller cannot carry every frame.';
   }
 
   @override
@@ -4125,13 +4131,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rxViaPrimary => 'the primary radio';
+  String get rxViaPrimary => 'the primary MeshCore radio';
 
   @override
   String get rxViaSecondary => 'radio 2';
 
   @override
-  String get rxViaUnknown => 'an unreported radio';
+  String get rxViaUnknown => 'an unreported MeshCore radio';
 
   @override
   String diagnosticsFramesDroppedLine(int count) {
@@ -4165,11 +4171,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsPairRadio => 'Pair a MeshCore radio';
 
   @override
-  String get diagnosticsForgetConfirmTitle => 'Forget this radio?';
+  String get diagnosticsForgetConfirmTitle => 'Forget this MeshCore radio?';
 
   @override
   String get diagnosticsForgetConfirmBody =>
-      'You will need to pair it again, and this clears its bond. Do not do this while the radio is out of reach.';
+      'You will need to pair it again, and this clears its bond. Do not do this while the MeshCore radio is out of reach.';
 
   @override
   String get diagnosticsSectionSend => 'Send';
@@ -4178,7 +4184,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsSendSelfAdvert => 'Send self-advert';
 
   @override
-  String get diagnosticsReadClock => 'Read the radio\'s clock';
+  String get diagnosticsReadClock => 'Read the MeshCore radio\'s clock';
 
   @override
   String get diagnosticsPullMessage => 'Pull the next message';
@@ -4273,7 +4279,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get networksEmpty =>
-      'No networks yet. A network is the radio settings your radios agree on.';
+      'No networks yet. A network is the MeshCore radio settings your radios agree on.';
 
   @override
   String get networksNew => 'New network';
@@ -4348,10 +4354,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get networksRemoveMember => 'Remove';
 
   @override
-  String get networksApply => 'Apply to this radio';
+  String get networksApply => 'Apply to this MeshCore radio';
 
   @override
-  String get networksApplyNeedsRadio => 'Connect a radio to apply.';
+  String get networksApplyNeedsRadio => 'Connect a MeshCore radio to apply.';
 
   @override
   String networksApplyTitle(String name) {
@@ -4360,12 +4366,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String networksApplyBodyShared(String summary) {
-    return 'This radio will switch to $summary.';
+    return 'This MeshCore radio will switch to $summary.';
   }
 
   @override
   String networksApplyBodyIsolated(String summary) {
-    return 'This radio will switch to $summary. It will stop hearing the public mesh until you switch it back.';
+    return 'This MeshCore radio will switch to $summary. It will stop hearing the public mesh until you switch it back.';
   }
 
   @override
@@ -4380,7 +4386,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get networksCurrent => 'This radio is on this network';
+  String get networksCurrent => 'This MeshCore radio is on this network';
 
   @override
   String get networksDelete => 'Delete network';
@@ -4429,7 +4435,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeRadioRefused =>
-      'The radio did not take it, so the place is not on the air.';
+      'The MeshCore radio did not take it, so the place is not on the air.';
 
   @override
   String placeGoesTo(Object channel) {
@@ -4446,7 +4452,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeNoIdentity =>
-      'Connect a radio first: a place is tagged as you.';
+      'Connect a MeshCore radio first: a place is tagged as you.';
 
   @override
   String get placeLabelEmpty => 'A place needs a few words.';
@@ -4610,35 +4616,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failureUnsupportedCommand =>
-      'The radio does not support that command. Its firmware is older than this app expects. Update the radio or use a command it lists.';
+      'The MeshCore radio does not support that command. Its firmware is older than this app expects. Update the radio or use a command it lists.';
 
   @override
   String get failureNotFound =>
-      'The radio could not find the target: the channel, contact or message is not on it. Refresh the contact list, then retry.';
+      'The MeshCore radio could not find the target: the channel, contact or message is not on it. Refresh the contact list, then retry.';
 
   @override
   String get failureTableFull =>
-      'The radio\'s queue or table is full, so it refused the request. Wait for it to drain, then retry. Nothing was lost.';
+      'The MeshCore radio\'s queue or table is full, so it refused the request. Wait for it to drain, then retry. Nothing was lost.';
 
   @override
   String get failureBadState =>
-      'The radio is busy with another operation and cannot start this one. Wait for the current operation to finish, then retry.';
+      'The MeshCore radio is busy with another operation and cannot start this one. Wait for the current operation to finish, then retry.';
 
   @override
   String get failureFileIoError =>
-      'The radio\'s storage refused the write. Its own log has the detail. Retry once, and if it repeats the radio\'s filesystem needs attention.';
+      'The MeshCore radio storage refused the write. Its own log has the detail. Retry once, and if it repeats the radio filesystem needs attention.';
 
   @override
   String get failureIllegalArgument =>
-      'The radio rejected the value or length as invalid. Check the field you changed: one value is outside what this firmware accepts.';
+      'The MeshCore radio rejected the value or length as invalid. Check the field you changed: one value is outside what this firmware accepts.';
 
   @override
   String get failureUnknownDeviceError =>
-      'The radio refused the request without a reason this app knows. The diagnostics page shows the raw frame.';
+      'The MeshCore radio refused the request without a reason this app knows. The diagnostics page shows the raw frame.';
 
   @override
   String get failureBlePermissions =>
-      'Bluetooth permission was refused, so the app cannot reach the radio. Allow Nearby devices for this app in Android settings, then reconnect.';
+      'Bluetooth permission was refused, so the app cannot reach the MeshCore radio. Allow Nearby devices for this app in Android settings, then reconnect.';
 
   @override
   String get failureBluetoothOff =>
@@ -4646,19 +4652,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failureNoRadioFound =>
-      'No radio answered the scan. Check that the radio is powered on, in range, and not already connected to another phone.';
+      'No MeshCore radio answered the scan. Check that it is powered on, in range, and not already connected to another phone.';
 
   @override
   String get failurePairingFailed =>
-      'The pairing did not complete. Enter the PIN shown on the radio screen (screenless radios use 123456), then retry.';
+      'The pairing did not complete. Enter the PIN shown on the MeshCore radio screen (screenless radios use 123456), then retry.';
 
   @override
   String get failureStalePairing =>
-      'The radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.';
+      'The MeshCore radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.';
 
   @override
   String get failurePairingNotKept =>
-      'The radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.';
+      'The MeshCore radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.';
 
   @override
   String get failureServiceMissing =>
@@ -4666,11 +4672,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failureCharacteristicMissing =>
-      'The radio\'s link is missing a characteristic the app needs. Its firmware may be older than this app expects.';
+      'The MeshCore radio\'s link is missing a characteristic the app needs. Its firmware may be older than this app expects.';
 
   @override
   String failureMtuTooSmall(String mtu, String need) {
-    return 'This radio\'s link is $mtu bytes and a full frame needs $need. Some firmware asks for the smaller size itself, so this radio cannot carry the largest frames: try newer firmware, or reconnect.';
+    return 'This MeshCore radio link is $mtu bytes and a full frame needs $need. Some firmware asks for the smaller size itself, so it cannot carry the largest frames: try newer firmware, or reconnect.';
   }
 
   @override
@@ -4687,23 +4693,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failureRadioSilent =>
-      'The radio accepted the request but did not answer in time. It may still have carried it out. Check the radio before retrying.';
+      'The MeshCore radio accepted the request but did not answer in time. It may still have carried it out. Check the radio before retrying.';
 
   @override
   String diagnosticsRadioChangedLine(String previous, String current) {
-    return 'This radio is not the one this app last used ($previous then, $current now). Your history, tags, favourites and blocks stay. They belong to the app. Contacts, channels and radio settings come from the radio, so they are this one\'s.';
+    return 'This MeshCore radio is not the one this app last used ($previous then, $current now). Your history, tags, favourites and blocks stay. They belong to the app. Contacts, channels and radio settings come from the radio, so they are this one\'s.';
   }
 
   @override
-  String get diagnosticsRadioChangedAccept => 'This is my radio';
+  String get diagnosticsRadioChangedAccept => 'This is my MeshCore radio';
 
   @override
   String get failureAirtimeBudget =>
-      'This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.';
+      'This phone has used its own MeshCore radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.';
 
   @override
   String get failureLinkTimeout =>
-      'The phone did not finish opening the radio link in time. Nothing was sent. Retry to open it again.';
+      'The phone did not finish opening the MeshCore radio link in time. Nothing was sent. Retry to open it again.';
 
   @override
   String diagnosticsHandshakeLine(String started, String timedOut) {
@@ -4717,12 +4723,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String airtimeSpentLine(String spent, String budget) {
-    return 'Radio time this hour: $spent of $budget';
+    return 'LoRa radio time this hour: $spent of $budget';
   }
 
   @override
   String airtimeSpentLineUnlimited(String spent) {
-    return 'Radio time this hour: $spent, with no limit set';
+    return 'LoRa radio time this hour: $spent, with no limit set';
   }
 
   @override
@@ -4759,7 +4765,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAirtimeHelp =>
-      'Every frame this app sends is counted. At the limit it stops until the hour rolls on. The radio keeps its own legal limit either way.';
+      'Every frame this app sends is counted. At the limit it stops until the hour rolls on. The MeshCore radio keeps its own legal limit either way.';
 
   @override
   String get airtimePolicyOnePercent => '1 % duty cycle';
@@ -4807,19 +4813,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get degradedClockUnset =>
-      'The radio\'s clock has never been set, so times it reports are shown as time unknown until it is.';
+      'The MeshCore radio\'s clock has never been set, so times it reports are shown as time unknown until it is.';
 
   @override
   String get degradedBatteryCritical =>
-      'The radio\'s battery is low enough that its transmissions may be cut. Charge it before relying on a long send.';
+      'The MeshCore radio\'s battery is low enough that its transmissions may be cut. Charge it before relying on a long send.';
 
   @override
   String get degradedRadioAbsent =>
-      'No radio is connected. Everything already received stays readable. Sending, telemetry and places wait until a radio connects.';
+      'No MeshCore radio is connected. Everything already received stays readable. Sending, telemetry and places wait until one connects.';
 
   @override
   String get degradedRadioSilent =>
-      'The radio is paired but has not answered. It may still have carried out the last request. Check the radio before retrying.';
+      'The MeshCore radio is paired but has not answered. It may still have carried out the last request. Check the radio before retrying.';
 
   @override
   String get degradedNoLocation =>
@@ -4853,7 +4859,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get sosInRange => 'Nobody is notified unless they are in radio range.';
+  String get sosInRange =>
+      'Nobody is notified unless they are in LoRa radio range.';
 
   @override
   String get sosHoldToArm => 'Hold to raise the alarm';
@@ -4868,7 +4875,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sosNoIdentity =>
-      'The radio has not reported a name yet, so the alarm has no name to send.';
+      'The MeshCore radio has not reported a name yet, so the alarm has no name to send.';
 
   @override
   String get sosWords => 'What is happening';
@@ -4885,7 +4892,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sosEmergencyRepeat =>
-      'The radio repeats each message once, about two minutes later. If the app closes, the rest stops.';
+      'The MeshCore radio repeats each message once, about two minutes later. If the app closes, the rest stops.';
 
   @override
   String get sosContactsNone =>
@@ -4944,7 +4951,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sosSendFailed =>
-      'The radio refused a repeat. The schedule continues.';
+      'The MeshCore radio refused a repeat. The schedule continues.';
 
   @override
   String get sosDefaultWords => 'I need help';
@@ -4993,7 +5000,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkinIntro =>
-      'One message with a deadline. The app marks it overdue here. The radio keeps no timer.';
+      'One message with a deadline. The app marks it overdue here. The MeshCore radio keeps no timer.';
 
   @override
   String get checkinDeadline => 'Deadline';
@@ -5034,7 +5041,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkinNeedsRadio =>
-      'A check-in needs a connected radio and the radio\'s name.';
+      'A check-in needs a connected MeshCore radio and its name.';
 
   @override
   String photoAnnounceLoad(Object n) {
@@ -5102,11 +5109,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaAcceptedNotDelivered =>
-      'The radio accepted these packets. A broadcast carries no delivery promise.';
+      'The MeshCore radio accepted these packets. A broadcast carries no delivery promise.';
 
   @override
   String mediaSendFailed(int count) {
-    return 'The radio refused $count packet(s), so this photo did not finish.';
+    return 'The MeshCore radio refused $count packet(s), so this photo did not finish.';
   }
 
   @override
@@ -5279,7 +5286,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get geofenceNeedsFix =>
-      'A fence needs your position. Connect the radio or allow location first.';
+      'A fence needs your position. Connect the MeshCore radio or allow location first.';
 
   @override
   String get geofenceAddHere => 'Add a fence here';
@@ -5575,7 +5582,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get blockedKeysCannotStop =>
-      'A block is local to this app. The radio still receives and relays the packet. What stops is what this app shows.';
+      'A block is local to this app. The MeshCore radio still receives and relays the packet. What stops is what this app shows.';
 
   @override
   String get blockedKeysUnblock => 'Unblock';
@@ -5720,7 +5727,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsUnitsImperialHint =>
-      'Converted from the metres the radio reports.';
+      'Converted from the metres the MeshCore radio reports.';
 
   @override
   String get settingsClock24 => '24-hour clock';
@@ -5976,7 +5983,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rawRecordHelp =>
-      'One record to one contact, addressed over its route. The radio answers OK or ERR. The peer sends nothing back.';
+      'One record to one contact, addressed over its route. The MeshCore radio answers OK or ERR. The peer sends nothing back.';
 
   @override
   String get rawRecordNoContact =>
@@ -6008,7 +6015,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rawRecordNotReady => 'No radio connected.';
+  String get rawRecordNotReady => 'No MeshCore radio connected.';
 
   @override
   String get rawRecordSending => 'Sending…';
@@ -6018,21 +6025,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String rawRecordConfirmBody(String name, String count) {
-    return 'The app cannot check what these bytes do. $name receives $count bytes as one record, and the radio answers OK or ERR.';
+    return 'The app cannot check what these bytes do. $name receives $count bytes as one record, and the MeshCore radio answers OK or ERR.';
   }
 
   @override
   String get rawRecordSent =>
-      'The radio accepted it. This is not delivery: a raw record carries no receipt from the peer.';
+      'The MeshCore radio accepted it. This is not delivery: a raw record carries no receipt from the peer.';
 
   @override
   String rawRecordRefused(String reason, String code) {
-    return 'The radio refused it: $reason (code $code).';
+    return 'The MeshCore radio refused it: $reason (code $code).';
   }
 
   @override
   String rawRecordNoAnswer(String seconds) {
-    return 'No answer in $seconds s. The radio may have sent it anyway.';
+    return 'No answer in $seconds s. The MeshCore radio may have sent it anyway.';
   }
 
   @override
@@ -6062,7 +6069,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosticsPositionRadio(Object lat, Object lon) {
-    return 'radio $lat, $lon';
+    return 'MeshCore radio $lat, $lon';
   }
 
   @override
@@ -6124,7 +6131,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pingLostMeaning =>
-      'Lost means no answer within the time the radio estimated for the reply. A node that ignores requests and one that is asleep look the same.';
+      'Lost means no answer within the time the MeshCore radio estimated for the reply. A node that ignores requests and one that is asleep look the same.';
 
   @override
   String get contactFilterHint => 'Name or key prefix';
@@ -6190,7 +6197,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storageClearAllStays =>
-      'The radio is untouched: its contacts, channels and settings stay, and a sent message is not recalled. Your settings and downloaded map regions stay too.';
+      'The MeshCore radio is untouched: its contacts, channels and settings stay, and a sent message is not recalled. Your settings and downloaded map regions stay too.';
 
   @override
   String storageClearAllTypeWord(String word) {
@@ -6202,11 +6209,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storageClearAllDone =>
-      'Deleted. The radio and your settings are untouched.';
+      'Deleted. The MeshCore radio and your settings are untouched.';
 
   @override
   String storageClearAllPartly(int unfinished, int total) {
-    return '$unfinished of $total stores did not finish. What is left is listed here. The radio and your settings are untouched.';
+    return '$unfinished of $total stores did not finish. What is left is listed here. The MeshCore radio and your settings are untouched.';
   }
 
   @override
@@ -6224,14 +6231,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaReachUnknown =>
-      'Reach is the radio\'s own scope, which it has not reported yet. A photo is not acknowledged.';
+      'Reach is the MeshCore radio\'s own scope, which it has not reported yet. A photo is not acknowledged.';
 
   @override
   String get deviceContactsSection => 'Contact table';
 
   @override
   String get autoAddIntro =>
-      'The radio decides which nodes it keeps. These are its settings, not the app\'s.';
+      'The MeshCore radio decides which nodes it keeps. These are its settings, not the app\'s.';
 
   @override
   String get autoAddOverwriteOldest => 'Replace the oldest when full';
@@ -6259,7 +6266,7 @@ class AppLocalizationsEn extends AppLocalizations {
       '0 = no limit · 1 = direct only · N = up to N−1 hops';
 
   @override
-  String get autoAddUnknown => 'Reading the radio\'s policy…';
+  String get autoAddUnknown => 'Reading the MeshCore radio\'s policy…';
 
   @override
   String get autoAddManage => 'Manage the table';
@@ -6269,7 +6276,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeAdvertPathNone =>
-      'The radio has no advert route for this node.';
+      'The MeshCore radio has no advert route for this node.';
 
   @override
   String get nodeAdvertPathReading => 'Reading the route…';
@@ -6297,15 +6304,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventOneKeyRejected(Object key) {
-    return 'radio refused a message from $key';
+    return 'MeshCore radio refused a message from $key';
   }
 
   @override
-  String get eventRadioRefused => 'the radio refused that command';
+  String get eventRadioRefused => 'the MeshCore radio refused that command';
 
   @override
   String get failureCommandDisabled =>
-      'This radio has that command switched off, so it refused. Nothing is wrong with the link.';
+      'This MeshCore radio has that command switched off, so it refused. Nothing is wrong with the link.';
 
   @override
   String get nodeShareContact => 'Share this contact';
@@ -6315,7 +6322,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nodeShareContactFailed =>
-      'The radio did not hand over the contact.';
+      'The MeshCore radio did not hand over the contact.';
 
   @override
   String get shareLinkSheetTitle => 'Contact link';
@@ -6334,14 +6341,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceContactsImportDone =>
-      'Sent to the radio. It is in the list when the radio confirms.';
+      'Sent to the MeshCore radio. It is in the list when the radio confirms.';
 
   @override
-  String get diagnosticsRestartRadio => 'Restart the radio';
+  String get diagnosticsRestartRadio => 'Restart the MeshCore radio';
 
   @override
   String get diagnosticsRestartConfirm =>
-      'Restart this radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.';
+      'Restart this MeshCore radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.';
 
   @override
   String get diagnosticsRestartSent =>
@@ -6349,14 +6356,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diagnosticsRestartNoReply =>
-      'The radio takes no reply to a restart, so this is sent, not confirmed.';
+      'The MeshCore radio takes no reply to a restart, so this is sent, not confirmed.';
 
   @override
-  String get settingsSecuritySection => 'Radio access';
+  String get settingsSecuritySection => 'MeshCore radio access';
 
   @override
   String get settingsPinIntro =>
-      'A pairing PIN gates a new Bluetooth pairing to this radio. The radio still keeps its own list of bonded devices.';
+      'A pairing PIN gates a new Bluetooth pairing to this MeshCore radio. The radio still keeps its own list of bonded devices.';
 
   @override
   String get settingsPinCurrent => 'Pairing PIN';
@@ -6385,7 +6392,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsPinConfirmRemove =>
-      'Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list.';
+      'Remove the pairing PIN? Anyone in range could offer to pair, and the MeshCore radio would still keep its own device list.';
 
   @override
   String get repeaterSession => 'Repeater session';
@@ -6447,7 +6454,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dmWaiting =>
-      'Waiting for the message above to settle. One message per contact at a time keeps the radio able to say which one was answered.';
+      'Waiting for the message above to settle. One message per contact at a time keeps the MeshCore radio able to say which one was answered.';
 
   @override
   String get settingsHubFirmware => 'Firmware';
@@ -6457,10 +6464,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firmwareIntro =>
-      'What this radio is running, and what this app will do about it. Nothing on this page installs anything.';
+      'What this MeshCore radio is running, and what this app will do about it. Nothing on this page installs anything.';
 
   @override
-  String get firmwareRadioLabel => 'Radio firmware';
+  String get firmwareRadioLabel => 'MeshCore radio firmware';
 
   @override
   String get firmwareAppLabel => 'This app';
@@ -6473,11 +6480,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get firmwareOtaUnknown =>
-      'not known yet: the radio answers on first contact';
+      'not known yet: the MeshCore radio answers on first contact';
 
   @override
   String get firmwareNoInstallWhy =>
-      'Installing is not offered from the app: an install consumes the radio\'s queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.';
+      'Installing is not offered from the app: an install consumes the MeshCore radio\'s queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.';
 
   @override
   String get firmwareOtaLabel => 'Over-the-air update';
@@ -6492,7 +6499,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRadio2Note =>
-      'A second profile takes 96-99 % of the radio\'s transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read. The second profile\'s own parameters are not shown.';
+      'A second profile takes 96-99 % of the MeshCore radio transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read. The second profile\'s own parameters are not shown.';
 
   @override
   String get deviceReadoutQuerying => 'querying device…';
@@ -6557,11 +6564,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceRepeatUnknown => 'repeat:.';
 
   @override
-  String get diagnosticsSectionRadioAlerts => 'Radio alerts';
+  String get diagnosticsSectionRadioAlerts => 'MeshCore radio alerts';
 
   @override
   String get diagnosticsRadioAlertsWhy =>
-      'The radio\'s own buzzer and vibration, for its own rules. Nothing in this app triggers them, and they keep working while the phone is away.';
+      'The MeshCore radio\'s own buzzer and vibration, for its own rules. Nothing in this app triggers them, and they keep working while the phone is away.';
 
   @override
   String get diagnosticsBuzzer => 'Buzzer';
@@ -6573,10 +6580,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsAlertNotRead => 'not read yet';
 
   @override
-  String get diagnosticsAlertReading => 'asking the radio';
+  String get diagnosticsAlertReading => 'asking the MeshCore radio';
 
   @override
-  String get diagnosticsAlertRead => 'Ask the radio';
+  String get diagnosticsAlertRead => 'Ask the MeshCore radio';
 
   @override
   String get diagnosticsAlertOn => 'On';
@@ -6585,26 +6592,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsAlertOff => 'Off';
 
   @override
-  String get diagnosticsAlertDone => 'The radio accepted it.';
+  String get diagnosticsAlertDone => 'The MeshCore radio accepted it.';
 
   @override
   String diagnosticsAlertSaid(String text) {
-    return 'The radio said: $text';
+    return 'The MeshCore radio said: $text';
   }
 
   @override
   String diagnosticsAlertRefused(String cause) {
-    return 'The radio refused: $cause';
+    return 'The MeshCore radio refused: $cause';
   }
 
   @override
   String diagnosticsAlertRefusedSaid(String cause, String text) {
-    return 'The radio refused: $cause. It said: $text';
+    return 'The MeshCore radio refused: $cause. It said: $text';
   }
 
   @override
   String get diagnosticsAlertSilent =>
-      'No answer inside six seconds. The radio may still have run it.';
+      'No answer inside six seconds. The MeshCore radio may still have run it.';
 
   @override
   String diagnosticsAlertSilentPartial(String text) {
@@ -6691,7 +6698,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaStalledTableFull =>
-      'The radio\'s packet table stayed full, so the send stopped. Nothing further was put on air.';
+      'The MeshCore radio\'s packet table stayed full, so the send stopped. Nothing further was put on air.';
 
   @override
   String get mediaStalledAirtime =>
@@ -6823,5 +6830,5 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatActionsNoRadio =>
-      'No radio: a reply or quote waits in the box until one is connected.';
+      'No MeshCore radio: a reply or quote waits in the box until one is connected.';
 }

@@ -54,7 +54,7 @@ void main() {
     expect(find.textContaining('OFFLINE'), findsOneWidget);
     expect(find.byTooltip('Connect'), findsOneWidget);
     expect(find.text('PEERS IN RANGE'), findsNothing);
-    expect(find.text('Waiting for the radio…'), findsNothing);
+    expect(find.text('Waiting for the MeshCore radio…'), findsNothing);
     expect(find.text('No activity yet'), findsNothing);
 
     // Connect + handshake.

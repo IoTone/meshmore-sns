@@ -30,7 +30,12 @@ const Set<String> _allowed = <String>{
   'SF',
   'CR',
   'CHG',
-  'XYZ'
+  'XYZ',
+  // Names, not words. The app names the radio by its product and its air
+  // interface, and "MeshCore 無線機" is the correct Japanese for it: translating
+  // the product name would stop it naming the product.
+  'MeshCore',
+  'LoRa',
 };
 
 /// Latin-letter runs of 2+ letters left in [s] after removing the

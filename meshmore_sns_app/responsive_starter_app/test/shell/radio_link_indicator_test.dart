@@ -85,7 +85,7 @@ void main() {
     expect(find.text('OFFLINE'), findsNothing);
     expect(
         find.byWidgetPredicate(
-            (Widget w) => w is Semantics && w.properties.label == 'ラジオ: オフライン'),
+            (Widget w) => w is Semantics && w.properties.label == 'MeshCore 無線機: オフライン'),
         findsOneWidget);
     ctrl.dispose();
   });

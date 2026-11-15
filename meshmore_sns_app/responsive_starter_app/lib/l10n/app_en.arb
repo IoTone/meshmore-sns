@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
   "appName": "Meshmore SNS",
-  "appSubtitle": "Mesh messaging over radio",
+  "appSubtitle": "Mesh messaging over LoRa radio",
   "tabDashboard": "Dashboard",
   "tabChat": "Chat",
   "tabNodes": "Nodes",
@@ -46,7 +46,7 @@
   "botOnWire": "Replies are sent with a [bot] prefix, so the person on the other end can tell a machine wrote them.",
   "botRefusedPublicSlot": "Not available on the public channel.",
   "botRefusedPublicPsk": "This channel still uses the public key, so it is public whatever its number. Give it a private key first.",
-  "botRefusedUnknownPsk": "Waiting for the radio to send this channel's key.",
+  "botRefusedUnknownPsk": "Waiting for the MeshCore radio to send this channel's key.",
   "botMode": "Reply mode",
   "botModeDeterministic": "Deterministic",
   "botModeRandom": "Random",
@@ -91,7 +91,7 @@
   "botFromBot": "bot",
   "dashboardRadio": "LoRa radio",
   "dashForestCanopy": "Canopy",
-  "dashForestNoRoutes": "No learned routes yet. The radio has not been told how to reach anyone.",
+  "dashForestNoRoutes": "No learned routes yet. The MeshCore radio has not been told how to reach anyone.",
   "dashForestContacts": "Contacts",
   "dashNervLink": "Link",
   "dashNervNode": "Node",
@@ -118,7 +118,7 @@
   "dashboardBattery": "BATTERY",
   "dashboardRecent": "RECENT",
   "dashboardNoActivity": "No activity yet",
-  "dashboardAwaitingDevice": "Waiting for the radio…",
+  "dashboardAwaitingDevice": "Waiting for the MeshCore radio…",
   "dashboardAwaitingDeviceLocation": "Waiting for a location…",
   "dashboardUnnamed": "(unnamed)",
   "dashboardLocationNotSet": "No location",
@@ -137,7 +137,7 @@
   "linkChipScan": "SCAN",
   "linkChipOffline": "OFFLINE",
   "linkChipConnect": "Connect a MeshCore radio",
-  "linkChipSemantics": "Radio {state}",
+  "linkChipSemantics": "MeshCore radio {state}",
   "@linkChipSemantics": {
     "placeholders": {
       "state": {
@@ -148,7 +148,7 @@
   "actionConnect": "Connect",
   "actionBlock": "Block this person",
   "blockConfirmTitle": "Block this key?",
-  "blockConfirmBody": "Hides what this person sends, on this device: messages, notifications and places. The radio still receives and relays the packet, and the mesh does not learn about the block.",
+  "blockConfirmBody": "Hides what this person sends, on this device: messages, notifications and places. The MeshCore radio still receives and relays the packet, and the mesh does not learn about the block.",
   "blockConfirmGo": "Block",
   "blockDone": "Blocked. This device no longer shows what it sends.",
   "blockFull": "The block list is full. Unblock something first.",
@@ -218,15 +218,15 @@
     }
   },
   "pairPermissionTitle": "Bluetooth permission",
-  "pairPermissionBody": "The app needs Nearby devices to find your radio and talk to it. Nothing is paired yet.",
+  "pairPermissionBody": "The app needs Nearby devices to find your MeshCore radio and talk to it. Nothing is paired yet.",
   "pairPermissionAllow": "Allow Bluetooth",
   "pairPermissionOpenSettings": "Open OS settings",
   "pairAdapterTitle": "Bluetooth is off",
-  "pairAdapterBody": "Switch Bluetooth on to find your radio. This screen continues by itself once it is on.",
-  "pairAdapterUnsupported": "This phone reports no usable Bluetooth adapter, so a radio cannot be paired here.",
+  "pairAdapterBody": "Switch Bluetooth on to find your MeshCore radio. This screen continues by itself once it is on.",
+  "pairAdapterUnsupported": "This phone reports no usable Bluetooth adapter, so a MeshCore radio cannot be paired here.",
   "pairRetry": "Try again",
   "pairScanTitle": "Looking for MeshCore radios",
-  "pairScanBody": "A radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.",
+  "pairScanBody": "A MeshCore radio advertises as MeshCore-<name>. Keep it switched on and within a metre or two of the phone.",
   "pairScanning": "Scanning…",
   "pairStopScan": "Stop",
   "pairScanAgain": "Scan again",
@@ -246,9 +246,9 @@
       }
     }
   },
-  "pairConnectingBody": "If the radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.",
+  "pairConnectingBody": "If the MeshCore radio shows a PIN, enter it on the phone when asked. Screenless radios use 123456.",
   "pairConfirmTitle": "MeshCore radio connected",
-  "pairConfirmBody": "{name} answered, so the link and the protocol both work. This radio is now the one the app uses.",
+  "pairConfirmBody": "{name} answered, so the link and the protocol both work. This MeshCore radio is now the one the app uses.",
   "@pairConfirmBody": {
     "placeholders": {
       "name": {
@@ -280,13 +280,13 @@
   "settingsPermissions": "Permissions",
   "settingsPermissionsSubtitle": "Bluetooth, notifications and location",
   "termsTitle": "Terms and privacy",
-  "termsLead": "This app talks to a mesh radio. There is no account, no cloud and no analytics.",
+  "termsLead": "This app talks to a mesh MeshCore radio. There is no account, no cloud and no analytics.",
   "termsSectionLocal": "WHAT STAYS ON THIS DEVICE",
   "termsLocalBody": "Messages, contacts, channels and settings are stored on this device. Message history, places, the movement trail and geofences are encrypted with a key this phone holds and cannot export. Coverage cells and the last day of channel activity are kept too, so the map and the activity report survive a restart: they are not encrypted, and Delete everything removes them with the rest. Cloud backup and device transfer are off for everything, so a new phone does not silently inherit it. Deleting the app deletes that data.",
   "termsSectionLeaves": "WHAT LEAVES THE DEVICE",
-  "termsLeavesBody": "Two things leave this device. What you send goes out over the radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.",
+  "termsLeavesBody": "Two things leave this device. What you send goes out over the MeshCore radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.",
   "termsSectionPermissions": "PERMISSIONS AND WHY",
-  "termsPermissionsBody": "Bluetooth connects to the radio. Location is used for your own position and, on older Android, to allow a Bluetooth scan. Notifications are used for messages that arrive while the app is in the background. Refusing any of them leaves the app usable without a radio.",
+  "termsPermissionsBody": "Bluetooth connects to the MeshCore radio. Location is used for your own position and, on older Android, to allow a Bluetooth scan. Notifications are used for messages that arrive while the app is in the background. Refusing any of them leaves the app usable without a radio.",
   "termsSectionRetention": "HOW MUCH IS KEPT",
   "termsRetentionBody": "Each conversation keeps its newest {cap} messages. Older ones are dropped. A place expires when its own timer runs out, and is then gone.",
   "@termsRetentionBody": {
@@ -328,7 +328,7 @@
   "aboutMadeWith": "Made with ♥ in Fukuoka, Japan",
   "aboutVersion": "v{version}",
   "aboutReportProblem": "Report a problem",
-  "aboutReportProblemSub": "Opens the issue tracker with the app and radio details filled in. Nothing is sent unless you send it there.",
+  "aboutReportProblemSub": "Opens the issue tracker with the app and MeshCore radio details filled in. Nothing is sent unless you send it there.",
   "creditsTitle": "Credits",
   "creditsIntro": "Everything this app is built out of, in one list. Each row names the component, its licence and where it comes from.",
   "aboutLicensesButton": "Open-source licenses & attributions",
@@ -380,7 +380,7 @@
   "firstRunNotificationsTitle": "Notifications",
   "firstRunNotificationsBody": "We ask later, only if you keep the app connected in the background.",
   "firstRunOfflineTitle": "Offline is fine",
-  "firstRunOfflineBody": "Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no radio traffic.",
+  "firstRunOfflineBody": "Without Bluetooth the app opens in demo mode: history, channels, settings and docs, with no MeshCore radio traffic.",
   "firstRunGrant": "Allow Bluetooth",
   "firstRunSkip": "Explore in demo mode (no MeshCore radio)",
   "firstRunDeniedTransient": "Bluetooth is off for this app. Continue offline, or allow it in Settings.",
@@ -563,7 +563,7 @@
   "deviceGpsModule": "ON-BOARD GPS MODULE",
   "deviceGpsEnable": "Enable on-board GPS",
   "deviceGpsEnabledHint": "Device firmware polls its GPS chip and updates location automatically.",
-  "deviceGpsDisabledHint": "Off. The radio does not read its GPS, so it keeps announcing the last position set.",
+  "deviceGpsDisabledHint": "Off. The MeshCore radio does not read its GPS, so it keeps announcing the last position set.",
   "deviceGpsUnknown": "Waiting for device…",
   "deviceGpsInterval": "GPS update interval",
   "deviceGpsIntervalOff": "Off",
@@ -591,9 +591,9 @@
       }
     }
   },
-  "deviceGpsIntervalFixedByFirmware": "Set on the radio",
+  "deviceGpsIntervalFixedByFirmware": "Set on the MeshCore radio",
   "locTitle": "Auto-publish location",
-  "locTileSubtitle": "Sends the phone's position to the radio",
+  "locTileSubtitle": "Sends the phone's position to the MeshCore radio",
   "deviceGpsIntervalWhy": "This firmware build decides how often the sensors are read, so the app cannot change it.",
   "locMaster": "Auto-publish",
   "locMasterOn": "On. Your position goes out with your adverts",
@@ -722,7 +722,7 @@
   "settingsHubDiagnostics": "MeshCore radio connection",
   "bootStarting": "STARTING",
   "bootHeader": "MESHMORE / SYNCHRONIZING",
-  "bootConnecting": "CONNECTING TO RADIO…",
+  "bootConnecting": "CONNECTING TO MeshCore radio…",
   "bootHandshaking": "HANDSHAKING…",
   "bootReady": "MESH ONLINE",
   "bootOffline": "OFFLINE. Open Connect a MeshCore radio",
@@ -788,7 +788,7 @@
       }
     }
   },
-  "eventMsgSent": "sent · the radio acknowledged it",
+  "eventMsgSent": "sent · the MeshCore radio acknowledged it",
   "eventDeviceInfo": "device {version}",
   "@eventDeviceInfo": {
     "placeholders": {
@@ -885,10 +885,10 @@
       }
     }
   },
-  "chatSendNotSent": "Not sent. The radio is not connected. Your message is back in the box.",
+  "chatSendNotSent": "Not sent. The MeshCore radio is not connected. Your message is back in the box.",
   "chatSend": "Send",
-  "chatBudgetNear": "Nearly at the limit: the radio counts its own name in these bytes",
-  "chatBudgetTooLong": "Too long by {over} bytes. The radio would cut the rest without telling you",
+  "chatBudgetNear": "Nearly at the limit: the MeshCore radio counts its own name in these bytes",
+  "chatBudgetTooLong": "Too long by {over} bytes. The MeshCore radio would cut the rest without telling you",
   "@chatBudgetTooLong": {
     "placeholders": {
       "over": {
@@ -1007,12 +1007,12 @@
   "nodeIdentityLinkSearchHint": "Filter by name, or paste a public key",
   "nodeIdentityLinkNoMatch": "No nodes match. Clear the search, or paste the full key to link directly.",
   "nodeIdentityLinkUseKey": "Link to this key",
-  "nodeDetailNotDeviceContact": "Not in the radio's contacts, so DMs may not route.",
+  "nodeDetailNotDeviceContact": "Not in the MeshCore radio's contacts, so DMs may not route.",
   "nodeDetailAddDeviceContact": "Add to device contacts",
   "nodeDetailAddDeviceContactDone": "Added. DMs will route.",
   "nodeDetailAddDeviceContactFailed": "Couldn't add the contact. Check the link and try again.",
   "nodeDetailRemoveDeviceContact": "Remove from device contacts",
-  "nodeDetailRemoveDeviceContactConfirm": "Remove “{name}” from the radio's contacts? You can add them again later.",
+  "nodeDetailRemoveDeviceContactConfirm": "Remove “{name}” from the MeshCore radio's contacts? You can add them again later.",
   "@nodeDetailRemoveDeviceContactConfirm": {
     "placeholders": {
       "name": {
@@ -1020,12 +1020,12 @@
       }
     }
   },
-  "nodeDetailRemoveDeviceContactDone": "Removed from your radio's contacts.",
+  "nodeDetailRemoveDeviceContactDone": "Removed from your MeshCore radio's contacts.",
   "deviceContactsTitle": "MeshCore radio contacts",
   "deviceContactsRefresh": "Refresh",
-  "deviceContactsSyncing": "Syncing contacts from the radio…",
-  "deviceContactsEmpty": "Your radio has no contacts.",
-  "deviceContactsCount": "{count} of {max} contacts on the radio",
+  "deviceContactsSyncing": "Syncing contacts from the MeshCore radio…",
+  "deviceContactsEmpty": "Your MeshCore radio has no contacts.",
+  "deviceContactsCount": "{count} of {max} contacts on the MeshCore radio",
   "@deviceContactsCount": {
     "placeholders": {
       "count": {
@@ -1036,7 +1036,7 @@
       }
     }
   },
-  "deviceContactsCountOnly": "{count} contacts on the radio",
+  "deviceContactsCountOnly": "{count} contacts on the MeshCore radio",
   "@deviceContactsCountOnly": {
     "placeholders": {
       "count": {
@@ -1084,7 +1084,7 @@
       }
     }
   },
-  "deviceContactsRemoveAll": "Remove all from the radio",
+  "deviceContactsRemoveAll": "Remove all from the MeshCore radio",
   "deviceContactsRemoveAllConfirm": "Remove all {count} contacts? You only need them to send direct messages, and you can add anyone back later.",
   "@deviceContactsRemoveAllConfirm": {
     "placeholders": {
@@ -1093,7 +1093,7 @@
       }
     }
   },
-  "deviceContactsRemoveAllDone": "Removed {count} contacts from the radio.",
+  "deviceContactsRemoveAllDone": "Removed {count} contacts from the MeshCore radio.",
   "@deviceContactsRemoveAllDone": {
     "placeholders": {
       "count": {
@@ -1337,9 +1337,9 @@
   "snsCellsLegendDecay": "Only the last hour is tracked. Nothing is stored.",
   "meshTreeEmpty": "Waiting for contact sync. The tree is built from each contact's outPath.",
   "meshTreeFilteredEmptyFor": "{count, plural, =1{No peer has a learned route at {stop}. 1 is heard without one. Flood / All shows it.} other{No peer has a learned route at {stop}. {count} are heard without one. Flood / All shows them.}}",
-  "meshTreeLearnRoutes": "Ask the radio for routes",
-  "meshTreeLearning": "Asking the radio…",
-  "meshTreeNoRoutes": "This radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.",
+  "meshTreeLearnRoutes": "Ask the MeshCore radio for routes",
+  "meshTreeLearning": "Asking the MeshCore radio…",
+  "meshTreeNoRoutes": "This MeshCore radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.",
   "@meshTreeFilteredEmptyFor": {
     "description": "Shown instead of the no-peers notice when the hop stop is what emptied the tree. The stop is named by its own label (Direct, <=3 hops, ...) rather than as a number, so it reads the same as the slider above it.",
     "placeholders": {
@@ -1376,7 +1376,7 @@
   },
   "meshTreeRecenter": "Recenter",
   "meshTreeLegendTitle": "MESH TREE",
-  "meshTreeLegendDesc": "A directed graph of how the radio reaches each contact. Each edge is a repeater on the route the radio actually sends by.",
+  "meshTreeLegendDesc": "A directed graph of how the MeshCore radio reaches each contact. Each edge is a repeater on the route it actually sends by.",
   "meshTreeLegendFlood": "Dashed edge = flood-routed. Reachable, no fixed path.",
   "meshTreeLegendFloat": "No edges = heard by advert only, route unknown.",
   "nodeDetailHopsKv": "hops",
@@ -1430,7 +1430,7 @@
   "nodeDetailLuminosityKv": "luminosity",
   "nodeDetailQueryTelemetry": "Query telemetry",
   "nodeDetailRefreshTelemetry": "Refresh telemetry",
-  "nodeDetailTelemetryQuerying": "Asking the radio for readings…",
+  "nodeDetailTelemetryQuerying": "Asking the MeshCore radio for readings…",
   "nodeDetailTelemetryNotContact": "Not a device contact, so telemetry is unavailable.",
   "nodeDetailTelemetryAge": "telemetry from {age}",
   "@nodeDetailTelemetryAge": {
@@ -1473,18 +1473,18 @@
     }
   },
   "channelsTitle": "Channels",
-  "channelsHelp": "Channel 0 is the shared public one. A private group needs the same channel number, name and key on every radio.",
+  "channelsHelp": "Channel 0 is the shared public one. A private group needs the same channel number, name and key on every MeshCore radio.",
   "channelsOfflineHint": "Connect a MeshCore radio (Diagnostics) to edit channels.",
   "channelCreateCreated": "Channel created.",
   "channelCreateTitle": "New channel",
   "channelCreateIntro": "Name it, then say who should be able to read it.",
   "channelCreateNameHint": "e.g. Basecamp",
   "channelCreateNameKeyedTitle": "Anyone who knows the name",
-  "channelCreateNameKeyedBody": "The key comes from the name, so every radio that types the same name joins. Nothing else can read it.",
+  "channelCreateNameKeyedBody": "The key comes from the name, so every MeshCore radio that types the same name joins. Nothing else can read it.",
   "channelCreatePublicTitle": "The public channel",
-  "channelCreatePublicBody": "Everyone within radio range on the public channel can read it. Use this only for a channel meant to be open.",
+  "channelCreatePublicBody": "Everyone within LoRa radio range on the public channel can read it. Use this only for a channel meant to be open.",
   "channelCreateSlotNote": "Goes in slot {slot}, the first one nothing is using.",
-  "channelCreateNoSlot": "Every channel slot on this radio is in use. Free one on the channels screen first.",
+  "channelCreateNoSlot": "Every channel slot on this MeshCore radio is in use. Free one on the channels screen first.",
   "channelCreateAdvanced": "Slot and key",
   "channelCreateSlotTile": "Channel slot",
   "channelCreateSlotHint": "The first free slot is used unless you pick one.",
@@ -1662,7 +1662,7 @@
       }
     }
   },
-  "channelsClearConfirmBody": "The radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.",
+  "channelsClearConfirmBody": "The MeshCore radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.",
   "channelsClearSnack": "Channel {idx} reset to the public defaults",
   "@channelsClearSnack": {
     "placeholders": {
@@ -1746,7 +1746,7 @@
   "deviceRegionSuggestNoFix": "No GPS fix yet. Try outdoors with location on.",
   "deviceRegionSuggestNoMatch": "Your location doesn't match any shipped country preset. Pick one manually.",
   "deviceRegionDisclaimerShort": "Shared by users, not checked by a regulator.",
-  "deviceRegionDisclaimer": "These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification. Most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.",
+  "deviceRegionDisclaimer": "These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every MeshCore radio. In Japan the radio itself must carry 技適 (giteki) certification. Most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.",
   "presetUsCanada": "USA / Canada",
   "presetUsArizona": "USA. Arizona",
   "presetJpAribT108": "Japan (ARIB STD-T108)",
@@ -1778,9 +1778,9 @@
   "@devicePathHashSize": {
     "description": "Radio/network setting. MeshCore path hash length."
   },
-  "devicePathHashSizeHelp": "The hash length this radio stamps on its packets. Repeaters follow each packet's own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the payload budget.",
-  "devicePathHashUnread": "The radio has not said which length it uses yet.",
-  "devicePathHashMismatch": "On the radio: {device}. Yours: {form}. Tap Apply to send yours.",
+  "devicePathHashSizeHelp": "The hash length this LoRa radio stamps on its packets. Repeaters follow each packet's own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the payload budget.",
+  "devicePathHashUnread": "The MeshCore radio has not said which length it uses yet.",
+  "devicePathHashMismatch": "On the MeshCore radio: {device}. Yours: {form}. Tap Apply to send yours.",
   "@devicePathHashMismatch": {
     "placeholders": {
       "device": {
@@ -1791,8 +1791,8 @@
       }
     }
   },
-  "deviceRadioApplied": "The radio confirmed the change.",
-  "deviceRadioRefused": "The radio refused {param} (error {code}). Later writes were not sent.",
+  "deviceRadioApplied": "The MeshCore radio confirmed the change.",
+  "deviceRadioRefused": "The MeshCore radio refused {param} (error {code}). Later writes were not sent.",
   "@deviceRadioRefused": {
     "placeholders": {
       "param": {
@@ -1819,11 +1819,11 @@
       }
     }
   },
-  "deviceRadioUnknownState": "Cannot change radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.",
-  "deviceRadioRevert": "Undo radio change",
+  "deviceRadioUnknownState": "Cannot change MeshCore radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.",
+  "deviceRadioRevert": "Undo MeshCore radio change",
   "deviceRadioReverted": "Previous operating point restored.",
   "deviceRadioRevertUnavailable": "Undo is one use only.",
-  "deviceRadioRevertFailed": "Undo did not apply. The radio kept its last values.",
+  "deviceRadioRevertFailed": "Undo did not apply. The MeshCore radio kept its last values.",
   "radioHealthTitle": "MeshCore radio health",
   "radioHealthRead": "Read",
   "radioHealthReading": "Reading…",
@@ -1864,8 +1864,8 @@
       }
     }
   },
-  "radioHealthSource": "From the radio",
-  "radioHealthAckTrip": "last acknowledgement: {ms} ms round trip (the radio's own measure)",
+  "radioHealthSource": "From the MeshCore radio",
+  "radioHealthAckTrip": "last acknowledgement: {ms} ms round trip (the MeshCore radio's own measure)",
   "@radioHealthAckTrip": {
     "placeholders": {
       "ms": {
@@ -1874,7 +1874,7 @@
     }
   },
   "deviceLoadFromDevice": "Load from device",
-  "deviceApplyRadio": "Apply radio params",
+  "deviceApplyRadio": "Apply MeshCore radio params",
   "deviceConnectFirst": "Connect a MeshCore radio first (Diagnostics & connect).",
   "deviceAdvertName": "Advert name",
   "deviceSetName": "Set name",
@@ -1970,7 +1970,7 @@
     }
   },
   "batterySpecCapacityUnknown": "Capacity: user-supplied (unknown)",
-  "batterySpecDraw": "Typical draw: ~{ma} mA (radio receiving)",
+  "batterySpecDraw": "Typical draw: ~{ma} mA (LoRa radio receiving)",
   "@batterySpecDraw": {
     "placeholders": {
       "ma": {
@@ -2024,7 +2024,7 @@
   "deliverySent": "Sent into the mesh",
   "deliveryDelivered": "Delivered (recipient acknowledged)",
   "deliveryFailed": "Not delivered. No acknowledgement or send failed",
-  "deliveryUnknown": "Sent while the app was closing. Whether the radio transmitted it is not knowable",
+  "deliveryUnknown": "Sent while the app was closing. Whether the MeshCore radio transmitted it is not knowable",
   "settingsHubTools": "Tools",
   "toolsTitle": "Tools",
   "toolsOffline": "Not connected. The tools need the MeshCore radio. Open Connect a MeshCore radio",
@@ -2080,15 +2080,15 @@
   "toolSoakSub": "Sequenced messages, counted. Pairs with the bot",
   "toolRangeName": "Range test",
   "toolRangeSub": "Beacon or log, with SNR and distance",
-  "toolFailNotConnected": "Not connected to a radio.",
-  "toolFailBusy": "Another tool is using the radio. Stop it first.",
-  "toolFailUnsupported": "Your radio's firmware doesn't support this.",
-  "toolFailNotFound": "The radio doesn't have this contact.",
-  "toolFailTableFull": "The radio is busy (send table full). Try again shortly.",
-  "toolFailRejected": "The radio refused the request.",
-  "toolFailNoConfirm": "The radio didn't confirm the send.",
-  "toolFailPublic": "Public is refused: everything sent there reaches every radio. Use a private channel or a DM.",
-  "toolFailUnknownChannel": "This channel's key hasn't been read from the radio yet.",
+  "toolFailNotConnected": "Not connected to a MeshCore radio.",
+  "toolFailBusy": "Another tool is using the MeshCore radio. Stop it first.",
+  "toolFailUnsupported": "Your MeshCore radio's firmware doesn't support this.",
+  "toolFailNotFound": "The MeshCore radio doesn't have this contact.",
+  "toolFailTableFull": "The MeshCore radio is busy (send table full). Try again shortly.",
+  "toolFailRejected": "The MeshCore radio refused the request.",
+  "toolFailNoConfirm": "The MeshCore radio didn't confirm the send.",
+  "toolFailPublic": "Public is refused: everything sent there reaches every MeshCore radio. Use a private channel or a DM.",
+  "toolFailUnknownChannel": "This channel's key hasn't been read from the MeshCore radio yet.",
   "toolFailNoTarget": "Choose a target first.",
   "statsRefresh": "Refresh",
   "statsAuto": "Auto (every 5 s)",
@@ -2122,7 +2122,7 @@
   "statsNotFetched": "Not fetched yet.",
   "pingTarget": "TARGET",
   "pingMethodStatus": "Status request. Repeaters, rooms and sensors answer this.",
-  "pingMethodTelemetry": "Asks for readings. The other radio answers only if it shares them with you.",
+  "pingMethodTelemetry": "Asks for readings. The other MeshCore radio answers only if it shares them with you.",
   "pingSummary": "{sent} sent · {replied} replied · {lost} lost",
   "@pingSummary": {
     "placeholders": {
@@ -2217,7 +2217,7 @@
   },
   "discoverAsymmetric": "asymmetric link",
   "soakScope": "CONVERSATION",
-  "soakPairHint": "Pairs with an R59 bot answering on the other radio: echoes show drops, duplicates and reordering.",
+  "soakPairHint": "Pairs with an R59 bot answering on the other MeshCore radio: echoes show drops, duplicates and reordering.",
   "soakSummary": "{sent} sent · {delivered} delivered · {failed} failed",
   "@soakSummary": {
     "placeholders": {
@@ -2315,7 +2315,7 @@
   "settingsHubInfo": "About",
   "settingsNotifDeniedPermanent": "Notifications were permanently denied. The background service needs a persistent notification.",
   "settingsNotifDeniedTransient": "Keeping the app connected in the background needs notifications. Allow them in Settings.",
-  "deviceAdvertPropagatesHint": "Takes effect the next time the radio announces itself.",
+  "deviceAdvertPropagatesHint": "Takes effect the next time the MeshCore radio announces itself.",
   "settingsHubMaps": "Offline maps",
   "mapsTitle": "Offline maps",
   "mapsOffline": "No network. Downloads resume on their own.",
@@ -2665,7 +2665,7 @@
       }
     }
   },
-  "diagnosticsMtuRefusedLine": "This phone link is {mtu} bytes and a full radio frame needs {need}. Reconnect to try again. A radio that caps the link smaller cannot carry every frame.",
+  "diagnosticsMtuRefusedLine": "This phone link is {mtu} bytes and a full LoRa frame needs {need}. Reconnect to try again. A MeshCore radio that caps the link smaller cannot carry every frame.",
   "@diagnosticsMtuRefusedLine": {
     "placeholders": {
       "mtu": {
@@ -2690,9 +2690,9 @@
       }
     }
   },
-  "rxViaPrimary": "the primary radio",
+  "rxViaPrimary": "the primary MeshCore radio",
   "rxViaSecondary": "radio 2",
-  "rxViaUnknown": "an unreported radio",
+  "rxViaUnknown": "an unreported MeshCore radio",
   "diagnosticsFramesDroppedLine": "{count, plural, =1{1 frame arrived in part, so its data may be incomplete} other{{count} frames arrived in part, so their data may be incomplete}}",
   "@diagnosticsFramesDroppedLine": {
     "placeholders": {
@@ -2726,11 +2726,11 @@
   },
   "diagnosticsSectionDeveloper": "Developer",
   "diagnosticsPairRadio": "Pair a MeshCore radio",
-  "diagnosticsForgetConfirmTitle": "Forget this radio?",
-  "diagnosticsForgetConfirmBody": "You will need to pair it again, and this clears its bond. Do not do this while the radio is out of reach.",
+  "diagnosticsForgetConfirmTitle": "Forget this MeshCore radio?",
+  "diagnosticsForgetConfirmBody": "You will need to pair it again, and this clears its bond. Do not do this while the MeshCore radio is out of reach.",
   "diagnosticsSectionSend": "Send",
   "diagnosticsSendSelfAdvert": "Send self-advert",
-  "diagnosticsReadClock": "Read the radio's clock",
+  "diagnosticsReadClock": "Read the MeshCore radio's clock",
   "diagnosticsPullMessage": "Pull the next message",
   "diagnosticsTestMessage": "Public-channel test message",
   "diagnosticsSend": "Send",
@@ -2792,7 +2792,7 @@
   "diagnosticsSoakCopied": "Soak results copied",
   "nodesClearSearch": "Clear search",
   "networksTitle": "Networks",
-  "networksEmpty": "No networks yet. A network is the radio settings your radios agree on.",
+  "networksEmpty": "No networks yet. A network is the MeshCore radio settings your radios agree on.",
   "networksNew": "New network",
   "networksName": "Name",
   "networksNameRequired": "Give the network a name.",
@@ -2853,8 +2853,8 @@
   "networksAddMember": "Add member",
   "networksNoContacts": "No known contacts to add.",
   "networksRemoveMember": "Remove",
-  "networksApply": "Apply to this radio",
-  "networksApplyNeedsRadio": "Connect a radio to apply.",
+  "networksApply": "Apply to this MeshCore radio",
+  "networksApplyNeedsRadio": "Connect a MeshCore radio to apply.",
   "networksApplyTitle": "Apply {name}?",
   "@networksApplyTitle": {
     "placeholders": {
@@ -2863,7 +2863,7 @@
       }
     }
   },
-  "networksApplyBodyShared": "This radio will switch to {summary}.",
+  "networksApplyBodyShared": "This MeshCore radio will switch to {summary}.",
   "@networksApplyBodyShared": {
     "placeholders": {
       "summary": {
@@ -2871,7 +2871,7 @@
       }
     }
   },
-  "networksApplyBodyIsolated": "This radio will switch to {summary}. It will stop hearing the public mesh until you switch it back.",
+  "networksApplyBodyIsolated": "This MeshCore radio will switch to {summary}. It will stop hearing the public mesh until you switch it back.",
   "@networksApplyBodyIsolated": {
     "placeholders": {
       "summary": {
@@ -2889,7 +2889,7 @@
       }
     }
   },
-  "networksCurrent": "This radio is on this network",
+  "networksCurrent": "This MeshCore radio is on this network",
   "networksDelete": "Delete network",
   "networksDeleteTitle": "Delete {name}?",
   "@networksDeleteTitle": {
@@ -2911,7 +2911,7 @@
   "placePrecisionExact": "Exact",
   "placePrecision100": "About 100 m",
   "placePrecision1000": "About 1 km",
-  "placeRadioRefused": "The radio did not take it, so the place is not on the air.",
+  "placeRadioRefused": "The MeshCore radio did not take it, so the place is not on the air.",
   "placeGoesTo": "Goes to {channel}",
   "placeSent": "Place tagged. It expires on its own.",
   "placeBudgetRefused": "You have sent {n} in the last hour. The next one can go at {time}.",
@@ -2925,7 +2925,7 @@
       }
     }
   },
-  "placeNoIdentity": "Connect a radio first: a place is tagged as you.",
+  "placeNoIdentity": "Connect a MeshCore radio first: a place is tagged as you.",
   "placeLabelEmpty": "A place needs a few words.",
   "placeLabelTooLong": "A label is at most 60 characters.",
   "placeLabelCarriesTtl": "A label cannot contain a TTL token.",
@@ -3031,37 +3031,37 @@
   "placeTypeCamp": "Camp",
   "placeTypeLook": "Look",
   "placeTypeOther": "Other",
-  "failureUnsupportedCommand": "The radio does not support that command. Its firmware is older than this app expects. Update the radio or use a command it lists.",
+  "failureUnsupportedCommand": "The MeshCore radio does not support that command. Its firmware is older than this app expects. Update the radio or use a command it lists.",
   "@failureUnsupportedCommand": {},
-  "failureNotFound": "The radio could not find the target: the channel, contact or message is not on it. Refresh the contact list, then retry.",
+  "failureNotFound": "The MeshCore radio could not find the target: the channel, contact or message is not on it. Refresh the contact list, then retry.",
   "@failureNotFound": {},
-  "failureTableFull": "The radio's queue or table is full, so it refused the request. Wait for it to drain, then retry. Nothing was lost.",
+  "failureTableFull": "The MeshCore radio's queue or table is full, so it refused the request. Wait for it to drain, then retry. Nothing was lost.",
   "@failureTableFull": {},
-  "failureBadState": "The radio is busy with another operation and cannot start this one. Wait for the current operation to finish, then retry.",
+  "failureBadState": "The MeshCore radio is busy with another operation and cannot start this one. Wait for the current operation to finish, then retry.",
   "@failureBadState": {},
-  "failureFileIoError": "The radio's storage refused the write. Its own log has the detail. Retry once, and if it repeats the radio's filesystem needs attention.",
+  "failureFileIoError": "The MeshCore radio storage refused the write. Its own log has the detail. Retry once, and if it repeats the radio filesystem needs attention.",
   "@failureFileIoError": {},
-  "failureIllegalArgument": "The radio rejected the value or length as invalid. Check the field you changed: one value is outside what this firmware accepts.",
+  "failureIllegalArgument": "The MeshCore radio rejected the value or length as invalid. Check the field you changed: one value is outside what this firmware accepts.",
   "@failureIllegalArgument": {},
-  "failureUnknownDeviceError": "The radio refused the request without a reason this app knows. The diagnostics page shows the raw frame.",
+  "failureUnknownDeviceError": "The MeshCore radio refused the request without a reason this app knows. The diagnostics page shows the raw frame.",
   "@failureUnknownDeviceError": {},
-  "failureBlePermissions": "Bluetooth permission was refused, so the app cannot reach the radio. Allow Nearby devices for this app in Android settings, then reconnect.",
+  "failureBlePermissions": "Bluetooth permission was refused, so the app cannot reach the MeshCore radio. Allow Nearby devices for this app in Android settings, then reconnect.",
   "@failureBlePermissions": {},
   "failureBluetoothOff": "Bluetooth is off. Turn it on, then reconnect.",
   "@failureBluetoothOff": {},
-  "failureNoRadioFound": "No radio answered the scan. Check that the radio is powered on, in range, and not already connected to another phone.",
+  "failureNoRadioFound": "No MeshCore radio answered the scan. Check that it is powered on, in range, and not already connected to another phone.",
   "@failureNoRadioFound": {},
-  "failurePairingFailed": "The pairing did not complete. Enter the PIN shown on the radio screen (screenless radios use 123456), then retry.",
+  "failurePairingFailed": "The pairing did not complete. Enter the PIN shown on the MeshCore radio screen (screenless radios use 123456), then retry.",
   "@failurePairingFailed": {},
-  "failureStalePairing": "The radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.",
+  "failureStalePairing": "The MeshCore radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.",
   "@failureStalePairing": {},
-  "failurePairingNotKept": "The radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.",
+  "failurePairingNotKept": "The MeshCore radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.",
   "@failurePairingNotKept": {},
   "failureServiceMissing": "This device does not expose the MeshCore service, so it is probably not a MeshCore radio.",
   "@failureServiceMissing": {},
-  "failureCharacteristicMissing": "The radio's link is missing a characteristic the app needs. Its firmware may be older than this app expects.",
+  "failureCharacteristicMissing": "The MeshCore radio's link is missing a characteristic the app needs. Its firmware may be older than this app expects.",
   "@failureCharacteristicMissing": {},
-  "failureMtuTooSmall": "This radio's link is {mtu} bytes and a full frame needs {need}. Some firmware asks for the smaller size itself, so this radio cannot carry the largest frames: try newer firmware, or reconnect.",
+  "failureMtuTooSmall": "This MeshCore radio link is {mtu} bytes and a full frame needs {need}. Some firmware asks for the smaller size itself, so it cannot carry the largest frames: try newer firmware, or reconnect.",
   "@failureMtuTooSmall": {
     "placeholders": {
       "mtu": {
@@ -3078,9 +3078,9 @@
   "@failureFrameTrailingBytes": {},
   "failureStorageFull": "The phone refused a write because storage is full. Nothing is being deleted silently. Free space and the history stays as it is.",
   "@failureStorageFull": {},
-  "failureRadioSilent": "The radio accepted the request but did not answer in time. It may still have carried it out. Check the radio before retrying.",
+  "failureRadioSilent": "The MeshCore radio accepted the request but did not answer in time. It may still have carried it out. Check the radio before retrying.",
   "@failureRadioSilent": {},
-  "diagnosticsRadioChangedLine": "This radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay. They belong to the app. Contacts, channels and radio settings come from the radio, so they are this one's.",
+  "diagnosticsRadioChangedLine": "This MeshCore radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay. They belong to the app. Contacts, channels and radio settings come from the radio, so they are this one's.",
   "@diagnosticsRadioChangedLine": {
     "placeholders": {
       "previous": {
@@ -3091,10 +3091,10 @@
       }
     }
   },
-  "diagnosticsRadioChangedAccept": "This is my radio",
-  "failureAirtimeBudget": "This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.",
+  "diagnosticsRadioChangedAccept": "This is my MeshCore radio",
+  "failureAirtimeBudget": "This phone has used its own MeshCore radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.",
   "@failureAirtimeBudget": {},
-  "failureLinkTimeout": "The phone did not finish opening the radio link in time. Nothing was sent. Retry to open it again.",
+  "failureLinkTimeout": "The phone did not finish opening the MeshCore radio link in time. Nothing was sent. Retry to open it again.",
   "@failureLinkTimeout": {},
   "diagnosticsHandshakeLine": "link handshakes: {started} started, {timedOut} with no answer",
   "@diagnosticsHandshakeLine": {
@@ -3115,7 +3115,7 @@
       }
     }
   },
-  "airtimeSpentLine": "Radio time this hour: {spent} of {budget}",
+  "airtimeSpentLine": "LoRa radio time this hour: {spent} of {budget}",
   "@airtimeSpentLine": {
     "placeholders": {
       "spent": {
@@ -3126,7 +3126,7 @@
       }
     }
   },
-  "airtimeSpentLineUnlimited": "Radio time this hour: {spent}, with no limit set",
+  "airtimeSpentLineUnlimited": "LoRa radio time this hour: {spent}, with no limit set",
   "@airtimeSpentLineUnlimited": {
     "placeholders": {
       "spent": {
@@ -3158,7 +3158,7 @@
   },
   "airtimeCutoffOff": "The meter still counts. Nothing is refused.",
   "settingsAirtimeTitle": "Transmit time limit",
-  "settingsAirtimeHelp": "Every frame this app sends is counted. At the limit it stops until the hour rolls on. The radio keeps its own legal limit either way.",
+  "settingsAirtimeHelp": "Every frame this app sends is counted. At the limit it stops until the hour rolls on. The MeshCore radio keeps its own legal limit either way.",
   "airtimePolicyOnePercent": "1 % duty cycle",
   "airtimePolicyOnePercentSub": "36 seconds of sending per hour. The legal limit in the EU and UK.",
   "airtimePolicyOwned": "No limit",
@@ -3201,13 +3201,13 @@
   },
   "degradedStorageFull": "This phone refused a write because storage is full. Nothing was deleted to make room. Free space and history continues.",
   "@degradedStorageFull": {},
-  "degradedClockUnset": "The radio's clock has never been set, so times it reports are shown as time unknown until it is.",
+  "degradedClockUnset": "The MeshCore radio's clock has never been set, so times it reports are shown as time unknown until it is.",
   "@degradedClockUnset": {},
-  "degradedBatteryCritical": "The radio's battery is low enough that its transmissions may be cut. Charge it before relying on a long send.",
+  "degradedBatteryCritical": "The MeshCore radio's battery is low enough that its transmissions may be cut. Charge it before relying on a long send.",
   "@degradedBatteryCritical": {},
-  "degradedRadioAbsent": "No radio is connected. Everything already received stays readable. Sending, telemetry and places wait until a radio connects.",
+  "degradedRadioAbsent": "No MeshCore radio is connected. Everything already received stays readable. Sending, telemetry and places wait until one connects.",
   "@degradedRadioAbsent": {},
-  "degradedRadioSilent": "The radio is paired but has not answered. It may still have carried out the last request. Check the radio before retrying.",
+  "degradedRadioSilent": "The MeshCore radio is paired but has not answered. It may still have carried out the last request. Check the radio before retrying.",
   "@degradedRadioSilent": {},
   "degradedNoLocation": "Location is off, so distances, bearings and place tags have no fix. Everything else works.",
   "@degradedNoLocation": {},
@@ -3231,7 +3231,7 @@
       }
     }
   },
-  "sosInRange": "Nobody is notified unless they are in radio range.",
+  "sosInRange": "Nobody is notified unless they are in LoRa radio range.",
   "sosHoldToArm": "Hold to raise the alarm",
   "sosHoldRemaining": "Keep holding · {seconds}s",
   "@sosHoldRemaining": {
@@ -3242,12 +3242,12 @@
     }
   },
   "sosHoldReleased": "Released too early. Nothing was sent.",
-  "sosNoIdentity": "The radio has not reported a name yet, so the alarm has no name to send.",
+  "sosNoIdentity": "The MeshCore radio has not reported a name yet, so the alarm has no name to send.",
   "sosWords": "What is happening",
   "sosWordsHint": "Carried by every repeat, up to 96 bytes",
   "sosDestination": "Goes to",
   "sosEmergencyPublicKey": "The #emergency channel's key is derived from its name, so anyone who knows the name can compute it and read this.",
-  "sosEmergencyRepeat": "The radio repeats each message once, about two minutes later. If the app closes, the rest stops.",
+  "sosEmergencyRepeat": "The MeshCore radio repeats each message once, about two minutes later. If the app closes, the rest stops.",
   "sosContactsNone": "With no contact copies, a channel acknowledgement can never stop this alarm.",
   "sosActive": "Alarm running",
   "sosNextSend": "Next in {seconds}s",
@@ -3306,7 +3306,7 @@
       }
     }
   },
-  "sosSendFailed": "The radio refused a repeat. The schedule continues.",
+  "sosSendFailed": "The MeshCore radio refused a repeat. The schedule continues.",
   "@sosSendFailed": {
     "description": "Active alarm: at least one repeat did not leave the radio."
   },
@@ -3337,7 +3337,7 @@
   "sosRefusedTooLong": "Too long to carry a name and a position. Shorten it.",
   "sosRefusedHold": "The hold is not finished.",
   "checkinTitle": "Check-in",
-  "checkinIntro": "One message with a deadline. The app marks it overdue here. The radio keeps no timer.",
+  "checkinIntro": "One message with a deadline. The app marks it overdue here. The MeshCore radio keeps no timer.",
   "checkinDeadline": "Deadline",
   "checkinMinutes": "{minutes} min",
   "@checkinMinutes": {
@@ -3370,7 +3370,7 @@
   "checkinAnsweredDirect": "Answered, by direct message.",
   "checkinAnsweredChannel": "Answered on the channel by name only, not by their key.",
   "checkinSent": "Check-in sent. Nothing repeats.",
-  "checkinNeedsRadio": "A check-in needs a connected radio and the radio's name.",
+  "checkinNeedsRadio": "A check-in needs a connected MeshCore radio and its name.",
   "photoAnnounceLoad": "Load · {n} packets",
   "photoAnnouncePreviewOnly": "Preview only",
   "photoAnnounceLoaded": "Loaded",
@@ -3426,9 +3426,9 @@
       }
     }
   },
-  "mediaAcceptedNotDelivered": "The radio accepted these packets. A broadcast carries no delivery promise.",
+  "mediaAcceptedNotDelivered": "The MeshCore radio accepted these packets. A broadcast carries no delivery promise.",
   "@mediaAcceptedNotDelivered": {},
-  "mediaSendFailed": "The radio refused {count} packet(s), so this photo did not finish.",
+  "mediaSendFailed": "The MeshCore radio refused {count} packet(s), so this photo did not finish.",
   "@mediaSendFailed": {
     "placeholders": {
       "count": {
@@ -3542,7 +3542,7 @@
       }
     }
   },
-  "geofenceNeedsFix": "A fence needs your position. Connect the radio or allow location first.",
+  "geofenceNeedsFix": "A fence needs your position. Connect the MeshCore radio or allow location first.",
   "geofenceAddHere": "Add a fence here",
   "geofenceListSection": "Your fences",
   "geofenceInsideNow": "You are inside",
@@ -3798,7 +3798,7 @@
   },
   "blockedKeysEmpty": "No key is blocked. Blocking a key hides what it sends, which is messages, notifications and places, on this device.",
   "blockedKeysCannotStopShort": "Local only",
-  "blockedKeysCannotStop": "A block is local to this app. The radio still receives and relays the packet. What stops is what this app shows.",
+  "blockedKeysCannotStop": "A block is local to this app. The MeshCore radio still receives and relays the packet. What stops is what this app shows.",
   "blockedKeysUnblock": "Unblock",
   "blockedKeysSince": "Blocked {when}",
   "@blockedKeysSince": {
@@ -3894,7 +3894,7 @@
   "settingsUnitsMetric": "Metres and kilometres",
   "settingsUnitsMetricHint": "How every MeshCore tool reports distance.",
   "settingsUnitsImperial": "Feet and miles",
-  "settingsUnitsImperialHint": "Converted from the metres the radio reports.",
+  "settingsUnitsImperialHint": "Converted from the metres the MeshCore radio reports.",
   "settingsClock24": "24-hour clock",
   "settingsClock24On": "14:32",
   "settingsClock12On": "2:32 PM",
@@ -4032,7 +4032,7 @@
     }
   },
   "rawRecordTitle": "Send a raw record",
-  "rawRecordHelp": "One record to one contact, addressed over its route. The radio answers OK or ERR. The peer sends nothing back.",
+  "rawRecordHelp": "One record to one contact, addressed over its route. The MeshCore radio answers OK or ERR. The peer sends nothing back.",
   "rawRecordNoContact": "No contact has a direct route yet. A raw record is addressed, not flooded.",
   "rawRecordBytes": "Bytes (hex)",
   "rawRecordEmpty": "Type the bytes to send.",
@@ -4067,10 +4067,10 @@
       }
     }
   },
-  "rawRecordNotReady": "No radio connected.",
+  "rawRecordNotReady": "No MeshCore radio connected.",
   "rawRecordSending": "Sending…",
   "rawRecordConfirmTitle": "Send these bytes?",
-  "rawRecordConfirmBody": "The app cannot check what these bytes do. {name} receives {count} bytes as one record, and the radio answers OK or ERR.",
+  "rawRecordConfirmBody": "The app cannot check what these bytes do. {name} receives {count} bytes as one record, and the MeshCore radio answers OK or ERR.",
   "@rawRecordConfirmBody": {
     "placeholders": {
       "name": {
@@ -4081,8 +4081,8 @@
       }
     }
   },
-  "rawRecordSent": "The radio accepted it. This is not delivery: a raw record carries no receipt from the peer.",
-  "rawRecordRefused": "The radio refused it: {reason} (code {code}).",
+  "rawRecordSent": "The MeshCore radio accepted it. This is not delivery: a raw record carries no receipt from the peer.",
+  "rawRecordRefused": "The MeshCore radio refused it: {reason} (code {code}).",
   "@rawRecordRefused": {
     "placeholders": {
       "reason": {
@@ -4093,7 +4093,7 @@
       }
     }
   },
-  "rawRecordNoAnswer": "No answer in {seconds} s. The radio may have sent it anyway.",
+  "rawRecordNoAnswer": "No answer in {seconds} s. The MeshCore radio may have sent it anyway.",
   "@rawRecordNoAnswer": {
     "placeholders": {
       "seconds": {
@@ -4122,7 +4122,7 @@
   "placeSuggestNeedsLocation": "Turn on location to tag a place.",
   "mapCompassLegend": "The arrow is this phone's compass.",
   "diagnosticsPosition": "Position, as the app sees it",
-  "diagnosticsPositionRadio": "radio {lat}, {lon}",
+  "diagnosticsPositionRadio": "MeshCore radio {lat}, {lon}",
   "diagnosticsPositionPolicy": "advert policy {policy}",
   "diagnosticsPositionPhone": "phone fix {source}",
   "diagnosticsPositionNone": "none",
@@ -4138,7 +4138,7 @@
   "locTriggerManual": "you asked",
   "locTriggerPeriodic": "on the timer",
   "locTriggerMovement": "you moved",
-  "pingLostMeaning": "Lost means no answer within the time the radio estimated for the reply. A node that ignores requests and one that is asleep look the same.",
+  "pingLostMeaning": "Lost means no answer within the time the MeshCore radio estimated for the reply. A node that ignores requests and one that is asleep look the same.",
   "contactFilterHint": "Name or key prefix",
   "contactFilterNone": "No contact matches that.",
   "actionClear": "Clear",
@@ -4155,11 +4155,11 @@
   "storageClearAll": "Delete everything the app kept",
   "storageClearAllTitle": "Delete everything?",
   "storageClearAllGoes": "This deletes the message history this app kept, places, the movement trail, unfinished media records and cached map tiles.",
-  "storageClearAllStays": "The radio is untouched: its contacts, channels and settings stay, and a sent message is not recalled. Your settings and downloaded map regions stay too.",
+  "storageClearAllStays": "The MeshCore radio is untouched: its contacts, channels and settings stay, and a sent message is not recalled. Your settings and downloaded map regions stay too.",
   "storageClearAllTypeWord": "Type {word} to confirm",
   "storageClearAllConfirm": "Delete",
-  "storageClearAllDone": "Deleted. The radio and your settings are untouched.",
-  "storageClearAllPartly": "{unfinished} of {total} stores did not finish. What is left is listed here. The radio and your settings are untouched.",
+  "storageClearAllDone": "Deleted. The MeshCore radio and your settings are untouched.",
+  "storageClearAllPartly": "{unfinished} of {total} stores did not finish. What is left is listed here. The MeshCore radio and your settings are untouched.",
   "@storageMaps": {
     "placeholders": {
       "used": {
@@ -4234,7 +4234,7 @@
   "chatMediaPrivateOnly": "Photos and voice: direct messages and private channels only.",
   "mediaReachScope": "Region scope {scope}.",
   "mediaReachNoScope": "No region scope set: everyone in range receives this.",
-  "mediaReachUnknown": "Reach is the radio's own scope, which it has not reported yet. A photo is not acknowledged.",
+  "mediaReachUnknown": "Reach is the MeshCore radio's own scope, which it has not reported yet. A photo is not acknowledged.",
   "@mediaReachScope": {
     "placeholders": {
       "scope": {
@@ -4243,7 +4243,7 @@
     }
   },
   "deviceContactsSection": "Contact table",
-  "autoAddIntro": "The radio decides which nodes it keeps. These are its settings, not the app's.",
+  "autoAddIntro": "The MeshCore radio decides which nodes it keeps. These are its settings, not the app's.",
   "autoAddOverwriteOldest": "Replace the oldest when full",
   "autoAddOverwriteOldestHint": "Favourites are never replaced.",
   "autoAddChat": "Chat nodes",
@@ -4252,10 +4252,10 @@
   "autoAddSensor": "Sensors",
   "autoAddMaxHops": "Hop limit",
   "autoAddMaxHopsHint": "0 = no limit · 1 = direct only · N = up to N−1 hops",
-  "autoAddUnknown": "Reading the radio's policy…",
+  "autoAddUnknown": "Reading the MeshCore radio's policy…",
   "autoAddManage": "Manage the table",
   "nodeAdvertPath": "Last advert came via",
-  "nodeAdvertPathNone": "The radio has no advert route for this node.",
+  "nodeAdvertPathNone": "The MeshCore radio has no advert route for this node.",
   "nodeAdvertPathReading": "Reading the route…",
   "retryPathReset": "Route cleared, so this retry goes out over flood.",
   "nodeFindRoute": "Find the route",
@@ -4263,24 +4263,24 @@
   "nodeFindRouteNone": "No route came back.",
   "nodeFindRouteDirect": "Direct. A neighbour in range.",
   "nodeFindRouteTwoWay": "Back by {back}",
-  "eventOneKeyRejected": "radio refused a message from {key}",
-  "eventRadioRefused": "the radio refused that command",
-  "failureCommandDisabled": "This radio has that command switched off, so it refused. Nothing is wrong with the link.",
+  "eventOneKeyRejected": "MeshCore radio refused a message from {key}",
+  "eventRadioRefused": "the MeshCore radio refused that command",
+  "failureCommandDisabled": "This MeshCore radio has that command switched off, so it refused. Nothing is wrong with the link.",
   "nodeShareContact": "Share this contact",
   "nodeShareContactHint": "Copies a link.",
-  "nodeShareContactFailed": "The radio did not hand over the contact.",
+  "nodeShareContactFailed": "The MeshCore radio did not hand over the contact.",
   "shareLinkSheetTitle": "Contact link",
   "shareLinkCopied": "Copied.",
   "deviceContactsImport": "Import a link",
   "deviceContactsImportHint": "Paste a meshcore:// link",
   "deviceContactsImportBad": "That is not a contact link.",
-  "deviceContactsImportDone": "Sent to the radio. It is in the list when the radio confirms.",
-  "diagnosticsRestartRadio": "Restart the radio",
-  "diagnosticsRestartConfirm": "Restart this radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.",
+  "deviceContactsImportDone": "Sent to the MeshCore radio. It is in the list when the radio confirms.",
+  "diagnosticsRestartRadio": "Restart the MeshCore radio",
+  "diagnosticsRestartConfirm": "Restart this MeshCore radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.",
   "diagnosticsRestartSent": "Restart sent. The link will drop and come back on its own.",
-  "diagnosticsRestartNoReply": "The radio takes no reply to a restart, so this is sent, not confirmed.",
-  "settingsSecuritySection": "Radio access",
-  "settingsPinIntro": "A pairing PIN gates a new Bluetooth pairing to this radio. The radio still keeps its own list of bonded devices.",
+  "diagnosticsRestartNoReply": "The MeshCore radio takes no reply to a restart, so this is sent, not confirmed.",
+  "settingsSecuritySection": "MeshCore radio access",
+  "settingsPinIntro": "A pairing PIN gates a new Bluetooth pairing to this MeshCore radio. The radio still keeps its own list of bonded devices.",
   "settingsPinCurrent": "Pairing PIN",
   "settingsPinNone": "No PIN set",
   "settingsPinSet": "Set a new PIN",
@@ -4289,7 +4289,7 @@
   "settingsPinBad": "A PIN is exactly six digits.",
   "settingsPinDone": "PIN set. A new pairing needs it now.",
   "settingsPinRemoved": "PIN removed. Pairing no longer asks for one.",
-  "settingsPinConfirmRemove": "Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list.",
+  "settingsPinConfirmRemove": "Remove the pairing PIN? Anyone in range could offer to pair, and the MeshCore radio would still keep its own device list.",
   "repeaterSession": "Repeater session",
   "repeaterSessionIntro": "A password opens a session on this repeater. It is the repeater's own secret, kept between it and you. The app does not store it.",
   "repeaterSignIn": "Sign in",
@@ -4307,16 +4307,16 @@
   "placeRefuteToSender": "Refute to the sender",
   "placeSentDirect": "Sent to the sender as a direct message.",
   "placeNoSenderKey": "This place came without a key, so there is nobody to address directly.",
-  "dmWaiting": "Waiting for the message above to settle. One message per contact at a time keeps the radio able to say which one was answered.",
+  "dmWaiting": "Waiting for the message above to settle. One message per contact at a time keeps the MeshCore radio able to say which one was answered.",
   "settingsHubFirmware": "Firmware",
   "firmwareTitle": "Firmware",
-  "firmwareIntro": "What this radio is running, and what this app will do about it. Nothing on this page installs anything.",
-  "firmwareRadioLabel": "Radio firmware",
+  "firmwareIntro": "What this MeshCore radio is running, and what this app will do about it. Nothing on this page installs anything.",
+  "firmwareRadioLabel": "MeshCore radio firmware",
   "firmwareAppLabel": "This app",
   "firmwareOtaSupported": "built with over-the-air update support",
   "firmwareOtaAbsent": "this build has no over-the-air update",
-  "firmwareOtaUnknown": "not known yet: the radio answers on first contact",
-  "firmwareNoInstallWhy": "Installing is not offered from the app: an install consumes the radio's queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.",
+  "firmwareOtaUnknown": "not known yet: the MeshCore radio answers on first contact",
+  "firmwareNoInstallWhy": "Installing is not offered from the app: an install consumes the MeshCore radio's queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.",
   "firmwareOtaLabel": "Over-the-air update",
   "deviceRadio2Seen": "second profile: heard {when}",
   "@deviceRadio2Seen": {
@@ -4327,7 +4327,7 @@
     }
   },
   "deviceRadio2Never": "second profile: nothing heard this session",
-  "deviceRadio2Note": "A second profile takes 96-99 % of the radio's transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read. The second profile's own parameters are not shown.",
+  "deviceRadio2Note": "A second profile takes 96-99 % of the MeshCore radio transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read. The second profile's own parameters are not shown.",
   "deviceReadoutQuerying": "querying device…",
   "deviceReadoutFirmware": "firmware: {value}",
   "@deviceReadoutFirmware": {
@@ -4421,17 +4421,17 @@
   },
   "deviceRepeatNone": "repeat: none reported",
   "deviceRepeatUnknown": "repeat:.",
-  "diagnosticsSectionRadioAlerts": "Radio alerts",
-  "diagnosticsRadioAlertsWhy": "The radio's own buzzer and vibration, for its own rules. Nothing in this app triggers them, and they keep working while the phone is away.",
+  "diagnosticsSectionRadioAlerts": "MeshCore radio alerts",
+  "diagnosticsRadioAlertsWhy": "The MeshCore radio's own buzzer and vibration, for its own rules. Nothing in this app triggers them, and they keep working while the phone is away.",
   "diagnosticsBuzzer": "Buzzer",
   "diagnosticsVibration": "Vibration",
   "diagnosticsAlertNotRead": "not read yet",
-  "diagnosticsAlertReading": "asking the radio",
-  "diagnosticsAlertRead": "Ask the radio",
+  "diagnosticsAlertReading": "asking the MeshCore radio",
+  "diagnosticsAlertRead": "Ask the MeshCore radio",
   "diagnosticsAlertOn": "On",
   "diagnosticsAlertOff": "Off",
-  "diagnosticsAlertDone": "The radio accepted it.",
-  "diagnosticsAlertSaid": "The radio said: {text}",
+  "diagnosticsAlertDone": "The MeshCore radio accepted it.",
+  "diagnosticsAlertSaid": "The MeshCore radio said: {text}",
   "@diagnosticsAlertSaid": {
     "placeholders": {
       "text": {
@@ -4439,7 +4439,7 @@
       }
     }
   },
-  "diagnosticsAlertRefused": "The radio refused: {cause}",
+  "diagnosticsAlertRefused": "The MeshCore radio refused: {cause}",
   "@diagnosticsAlertRefused": {
     "placeholders": {
       "cause": {
@@ -4447,7 +4447,7 @@
       }
     }
   },
-  "diagnosticsAlertRefusedSaid": "The radio refused: {cause}. It said: {text}",
+  "diagnosticsAlertRefusedSaid": "The MeshCore radio refused: {cause}. It said: {text}",
   "@diagnosticsAlertRefusedSaid": {
     "placeholders": {
       "cause": {
@@ -4458,7 +4458,7 @@
       }
     }
   },
-  "diagnosticsAlertSilent": "No answer inside six seconds. The radio may still have run it.",
+  "diagnosticsAlertSilent": "No answer inside six seconds. The MeshCore radio may still have run it.",
   "diagnosticsAlertSilentPartial": "No answer inside six seconds. It said: {text}",
   "@diagnosticsAlertSilentPartial": {
     "placeholders": {
@@ -4523,7 +4523,7 @@
   },
   "voiceNoteDecodeFailed": "This voice note cannot be decoded.",
   "voiceNoteTooShort": "Too short to decode.",
-  "mediaStalledTableFull": "The radio's packet table stayed full, so the send stopped. Nothing further was put on air.",
+  "mediaStalledTableFull": "The MeshCore radio's packet table stayed full, so the send stopped. Nothing further was put on air.",
   "mediaStalledAirtime": "This hour's airtime budget refused the send, so it stopped. It can be tried again after the window rolls over.",
   "voiceNotesSession": "Kept on this phone until the app closes. A note is not saved to history.",
   "gridRangeAuto": "Auto",
@@ -4609,5 +4609,5 @@
   "actionQuote": "Quote this message",
   "actionReact": "React",
   "actionReplyNoName": "Reply",
-  "chatActionsNoRadio": "No radio: a reply or quote waits in the box until one is connected."
+  "chatActionsNoRadio": "No MeshCore radio: a reply or quote waits in the box until one is connected."
 }

@@ -102,7 +102,7 @@ void main() {
       expect(
           find.text(
               'One message with a deadline. The app marks it overdue here. '
-              'The radio keeps no timer.'),
+              'The MeshCore radio keeps no timer.'),
           findsOneWidget);
       await t.pumpWidget(const SizedBox());
     }

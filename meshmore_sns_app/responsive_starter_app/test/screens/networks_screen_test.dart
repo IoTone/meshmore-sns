@@ -88,7 +88,7 @@ void main() {
 
   testWidgets('empty list explains what a network is', (WidgetTester t) async {
     await pump(t, const NetworksScreen());
-    expect(find.textContaining('A network is the radio settings'),
+    expect(find.textContaining('A network is the MeshCore radio settings'),
         findsOneWidget);
     await end(t);
   });
@@ -212,7 +212,7 @@ void main() {
     expect(
         t.widget<FilledButton>(find.byKey(const Key('network-apply'))).onPressed,
         isNull);
-    expect(find.text('Connect a radio to apply.'), findsOneWidget);
+    expect(find.text('Connect a MeshCore radio to apply.'), findsOneWidget);
     await end(t);
   });
 

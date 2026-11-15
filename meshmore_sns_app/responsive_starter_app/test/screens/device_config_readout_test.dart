@@ -100,7 +100,7 @@ void main() {
     expect(find.textContaining('second profile: heard'), findsOneWidget);
     expect(find.byKey(const Key('device-radio2-note')), findsOneWidget);
     expect(
-      find.textContaining("96-99 % of the radio's transmit time"),
+      find.textContaining("96-99 % of the MeshCore radio transmit time"),
       findsOneWidget,
       reason: 'the measured cost is the reason there is no switch here',
     );

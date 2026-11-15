@@ -58,7 +58,7 @@ void main() {
 
     // The sentence is the point: a reader who blocks expecting the traffic to
     // stop has been misled by their own app.
-    expect(find.textContaining('The radio still receives and relays'),
+    expect(find.textContaining('The MeshCore radio still receives and relays'),
         findsOneWidget);
     expect(find.textContaining('Mallory'), findsOneWidget);
 

@@ -164,7 +164,7 @@ void main() {
 
     await t.tap(find.byKey(const ValueKey<String>('diag-forget')));
     await t.pumpAndSettle();
-    expect(find.text('Forget this radio?'), findsOneWidget);
+    expect(find.text('Forget this MeshCore radio?'), findsOneWidget);
     await t.tap(find.text('Cancel'));
     await t.pumpAndSettle();
     expect(ctrl.hasPairedDevice, isTrue);

@@ -178,9 +178,9 @@ void main() {
 
     scanner.hear(const <PairHit>[]);
     scanner.finishScan();
-    await _pumpUntil(t, find.textContaining('No radio answered'));
+    await _pumpUntil(t, find.textContaining('No MeshCore radio answered'));
 
-    expect(find.textContaining('No radio answered'), findsOneWidget);
+    expect(find.textContaining('No MeshCore radio answered'), findsOneWidget);
     expect(find.text('Scan again'), findsOneWidget,
         reason: 'an empty result is a state with an action, not a dead end');
   });

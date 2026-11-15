@@ -141,7 +141,7 @@ void main() {
     expect(find.textContaining('-88'), findsOneWidget);
     expect(find.textContaining('4.10 V'), findsOneWidget);
     expect(find.textContaining('1h 30m'), findsOneWidget);
-    expect(find.textContaining('From the radio'), findsOneWidget);
+    expect(find.textContaining('From the MeshCore radio'), findsOneWidget);
   });
 
   testWidgets('a battery the firmware does not report is said, not shown as 0',

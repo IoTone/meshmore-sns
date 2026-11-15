@@ -81,7 +81,7 @@ void main() {
     await t.pumpAndSettle();
     expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x0B).length, before0B,
         reason: 'picking a preset must not send');
-    await t.tap(find.text('Apply radio params'));
+    await t.tap(find.text('Apply MeshCore radio params'));
     await t.pumpAndSettle();
     await answerRadioConfig(t, fake);
 
@@ -139,7 +139,7 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('Japan (ARIB STD-T108)'));
     await t.pumpAndSettle();
-    await t.tap(find.text('Apply radio params'));
+    await t.tap(find.text('Apply MeshCore radio params'));
     await t.pumpAndSettle();
     await answerRadioConfig(t, fake);
 
@@ -242,7 +242,7 @@ void main() {
     expect(segs.any((SegmentedButton<int> s) => s.selected.contains(3)), isTrue,
         reason: 'device path_hash_mode 2 means a 3-byte hash is in force');
 
-    await t.tap(find.text('Apply radio params'));
+    await t.tap(find.text('Apply MeshCore radio params'));
     await t.pumpAndSettle();
     await answerRadioConfig(t, fake);
 
@@ -291,7 +291,7 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('Hungary'));
     await t.pumpAndSettle();
-    await t.tap(find.text('Apply radio params'));
+    await t.tap(find.text('Apply MeshCore radio params'));
     await t.pumpAndSettle();
     await answerRadioConfig(t, fake);
     expect(
@@ -312,7 +312,7 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('USA / Canada'));
     await t.pumpAndSettle();
-    await t.tap(find.text('Apply radio params'));
+    await t.tap(find.text('Apply MeshCore radio params'));
     await t.pumpAndSettle();
     await answerRadioConfig(t, fake);
     expect(fake.sent.any((List<int> f) => f.isNotEmpty && f[0] == 0x0B), isTrue);

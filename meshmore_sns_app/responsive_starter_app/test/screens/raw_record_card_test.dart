@@ -202,7 +202,7 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('raw-record-outcome')),
         findsOneWidget);
-    expect(find.textContaining('The radio accepted it'), findsOneWidget);
+    expect(find.textContaining('The MeshCore radio accepted it'), findsOneWidget);
     expect(find.textContaining('not delivery'), findsOneWidget,
         reason: 'a raw record carries no receipt from the peer');
     await _teardown(t, h);
@@ -234,7 +234,7 @@ void main() {
     // The fourth answer state. It has to be a sentence, not a dead button
     // that says nothing about why it is dead.
     final _Host h = await _host(t, ready: false);
-    expect(find.text('No radio connected.'), findsOneWidget);
+    expect(find.text('No MeshCore radio connected.'), findsOneWidget);
     expect(find.byType(MmAction), findsNothing);
     await _teardown(t, h);
   });

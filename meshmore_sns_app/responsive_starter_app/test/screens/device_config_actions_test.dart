@@ -85,7 +85,7 @@ void main() {
     // Every commit action sits inside an MmActionRow, so the placement is a
     // property of the group rather than of the button.
     for (final String label in <String>[
-      'Apply radio params',
+      'Apply MeshCore radio params',
       'Set name',
       'Set advert location',
       'Use phone location',
@@ -100,7 +100,7 @@ void main() {
     }
 
     // The three writes are the filled ones, and only they are.
-    expect(action(t, 'Apply radio params').primary, isTrue);
+    expect(action(t, 'Apply MeshCore radio params').primary, isTrue);
     expect(action(t, 'Set name').primary, isTrue);
     expect(action(t, 'Set advert location').primary, isTrue);
     expect(action(t, 'Use phone location').primary, isFalse);
@@ -135,7 +135,7 @@ void main() {
     );
     await t.pumpAndSettle();
     for (final String label in <String>[
-      'Apply radio params',
+      'Apply MeshCore radio params',
       'Set name',
       'Set advert location',
     ]) {

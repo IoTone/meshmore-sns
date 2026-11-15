@@ -81,7 +81,7 @@ void main() {
       (WidgetTester t) async {
     final BotController bot = make(pskFor: (int _) => null);
     await t.pumpWidget(host(bot, const ChannelScope(3)));
-    expect(find.textContaining("Waiting for the radio to send this channel"),
+    expect(find.textContaining("Waiting for the MeshCore radio to send this channel"),
         findsOneWidget);
   });
 
