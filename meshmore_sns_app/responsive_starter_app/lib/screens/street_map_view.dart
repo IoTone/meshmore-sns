@@ -973,6 +973,64 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// per pixel rather than read from `visibleBounds`: that getter is only valid
   /// once the map has painted, and this build runs first — and when it did answer
   /// it described a rectangle the hexagon lattice only half covered.
+  /// The node pins, cached against what they draw.
+  ///
+  /// The map's build watches the controller, and the controller notifies for
+  /// things that do not move a pin: a battery reading, an airtime tick, an
+  /// incoming message. Rebuilding a Marker, a glyph, a Semantics label and a
+  /// gesture for every visible node on each of those is what made the map feel
+  /// slow while traffic arrived. The signature is the drawing's own inputs, so
+  /// a notify that changes none of them keeps the list it already had.
+  List<Marker> _nodePins(
+    BuildContext context,
+    MeshcoreController mc,
+    List<DiscoveredNode> withLoc,
+    AppLocalizations l,
+  ) {
+    final String sig = <Object?>[
+      for (final DiscoveredNode n in withLoc)
+        '${n.pubKeyHex}|${n.latitude}|${n.longitude}|'
+            '${n.name}|${n.shortId}|'
+            '${mc.known.contains(n.pubKeyHex)}|'
+            '${mc.favorites.contains(n.pubKeyHex)}',
+      context.skin.preset.name,
+    ].join(';');
+    final List<Marker>? cached = _nodePinCache;
+    if (cached != null && _nodePinSignature == sig) return cached;
+    final List<Marker> pins = <Marker>[
+      for (final DiscoveredNode n in withLoc)
+        Marker(
+          point: LatLng(n.latitude!, n.longitude!),
+          width: 32,
+          height: 32,
+          alignment: Alignment.center,
+          child: Semantics(
+            button: true,
+            label:
+                l.nodeMarkerSemantics(n.name.isEmpty ? n.shortId : n.name),
+            child: GestureDetector(
+              onTap: () => _showDetail(context, mc, n),
+              child: _PeerGlyph(
+                node: n,
+                ring: context.skin.color.fg,
+                companion: VizPalette.companion,
+                repeater: VizPalette.repeater,
+                known: mc.known.contains(n.pubKeyHex),
+                favourite: mc.favorites.contains(n.pubKeyHex),
+              ),
+            ),
+          ),
+        ),
+    ];
+    _nodePinSignature = sig;
+    _nodePinCache = pins;
+    return pins;
+  }
+
+  /// The last node-pin list and the signature it was built for.
+  List<Marker>? _nodePinCache;
+  String? _nodePinSignature;
+
   GeoBox? _visibleBox() {
     try {
       final MapCamera cam = _map.camera;
@@ -2162,29 +2220,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                 ),
               MarkerLayer(
                 markers: <Marker>[
-                  for (final DiscoveredNode n in withLoc)
-                    Marker(
-                      point: LatLng(n.latitude!, n.longitude!),
-                      width: 32,
-                      height: 32,
-                      alignment: Alignment.center,
-                      child: Semantics(
-                        button: true,
-                        label: l.nodeMarkerSemantics(
-                            n.name.isEmpty ? n.shortId : n.name),
-                        child: GestureDetector(
-                          onTap: () => _showDetail(context, mc, n),
-                          child: _PeerGlyph(
-                            node: n,
-                            ring: context.skin.color.fg,
-                            companion: VizPalette.companion,
-                            repeater: VizPalette.repeater,
-                            known: mc.known.contains(n.pubKeyHex),
-                            favourite: mc.favorites.contains(n.pubKeyHex),
-                          ),
-                        ),
-                      ),
-                    ),
+                  ..._nodePins(context, mc, withLoc, l),
                   // A bubble over whoever just spoke, under the self marker so
                   // the reader's own position is never covered.
                   for (final MessageBubbleMark b in bubbles)

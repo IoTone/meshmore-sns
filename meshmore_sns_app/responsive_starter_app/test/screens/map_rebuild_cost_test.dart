@@ -62,6 +62,16 @@ List<Polygon<HexCell>> _hexPolygons(WidgetTester t) {
   return layer.polygons;
 }
 
+
+/// The markers the pin layer is drawing right now, node pins only.
+List<Marker> _nodePins(WidgetTester t) {
+  for (final MarkerLayer layer in t.widgetList<MarkerLayer>(
+      find.byType(MarkerLayer))) {
+    if (layer.markers.any((Marker m) => m.width == 32)) return layer.markers;
+  }
+  return const <Marker>[];
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
@@ -72,8 +82,13 @@ void main() {
             const MethodChannel('meshmore/compass'), (MethodCall c) async => null);
   });
 
-  Future<(MapsController, MeshcoreController, GeofenceController)> pump(
-      WidgetTester t) async {
+  Future<
+      (
+        MapsController,
+        MeshcoreController,
+        GeofenceController,
+        FakeMeshcoreTransport
+      )> pump(WidgetTester t) async {
     await t.binding.setSurfaceSize(const Size(400, 800));
     addTearDown(() => t.binding.setSurfaceSize(null));
     late final Directory dir;
@@ -141,13 +156,17 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
     await t.tapAt(const Offset(20, 20));
     await t.pumpAndSettle();
-    return (maps, mc, fences);
+    return (maps, mc, fences, fake);
   }
 
   testWidgets('a geofence sample that changes nothing rebuilds nothing',
       (WidgetTester t) async {
-    final (MapsController maps, MeshcoreController mc, GeofenceController fences) =
-        await pump(t);
+    final (
+      MapsController maps,
+      MeshcoreController mc,
+      GeofenceController fences,
+      FakeMeshcoreTransport _
+    ) = await pump(t);
     // The store writes a sealed document, which is real file I/O: it has to run
     // outside the fake-async zone or the await never completes.
     await t.runAsync(() => fences.addFence(
@@ -179,8 +198,12 @@ void main() {
 
   testWidgets('a rebuild that changes nothing reuses the field',
       (WidgetTester t) async {
-    final (MapsController maps, MeshcoreController mc, GeofenceController fences) =
-        await pump(t);
+    final (
+      MapsController maps,
+      MeshcoreController mc,
+      GeofenceController fences,
+      FakeMeshcoreTransport _
+    ) = await pump(t);
     final List<Polygon<HexCell>> first = _hexPolygons(t);
 
     // A skin change rebuilds the map and does change the field's colours, so it
@@ -189,6 +212,39 @@ void main() {
     await t.pump();
     expect(identical(_hexPolygons(t), first), isTrue,
         reason: 'the field was rebuilt for a rebuild that changed nothing');
+
+    mc.dispose();
+    maps.dispose();
+    fences.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+    t.takeException();
+  });
+
+  testWidgets('a notify that moves no node keeps the pins', (WidgetTester t) async {
+    final (
+      MapsController maps,
+      MeshcoreController mc,
+      GeofenceController fences,
+      FakeMeshcoreTransport fake
+    ) = await pump(t);
+    final List<Marker> first = _nodePins(t);
+    expect(first, isNotEmpty, reason: 'two nodes with positions, so there are pins');
+
+    // A plain rebuild: same nodes, same box, same skin. The pins are the
+    // expensive part of the map's build, so they are kept rather than rebuilt
+    // for a reason that changes none of their inputs.
+    await t.pump();
+    expect(identical(_nodePins(t), first), isTrue,
+        reason: 'the pins were rebuilt for a rebuild that changed nothing');
+
+    // A new node is a real change, so the pins must be built again.
+    fake.emit(advertFrameAt(
+        lat: 39.0003, lon: -104.9997, name: 'N3', firstPubByte: 41));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 50));
+    expect(identical(_nodePins(t), first), isFalse,
+        reason: 'a new node must appear on the map');
 
     mc.dispose();
     maps.dispose();
