@@ -799,6 +799,10 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// interaction, and a second implementation would drift from the first.
   String? _reshapingId;
 
+  /// The name the fence being reshaped already has, so the sheet opens on it
+  /// rather than asking for a name it would then throw away.
+  String? _reshapingLabel;
+
   /// Open an existing fence's corners for dragging.
   ///
   /// The fence is loaded into the draft and the camera is moved to it, so the
@@ -817,6 +821,7 @@ class _StreetMapViewState extends State<StreetMapView> {
     ];
     setState(() {
       _reshapingId = id;
+      _reshapingLabel = fence.label;
       _draft = corners;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -849,6 +854,7 @@ class _StreetMapViewState extends State<StreetMapView> {
   void _cancelDrawing() => setState(() {
         _draft = const <LatLng>[];
         _reshapingId = null;
+        _reshapingLabel = null;
       });
 
   /// Move one corner, from a drag on its handle.
@@ -893,15 +899,27 @@ class _StreetMapViewState extends State<StreetMapView> {
         latitude: corners.first.lat,
         longitude: corners.first.lon,
         polygon: corners,
+        // A reshape is an edit of a fence that exists, so the sheet says so and
+        // opens on the name it already has. It used to open as a new fence with
+        // an empty name field, and the name typed there was discarded.
+        editing: _reshapingId != null,
+        initialLabel: _reshapingLabel,
       ),
     );
     if (made == null || !mounted || fences == null) return;
     final CueService? cue = context.cue;
     final String? reshaping = _reshapingId;
+    bool saved;
     if (reshaping != null) {
-      // A reshape keeps the fence's identity, its name and its crossing log:
-      // the reader moved a boundary, they did not draw a new fence.
-      await fences.updatePolygon(id: reshaping, polygon: corners);
+      // A reshape keeps the fence's identity and its crossing log: the reader
+      // moved a boundary, they did not draw a new fence. The name is the one
+      // the sheet opened on, so renaming while reshaping works and an untouched
+      // field changes nothing.
+      saved = await fences.updatePolygon(
+        id: reshaping,
+        polygon: corners,
+        label: made.label,
+      );
     } else {
       await fences.addPolygonFence(
         label: made.label.isEmpty
@@ -909,14 +927,23 @@ class _StreetMapViewState extends State<StreetMapView> {
             : made.label,
         polygon: corners,
       );
+      saved = true;
     }
-    cue?.play(CueKind.taskOk);
-    if (mounted) {
-      setState(() {
-        _draft = const <LatLng>[];
-        _reshapingId = null;
-      });
+    if (!mounted) return;
+    if (saved) {
+      cue?.play(CueKind.taskOk);
+    } else {
+      // The fence was deleted while its corners were open. Saying nothing would
+      // read as a save, and the cue would confirm it.
+      ScaffoldMessenger.maybeOf(context)
+        ?..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l.geofenceReshapeGone)));
     }
+    setState(() {
+      _draft = const <LatLng>[];
+      _reshapingId = null;
+      _reshapingLabel = null;
+    });
   }
 
   /// One fence, drawn as an area with a boundary rather than as a line.

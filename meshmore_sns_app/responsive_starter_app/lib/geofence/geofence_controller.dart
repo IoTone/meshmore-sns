@@ -265,17 +265,22 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
   /// boundary excludes the reader, the next sample reports the leave, which is
   /// true and is what moving the boundary means. Re-deriving from "outside"
   /// would fire an entry for a crossing that never happened.
-  Future<void> updatePolygon({
+  /// Returns false when the fence is gone, so the caller does not confirm a
+  /// save that did not happen: the map page is kept alive, so a fence deleted
+  /// from the list while its corners are open is reachable.
+  Future<bool> updatePolygon({
     required String id,
     required List<FencePoint> polygon,
+    String? label,
   }) async {
-    if (polygon.length < 3) return;
+    if (polygon.length < 3) return false;
     final int at = _fences.indexWhere((StoredGeofence f) => f.id == id);
-    if (at < 0) return;
+    if (at < 0) return false;
     final StoredGeofence old = _fences[at];
+    final String wanted = (label ?? old.label).trim();
     final StoredGeofence next = StoredGeofence(
       id: old.id,
-      label: old.label,
+      label: wanted.isEmpty ? old.label : wanted,
       latitude: old.latitude,
       longitude: old.longitude,
       radiusMeters: old.radiusMeters,
@@ -285,6 +290,7 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
     _watches[id]?.rebase(next.toEngine());
     await GeofenceStore.save(_fences);
     notifyListeners();
+    return true;
   }
 
   /// Forget every crossing, on disk and in memory.

@@ -113,7 +113,18 @@ class ToolHistoryStore extends ChangeNotifier with SafeNotifier {
   int get csvBytes =>
       _runs.fold<int>(0, (int n, ToolRun r) => n + (r.csv?.length ?? 0));
 
-  Future<void> load() async {
+  /// The load in flight, so two callers share one read.
+  ///
+  /// `ToolsController` starts a load at construction and a run can end before it
+  /// finishes. Two loads would each assign [_runs] from the same document, and
+  /// the second assignment could land after a run was recorded, dropping it from
+  /// memory while the disk kept it. One shared future removes the race rather
+  /// than narrowing it.
+  Future<void>? _loading;
+
+  Future<void> load() => _loading ??= _load();
+
+  Future<void> _load() async {
     final ValueNotifier<bool> unreadable = ValueNotifier<bool>(false);
     final String? doc =
         await SealedDocument.read(recordName, sealedUnreadable: unreadable);
@@ -135,6 +146,7 @@ class ToolHistoryStore extends ChangeNotifier with SafeNotifier {
       }
     }
     _loaded = true;
+    _loading = null;
     notifyListeners();
   }
 

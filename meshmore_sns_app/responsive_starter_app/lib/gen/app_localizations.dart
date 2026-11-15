@@ -11601,6 +11601,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tool runs {n} of {cap}, {size} of tables'**
   String storageToolRuns(int n, int cap, String size);
+
+  /// No description provided for @geofenceReshapeGone.
+  ///
+  /// In en, this message translates to:
+  /// **'That fence is gone, so the new shape was not saved.'**
+  String get geofenceReshapeGone;
 }
 
 class _AppLocalizationsDelegate

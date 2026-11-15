@@ -400,6 +400,40 @@ void _reshapeTests() {
     expect(next.fences.single.polygon!.first.lat, closeTo(0.011, 1e-9));
   });
 
+  test('a reshape can rename, and an empty name keeps the old one', () async {
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    addTearDown(g.dispose);
+    await g.load();
+    await g.addPolygonFence(label: 'Yard', polygon: square(0));
+    final String id = g.fences.single.id;
+
+    expect(await g.updatePolygon(id: id, polygon: square(0.01), label: 'Garden'),
+        isTrue);
+    expect(g.fences.single.label, 'Garden');
+
+    await g.updatePolygon(id: id, polygon: square(0.02), label: '   ');
+    expect(g.fences.single.label, 'Garden',
+        reason: 'an untouched name field must not blank the fence');
+  });
+
+  test('a reshape of a fence that is gone says so instead of confirming',
+      () async {
+    // The map page is kept alive, so a fence deleted from the list while its
+    // corners are open is reachable. A silent return would let the map play the
+    // success cue for a save that did not happen.
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    addTearDown(g.dispose);
+    await g.load();
+    await g.addPolygonFence(label: 'Yard', polygon: square(0));
+    final String id = g.fences.single.id;
+    await g.removeFence(id);
+
+    expect(await g.updatePolygon(id: id, polygon: square(0.01)), isFalse);
+    expect(g.fences, isEmpty);
+  });
+
   test('two corners are refused, because they are not a fence', () async {
     final GeofenceController g = GeofenceController(
         mc: MeshcoreController(), clock: () => t0, autoTick: false);

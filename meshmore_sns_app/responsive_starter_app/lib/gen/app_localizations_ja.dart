@@ -6687,4 +6687,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String storageToolRuns(int n, int cap, String size) {
     return 'ツール実行 $n / $cap 件、表 $size';
   }
+
+  @override
+  String get geofenceReshapeGone => 'そのフェンスは削除済みのため、新しい形は保存されませんでした。';
 }

@@ -6964,4 +6964,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String storageToolRuns(int n, int cap, String size) {
     return 'Tool runs $n of $cap, $size of tables';
   }
+
+  @override
+  String get geofenceReshapeGone =>
+      'That fence is gone, so the new shape was not saved.';
 }
