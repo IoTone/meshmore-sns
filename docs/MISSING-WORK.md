@@ -54,7 +54,7 @@ their evidence so a row that says "built" can be checked rather than trusted.
 
 | id | area | what is missing | evidence | size | type |
 |----|------|-----------------|----------|------|------|
-| N-01 | notifications | **Task removal is the one delivery case left.** Closed-app delivery is measured: a real channel message notified at 22 minutes of a screen-off background on 2026-11-16, with the foreground service still listed. What is not measured is the app swiped out of the recents list, because that needs its own sitting. | `docs/MISSING-WORK.md` §9, the 2026-11-16 run | S | UNFINISHED |
+| N-01 | notifications | **Task removal is the one delivery case left.** Closed-app delivery is measured: a real channel message notified at 22 minutes of a screen-off background on 2026-11-16, and the foreground service was still listed at the 30-minute mark. What is not measured is the app swiped out of the recents list, because that needs its own sitting. | `docs/MISSING-WORK.md` §9, the 2026-11-16 run | S | UNFINISHED |
 | N-02 | notifications | **Measured: the app runs optimised on this handset.** `dumpsys deviceidle whitelist` has no entry for the package, and the App settings row says so. Whether that stops delivery is answered by N-01's run (it did not, at 22 minutes), so the row is informational until an OEM does stop it. | `docs/MISSING-WORK.md` §9; `lib/perms/battery_exemption.dart` | S | CLOSED (measured) |
 | R-06 | radio | **A radio rename does not survive a power cycle** on the paired Wio (1.17.1). The write lands and reads back in the same session, then the name reverts. This is the firmware's own prefs write, not the app's encode. | `docs/MISSING-WORK.md` §10; firmware `examples/companion_radio/MyMesh.cpp:1219-1225` | — | DECIDED (firmware) |
 | R-07 | radio | **Firmware OTA install.** The page reads the gate and shows versions; no transfer starts, because an install drains the radio's offline queue and nothing can re-sync it. | `lib/screens/firmware_screen.dart`; register row | L | DECIDED |
@@ -250,10 +250,12 @@ home and the screen turned off at 13:43:14, and the screen was off for the whole
   `mm_messages_channel` reading `1 message · RichardWB5YOE: @[Half Live] ack, 5 hops to SE
   Aurora`, plus its own message record (`id=584208371`, `category=msg`, `AUTO_CANCEL`), with
   the keepalive still in place and the service still listed.
-- The service and the drain therefore survive at least 22 minutes of a screen-off background,
-  so the platform did not stop it and question 2 is answered for this handset in this
-  configuration. Question 3 (task removal) is unchanged: it needs the app swiped out of the
-  recents list, which is a separate sitting.
+- At the 30-minute mark (14:13:51) the picture was unchanged: `ForegroundService` still listed,
+  the keepalive and both `mm_messages_channel` records still there, `mWakefulness=Dozing`
+  throughout. The service and the drain therefore survive a full half hour of a screen-off
+  background, so the platform did not stop it and question 2 is answered for this handset in
+  this configuration. Question 3 (task removal) is unchanged: it needs the app swiped out of
+  the recents list, which is a separate sitting.
 - Not exercised: the 5-minute mark with an inbound message, because no traffic arrived in the
   first five minutes. The 22-minute delivery covers the same path at a longer interval.
 
