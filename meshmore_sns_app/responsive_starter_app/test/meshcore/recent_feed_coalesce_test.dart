@@ -83,6 +83,31 @@ void main() {
         expect(feed.first.args['count'], '6');
       }
     });
+    test('a poll landing mid-sync does not split the one line', () async {
+      // The radio does not pause its other polls while the table streams, so a
+      // battery reading inside a 350-contact sync used to end the run: the feed
+      // read "35 contacts" and then "315 contacts" while the CONTACTS row said
+      // 350/350.
+      final int before = ctrl.recentEvents.length;
+      fake.emit(contactFrame(name: 'First'));
+      await Future<void>.delayed(Duration.zero);
+      fake.emit(batteryFrame(3950));
+      await Future<void>.delayed(Duration.zero);
+      fake.emit(contactFrame(name: 'Second'));
+      fake.emit(contactFrame(name: 'Third'));
+      await Future<void>.delayed(Duration.zero);
+      final List<MeshEvent> feed = ctrl.recentEvents;
+      final List<MeshEvent> batches = feed
+          .where((MeshEvent e) =>
+              e.kind == MeshEventKind.contactBatch ||
+              e.kind == MeshEventKind.contact)
+          .toList();
+      expect(batches, hasLength(1),
+          reason: 'one table load is one line, whatever lands in the middle');
+      expect(batches.single.args['count'], '3');
+      expect(ctrl.recentEvents.length - before, lessThanOrEqualTo(2),
+          reason: 'the batch and the battery reading, nothing per contact');
+    });
+
   });
 }
-

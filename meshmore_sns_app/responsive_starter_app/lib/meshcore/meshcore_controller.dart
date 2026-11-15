@@ -2189,6 +2189,12 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// Kinds that describe a state rather than an occurrence. The radio reports
   /// its battery and its own info on a timer, and a node advertises every so
   /// often, so the same event arrives unchanged again and again.
+  /// How close together two contact frames have to be to be one table load.
+  ///
+  /// The radio streams its table over a few seconds; a minute is far longer than
+  /// that and far shorter than any gap between two deliberate loads.
+  static const Duration _contactSyncWindow = Duration(minutes: 1);
+
   static const Set<MeshEventKind> _stateKinds = <MeshEventKind>{
     MeshEventKind.battery,
     MeshEventKind.selfInfo,
@@ -2211,13 +2217,23 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     // A contact sync is one event, not one per frame: the radio streams its
     // table on connect, and a row for each entry buried every message the feed
     // exists to show.
+    //
+    // The run is found anywhere in the feed rather than only at its end, because
+    // the radio does not pause its other polls while the table streams: a
+    // battery reading landing mid-sync split 350 contacts into "35 contacts" and
+    // "315 contacts" while the CONTACTS row said 350/350. A sync that starts
+    // more than [_contactSyncWindow] later is its own line, so a second table
+    // load is not added to the first.
     if (ev.kind == MeshEventKind.contact) {
-      final MeshEvent? last = _events.isEmpty ? null : _events.last;
-      if (last != null &&
-          (last.kind == MeshEventKind.contact ||
-              last.kind == MeshEventKind.contactBatch)) {
-        final int n = int.tryParse(last.args['count'] ?? '') ?? 1;
-        _events[_events.length - 1] = MeshEvent(
+      final int at = _events.lastIndexWhere(
+          (MeshEvent e) =>
+              e.kind == MeshEventKind.contact ||
+              e.kind == MeshEventKind.contactBatch,
+          );
+      if (at >= 0 &&
+          ev.at.difference(_events[at].at).abs() <= _contactSyncWindow) {
+        final int n = int.tryParse(_events[at].args['count'] ?? '') ?? 1;
+        _events[at] = MeshEvent(
           kind: MeshEventKind.contactBatch,
           args: <String, String>{'count': '${n + 1}'},
           at: ev.at,
