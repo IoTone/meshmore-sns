@@ -125,7 +125,7 @@ void main() {
     await t.pump();
 
     expect(sos.state, SosState.idle);
-    expect(find.text('Released too early — nothing was sent.'), findsOneWidget);
+    expect(find.text('Released too early. Nothing was sent.'), findsOneWidget);
     expect(fake.sent.where((Uint8List f) => f.first == 0x03), isEmpty);
   });
 

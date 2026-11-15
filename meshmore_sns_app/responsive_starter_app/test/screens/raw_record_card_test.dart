@@ -224,7 +224,7 @@ void main() {
     expect(find.textContaining('(code 3)'), findsOneWidget);
     // The meaning comes from the failure catalogue, not a literal here.
     expect(find.textContaining('queue or table is full'), findsOneWidget);
-    expect(find.textContaining('nothing was lost'), findsOneWidget,
+    expect(find.textContaining('Nothing was lost'), findsOneWidget,
         reason: 'capacity, not a lost record');
     await _teardown(t, h);
   });

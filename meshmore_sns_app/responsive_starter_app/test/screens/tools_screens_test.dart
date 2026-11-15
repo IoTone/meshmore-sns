@@ -92,7 +92,7 @@ void main() {
       await t.drag(topScroller.first, const Offset(0, 2000));
       await t.pumpAndSettle();
     }
-    expect(find.textContaining('the tools need the MeshCore radio'),
+    expect(find.textContaining('The tools need the MeshCore radio'),
         findsOneWidget);
     await t.tap(find.text('Ping'));
     await t.pumpAndSettle();

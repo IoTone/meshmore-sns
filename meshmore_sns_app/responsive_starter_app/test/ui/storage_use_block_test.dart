@@ -285,7 +285,7 @@ void main() {
         "Deleted. The radio and your settings are untouched.");
     expect(
         StorageUseBlock.clearEverythingMessage(en, 2, 5),
-        "2 of 5 stores did not finish. What is left is listed here; the radio "
+        "2 of 5 stores did not finish. What is left is listed here. The radio "
         "and your settings are untouched.");
   });
 
