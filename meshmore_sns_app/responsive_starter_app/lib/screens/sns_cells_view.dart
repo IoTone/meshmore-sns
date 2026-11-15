@@ -805,27 +805,23 @@ class _SnsCellsPainter extends CustomPainter {
     _paintWave(canvas, size);
 
     // --- Nodes ---
+    // One Paint per job, reused: this painter redraws on every frame of the
+    // wave, and a Paint per node per frame is an allocation per node per frame.
+    final Paint flashFill = Paint()..style = PaintingStyle.fill;
+    final Paint flashRing = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    final Paint dot = Paint();
     for (final DiscoveredNode n in nodes) {
       final Offset p = _project(n.latitude!, n.longitude!);
       final bool flashing = n.pubKeyHex == flashPubKey;
       if (flashing) {
         // Expanding ring pulse around the active node.
         canvas.drawCircle(
-            p,
-            10,
-            Paint()
-              ..color = flash.withValues(alpha: 0.35)
-              ..style = PaintingStyle.fill);
-        canvas.drawCircle(
-            p,
-            13,
-            Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.5
-              ..color = flash);
+            p, 10, flashFill..color = flash.withValues(alpha: 0.35));
+        canvas.drawCircle(p, 13, flashRing..color = flash);
       }
-      canvas.drawCircle(p, 3.5,
-          Paint()..color = flashing ? flash : node);
+      canvas.drawCircle(p, 3.5, dot..color = flashing ? flash : node);
     }
 
 

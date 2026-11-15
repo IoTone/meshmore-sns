@@ -52,7 +52,7 @@ class TermsScreen extends StatelessWidget {
           children: <Widget>[
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                padding: skin.space.padScreen,
                 children: <Widget>[
                   Text(
                     l.termsLead,
@@ -87,7 +87,8 @@ class TermsScreen extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              padding: EdgeInsets.fromLTRB(skin.space.screenEdge, 0,
+                  skin.space.screenEdge, skin.space.step(5)),
               child: gate
                   ? Column(
                       mainAxisSize: MainAxisSize.min,

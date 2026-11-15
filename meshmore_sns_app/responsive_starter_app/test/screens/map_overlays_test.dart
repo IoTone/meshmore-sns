@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
@@ -12,6 +11,7 @@ import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/gen/app_localizations_en.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/maps/hex_field.dart';
+import 'package:meshmore_sns_app/maps/hex_field_layer.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/street_map_view.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
@@ -97,7 +97,7 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
 
     // Off by default: a reading about the mesh is something to ask for.
-    expect(find.byType(PolygonLayer<HexCell>), findsNothing);
+    expect(find.byType(HexFieldLayer), findsNothing);
     // One control for everything the map shows: the toggles live in its sheet.
     expect(find.byKey(const ValueKey<String>('map-overlays-button')),
         findsOneWidget);
@@ -133,23 +133,22 @@ void main() {
     await t.tapAt(const Offset(20, 20));
     await t.pumpAndSettle();
 
-    final PolygonLayer<HexCell> layer = t.widget<PolygonLayer<HexCell>>(
-        find.byType(PolygonLayer<HexCell>));
+    final HexFieldLayer layer =
+        t.widget<HexFieldLayer>(find.byType(HexFieldLayer));
     // How many squares there are is a property of the zoom now, because the
     // cell size follows it: the assertion is that every located node is in one
     // of them, not that the count happens to be two.
-    expect(layer.polygons, isNotEmpty);
+    expect(layer.cells, isNotEmpty);
     // Every located node is in exactly one hexagon, and the hexagon carries the
     // keys a tap needs to name them.
     final Set<String> keys = <String>{
-      for (final Polygon<HexCell> p in layer.polygons) ...p.hitValue!.points,
+      for (final HexCell c in layer.cells) ...c.points,
     };
     expect(keys, hasLength(3));
-    expect(layer.polygons.first.hitValue!.count,
-        layer.polygons.first.hitValue!.points.length);
+    expect(layer.cells.first.count, layer.cells.first.points.length);
     // A hexagon has six corners and the width/height ratio a regular one has,
     // which is what stops the field reading as a row of squashed cells.
-    expect(layer.polygons.first.points, hasLength(6));
+    expect(layer.cells.first.corners, hasLength(6));
 
     // A count only means something next to the distance it is a count per, so
     // the size is stated on screen. Whether the numbers themselves are drawn
@@ -177,14 +176,12 @@ void main() {
     // square is first: how many nodes share one depends on the zoom's cell size.
     final String label = counts.first.properties.label!;
     expect(
-        layer.polygons.any(
-            (Polygon<HexCell> p) => _en.mapDensityCellTitle(p.hitValue!.count) == label),
+        layer.cells.any(
+            (HexCell c) => _en.mapDensityCellTitle(c.count) == label),
         isTrue,
         reason: 'the label names a real cell, count and all');
-    final HexCell tapped = layer.polygons
-        .firstWhere((Polygon<HexCell> p) =>
-            _en.mapDensityCellTitle(p.hitValue!.count) == label)
-        .hitValue!;
+    final HexCell tapped = layer.cells
+        .firstWhere((HexCell c) => _en.mapDensityCellTitle(c.count) == label);
     await t.tap(find.byKey(ValueKey<String>('density-count-${tapped.id}')));
     // ignore: avoid_print
     print('PROBE after-tap texts=${t.widgetList<Text>(find.byType(Text)).map((Text x) => x.data).where((String? d) => d != null).take(14).toList()}');

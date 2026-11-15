@@ -976,7 +976,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gridZoomTighter => '狭く（ズームイン）';
 
   @override
-  String get gridNeedsFix => 'この表示には自分の位置が必要です。GPS 取得待ち（スマートフォンまたはデバイス）。';
+  String get gridNeedsFix => 'この表示には自分の位置が必要です。スマートフォンか無線機が位置を報告するのを待っています。';
 
   @override
   String get gridViewElevation => '高度';
@@ -1426,7 +1426,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatRestoreFailed => 'パスフレーズかファイルが違う';
+  String get chatRestoreFailed => 'そのパスフレーズではファイルを開けませんでした。';
 
   @override
   String get diagnosticsPlaceStore => 'プレイスストア';
@@ -1478,7 +1478,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chatBudgetTooLong(int over) {
-    return '$over バイト超過 、 無線機は残りを通知せずに切り捨てます';
+    return '$over バイト超過しています。無線機は残りを通知せずに切り捨てます。';
   }
 
   @override
@@ -2353,7 +2353,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String channelsSetSnack(int idx) {
-    return 'スロット $idx を保存しました';
+    return 'チャンネル $idx を保存しました。';
   }
 
   @override
@@ -2387,10 +2387,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifBodySos => 'アプリで位置を確認してください。';
 
   @override
-  String get notifAlarmRunningBody => '警報を繰り返し中。開いて停止。';
+  String notifBodySosAck(String name) {
+    return '$name が警報に応答しました。';
+  }
 
   @override
-  String get notifBodyFence => '最新の位置情報で検知。';
+  String notifBodySosSafe(String name) {
+    return '$name は無事だと伝えています。';
+  }
+
+  @override
+  String notifBodySosCheckin(String name) {
+    return '$name がチェックインしました。';
+  }
+
+  @override
+  String get notifAlarmRunningBody => '警報はまだ繰り返しています。アプリを開いて停止してください。';
+
+  @override
+  String get notifBodyFence => 'スマートフォンが最後に報告した位置で判定しています。少し前に起きた可能性があります。';
 
   @override
   String get settingsBatteryOptimisedTitle => 'Android が接続を止める場合あり';
@@ -2447,7 +2462,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifQuietBanner => 'Android 設定で通知が消音です。';
 
   @override
-  String get notifMissingChannelBanner => '通知チャンネルを再作成しました。';
+  String get notifMissingChannelBanner =>
+      'Android がこのアプリの通知設定を削除していたため、設定し直しました。';
 
   @override
   String get channelsKeyPublic => 'Public';
@@ -2540,7 +2556,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String channelsClearSnack(int idx) {
-    return 'チャンネル $idx を公開の既定値に戻しました';
+    return 'チャンネル $idx を共有の既定値に戻しました。';
   }
 
   @override
@@ -2743,22 +2759,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String deviceRadioRefused(String param, String code) {
-    return '無線機が $param を拒否しました(エラー $code)。以降の書き込みは送信していません。';
+    return '無線機が $param を拒否しました(エラー $code)。それ以降は送信していません。';
   }
 
   @override
   String deviceRadioSilent(String param) {
-    return '$param の応答が5秒以内にありません。書き込みが反映されていない可能性があります。';
+    return '$param の応答が5秒以内にありませんでした。変更が反映されていない可能性があります。';
   }
 
   @override
   String deviceRadioUnsupported(String param) {
-    return '$param はこのファームウェアにありません。';
+    return 'この無線機のファームウェアに $param はありません。';
   }
 
   @override
   String get deviceRadioUnknownState =>
-      '無線設定を変更できません: この無線機はパスハッシュ長をまだ報告していないため、戻す値がありません。';
+      'この無線機はまだ経路のラベルの付け方を報告していないため、戻す値がありません。再接続してお試しください。';
 
   @override
   String get deviceRadioRevert => '無線設定を元に戻す';
@@ -2767,7 +2783,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRadioReverted => '以前の設定に戻しました。';
 
   @override
-  String get deviceRadioRevertUnavailable => '元に戻せるのは一度だけです。';
+  String get deviceRadioRevertUnavailable => '元に戻せるのは一度だけです。その後は手動で値を設定してください。';
 
   @override
   String get deviceRadioRevertFailed => '元に戻せませんでした 、 MeshCore 無線機は直前の値のままです。';
@@ -2822,7 +2838,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceApplyRadio => 'MeshCore 無線機パラメータを適用';
 
   @override
-  String get deviceConnectFirst => '先に MeshCore 無線機に接続してください（診断と接続）。';
+  String get deviceConnectFirst => '先に無線機に接続してください。設定の「MeshCore 無線接続」から行えます。';
 
   @override
   String get deviceAdvertName => 'アドバート名';
@@ -2861,44 +2877,46 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceToastNameEmpty => 'ノード名を入力してください';
 
   @override
-  String get deviceToastNameSet => '名前を更新 、 隣接ノードへ再アドバート中';
+  String get deviceToastNameSet => '名前を更新しました。次回の通知で隣接ノードに届きます。';
 
   @override
   String deviceToastSendFailed(String error) {
-    return '送信失敗: $error';
+    return '無線機が受け付けませんでした: $error';
   }
 
   @override
-  String get deviceToastNoDeviceYet => 'デバイス未応答 、 接続後に再試行';
+  String get deviceToastNoDeviceYet => '無線機がまだ応答していません。接続してからもう一度お試しください。';
 
   @override
-  String get deviceToastNoGpsYet => 'デバイスにまだ位置情報がありません (GPS 未取得)';
+  String get deviceToastNoGpsYet => '無線機はまだ自分の位置を特定していません。';
 
   @override
   String get deviceToastLoadedDeviceLoc =>
-      'デバイス位置を読込 · ブロードキャストするには「アドバート位置を設定」をタップ';
+      '無線機の位置を読み込みました。「アドバート位置を設定」をタップして送信してください。';
 
   @override
-  String get deviceToastGettingPhoneFix => 'スマートフォン GPS を取得中…';
+  String get deviceToastGettingPhoneFix => '位置を取得しています…';
 
   @override
-  String get deviceToastPhoneFixFailed => 'スマートフォン GPS の取得失敗 (サービス無効またはタイムアウト)';
+  String get deviceToastPhoneFixFailed =>
+      'スマートフォンが位置を取得できませんでした。位置情報がオンか確認して、もう一度お試しください。';
 
   @override
-  String get deviceToastNoFixReturned => '位置情報が返されませんでした';
+  String get deviceToastNoFixReturned =>
+      'スマートフォンが位置を取得できませんでした。屋外でもう一度お試しください。';
 
   @override
-  String get deviceToastGotPhoneLoc =>
-      'スマートフォン位置を取得 · ブロードキャストするには「アドバート位置を設定」をタップ';
+  String get deviceToastGotPhoneLoc => '位置を取得しました。「アドバート位置を設定」をタップして送信してください。';
 
   @override
-  String get deviceToastInvalidLatLon => '有効な緯度 (−90..90) と経度 (−180..180) を入力';
+  String get deviceToastInvalidLatLon =>
+      '緯度は -90 から 90、経度は -180 から 180 で入力してください。';
 
   @override
-  String get deviceToastAdvertLocSet => 'アドバート位置を設定しました';
+  String get deviceToastAdvertLocSet => '無線機はこの位置を通知するようになりました。';
 
   @override
-  String get deviceToastInvalidRadio => 'freq/BW/SF/CR に有効な数値を入力';
+  String get deviceToastInvalidRadio => '周波数、帯域幅、拡散率、符号化率を入力してください。';
 
   @override
   String get deviceLocPermDenied => '位置情報の許可が必要';
@@ -3352,7 +3370,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get traceReset => '経路をリセット';
 
   @override
-  String get traceResetDone => '経路をリセットしました 、 次のメッセージはフラッドします。';
+  String get traceResetDone => '経路を消去しました。次のメッセージは範囲内のすべての無線機に送られます。';
 
   @override
   String get traceNoRepeaters =>
@@ -4047,7 +4065,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String diagnosticsSendFailed(String error) {
-    return '送信に失敗しました: $error';
+    return '無線機が受け付けませんでした: $error';
   }
 
   @override
@@ -4079,7 +4097,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnosticsCopyFixture => 'フィクスチャ JSON をコピー';
 
   @override
-  String get diagnosticsFixtureCopied => 'コピーしました。プロトコルパッケージの取得済みベクタに保存してください。';
+  String get diagnosticsFixtureCopied => 'コピーしました。';
 
   @override
   String get diagnosticsNoRfLog => 'RF ログのフレームがまだありません';
@@ -4239,11 +4257,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get networksApplyConfirm => '適用';
 
   @override
-  String get networksApplied => '適用しました。';
+  String get networksApplied => 'ネットワークを適用しました。';
 
   @override
   String networksApplyFailed(String error) {
-    return '適用できません: $error';
+    return 'ネットワークを適用できませんでした: $error';
   }
 
   @override
@@ -4711,8 +4729,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '無線機はペアリングされていますが応答しません。直前の要求は実行済みの可能性があります。再試行の前に無線機を確認してください。';
 
   @override
-  String get degradedNoLocation =>
-      '位置情報が無効のため、距離・方位・場所のタグの基準がありません。それ以外は動作します。';
+  String get degradedNoLocation => '位置情報が無効のため、距離・方位・場所のタグを計算できません。それ以外は動作します。';
 
   @override
   String get degradedMapOffline => '地図タイルを取得できません。同梱のベースマップと保存済みのタイルは表示されます。';
@@ -4902,7 +4919,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get checkinAnsweredDirect => '応答あり（直接メッセージ）。';
 
   @override
-  String get checkinAnsweredChannel => 'チャンネルで応答がありました（名前だけで、鍵による確認はありません）。';
+  String get checkinAnsweredChannel => 'チャンネルで名前だけの応答がありました。アプリは相手を証明できません。';
 
   @override
   String get checkinSent => 'チェックインを送信しました。繰り返しはしません。';
@@ -6227,10 +6244,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'この無線機を今すぐ再起動しますか？起動の間リンクは数秒切れ、無線機に溜まっていたものは失われます。';
 
   @override
-  String get diagnosticsRestartSent => '再起動を送信。接続は切れます';
+  String get diagnosticsRestartSent => '再起動を送信しました。接続は切れます。';
 
   @override
-  String get diagnosticsRestartNoReply => '再起動を送信。確認なし';
+  String get diagnosticsRestartNoReply => '再起動を送信しましたが、無線機は確認していません。';
 
   @override
   String get settingsSecuritySection => 'MeshCore 無線機へのアクセス';
@@ -6750,7 +6767,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get geofenceReshapeGone => 'そのフェンスはありません';
+  String get geofenceReshapeGone => 'そのフェンスは削除されました。';
 
   @override
   String mediaReceivedForeign(int n) {

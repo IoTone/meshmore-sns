@@ -64,7 +64,7 @@ class AboutScreen extends StatelessWidget {
       appBar: AppBar(title: Text(l.tabAbout)),
       body: MmScaffold(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+          padding: skin.space.padScreen,
           children: <Widget>[
             Text(l.appName.toUpperCase(),
                 textAlign: TextAlign.center,

@@ -1021,7 +1021,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gridNeedsFix =>
-      'This view needs your own position. Waiting for a GPS fix (phone or device).';
+      'This view needs your position. Waiting for the phone or the MeshCore radio to report one.';
 
   @override
   String get gridViewElevation => 'Altitude';
@@ -1478,7 +1478,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chatRestoreFailed => 'Wrong passphrase or file';
+  String get chatRestoreFailed => 'That passphrase did not open the file.';
 
   @override
   String get diagnosticsPlaceStore => 'Places store';
@@ -1539,7 +1539,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chatBudgetTooLong(int over) {
-    return 'Too long by $over bytes. The MeshCore radio would cut the rest without telling you';
+    return 'Too long by $over bytes. The MeshCore radio would cut the rest without telling you.';
   }
 
   @override
@@ -2438,7 +2438,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channelsSetSnack(int idx) {
-    return 'Slot $idx saved';
+    return 'Channel $idx saved.';
   }
 
   @override
@@ -2472,10 +2472,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifBodySos => 'Open the app to see the position.';
 
   @override
-  String get notifAlarmRunningBody => 'Alarm repeating. Open to stop.';
+  String notifBodySosAck(String name) {
+    return '$name answered your alarm.';
+  }
 
   @override
-  String get notifBodyFence => 'Noticed on the latest position fix.';
+  String notifBodySosSafe(String name) {
+    return '$name says they are safe.';
+  }
+
+  @override
+  String notifBodySosCheckin(String name) {
+    return '$name checked in.';
+  }
+
+  @override
+  String get notifAlarmRunningBody =>
+      'The alarm is still repeating. Open the app to stop it.';
+
+  @override
+  String get notifBodyFence =>
+      'This is based on the last position your phone reported, so it may have happened a little earlier.';
 
   @override
   String get settingsBatteryOptimisedTitle => 'Android may stop the link';
@@ -2535,7 +2552,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Notifications are silent in Android settings.';
 
   @override
-  String get notifMissingChannelBanner => 'Notification channel recreated.';
+  String get notifMissingChannelBanner =>
+      'Android had removed this app\'s notification settings, so they were set up again.';
 
   @override
   String get channelsKeyPublic => 'Public';
@@ -2631,7 +2649,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String channelsClearSnack(int idx) {
-    return 'Channel $idx reset to the public defaults';
+    return 'Channel $idx reset to the shared defaults.';
   }
 
   @override
@@ -2837,22 +2855,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String deviceRadioRefused(String param, String code) {
-    return 'The MeshCore radio refused $param (error $code). Later writes were not sent.';
+    return 'The MeshCore radio refused $param (error $code). Nothing after it was sent.';
   }
 
   @override
   String deviceRadioSilent(String param) {
-    return 'No answer for $param within five seconds. The write may not have applied.';
+    return 'The MeshCore radio did not answer $param within five seconds, so the change may not have taken.';
   }
 
   @override
   String deviceRadioUnsupported(String param) {
-    return '$param is not in this firmware build.';
+    return 'This MeshCore radio\'s firmware does not have $param.';
   }
 
   @override
   String get deviceRadioUnknownState =>
-      'Cannot change MeshCore radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.';
+      'This MeshCore radio has not said how it labels routes yet, so there is nothing to undo back to. Reconnect and try again.';
 
   @override
   String get deviceRadioRevert => 'Undo MeshCore radio change';
@@ -2861,7 +2879,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceRadioReverted => 'Previous operating point restored.';
 
   @override
-  String get deviceRadioRevertUnavailable => 'Undo is one use only.';
+  String get deviceRadioRevertUnavailable =>
+      'Undo works once. After that, set the value again by hand.';
 
   @override
   String get deviceRadioRevertFailed =>
@@ -2918,7 +2937,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceConnectFirst =>
-      'Connect a MeshCore radio first (Diagnostics & connect).';
+      'Connect a MeshCore radio first, in Settings under MeshCore radio connection.';
 
   @override
   String get deviceAdvertName => 'Advert name';
@@ -2957,47 +2976,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deviceToastNameEmpty => 'Enter a node name';
 
   @override
-  String get deviceToastNameSet => 'Name updated. Re-advertising to neighbours';
+  String get deviceToastNameSet =>
+      'Name updated. Neighbours will hear it on the next announcement.';
 
   @override
   String deviceToastSendFailed(String error) {
-    return 'Send failed: $error';
+    return 'The MeshCore radio did not take it: $error';
   }
 
   @override
   String get deviceToastNoDeviceYet =>
-      'Device hasn\'t reported yet. Try once linked';
+      'The MeshCore radio has not answered yet. Try again once it is connected.';
 
   @override
-  String get deviceToastNoGpsYet => 'Device has no location yet (no GPS fix)';
+  String get deviceToastNoGpsYet =>
+      'The MeshCore radio has not worked out where it is yet.';
 
   @override
   String get deviceToastLoadedDeviceLoc =>
-      'Loaded device location · tap Set advert location to broadcast';
+      'Loaded the MeshCore radio\'s position. Tap Set advert location to send it.';
 
   @override
-  String get deviceToastGettingPhoneFix => 'Getting phone GPS fix…';
+  String get deviceToastGettingPhoneFix => 'Getting your position…';
 
   @override
   String get deviceToastPhoneFixFailed =>
-      'Phone GPS fix failed (services off or timeout)';
+      'The phone could not get a position. Check that location is on, then try again.';
 
   @override
-  String get deviceToastNoFixReturned => 'No fix returned';
+  String get deviceToastNoFixReturned =>
+      'The phone did not get a position. Try again outdoors.';
 
   @override
   String get deviceToastGotPhoneLoc =>
-      'Got phone location · tap Set advert location to broadcast';
+      'Got your position. Tap Set advert location to send it.';
 
   @override
   String get deviceToastInvalidLatLon =>
-      'Enter valid lat (−90.90) and lon (−180.180)';
+      'Enter a latitude from -90 to 90 and a longitude from -180 to 180.';
 
   @override
-  String get deviceToastAdvertLocSet => 'Advert location set';
+  String get deviceToastAdvertLocSet =>
+      'The MeshCore radio will now announce this position.';
 
   @override
-  String get deviceToastInvalidRadio => 'Enter valid numbers for freq/BW/SF/CR';
+  String get deviceToastInvalidRadio =>
+      'Enter a frequency, a bandwidth, a spreading factor and a coding rate.';
 
   @override
   String get deviceLocPermDenied => 'Location permission needed';
@@ -3469,7 +3493,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get traceReset => 'Reset route';
 
   @override
-  String get traceResetDone => 'Route reset. The next message floods.';
+  String get traceResetDone =>
+      'Route cleared. The next message goes out to every MeshCore radio in range.';
 
   @override
   String get traceNoRepeaters =>
@@ -4185,7 +4210,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String diagnosticsSendFailed(String error) {
-    return 'The send failed: $error';
+    return 'The MeshCore radio did not take it: $error';
   }
 
   @override
@@ -4217,8 +4242,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsCopyFixture => 'Copy fixture JSON';
 
   @override
-  String get diagnosticsFixtureCopied =>
-      'Copied. Save it under the protocol package\'s captured vectors.';
+  String get diagnosticsFixtureCopied => 'Copied.';
 
   @override
   String get diagnosticsNoRfLog => 'No RF-log frame captured yet';
@@ -4381,11 +4405,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get networksApplyConfirm => 'Apply';
 
   @override
-  String get networksApplied => 'Applied.';
+  String get networksApplied => 'The network was applied.';
 
   @override
   String networksApplyFailed(String error) {
-    return 'Could not apply: $error';
+    return 'The network was not applied: $error';
   }
 
   @override
@@ -4870,7 +4894,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get degradedNoLocation =>
-      'Location is off, so distances, bearings and place tags have no fix. Everything else works.';
+      'Location is off, so distances, bearings and place tags cannot be worked out. Everything else works.';
 
   @override
   String get degradedMapOffline =>
@@ -5071,7 +5095,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkinAnsweredChannel =>
-      'Answered on the channel by name only, not by their key.';
+      'Answered on the channel by name only, so the app cannot prove who it was.';
 
   @override
   String get checkinSent => 'Check-in sent. Nothing repeats.';
@@ -6460,10 +6484,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Restart this MeshCore radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.';
 
   @override
-  String get diagnosticsRestartSent => 'Restart sent, link will drop';
+  String get diagnosticsRestartSent =>
+      'Restart sent. The connection will drop.';
 
   @override
-  String get diagnosticsRestartNoReply => 'Restart sent, not confirmed';
+  String get diagnosticsRestartNoReply =>
+      'Restart sent, but the MeshCore radio did not confirm it.';
 
   @override
   String get settingsSecuritySection => 'MeshCore radio access';
@@ -6998,7 +7024,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get geofenceReshapeGone => 'That fence is gone';
+  String get geofenceReshapeGone => 'That fence has been deleted.';
 
   @override
   String mediaReceivedForeign(int n) {

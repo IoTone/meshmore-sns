@@ -187,9 +187,12 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
       appBar: AppBar(title: Text(l.geofenceTitle)),
       body: MmScaffold(
         child: ListView(
-          padding: EdgeInsets.all(skin.space.step(5)),
+          padding: skin.space.padScreen,
           children: <Widget>[
             MmSectionHeader(l.geofenceAddSection),
+            // A header is a label, not a container: without this the chips sat
+            // against it while every other page leaves a row gap under one.
+            SizedBox(height: skin.space.rowGap),
             Wrap(
               spacing: skin.space.step(2),
               children: <Widget>[
@@ -234,6 +237,7 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
                   ),
               ],
             ),
+            SizedBox(height: skin.space.rowGap),
             if (fences.fences.length > 3)
               Padding(
                 padding: EdgeInsets.only(top: skin.space.step(2)),

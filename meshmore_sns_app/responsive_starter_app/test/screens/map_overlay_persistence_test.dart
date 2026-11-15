@@ -6,7 +6,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
@@ -15,7 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/maps/hex_field.dart';
+import 'package:meshmore_sns_app/maps/hex_field_layer.dart';
 import 'package:meshmore_sns_app/maps/map_fetch.dart';
 import 'package:meshmore_sns_app/maps/map_overlay_prefs.dart';
 import 'package:meshmore_sns_app/maps/maps_controller.dart';
@@ -147,7 +146,7 @@ void main() {
     final MeshcoreController mc =
         await _pump(t, FakeMeshcoreTransport(connected: true));
     // No tap, no sheet: the reader asked once, last week.
-    expect(find.byType(PolygonLayer<HexCell>), findsOneWidget,
+    expect(find.byType(HexFieldLayer), findsOneWidget,
         reason: 'the field the reader turned on was off again');
     await _drain(t, mc);
   });
@@ -180,7 +179,7 @@ void main() {
     });
     final MeshcoreController mc =
         await _pump(t, FakeMeshcoreTransport(connected: true));
-    expect(find.byType(PolygonLayer<HexCell>), findsNothing);
+    expect(find.byType(HexFieldLayer), findsNothing);
     expect(t.takeException(), isNull);
     await _drain(t, mc);
   });

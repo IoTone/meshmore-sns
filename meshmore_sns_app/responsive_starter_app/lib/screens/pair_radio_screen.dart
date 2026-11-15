@@ -263,7 +263,7 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
       appBar: AppBar(title: Text(l.pairTitle)),
       body: MmScaffold(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          padding: skin.space.padScreen,
           children: <Widget>[
             Text(
               l.pairStepOf(_step.index + 1, _Step.values.length),

@@ -1697,6 +1697,18 @@ class _GridPainter extends CustomPainter {
       }
     }
 
+    // One Paint per job, reused across the loop. A Paint per blip per frame is
+    // an allocation per node per frame, and this dial repaints on every tick
+    // because the sweep moves: on a mesh with hundreds of nodes that is tens of
+    // thousands of short-lived objects a second for a picture that changes only
+    // in colour.
+    final Paint blip = Paint();
+    final Paint blipHalo = Paint();
+    final Paint blipRing = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    final Paint affinityRing = Paint()..style = PaintingStyle.stroke;
+
     for (final DiscoveredNode n in nodes) {
       // Recency → brightness (linear 24h decay).
       final double age = (nowUnix - n.lastHeardUnix) / windowSec;
@@ -1739,19 +1751,13 @@ class _GridPainter extends CustomPainter {
       final Color c = accent.withValues(alpha: bright * opacityMul);
       final GridMarkerSource source = _sourceFor(n, selfLat, selfLon);
       if (source == GridMarkerSource.position) {
-        canvas.drawCircle(p, r0, Paint()..color = c);
+        canvas.drawCircle(p, r0, blip..color = c);
       } else {
         // Hollow: a position we do not have is not a position. The ring sits
         // on the band its signal implies; the angle is a placeholder.
-        canvas.drawCircle(p, r0 + 1, Paint()..color = c.withValues(alpha: .18));
         canvas.drawCircle(
-          p,
-          r0 + 1,
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.4
-            ..color = c,
-        );
+            p, r0 + 1, blipHalo..color = c.withValues(alpha: .18));
+        canvas.drawCircle(p, r0 + 1, blipRing..color = c);
       }
 
       // Reduce-motion accessibility ring: known = thin ring; fav =
@@ -1760,8 +1766,7 @@ class _GridPainter extends CustomPainter {
         canvas.drawCircle(
           p,
           r0 + (isFav ? 5 : 3),
-          Paint()
-            ..style = PaintingStyle.stroke
+          affinityRing
             ..strokeWidth = isFav ? 2 : 1.2
             ..color = accent.withValues(alpha: bright * .8),
         );

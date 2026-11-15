@@ -1877,7 +1877,7 @@ abstract class AppLocalizations {
   /// No description provided for @gridNeedsFix.
   ///
   /// In en, this message translates to:
-  /// **'This view needs your own position. Waiting for a GPS fix (phone or device).'**
+  /// **'This view needs your position. Waiting for the phone or the MeshCore radio to report one.'**
   String get gridNeedsFix;
 
   /// No description provided for @gridViewElevation.
@@ -2621,7 +2621,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatRestoreFailed.
   ///
   /// In en, this message translates to:
-  /// **'Wrong passphrase or file'**
+  /// **'That passphrase did not open the file.'**
   String get chatRestoreFailed;
 
   /// No description provided for @diagnosticsPlaceStore.
@@ -2693,7 +2693,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatBudgetTooLong.
   ///
   /// In en, this message translates to:
-  /// **'Too long by {over} bytes. The MeshCore radio would cut the rest without telling you'**
+  /// **'Too long by {over} bytes. The MeshCore radio would cut the rest without telling you.'**
   String chatBudgetTooLong(int over);
 
   /// No description provided for @chatMessageActions.
@@ -4145,7 +4145,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsSetSnack.
   ///
   /// In en, this message translates to:
-  /// **'Slot {idx} saved'**
+  /// **'Channel {idx} saved.'**
   String channelsSetSnack(int idx);
 
   /// No description provided for @channelsDialogTitle.
@@ -4196,16 +4196,34 @@ abstract class AppLocalizations {
   /// **'Open the app to see the position.'**
   String get notifBodySos;
 
+  /// OS notification body for an acknowledgement of an SOS. The wire form is [ACK:<id>] <callsign> <words>; the lock screen shows a sentence instead.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} answered your alarm.'**
+  String notifBodySosAck(String name);
+
+  /// OS notification body for a safe message. The wire form is [SAFE:<id>] <callsign>.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} says they are safe.'**
+  String notifBodySosSafe(String name);
+
+  /// OS notification body for a check-in. The wire form carries coordinates, which the lock screen must not publish.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} checked in.'**
+  String notifBodySosCheckin(String name);
+
   /// Ongoing notification shown while an SOS is running.
   ///
   /// In en, this message translates to:
-  /// **'Alarm repeating. Open to stop.'**
+  /// **'The alarm is still repeating. Open the app to stop it.'**
   String get notifAlarmRunningBody;
 
   /// OS notification body for a fence crossing. States the limit: fences are evaluated against the position fixes the app already has, so a crossing can lag the walk.
   ///
   /// In en, this message translates to:
-  /// **'Noticed on the latest position fix.'**
+  /// **'This is based on the last position your phone reported, so it may have happened a little earlier.'**
   String get notifBodyFence;
 
   /// App settings row shown when this app is still on the battery-optimisation list, which lets an OEM stop the foreground service.
@@ -4319,7 +4337,7 @@ abstract class AppLocalizations {
   /// Shown when a notification channel was deleted by the user.
   ///
   /// In en, this message translates to:
-  /// **'Notification channel recreated.'**
+  /// **'Android had removed this app\'s notification settings, so they were set up again.'**
   String get notifMissingChannelBanner;
 
   /// No description provided for @channelsKeyPublic.
@@ -4493,7 +4511,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsClearSnack.
   ///
   /// In en, this message translates to:
-  /// **'Channel {idx} reset to the public defaults'**
+  /// **'Channel {idx} reset to the shared defaults.'**
   String channelsClearSnack(int idx);
 
   /// No description provided for @channelsDefaultBadge.
@@ -4871,25 +4889,25 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioRefused.
   ///
   /// In en, this message translates to:
-  /// **'The MeshCore radio refused {param} (error {code}). Later writes were not sent.'**
+  /// **'The MeshCore radio refused {param} (error {code}). Nothing after it was sent.'**
   String deviceRadioRefused(String param, String code);
 
   /// No description provided for @deviceRadioSilent.
   ///
   /// In en, this message translates to:
-  /// **'No answer for {param} within five seconds. The write may not have applied.'**
+  /// **'The MeshCore radio did not answer {param} within five seconds, so the change may not have taken.'**
   String deviceRadioSilent(String param);
 
   /// No description provided for @deviceRadioUnsupported.
   ///
   /// In en, this message translates to:
-  /// **'{param} is not in this firmware build.'**
+  /// **'This MeshCore radio\'s firmware does not have {param}.'**
   String deviceRadioUnsupported(String param);
 
   /// No description provided for @deviceRadioUnknownState.
   ///
   /// In en, this message translates to:
-  /// **'Cannot change MeshCore radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.'**
+  /// **'This MeshCore radio has not said how it labels routes yet, so there is nothing to undo back to. Reconnect and try again.'**
   String get deviceRadioUnknownState;
 
   /// No description provided for @deviceRadioRevert.
@@ -4907,7 +4925,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioRevertUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Undo is one use only.'**
+  /// **'Undo works once. After that, set the value again by hand.'**
   String get deviceRadioRevertUnavailable;
 
   /// No description provided for @deviceRadioRevertFailed.
@@ -4997,7 +5015,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceConnectFirst.
   ///
   /// In en, this message translates to:
-  /// **'Connect a MeshCore radio first (Diagnostics & connect).'**
+  /// **'Connect a MeshCore radio first, in Settings under MeshCore radio connection.'**
   String get deviceConnectFirst;
 
   /// No description provided for @deviceAdvertName.
@@ -5075,73 +5093,73 @@ abstract class AppLocalizations {
   /// No description provided for @deviceToastNameSet.
   ///
   /// In en, this message translates to:
-  /// **'Name updated. Re-advertising to neighbours'**
+  /// **'Name updated. Neighbours will hear it on the next announcement.'**
   String get deviceToastNameSet;
 
   /// No description provided for @deviceToastSendFailed.
   ///
   /// In en, this message translates to:
-  /// **'Send failed: {error}'**
+  /// **'The MeshCore radio did not take it: {error}'**
   String deviceToastSendFailed(String error);
 
   /// No description provided for @deviceToastNoDeviceYet.
   ///
   /// In en, this message translates to:
-  /// **'Device hasn\'t reported yet. Try once linked'**
+  /// **'The MeshCore radio has not answered yet. Try again once it is connected.'**
   String get deviceToastNoDeviceYet;
 
   /// No description provided for @deviceToastNoGpsYet.
   ///
   /// In en, this message translates to:
-  /// **'Device has no location yet (no GPS fix)'**
+  /// **'The MeshCore radio has not worked out where it is yet.'**
   String get deviceToastNoGpsYet;
 
   /// No description provided for @deviceToastLoadedDeviceLoc.
   ///
   /// In en, this message translates to:
-  /// **'Loaded device location · tap Set advert location to broadcast'**
+  /// **'Loaded the MeshCore radio\'s position. Tap Set advert location to send it.'**
   String get deviceToastLoadedDeviceLoc;
 
   /// No description provided for @deviceToastGettingPhoneFix.
   ///
   /// In en, this message translates to:
-  /// **'Getting phone GPS fix…'**
+  /// **'Getting your position…'**
   String get deviceToastGettingPhoneFix;
 
   /// No description provided for @deviceToastPhoneFixFailed.
   ///
   /// In en, this message translates to:
-  /// **'Phone GPS fix failed (services off or timeout)'**
+  /// **'The phone could not get a position. Check that location is on, then try again.'**
   String get deviceToastPhoneFixFailed;
 
   /// No description provided for @deviceToastNoFixReturned.
   ///
   /// In en, this message translates to:
-  /// **'No fix returned'**
+  /// **'The phone did not get a position. Try again outdoors.'**
   String get deviceToastNoFixReturned;
 
   /// No description provided for @deviceToastGotPhoneLoc.
   ///
   /// In en, this message translates to:
-  /// **'Got phone location · tap Set advert location to broadcast'**
+  /// **'Got your position. Tap Set advert location to send it.'**
   String get deviceToastGotPhoneLoc;
 
   /// No description provided for @deviceToastInvalidLatLon.
   ///
   /// In en, this message translates to:
-  /// **'Enter valid lat (−90.90) and lon (−180.180)'**
+  /// **'Enter a latitude from -90 to 90 and a longitude from -180 to 180.'**
   String get deviceToastInvalidLatLon;
 
   /// No description provided for @deviceToastAdvertLocSet.
   ///
   /// In en, this message translates to:
-  /// **'Advert location set'**
+  /// **'The MeshCore radio will now announce this position.'**
   String get deviceToastAdvertLocSet;
 
   /// No description provided for @deviceToastInvalidRadio.
   ///
   /// In en, this message translates to:
-  /// **'Enter valid numbers for freq/BW/SF/CR'**
+  /// **'Enter a frequency, a bandwidth, a spreading factor and a coding rate.'**
   String get deviceToastInvalidRadio;
 
   /// No description provided for @deviceLocPermDenied.
@@ -5975,7 +5993,7 @@ abstract class AppLocalizations {
   /// No description provided for @traceResetDone.
   ///
   /// In en, this message translates to:
-  /// **'Route reset. The next message floods.'**
+  /// **'Route cleared. The next message goes out to every MeshCore radio in range.'**
   String get traceResetDone;
 
   /// No description provided for @traceNoRepeaters.
@@ -7188,7 +7206,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsSendFailed.
   ///
   /// In en, this message translates to:
-  /// **'The send failed: {error}'**
+  /// **'The MeshCore radio did not take it: {error}'**
   String diagnosticsSendFailed(String error);
 
   /// No description provided for @diagnosticsSectionErrors.
@@ -7242,7 +7260,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsFixtureCopied.
   ///
   /// In en, this message translates to:
-  /// **'Copied. Save it under the protocol package\'s captured vectors.'**
+  /// **'Copied.'**
   String get diagnosticsFixtureCopied;
 
   /// No description provided for @diagnosticsNoRfLog.
@@ -7525,13 +7543,13 @@ abstract class AppLocalizations {
   /// No description provided for @networksApplied.
   ///
   /// In en, this message translates to:
-  /// **'Applied.'**
+  /// **'The network was applied.'**
   String get networksApplied;
 
   /// No description provided for @networksApplyFailed.
   ///
   /// In en, this message translates to:
-  /// **'Could not apply: {error}'**
+  /// **'The network was not applied: {error}'**
   String networksApplyFailed(String error);
 
   /// No description provided for @networksCurrent.
@@ -8317,7 +8335,7 @@ abstract class AppLocalizations {
   /// No description provided for @degradedNoLocation.
   ///
   /// In en, this message translates to:
-  /// **'Location is off, so distances, bearings and place tags have no fix. Everything else works.'**
+  /// **'Location is off, so distances, bearings and place tags cannot be worked out. Everything else works.'**
   String get degradedNoLocation;
 
   /// No description provided for @degradedMapOffline.
@@ -8629,7 +8647,7 @@ abstract class AppLocalizations {
   /// No description provided for @checkinAnsweredChannel.
   ///
   /// In en, this message translates to:
-  /// **'Answered on the channel by name only, not by their key.'**
+  /// **'Answered on the channel by name only, so the app cannot prove who it was.'**
   String get checkinAnsweredChannel;
 
   /// No description provided for @checkinSent.
@@ -10891,13 +10909,13 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsRestartSent.
   ///
   /// In en, this message translates to:
-  /// **'Restart sent, link will drop'**
+  /// **'Restart sent. The connection will drop.'**
   String get diagnosticsRestartSent;
 
   /// No description provided for @diagnosticsRestartNoReply.
   ///
   /// In en, this message translates to:
-  /// **'Restart sent, not confirmed'**
+  /// **'Restart sent, but the MeshCore radio did not confirm it.'**
   String get diagnosticsRestartNoReply;
 
   /// No description provided for @settingsSecuritySection.
@@ -11761,7 +11779,7 @@ abstract class AppLocalizations {
   /// No description provided for @geofenceReshapeGone.
   ///
   /// In en, this message translates to:
-  /// **'That fence is gone'**
+  /// **'That fence has been deleted.'**
   String get geofenceReshapeGone;
 
   /// Names pictures that arrived in AEIC, MeshCore Open's neural codec, which this build does not ship. Without this line an arriving picture looks like nobody sending one.

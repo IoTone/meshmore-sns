@@ -198,9 +198,16 @@ List<HexCell> hexField({
             2;
     latticeRows = rows;
     latticeCols = cols;
+    // Stop at the cap. The emission loop returns at the same number, so a
+    // bucket past it is never read — and a box larger than the screen (a
+    // hundred kilometres of lattice at a cell size in metres) would otherwise
+    // pre-fill millions of them before the cap was ever consulted. That loop
+    // was a four-second build, which is an "isn't responding" dialog.
+    fill:
     for (int row = -1; row <= rows; row++) {
       for (int col = -1; col <= cols; col++) {
         buckets.putIfAbsent((col, row), () => <String>[]);
+        if (buckets.length >= maxCells) break fill;
       }
     }
   }

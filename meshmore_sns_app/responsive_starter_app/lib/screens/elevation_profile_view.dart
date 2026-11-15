@@ -465,6 +465,16 @@ class _ElevationProfilePainter extends CustomPainter {
   final double? selfAltMeters;
   final List<DiscoveredNode> peers;
 
+  /// One Paint per job, reused across the peer loop. The scan line animates, so
+  /// this painter repaints every frame while it runs, and a Paint per marker per
+  /// frame is three allocations per peer per frame on a mesh with hundreds.
+  final Paint _markerFill = Paint();
+  final Paint _markerRope = Paint()..strokeWidth = 1.0;
+  final Paint _pipFill = Paint();
+  final Paint _pipRing = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.8;
+
   /// R45+1 — resolved altitude per peer (keyed by pubKeyHex). Falls
   /// back through advert → telemetry cache → null in the caller; the
   /// painter just reads this map. Peers absent from the map land in
@@ -842,7 +852,7 @@ class _ElevationProfilePainter extends CustomPainter {
   void _drawPeerMarker(Canvas canvas, Offset at, DiscoveredNode n,
       {required bool isUnknownAlt, double groundY = 0}) {
     final Color base = n.type == 2 ? accent : warn;
-    final Paint fill = Paint()..color = base;
+    final Paint fill = _markerFill..color = base;
     if (n.type == 2) {
       // Repeater = triangle.
       const double s = 5.0;
@@ -858,9 +868,7 @@ class _ElevationProfilePainter extends CustomPainter {
     // Faint vertical "rope" from the marker to the ground for
     // known-altitude peers, so the height-above-horizon reads.
     if (!isUnknownAlt) {
-      final Paint rope = Paint()
-        ..color = base.withValues(alpha: .3)
-        ..strokeWidth = 1.0;
+      final Paint rope = _markerRope..color = base.withValues(alpha: .3);
       // To the ground, not to a fixed 200 px below the marker: on a short
       // viewport the rope hung in mid-air and on a tall one it stopped short of
       // the axis it is meant to reach.
@@ -869,15 +877,11 @@ class _ElevationProfilePainter extends CustomPainter {
     }
     // Star pip for favourite, dot for known.
     if (favPubKeys.contains(n.pubKeyHex)) {
-      canvas.drawCircle(at + const Offset(0, -8), 1.6, Paint()..color = warn);
+      canvas.drawCircle(
+          at + const Offset(0, -8), 1.6, _pipFill..color = warn);
     } else if (knownPubKeys.contains(n.pubKeyHex)) {
       canvas.drawCircle(
-          at + const Offset(0, -8),
-          1.6,
-          Paint()
-            ..color = accent
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 0.8);
+          at + const Offset(0, -8), 1.6, _pipRing..color = accent);
     }
   }
 

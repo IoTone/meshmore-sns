@@ -779,7 +779,14 @@ class _MeshTreePainter extends CustomPainter {
       }
     }
 
-    // Nodes.
+    // Nodes. One Paint per job, reused: this painter redraws on every tick of
+    // the dial, and a Paint per node per frame is an allocation per node per
+    // frame for a picture that changes only in colour.
+    final Paint halo = Paint()..style = PaintingStyle.fill;
+    final Paint fillBg = Paint()..color = bg;
+    final Paint strokeBody = Paint()..style = PaintingStyle.stroke;
+    final Paint selfDot = Paint();
+
     for (final MeshGraphNode n in graph.nodes) {
       final NodePosition? p = positions[n.id];
       if (p == null) continue;
@@ -788,31 +795,21 @@ class _MeshTreePainter extends CustomPainter {
       // Halo for known / favourites — same circle for any glyph
       // shape so the affinity cue stays consistent.
       if (favPubKeys.contains(n.id)) {
-        canvas.drawCircle(
-            c,
-            style.radius + 5,
-            Paint()
-              ..color = style.colour.withValues(alpha: .25)
-              ..style = PaintingStyle.fill);
+        canvas.drawCircle(c, style.radius + 5,
+            halo..color = style.colour.withValues(alpha: .25));
       } else if (knownPubKeys.contains(n.id)) {
-        canvas.drawCircle(
-            c,
-            style.radius + 3,
-            Paint()
-              ..color = style.colour.withValues(alpha: .18)
-              ..style = PaintingStyle.fill);
+        canvas.drawCircle(c, style.radius + 3,
+            halo..color = style.colour.withValues(alpha: .18));
       }
       // Body + outline, shape-aware.
-      final Paint fillBg = Paint()..color = bg;
-      final Paint strokeBody = Paint()
-        ..style = PaintingStyle.stroke
+      strokeBody
         ..strokeWidth = n.isSelf ? 2.4 : 1.5
         ..color = style.colour;
       _drawShape(canvas, c, style.radius, style.shape, fillBg);
       _drawShape(canvas, c, style.radius, style.shape, strokeBody);
       // Centre dot for self.
       if (n.isSelf) {
-        canvas.drawCircle(c, 3.0, Paint()..color = style.colour);
+        canvas.drawCircle(c, 3.0, selfDot..color = style.colour);
       }
       // Label, if this node is inside the cap.
       if (!labels.contains(n.id)) continue;

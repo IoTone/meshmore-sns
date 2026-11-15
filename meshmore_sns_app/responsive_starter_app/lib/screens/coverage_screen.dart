@@ -32,7 +32,7 @@ class CoverageScreen extends StatelessWidget {
       appBar: AppBar(title: Text(l.coverageTitle)),
       body: MmScaffold(
         child: ListView(
-          padding: EdgeInsets.all(skin.space.step(5)),
+          padding: skin.space.padScreen,
           children: <Widget>[
             Text(
               l.coverageBeforeStart,
@@ -63,6 +63,7 @@ class CoverageScreen extends StatelessWidget {
               ),
               SizedBox(height: skin.space.step(5)),
               MmSectionHeader(l.coverageCellsSection),
+              SizedBox(height: skin.space.rowGap),
               if (s.samples.isEmpty)
                 Text(l.coverageNoSamples,
                     key: const ValueKey<String>('coverage-empty'),

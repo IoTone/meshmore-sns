@@ -15,6 +15,7 @@ import 'package:meshmore_sns_app/geofence/geofence_controller.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
 import 'package:meshmore_sns_app/maps/hex_field.dart';
+import 'package:meshmore_sns_app/maps/hex_field_layer.dart';
 import 'package:meshmore_sns_app/maps/map_fetch.dart';
 import 'package:meshmore_sns_app/maps/maps_controller.dart';
 import 'package:meshcore/meshcore.dart';
@@ -55,11 +56,11 @@ OwnLocation _at(double lat, double lon) => OwnLocation(
       source: OwnLocationSource.phoneFix,
     );
 
-/// The polygons the density layer is drawing right now.
-List<Polygon<HexCell>> _hexPolygons(WidgetTester t) {
-  final PolygonLayer<HexCell> layer = t.widget<PolygonLayer<HexCell>>(
-      find.byType(PolygonLayer<HexCell>));
-  return layer.polygons;
+/// The cells the density layer is drawing right now.
+List<HexCell> _hexPolygons(WidgetTester t) {
+  final HexFieldLayer layer =
+      t.widget<HexFieldLayer>(find.byType(HexFieldLayer));
+  return layer.cells;
 }
 
 
@@ -179,7 +180,7 @@ void main() {
     // Walk in: the inside-state flips, so the map must redraw the fence.
     fences.sample(_at(40.0, -105.0));
     await t.pump();
-    final List<Polygon<HexCell>> afterEntry = _hexPolygons(t);
+    final List<HexCell> afterEntry = _hexPolygons(t);
 
     // Standing still: the controller notifies again, and the map must not care.
     // This is the once-a-second rebuild that ran the heap out.
@@ -207,7 +208,7 @@ void main() {
       GeofenceController fences,
       FakeMeshcoreTransport _
     ) = await pump(t);
-    final List<Polygon<HexCell>> first = _hexPolygons(t);
+    final List<HexCell> first = _hexPolygons(t);
 
     // A skin change rebuilds the map and does change the field's colours, so it
     // is not the case under test. A plain rebuild is: the same nodes, the same

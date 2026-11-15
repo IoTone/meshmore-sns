@@ -24,6 +24,7 @@ import '../maps/basemap.dart';
 import '../cue/cue_service.dart';
 import '../maps/density_overlay.dart';
 import '../maps/hex_field.dart';
+import '../maps/hex_field_layer.dart';
 import '../maps/message_bubble.dart';
 import '../theme/viz_palette.dart';
 import '../util/mm_format.dart';
@@ -322,24 +323,11 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// geofence sample. Memoising it on the inputs that actually change the
   /// picture is what keeps a rebuild cheap enough to be harmless.
   List<HexCell> _hexCache = const <HexCell>[];
-  List<Polygon<HexCell>> _hexPolygons = const <Polygon<HexCell>>[];
   String _hexKey = '';
 
-  /// The polygon list's own key: the field it describes and the skin it is
-  /// painted in. Readiness is deliberately *not* part of it — see
-  /// [_schedulePolygonRebuild].
-  String _hexPolyKey = '';
-
-  /// Set when a coalesced readiness tick has asked for a new polygon list.
-  ///
-  /// The list itself is rebuilt whole and thrown away whole: a polygon is a view
-  /// of one cell at one cell size, and holding them alive would keep geometry
-  /// that the next zoom step invalidates. What costs is building the list a dozen
-  /// times for a dozen tile arrivals, and that is what the tick prevents.
-  bool _hexPolyStale = true;
-
-  /// The readiness revision the field was last built for.
-  int _hexReadyRev = -1;
+  /// The cells the layer is drawing, and the key they were filtered for.
+  List<HexCell> _hexShown = const <HexCell>[];
+  String _hexShownKey = '';
 
   /// The camera zoom the field on screen was built for.
   ///
@@ -377,20 +365,6 @@ class _StreetMapViewState extends State<StreetMapView> {
       _hexKey = '';
       _fieldZoom = _zoom;
       _cameraMoving = false;
-      setState(() {});
-    });
-  }
-
-  Timer? _hexPolyTimer;
-
-  /// One rebuild per burst of tile arrivals.
-  void _schedulePolygonRebuild() {
-    if (_hexPolyTimer?.isActive ?? false) return;
-    _hexPolyTimer = Timer(const Duration(milliseconds: 120), () {
-      _hexPolyTimer = null;
-      if (!mounted) return;
-      if (_hexPolyStale) return; // a field rebuild is already queued
-      _hexPolyStale = true;
       setState(() {});
     });
   }
@@ -582,6 +556,83 @@ class _StreetMapViewState extends State<StreetMapView> {
     return distance.clamp(200, kPeerReachCeilingMeters);
   }
 
+  /// The peer reach rings, cached against what they draw.
+  ///
+  /// The map's build watches the controller, and the controller notifies for
+  /// things that do not move a ring: a battery reading, an airtime tick, an
+  /// incoming message. A haversine per located node on each of those is work
+  /// nobody asked for, and on a mesh with hundreds of located nodes it is the
+  /// same mistake the node pins were fixed for.
+  ///
+  /// The set is every located node, not the nodes inside the viewport. A ring
+  /// is up to 5 km across, so a ring whose centre is off screen is still on
+  /// screen, and culling on the node's position made rings appear and vanish as
+  /// the reader panned — a circle arriving fully formed in the middle of the
+  /// view. The readability rule is the only gate, and it depends on the zoom,
+  /// not on where the camera is.
+  List<CircleMarker> _peerRings(
+    List<DiscoveredNode> source,
+    MeshcoreController mc,
+    SelfInfo? si,
+    double viewportMeters,
+    ColorScheme cs,
+    GeoBox? cull,
+  ) {
+    int h = 0;
+    for (final DiscoveredNode n in source) {
+      if (!n.hasLocation) continue;
+      h = h * 31 + n.pubKeyHex.hashCode;
+      h = h * 31 + n.latitude.hashCode;
+      h = h * 31 + n.longitude.hashCode;
+    }
+    // The radius is the distance from us, so our own fix is an input too.
+    final OwnLocation? own = mc.ownLocation;
+    h = h * 31 + (own?.latitude.hashCode ?? 0);
+    h = h * 31 + (own?.longitude.hashCode ?? 0);
+    h = h * 31 + viewportMeters.round();
+    h = h * 31 + cs.tertiary.toARGB32();
+    if (cull != null) {
+      h = h * 31 + cull.south.hashCode;
+      h = h * 31 + cull.west.hashCode;
+      h = h * 31 + cull.north.hashCode;
+      h = h * 31 + cull.east.hashCode;
+    }
+    final String sig = '$h';
+    final List<CircleMarker>? cached = _ringCache;
+    if (cached != null && _ringSignature == sig) return cached;
+    final List<CircleMarker> rings = <CircleMarker>[
+      for (final DiscoveredNode n in source)
+        if (n.hasLocation)
+          // The test is on the ring's own extent, not on the node's position.
+          // A ring is up to 5 km across, so a ring whose centre is off screen
+          // is still on screen; culling on the position made rings appear and
+          // vanish as the reader panned, a circle arriving fully formed in the
+          // middle of the view. The box test is cheap and runs for every
+          // located node; the distance is computed only for the nodes whose
+          // largest possible ring could reach the view.
+          if (cull == null ||
+              GeoBox.around(n.latitude!, n.longitude!,
+                      kPeerReachCeilingMeters / 1000)
+                  .intersects(cull))
+            if (_reachMeters(n, mc, si) case final double meters)
+              if (StreetMapView.reachRingReadable(meters, viewportMeters))
+                CircleMarker(
+                  point: LatLng(n.latitude!, n.longitude!),
+                  radius: meters,
+                  useRadiusInMeter: true,
+                  color: Colors.transparent,
+                  borderColor: cs.tertiary.withValues(alpha: .55),
+                  borderStrokeWidth: 1.0,
+                ),
+    ];
+    _ringCache = rings;
+    _ringSignature = sig;
+    return rings;
+  }
+
+  List<CircleMarker>? _ringCache;
+  String? _ringSignature;
+
   /// R25+3 / R61 — basemap source. Starts on OSM; the picker offers
   /// every source in the maps catalogue (built-ins + custom servers).
   /// Session-scoped like the grid's view mode.
@@ -735,7 +786,6 @@ class _StreetMapViewState extends State<StreetMapView> {
     // its list after the tab is gone is the literal reading of "it stays alive".
     _warmGenerationOf?.call();
     _bubbleTick?.cancel();
-    _hexPolyTimer?.cancel();
     _fieldRebuild?.cancel();
     _warm?.cancel();
     _saveView?.cancel();
@@ -1101,15 +1151,23 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// margin cells sit over ground whose tiles have not arrived, and a lattice
   /// over the background colour reads as a rendering fault rather than as a
   /// reading.
-  GeoBox _fieldBox(List<DensityPoint> points) {
+  /// The box the lattice is built over: the viewport, and never more.
+  ///
+  /// It used to fall back to the bounding box of *every* located node when the
+  /// viewport held none, which is the whole mesh — a hundred kilometres of
+  /// lattice at a cell size measured in metres. `hexField` then built tens of
+  /// thousands of cells in one build, and a build that takes four seconds is an
+  /// "isn't responding" dialog. A field with no node in it is not a reading, so
+  /// there is nothing to draw and nothing to build.
+  GeoBox? _fieldBox(List<DensityPoint> points) {
     final GeoBox? visible = _visibleBox();
-    if (visible == null) return _nodeBox(points);
+    if (visible == null) return null;
     final bool any = points.any((DensityPoint p) =>
         p.lat >= visible.south &&
         p.lat <= visible.north &&
         p.lon >= visible.west &&
         p.lon <= visible.east);
-    return any ? visible : _nodeBox(points);
+    return any ? visible : null;
   }
 
   /// The field box rounded outward to whole cells of the current radius.
@@ -1135,22 +1193,6 @@ class _StreetMapViewState extends State<StreetMapView> {
       south: mercatorLat(sy0),
       north: mercatorLat(sy1),
     );
-  }
-
-  GeoBox _nodeBox(List<DensityPoint> points) {
-    double south = 90, west = 180, north = -90, east = -180;
-    for (final DensityPoint p in points) {
-      if (p.lat < south) south = p.lat;
-      if (p.lat > north) north = p.lat;
-      if (p.lon < west) west = p.lon;
-      if (p.lon > east) east = p.lon;
-    }
-    if (south > north) {
-      return const GeoBox(south: -0.01, west: -0.01, north: 0.01, east: 0.01);
-    }
-    const double pad = 0.004;
-    return GeoBox(
-        south: south - pad, west: west - pad, north: north + pad, east: east + pad);
   }
 
   /// The part of the ground this map is showing, as a box.
@@ -1873,16 +1915,14 @@ class _StreetMapViewState extends State<StreetMapView> {
     // that does nothing on the tab whose whole point is that it always draws.
     // The cell size follows the zoom, so a reading is legible at every scale
     // rather than only at the one zoom 250 m happened to suit.
-    final double metresPerPixel = StreetMapView.metersPerPixel(
-        _zoom, hasFix ? start.centre.latitude : 39);
-    // Fill and number appear and disappear together, or a filled square with no
-    // number reads as a large node pin. Hysteresis: appear at the readable size,
-    // leave only once comfortably below it, so a pinch on the boundary does not
-    // make the whole overlay blink.
-    final double cellPx = _densityCellMetresShown / metresPerPixel;
+    // The field is a reading about the mesh, so it appears only once a cell
+    // covers ground worth counting: at street zoom a cell is a few tens of
+    // metres across and the lattice is a mosaic over the streets it describes.
+    // Hysteresis, so a pinch on the boundary does not make the overlay blink.
+    _hexRadiusMetres = hexRadiusForZoomLevel(_zoom);
     final bool wantCells = _densityCellsDrawn
-        ? cellPx >= kDensityLabelMinPx - 6
-        : cellPx >= kDensityLabelMinPx;
+        ? _hexRadiusMetres >= kDensityFieldMinMetres * 0.85
+        : _hexRadiusMetres >= kDensityFieldMinMetres;
     if (wantCells != _densityCellsDrawn) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => _densityCellsDrawn = wantCells);
@@ -1898,7 +1938,6 @@ class _StreetMapViewState extends State<StreetMapView> {
     // the lattice by a fraction of a cell. Quantised as well, because a
     // continuous radius changed the memo key on every frame of a pinch, so the
     // lattice was rebuilt and re-anchored under the finger.
-    _hexRadiusMetres = hexRadiusForZoomLevel(_zoom);
     if (_fieldZoom.isNaN) _fieldZoom = _zoom;
     // The drawn radius in logical pixels, which is what the cap must be sized
     // from: it is not `kHexRadiusPx` once quantisation has moved it.
@@ -1944,15 +1983,16 @@ class _StreetMapViewState extends State<StreetMapView> {
     // edges outward to whole cells keeps the key still while the map slides
     // inside the same cells, so a pan costs nothing until it crosses a cell
     // boundary, and the cells that are drawn do not shift when it does.
-    final GeoBox fieldBox = _snapFieldBox(_fieldBox(densityPoints));
-    final String hexKey = densityPoints.isEmpty
+    final GeoBox? rawBox = _fieldBox(densityPoints);
+    final GeoBox? fieldBox = rawBox == null ? null : _snapFieldBox(rawBox);
+    final String hexKey = fieldBox == null
         ? ''
         : '${fieldBox.south},${fieldBox.west},${fieldBox.north},'
             '${fieldBox.east}|$_hexRadiusMetres|$hexZoom|'
             '${context.skin.preset.name}|${_densitySignature(densityPoints)}';
     if (hexKey != _hexKey) {
       _hexKey = hexKey;
-      _hexCache = densityPoints.isEmpty
+      _hexCache = fieldBox == null
           ? const <HexCell>[]
           : hexField(
               points: densityPoints,
@@ -1967,15 +2007,15 @@ class _StreetMapViewState extends State<StreetMapView> {
               // viewport, so the bound carries a row and a column more than the
               // view itself needs. A bound short of the box drops the last rows,
               // and the bottom of the map simply has no field.
+              // The viewport's own count plus a row and a column for the
+              // snapped box. The second term used to be the same count at a
+              // quarter of the radius, which is fifteen times the viewport and
+              // made the cap meaningless: it never bound, so a box that was
+              // larger than the screen built every cell in it.
               maxCells: hexCellsForViewport(
                     width: MediaQuery.sizeOf(context).width,
                     height: MediaQuery.sizeOf(context).height,
                     radiusPx: drawnRadiusPx,
-                  ) +
-                  hexCellsForViewport(
-                    width: MediaQuery.sizeOf(context).width,
-                    height: MediaQuery.sizeOf(context).height,
-                    radiusPx: drawnRadiusPx * 0.25,
                   ) +
                   8,
             );
@@ -1998,74 +2038,21 @@ class _StreetMapViewState extends State<StreetMapView> {
         (_zoom - _fieldZoom).abs() > _kFieldZoomSettle;
     if (zooming) _scheduleFieldRebuild();
     // Nothing is drawn while the camera is in motion: see [_cameraMoving].
-    final List<HexCell> hexes = (zooming || _cameraMoving)
-        ? const <HexCell>[]
-        : _hexCache.where(mappable).toList(growable: false);
+    final bool fieldHidden = zooming || _cameraMoving;
+    // The drawable cells, memoised on the three things that change them: the
+    // field, the tile readiness, and whether the camera is moving. Filtering
+    // three thousand cells on every rebuild — and the map rebuilds for a
+    // message bubble fading, a poll, a skin change — is work nobody asked for,
+    // and a fresh list each time also means the layer repaints for nothing.
+    final String shownKey = '$hexKey|$readyRev|${fieldHidden ? 1 : 0}';
+    if (shownKey != _hexShownKey) {
+      _hexShownKey = shownKey;
+      _hexShown = fieldHidden
+          ? const <HexCell>[]
+          : _hexCache.where(mappable).toList(growable: false);
+    }
+    final List<HexCell> hexes = _hexShown;
 
-    // A tile arriving used to rebuild every polygon in the field, and a zoom
-    // streams a dozen tiles: the field re-shaped itself a dozen times after the
-    // map had already drawn, which is the "slow repopulate" the owner saw. Two
-    // things fix it.
-    //
-    // First, coalescing: a readiness change schedules one rebuild a fraction of a
-    // second later, so a burst of tile loads is one pass rather than twelve.
-    // Until it lands the previous polygons stay on screen, which is what a reader
-    // expects while the map fills in.
-    //
-    // Second, no rebuild here at all unless the *field* changed (its key) or the
-    // preset did: cells that were already built are reused by id, so a readiness
-    // change only adds the cells that just became drawable.
-    final String fieldKey = '$hexKey|${context.skin.preset.name}';
-    if (fieldKey != _hexPolyKey) {
-      _hexPolyKey = fieldKey;
-      _hexPolyStale = true;
-      // The old cells describe a lattice that no longer exists — a different
-      // radius, or a different set of cells. Nothing is drawn for them: the new
-      // field is built below in this same build, so what appears is the new
-      // lattice, and cells whose tile has not arrived appear when it does.
-      _hexPolygons = const <Polygon<HexCell>>[];
-      _hexPolyTimer?.cancel();
-      _hexPolyTimer = null;
-    }
-    if (readyRev != _hexReadyRev) {
-      _hexReadyRev = readyRev;
-      _schedulePolygonRebuild();
-    }
-    // One list per field, or per coalesced tick. Until then the previous list is
-    // what is drawn, which is exactly what the map looked like a moment ago.
-    if (_hexPolyStale) {
-      _hexPolyStale = false;
-      final Color accent = VizPalette.of(context.skin).accent;
-      final Color edge = cs.onSurface;
-      _hexPolygons = <Polygon<HexCell>>[
-        for (final HexCell c in hexes)
-          Polygon<HexCell>(
-            // The cell's own corners, drawn with the projection scale the
-            // lattice laid it out with.
-            //
-            // Clamped to the projection's limit: at a wide zoom a cell is
-            // hundreds of kilometres across, so one whose centre is near the
-            // pole reaches past 90 degrees and `LatLngBounds` asserts, which took
-            // the whole layer down.
-            points: <LatLng>[
-              for (final LatLng p in c.corners)
-                LatLng(p.latitude.clamp(-85.0, 85.0), p.longitude),
-            ],
-            hitValue: c,
-            // The fill carries the count and the ink; the *edge* is what makes
-            // it a field. An accent-coloured lattice over a satellite photograph
-            // disappeared into the vegetation it was measuring, so the line is
-            // the skin's foreground — the one colour guaranteed to differ from
-            // the ground it is drawn on — and the fill keeps the accent.
-            // One palette lookup for the whole field, not one per cell: the
-            // palette is a map of a dozen colours and building it inside the
-            // loop made a thousand of them per rebuild.
-            color: accent.withValues(alpha: hexAlpha(c.count)),
-            borderColor: edge.withValues(alpha: c.count == 0 ? 0.22 : 0.55),
-            borderStrokeWidth: c.count == 0 ? 0.7 : 1.1,
-          ),
-      ];
-    }
     // The tap handler reads this, and it is the same list the layer draws, so
     // the cell that opens is the cell that was tapped.
     _densityCells = hexes;
@@ -2136,19 +2123,6 @@ class _StreetMapViewState extends State<StreetMapView> {
     // onto the live fix so it ends on the marker.
     final double viewportMeters = MediaQuery.sizeOf(context).height *
         StreetMapView.metersPerPixel(_zoom, selfLat ?? 0);
-    final List<CircleMarker> peerReachRings = <CircleMarker>[
-      for (final DiscoveredNode n in withLoc)
-        if (_reachMeters(n, mc, si) case final double meters)
-          if (StreetMapView.reachRingReadable(meters, viewportMeters))
-            CircleMarker(
-              point: LatLng(n.latitude!, n.longitude!),
-              radius: meters,
-              useRadiusInMeter: true,
-              color: Colors.transparent,
-              borderColor: cs.tertiary.withValues(alpha: .55),
-              borderStrokeWidth: 1.0,
-            ),
-    ];
     // Who has spoken in the last minute, at the place they spoke from. A node
     // with no position is left out rather than pinned to our own fix: a bubble
     // at the wrong place is a worse answer than no bubble.
@@ -2166,6 +2140,22 @@ class _StreetMapViewState extends State<StreetMapView> {
               ),
     ];
     _ensureBubbleTick(bubbles.isNotEmpty);
+
+    // A ring is drawn when any part of it is on screen, not when its node is.
+    //
+    // The node cull reaches a fifth of the view past the edge, and a ring is up
+    // to 5 km across while the viewport is often smaller than that, so a ring
+    // whose centre sat in that margin still swept across the middle of the
+    // screen: the reader saw a circle appear fully formed in the middle of the
+    // view as they panned, and another one leave, which is what "it adds a
+    // circle every time I move" was. The test is on the ring's own extent now,
+    // so a ring enters at the edge it actually crosses.
+    //
+    // The box test is cheap and runs for every located node; the distance (a
+    // haversine) is computed only for the nodes whose largest possible ring
+    // could reach the view, which is a handful at any zoom.
+    final List<CircleMarker> peerReachRings =
+        _peerRings(source, mc, si, viewportMeters, cs, cull);
 
     final List<LatLng> trail = StreetMapView.trailPathFor(
       mc.ownTrail,
@@ -2284,13 +2274,15 @@ class _StreetMapViewState extends State<StreetMapView> {
               // over the quilt, because a cell is about where nodes are and a
               // ring is about how far they reach.
               if (hexes.isNotEmpty && _densityCellsDrawn)
-                PolygonLayer<HexCell>(
-                  // A continuous field rather than a scatter of boxes: every
-                  // hexagon is the same size on the glass at every zoom, its
-                  // ground area is what the chip states, and its shade is its
-                  // count. Built once per change of the field, not once per
-                  // build: see [_hexPolygons].
-                  polygons: _hexPolygons,
+                // A continuous field rather than a scatter of boxes: every
+                // hexagon is the same size on the glass at every zoom, its
+                // ground area is what the chip states, and its shade is its
+                // count. One vector pass, not one polygon widget per cell.
+                HexFieldLayer(
+                  cells: hexes,
+                  radiusPx: drawnRadiusPx,
+                  accent: VizPalette.of(context.skin).accent,
+                  edge: cs.onSurface,
                 ),
               // R61 — event maps (festival streets, courses, camps).
               const EventLayersOverlay(),
@@ -2337,7 +2329,12 @@ class _StreetMapViewState extends State<StreetMapView> {
                     // no centre in sight.
                     if (StreetMapView.reachRingReadable(rangeM, viewportMeters))
                       CircleMarker(
-                        point: start.centre,
+                        // At the fix, not at `start.centre`. The ladder's answer
+                        // is where to *look* — a remembered view, or wherever
+                        // the reader last panned — so the ring used to follow
+                        // the camera while the marker, the trail and every
+                        // distance were computed from the real fix.
+                        point: LatLng(selfLat!, selfLon!),
                         radius: rangeM,
                         useRadiusInMeter: true,
                         // Outline-only: even modest fill alpha accumulates

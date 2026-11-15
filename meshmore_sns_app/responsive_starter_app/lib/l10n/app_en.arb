@@ -510,7 +510,7 @@
   "gridViewPicker": "View",
   "gridZoomWider": "Wider (zoom out)",
   "gridZoomTighter": "Tighter (zoom in)",
-  "gridNeedsFix": "This view needs your own position. Waiting for a GPS fix (phone or device).",
+  "gridNeedsFix": "This view needs your position. Waiting for the phone or the MeshCore radio to report one.",
   "gridViewElevation": "Altitude",
   "fujiLegendTitle": "ALTITUDE",
   "fujiLegendAutoQuery": "Altitudes arrive slowly. Tap the box to ask again.",
@@ -865,7 +865,7 @@
   "chatRestorePassphrase": "Passphrase for the export",
   "chatRestoreConfirm": "Restore",
   "chatRestoreDone": "{count, plural, =1{1 message restored} other{{count} messages restored}}",
-  "chatRestoreFailed": "Wrong passphrase or file",
+  "chatRestoreFailed": "That passphrase did not open the file.",
   "@chatRestoreDone": {
     "placeholders": {
       "count": {
@@ -905,7 +905,7 @@
   "chatSendNotSent": "Not sent: no MeshCore radio.",
   "chatSend": "Send",
   "chatBudgetNear": "Nearly at the limit: the MeshCore radio counts its own name in these bytes",
-  "chatBudgetTooLong": "Too long by {over} bytes. The MeshCore radio would cut the rest without telling you",
+  "chatBudgetTooLong": "Too long by {over} bytes. The MeshCore radio would cut the rest without telling you.",
   "@chatBudgetTooLong": {
     "placeholders": {
       "over": {
@@ -1555,7 +1555,7 @@
     }
   },
   "channelsEdit": "Edit",
-  "channelsSetSnack": "Slot {idx} saved",
+  "channelsSetSnack": "Channel {idx} saved.",
   "@channelsSetSnack": {
     "placeholders": {
       "idx": {
@@ -1597,11 +1597,38 @@
     "description": "OS notification title for an SOS or its acknowledgement."
   },
   "notifBodySos": "Open the app to see the position.",
-  "notifAlarmRunningBody": "Alarm repeating. Open to stop.",
+  "notifBodySosAck": "{name} answered your alarm.",
+  "@notifBodySosAck": {
+    "description": "OS notification body for an acknowledgement of an SOS. The wire form is [ACK:<id>] <callsign> <words>; the lock screen shows a sentence instead.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notifBodySosSafe": "{name} says they are safe.",
+  "@notifBodySosSafe": {
+    "description": "OS notification body for a safe message. The wire form is [SAFE:<id>] <callsign>.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notifBodySosCheckin": "{name} checked in.",
+  "@notifBodySosCheckin": {
+    "description": "OS notification body for a check-in. The wire form carries coordinates, which the lock screen must not publish.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "notifAlarmRunningBody": "The alarm is still repeating. Open the app to stop it.",
   "@notifAlarmRunningBody": {
     "description": "Ongoing notification shown while an SOS is running."
   },
-  "notifBodyFence": "Noticed on the latest position fix.",
+  "notifBodyFence": "This is based on the last position your phone reported, so it may have happened a little earlier.",
   "@notifBodyFence": {
     "description": "OS notification body for a fence crossing. States the limit: fences are evaluated against the position fixes the app already has, so a crossing can lag the walk."
   },
@@ -1665,7 +1692,7 @@
   "@notifQuietBanner": {
     "description": "Shown when one of the app's notification channels is below high importance."
   },
-  "notifMissingChannelBanner": "Notification channel recreated.",
+  "notifMissingChannelBanner": "Android had removed this app's notification settings, so they were set up again.",
   "@notifMissingChannelBanner": {
     "description": "Shown when a notification channel was deleted by the user."
   },
@@ -1707,7 +1734,7 @@
     }
   },
   "channelsClearConfirmBody": "The MeshCore radio has no empty channel, so this one goes back to the public name and key. Other radios need the same to talk here again.",
-  "channelsClearSnack": "Channel {idx} reset to the public defaults",
+  "channelsClearSnack": "Channel {idx} reset to the shared defaults.",
   "@channelsClearSnack": {
     "placeholders": {
       "idx": {
@@ -1830,7 +1857,7 @@
     }
   },
   "deviceRadioApplied": "The MeshCore radio confirmed the change.",
-  "deviceRadioRefused": "The MeshCore radio refused {param} (error {code}). Later writes were not sent.",
+  "deviceRadioRefused": "The MeshCore radio refused {param} (error {code}). Nothing after it was sent.",
   "@deviceRadioRefused": {
     "placeholders": {
       "param": {
@@ -1841,7 +1868,7 @@
       }
     }
   },
-  "deviceRadioSilent": "No answer for {param} within five seconds. The write may not have applied.",
+  "deviceRadioSilent": "The MeshCore radio did not answer {param} within five seconds, so the change may not have taken.",
   "@deviceRadioSilent": {
     "placeholders": {
       "param": {
@@ -1849,7 +1876,7 @@
       }
     }
   },
-  "deviceRadioUnsupported": "{param} is not in this firmware build.",
+  "deviceRadioUnsupported": "This MeshCore radio's firmware does not have {param}.",
   "@deviceRadioUnsupported": {
     "placeholders": {
       "param": {
@@ -1857,10 +1884,10 @@
       }
     }
   },
-  "deviceRadioUnknownState": "Cannot change MeshCore radio settings yet: this radio has not reported its path-hash size, so there is no value to undo back to.",
+  "deviceRadioUnknownState": "This MeshCore radio has not said how it labels routes yet, so there is nothing to undo back to. Reconnect and try again.",
   "deviceRadioRevert": "Undo MeshCore radio change",
   "deviceRadioReverted": "Previous operating point restored.",
-  "deviceRadioRevertUnavailable": "Undo is one use only.",
+  "deviceRadioRevertUnavailable": "Undo works once. After that, set the value again by hand.",
   "deviceRadioRevertFailed": "Undo did not apply. The MeshCore radio kept its last values.",
   "radioHealthTitle": "MeshCore radio health",
   "radioHealthRead": "Read",
@@ -1913,7 +1940,7 @@
   },
   "deviceLoadFromDevice": "Load from device",
   "deviceApplyRadio": "Apply MeshCore radio params",
-  "deviceConnectFirst": "Connect a MeshCore radio first (Diagnostics & connect).",
+  "deviceConnectFirst": "Connect a MeshCore radio first, in Settings under MeshCore radio connection.",
   "deviceAdvertName": "Advert name",
   "deviceSetName": "Set name",
   "deviceAdvertLatitude": "Advert latitude (°)",
@@ -1926,8 +1953,8 @@
   "deviceAdvertSourcePinned": "Pinned",
   "deviceAdvertSourceGps": "Device GPS",
   "deviceToastNameEmpty": "Enter a node name",
-  "deviceToastNameSet": "Name updated. Re-advertising to neighbours",
-  "deviceToastSendFailed": "Send failed: {error}",
+  "deviceToastNameSet": "Name updated. Neighbours will hear it on the next announcement.",
+  "deviceToastSendFailed": "The MeshCore radio did not take it: {error}",
   "@deviceToastSendFailed": {
     "placeholders": {
       "error": {
@@ -1935,16 +1962,16 @@
       }
     }
   },
-  "deviceToastNoDeviceYet": "Device hasn't reported yet. Try once linked",
-  "deviceToastNoGpsYet": "Device has no location yet (no GPS fix)",
-  "deviceToastLoadedDeviceLoc": "Loaded device location · tap Set advert location to broadcast",
-  "deviceToastGettingPhoneFix": "Getting phone GPS fix…",
-  "deviceToastPhoneFixFailed": "Phone GPS fix failed (services off or timeout)",
-  "deviceToastNoFixReturned": "No fix returned",
-  "deviceToastGotPhoneLoc": "Got phone location · tap Set advert location to broadcast",
-  "deviceToastInvalidLatLon": "Enter valid lat (−90.90) and lon (−180.180)",
-  "deviceToastAdvertLocSet": "Advert location set",
-  "deviceToastInvalidRadio": "Enter valid numbers for freq/BW/SF/CR",
+  "deviceToastNoDeviceYet": "The MeshCore radio has not answered yet. Try again once it is connected.",
+  "deviceToastNoGpsYet": "The MeshCore radio has not worked out where it is yet.",
+  "deviceToastLoadedDeviceLoc": "Loaded the MeshCore radio's position. Tap Set advert location to send it.",
+  "deviceToastGettingPhoneFix": "Getting your position…",
+  "deviceToastPhoneFixFailed": "The phone could not get a position. Check that location is on, then try again.",
+  "deviceToastNoFixReturned": "The phone did not get a position. Try again outdoors.",
+  "deviceToastGotPhoneLoc": "Got your position. Tap Set advert location to send it.",
+  "deviceToastInvalidLatLon": "Enter a latitude from -90 to 90 and a longitude from -180 to 180.",
+  "deviceToastAdvertLocSet": "The MeshCore radio will now announce this position.",
+  "deviceToastInvalidRadio": "Enter a frequency, a bandwidth, a spreading factor and a coding rate.",
   "deviceLocPermDenied": "Location permission needed",
   "deviceLocPermDeniedPerm": "Location permission permanently denied. Open OS settings to grant it.",
   "deviceOpenSettings": "Open settings",
@@ -2222,7 +2249,7 @@
     }
   },
   "traceReset": "Reset route",
-  "traceResetDone": "Route reset. The next message floods.",
+  "traceResetDone": "Route cleared. The next message goes out to every MeshCore radio in range.",
   "traceNoRepeaters": "Trace needs a repeater on the way: pick a repeater, or a contact reached through one.",
   "discoverStart": "Discover",
   "discoverListening": "Listening… {s} s",
@@ -2780,7 +2807,7 @@
       }
     }
   },
-  "diagnosticsSendFailed": "The send failed: {error}",
+  "diagnosticsSendFailed": "The MeshCore radio did not take it: {error}",
   "@diagnosticsSendFailed": {
     "placeholders": {
       "error": {
@@ -2810,7 +2837,7 @@
   "diagnosticsResolveTail": "Resolve channel-tail",
   "diagnosticsExportFixture": "Export fixture",
   "diagnosticsCopyFixture": "Copy fixture JSON",
-  "diagnosticsFixtureCopied": "Copied. Save it under the protocol package's captured vectors.",
+  "diagnosticsFixtureCopied": "Copied.",
   "diagnosticsNoRfLog": "No RF-log frame captured yet",
   "diagnosticsNotRfLog": "The last RF-log frame did not decode",
   "diagnosticsNotGrpTxt": "That packet is not a group text. Send on the Public channel and try again.",
@@ -2925,8 +2952,8 @@
     }
   },
   "networksApplyConfirm": "Apply",
-  "networksApplied": "Applied.",
-  "networksApplyFailed": "Could not apply: {error}",
+  "networksApplied": "The network was applied.",
+  "networksApplyFailed": "The network was not applied: {error}",
   "@networksApplyFailed": {
     "placeholders": {
       "error": {
@@ -3282,7 +3309,7 @@
   "@degradedRadioAbsent": {},
   "degradedRadioSilent": "The MeshCore radio is paired but has not answered. It may still have carried out the last request. Check the radio before retrying.",
   "@degradedRadioSilent": {},
-  "degradedNoLocation": "Location is off, so distances, bearings and place tags have no fix. Everything else works.",
+  "degradedNoLocation": "Location is off, so distances, bearings and place tags cannot be worked out. Everything else works.",
   "@degradedNoLocation": {},
   "degradedMapOffline": "Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw.",
   "@degradedMapOffline": {},
@@ -3440,7 +3467,7 @@
   "checkinWatching": "Waiting for an answer",
   "checkinOverdue": "Overdue. The deadline passed and no answer came back.",
   "checkinAnsweredDirect": "Answered, by direct message.",
-  "checkinAnsweredChannel": "Answered on the channel by name only, not by their key.",
+  "checkinAnsweredChannel": "Answered on the channel by name only, so the app cannot prove who it was.",
   "checkinSent": "Check-in sent. Nothing repeats.",
   "checkinNeedsRadio": "A check-in needs a connected MeshCore radio and its name.",
   "photoAnnounceLoad": "Load · {n} packets",
@@ -4386,8 +4413,8 @@
   "deviceContactsImportDone": "Sent, MeshCore radio confirms",
   "diagnosticsRestartRadio": "Restart the MeshCore radio",
   "diagnosticsRestartConfirm": "Restart this MeshCore radio now? The link drops for a few seconds while it boots, and anything queued on it is lost.",
-  "diagnosticsRestartSent": "Restart sent, link will drop",
-  "diagnosticsRestartNoReply": "Restart sent, not confirmed",
+  "diagnosticsRestartSent": "Restart sent. The connection will drop.",
+  "diagnosticsRestartNoReply": "Restart sent, but the MeshCore radio did not confirm it.",
   "settingsSecuritySection": "MeshCore radio access",
   "settingsPinIntro": "A pairing PIN gates a new Bluetooth pairing to this MeshCore radio. The radio still keeps its own list of bonded devices.",
   "settingsPinCurrent": "Pairing PIN",
@@ -4789,7 +4816,7 @@
       }
     }
   },
-  "geofenceReshapeGone": "That fence is gone",
+  "geofenceReshapeGone": "That fence has been deleted.",
   "mediaReceivedForeign": "{n} more arrived in a codec this build does not carry, so they cannot be shown here.",
   "@mediaReceivedForeign": {
     "description": "Names pictures that arrived in AEIC, MeshCore Open's neural codec, which this build does not ship. Without this line an arriving picture looks like nobody sending one.",

@@ -58,6 +58,14 @@ abstract interface class NotificationStrings {
   /// text stays in the thread.
   String sosBody();
 
+  /// The body for an acknowledgement, a safe message or a check-in.
+  ///
+  /// Those three travel as `[ACK:<id6>] <callsign> …`, `[SAFE:<id6>] <callsign>`
+  /// and `[CHK:<id6>] <lat>,<lon> <callsign> until <time>`. Posting the wire
+  /// form put a bracketed tag on the lock screen, and the check-in form put the
+  /// coordinates there too, which is the one thing [sosBody] exists to avoid.
+  String sosTagBody(SosTag tag, String? name);
+
   /// The body of the catch-up line: how many messages are waiting, and
   /// nothing about their contents. A queue is read in the app, not on a lock
   /// screen.
@@ -110,6 +118,17 @@ class LocalizedNotificationStrings implements NotificationStrings {
 
   @override
   String sosBody() => l10n.notifBodySos;
+
+  @override
+  String sosTagBody(SosTag tag, String? name) {
+    final String who = (name == null || name.isEmpty) ? '?' : name;
+    return switch (tag) {
+      SosTag.sos => l10n.notifBodySos,
+      SosTag.ack => l10n.notifBodySosAck(who),
+      SosTag.safe => l10n.notifBodySosSafe(who),
+      SosTag.checkin => l10n.notifBodySosCheckin(who),
+    };
+  }
 
   @override
   String unreadDigest(int count) => l10n.notifUnreadDigest(count);
@@ -233,6 +252,22 @@ class NotificationService {
     return h & 0x7FFFFFFF;
   }
 
+  /// What the lock screen says for [text].
+  ///
+  /// An ordinary message is its own text. A tagged one is a sentence: the tag
+  /// is protocol syntax, and the check-in form carries coordinates that the
+  /// lock screen must not publish.
+  String _bodyFor(String text, String? name, {bool channel = false}) {
+    // A channel line arrives as `sender: body`, and the tag starts after that
+    // prefix. A direct message's text is the body already, so stripping a
+    // prefix there would eat the first words of a message that happens to
+    // contain a colon.
+    final SosMessage? parsed =
+        parseSos(channel ? withoutSenderPrefix(text) : text);
+    if (parsed == null) return text;
+    return strings().sosTagBody(parsed.tag, name);
+  }
+
   void _onChannel(ChatMessage m) {
     if (m.outgoing) return;
     if (isBlocked?.call(m) ?? false) return;
@@ -279,7 +314,7 @@ class NotificationService {
       id: idFor(m.id),
       cls: cls,
       title: strings().title(cls, channelName(m.channelIdx)),
-      body: sos ? strings().sosBody() : m.text,
+      body: _bodyFor(m.text, channelName(m.channelIdx), channel: true),
       payload: 'ch:${m.channelIdx}',
     ));
   }
@@ -303,7 +338,7 @@ class NotificationService {
       cls: sos ? NotificationClass.sos : NotificationClass.direct,
       title: strings().title(
           sos ? NotificationClass.sos : NotificationClass.direct, name ?? key),
-      body: sos ? strings().sosBody() : m.text,
+      body: _bodyFor(m.text, name),
       payload: 'dm:$key',
     ));
   }

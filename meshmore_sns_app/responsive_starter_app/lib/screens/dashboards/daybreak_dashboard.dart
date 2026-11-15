@@ -161,17 +161,19 @@ class DaybreakDashboard extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          SizedBox(
-                            width: skin.space.step(9) * 2,
-                            child: Text(
-                              m.events[i].time,
-                              style: TextStyle(
+                          // The stamp sizes to its own text and the gap is a
+                          // gap. A guessed 64 dp column wrapped the last digit
+                          // of "12:34:56" onto a second line at larger text and
+                          // left the stamp touching the event it describes.
+                          Text(
+                            m.events[i].time,
+                            style: TextStyle(
                                 color: muted,
                                 fontFamily: skin.type.monoFamily,
                                 fontSize: skin.type.sizeSm,
                               ),
-                            ),
                           ),
+                          SizedBox(width: skin.space.rowGap),
                           Expanded(
                             child: Text(
                               m.events[i].text,

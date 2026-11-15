@@ -8,6 +8,7 @@ import 'package:meshmore_sns_app/notifications/channel_notification_prefs.dart';
 import 'package:meshmore_sns_app/notifications/message_notification.dart';
 import 'package:meshmore_sns_app/notifications/notification_focus.dart';
 import 'package:meshmore_sns_app/notifications/notification_service.dart';
+import 'package:meshmore_sns_app/sos/sos_message.dart';
 
 import '../support/fake_notifier.dart';
 
@@ -37,6 +38,14 @@ class _Strings implements NotificationStrings {
 
   @override
   String sosBody() => 'SOS body without coordinates';
+
+  @override
+  String sosTagBody(SosTag tag, String? name) => switch (tag) {
+        SosTag.sos => 'SOS body without coordinates',
+        SosTag.ack => '${name ?? '?'} answered your alarm.',
+        SosTag.safe => '${name ?? '?'} says they are safe.',
+        SosTag.checkin => '${name ?? '?'} checked in.',
+      };
 
   @override
   String unreadDigest(int count) =>

@@ -100,6 +100,15 @@ const double kDensityLabelMinPx = 28.0;
 /// Whether a square this many logical pixels across can hold its count.
 bool densityLabelsFit(double cellPx) => cellPx >= kDensityLabelMinPx;
 
+/// The smallest ground size a cell may have before the field is drawn at all.
+///
+/// The lattice keeps a constant size on the glass, so at street zoom a cell is
+/// a few tens of metres across: a field of them is a mosaic over the streets it
+/// is supposed to describe, and "nodes per cell" at that scale is a count of
+/// one. The field is a reading about the mesh, so it appears once a cell covers
+/// ground a reader would call a neighbourhood — about zoom 15 and out.
+const double kDensityFieldMinMetres = 60.0;
+
 /// The sizes a cell may take, in metres. A ladder rather than a computed
 /// number, so the label always reads as a round distance and two views can be
 /// compared without arithmetic.
