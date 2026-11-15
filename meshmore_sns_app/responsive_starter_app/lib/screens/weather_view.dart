@@ -204,7 +204,7 @@ class _WeatherViewState extends State<WeatherView> {
             ],
           ),
         ],
-        const SizedBox(height: 14),
+        SizedBox(height: context.skin.space.sectionGap),
         Text(l.weatherMeasuredHeader,
             style: TextStyle(
                 color: cs.onSurfaceVariant,
@@ -351,7 +351,9 @@ class _SummaryCard extends StatelessWidget {
           ],
         );
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: EdgeInsets.symmetric(
+          horizontal: context.skin.space.screenEdge,
+          vertical: context.skin.space.rowInset),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .4),
         borderRadius: mmRadius(context, 14),
@@ -363,7 +365,7 @@ class _SummaryCard extends StatelessWidget {
           Text(l.weatherReporting(count),
               style: TextStyle(
                   color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm, letterSpacing: 2)),
-          const SizedBox(height: 10),
+          SizedBox(height: context.skin.space.rowGap),
           // Three numbers side by side at 200 % text are wider than a
           // 320 dp screen (measured: 402 px of overflow), and there is no
           // useful truncation for a temperature. They wrap instead, and each
@@ -532,7 +534,11 @@ class _MicroclimateStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: EdgeInsets.fromLTRB(
+          context.skin.space.rowInset,
+          context.skin.space.step(3),
+          context.skin.space.rowInset,
+          context.skin.space.step(3)),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .35),
         borderRadius: mmRadius(context, 14),
@@ -573,7 +579,7 @@ class _MicroclimateStrip extends StatelessWidget {
                 fontSize: context.skin.type.sizeSm,
                 height: 1.3),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: context.skin.space.rowGap),
           if (last24h == null)
             Text(l.wxAmbientEmpty,
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBodyLg))
@@ -627,7 +633,8 @@ class _WindowRow extends StatelessWidget {
     final AmbientWx? a = ambient;
     final Widget pill = Container(
       width: 40,
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: EdgeInsets.symmetric(
+          vertical: context.skin.space.insideText + 1),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: cs.primary.withValues(alpha: a == null ? .08 : .16),
@@ -646,7 +653,7 @@ class _WindowRow extends StatelessWidget {
       return Row(
         children: <Widget>[
           pill,
-          const SizedBox(width: 12),
+          SizedBox(width: context.skin.space.rowInset),
           Text('—',
               style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeLg)),
         ],
@@ -657,10 +664,10 @@ class _WindowRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         pill,
-        const SizedBox(width: 10),
+        SizedBox(width: context.skin.space.rowGap),
         Text(a.dominant != null ? wxGlyph(a.dominant!) : '🌡',
             style: TextStyle(fontSize: context.skin.type.size(26))),
-        const SizedBox(width: 10),
+        SizedBox(width: context.skin.space.rowGap),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -764,7 +771,9 @@ class _MicroclimateBubble extends StatelessWidget {
     final FormatPrefs? prefs = context.formatPrefs;
     final String? t = _temp(prefs);
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 7, 12, 7),
+      padding: EdgeInsets.fromLTRB(context.skin.space.rowGap,
+          context.skin.space.step(3), context.skin.space.rowInset,
+          context.skin.space.step(3)),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .4),
         borderRadius: mmRadius(context, 20),

@@ -824,7 +824,7 @@ class _StreetMapViewState extends State<StreetMapView> {
       try {
         _map.fitCamera(CameraFit.bounds(
           bounds: LatLngBounds.fromPoints(corners),
-          padding: const EdgeInsets.all(48),
+          padding: EdgeInsets.all(context.skin.space.step(9) + context.skin.space.rowInset),
         ));
       } catch (_) {
         // The map has not rendered yet; the corners are still loaded and the
@@ -2724,7 +2724,9 @@ class _StreetMapViewState extends State<StreetMapView> {
             top: 12,
             child: IgnorePointer(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                    horizontal: context.skin.space.rowGap,
+                    vertical: context.skin.space.step(3)),
                 decoration: BoxDecoration(
                   color: cs.surface,
                   borderRadius: mmRadius(context, 4),
