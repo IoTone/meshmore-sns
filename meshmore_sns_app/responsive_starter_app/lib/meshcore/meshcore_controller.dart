@@ -2197,11 +2197,18 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// Messages and faults always append: two identical messages are two
   /// messages, and a repeated fault is a repeated fault.
   void _pushEvent(MeshEvent ev) {
-    if (_events.isNotEmpty && _stateKinds.contains(ev.kind)) {
-      final MeshEvent last = _events.last;
-      if (last.kind == ev.kind && _sameArgs(last.args, ev.args)) {
-        _events[_events.length - 1] =
-            MeshEvent(kind: ev.kind, args: ev.args, at: ev.at);
+    if (_stateKinds.contains(ev.kind)) {
+      // The last row of this KIND, not the last row overall. The radio polls
+      // battery and self-info on the same timer, so they alternate and two
+      // consecutive rows are never the same event: the feed on the handset read
+      // "battery 3.96V", "self-info · WIOld", "battery 3.96V", "self-info ·
+      // WIOld" — one line each per minute, which is what taught a reader to skip
+      // it. Matching on the kind keeps the row in place and refreshes its
+      // timestamp, so a state that has not changed is one row that stays fresh
+      // and a state that HAS changed is a new row.
+      final int at = _events.lastIndexWhere((MeshEvent e) => e.kind == ev.kind);
+      if (at >= 0 && _sameArgs(_events[at].args, ev.args)) {
+        _events[at] = MeshEvent(kind: ev.kind, args: ev.args, at: ev.at);
         return;
       }
     }

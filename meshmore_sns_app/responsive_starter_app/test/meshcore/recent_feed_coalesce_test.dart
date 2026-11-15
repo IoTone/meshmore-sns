@@ -38,6 +38,23 @@ void main() {
           reason: 'the same reading three times is one line');
     });
 
+    test('two state kinds that alternate still collapse', () async {
+      // The radio polls battery and self-info on the same timer, so on the
+      // handset the feed alternated and no two CONSECUTIVE rows were identical:
+      // the consecutive-only collapse never fired and the feed read as a poll
+      // log. Matching on the last row of the same kind fixes it.
+      final int before = ctrl.recentEvents.length;
+      for (int i = 0; i < 3; i++) {
+        fake.emit(batteryFrame(4030));
+        await Future<void>.delayed(Duration.zero);
+        fake.emit(selfInfoFrame());
+        await Future<void>.delayed(Duration.zero);
+      }
+      // At most one new row per kind, whatever the order they arrive in.
+      expect(ctrl.recentEvents.length, lessThanOrEqualTo(before + 2),
+          reason: 'a repeating pair is two lines, not six');
+    });
+
     test('a changed reading is a new row', () async {
       fake.emit(batteryFrame(4030));
       await Future<void>.delayed(Duration.zero);
