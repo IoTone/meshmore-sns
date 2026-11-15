@@ -1810,17 +1810,24 @@ class _StreetMapViewState extends State<StreetMapView> {
     }
     // One size for the hexagons and for the chip that names them: a constant
     // size on the glass, so the ground area is the only thing a zoom changes.
-    // Quantised: a continuous radius changed the memo key on every frame of a
-    // pinch, so the lattice was rebuilt and re-anchored under the finger instead
-    // of scaling with the ground it was drawn on.
-    _hexRadiusMetres = quantiseHexRadius(
-        hexRadiusForZoom(metresPerPixel: metresPerPixel));
+    //
+    // The size is in the projection's metres, which is why it comes from the
+    // zoom rather than from the ground metres under the camera. A cell size
+    // taken from the ground scale carries the latitude, and the latitude is a
+    // property of the box: every resize or return from the app switcher moved
+    // the lattice by a fraction of a cell. Quantised as well, because a
+    // continuous radius changed the memo key on every frame of a pinch, so the
+    // lattice was rebuilt and re-anchored under the finger.
+    _hexRadiusMetres = hexRadiusForZoomLevel(_zoom);
     // The drawn radius in logical pixels, which is what the cap must be sized
     // from: it is not `kHexRadiusPx` once quantisation has moved it.
-    final double drawnRadiusPx = metresPerPixel > 0
-        ? _hexRadiusMetres / metresPerPixel
-        : kHexRadiusPx;
-    _densityCellMetresShown = math.sqrt(3) * _hexRadiusMetres;
+    final double drawnRadiusPx = _hexRadiusMetres / hexMetresPerPixel(_zoom);
+    // The chip speaks ground metres, so it converts back at the camera's own
+    // latitude: the cell is one size on the glass everywhere, which is a
+    // different ground size at every latitude.
+    _densityCellMetresShown = math.sqrt(3) *
+        _hexRadiusMetres *
+        groundPerProjectionMetre(start.centre.latitude);
     final List<DensityPoint> densityPoints = _showDensity
         ? <DensityPoint>[
             for (final DiscoveredNode n in mc.nodes)

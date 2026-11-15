@@ -21,49 +21,40 @@ void main() {
   /// The ground area of a regular hexagon with circumradius R.
   double hexArea(double r) => 3 * math.sqrt(3) / 2 * r * r;
 
-  test('a hexagon is not flattened: width is sqrt(3) x radius', () {
-    const LatLng centre = LatLng(47.61, -122.335);
+  test('a hexagon is regular on the screen, at any latitude', () {
+    // Measured in the projection's metres, because that is the plane the map
+    // draws in: a regular shape there is a regular shape on the glass. The
+    // lattice used to be laid out in ground metres, which is the same thing near
+    // the box's centre and a stretch away from it.
     const double r = 200;
-    final List<LatLng> corners = hexCorners(centre, r);
-    expect(corners.length, 6);
+    for (final double lat in <double>[0, 39, 47.61, 60, -33]) {
+      final LatLng centre = LatLng(lat, -122.335);
+      final List<LatLng> corners = hexCorners(centre, r);
+      expect(corners.length, 6);
 
-    // Distances from the centre are all the circumradius: a flattened hexagon
-    // would have two of them shorter.
-    final List<double> toCorners = <double>[
-      for (final LatLng c in corners)
-        math.sqrt(
-          math.pow((c.latitude - centre.latitude) * kMetresPerDegLatHex, 2) +
-              math.pow(
-                  (c.longitude - centre.longitude) *
-                      kMetresPerDegLatHex *
-                      math.cos(centre.latitude * math.pi / 180),
-                  2),
-        ),
-    ];
-    for (final double d in toCorners) {
-      expect(d, closeTo(r, 2), reason: 'every corner is one radius away');
+      final double cx = mercatorX(centre.longitude);
+      final double cy = mercatorY(centre.latitude);
+      final List<double> toCorners = <double>[
+        for (final LatLng c in corners)
+          math.sqrt(math.pow(mercatorX(c.longitude) - cx, 2) +
+              math.pow(mercatorY(c.latitude) - cy, 2)),
+      ];
+      for (final double d in toCorners) {
+        expect(d, closeTo(r, 0.01),
+            reason: 'at $lat degrees every corner is one radius away');
+      }
+
+      // The bounding box: width sqrt(3)·R, height 2R.
+      final Iterable<double> ys = corners.map((LatLng c) => mercatorY(c.latitude));
+      final Iterable<double> xs = corners.map((LatLng c) => mercatorX(c.longitude));
+      final double height = ys.reduce((double a, double b) => a > b ? a : b) -
+          ys.reduce((double a, double b) => a < b ? a : b);
+      final double width = xs.reduce((double a, double b) => a > b ? a : b) -
+          xs.reduce((double a, double b) => a < b ? a : b);
+      expect(height, closeTo(2 * r, 0.02));
+      expect(width, closeTo(math.sqrt(3) * r, 0.02),
+          reason: 'a hexagon wider or narrower than √3·R reads as squashed');
     }
-
-    // The bounding box: width sqrt(3)·R, height 2R.
-    final double northMost = corners
-        .map((LatLng c) => c.latitude)
-        .reduce((double a, double b) => a > b ? a : b);
-    final double southMost = corners
-        .map((LatLng c) => c.latitude)
-        .reduce((double a, double b) => a < b ? a : b);
-    final double eastMost = corners
-        .map((LatLng c) => c.longitude)
-        .reduce((double a, double b) => a > b ? a : b);
-    final double westMost = corners
-        .map((LatLng c) => c.longitude)
-        .reduce((double a, double b) => a < b ? a : b);
-    final double height = (northMost - southMost) * kMetresPerDegLatHex;
-    final double width = (eastMost - westMost) *
-        kMetresPerDegLatHex *
-        math.cos(centre.latitude * math.pi / 180);
-    expect(height, closeTo(2 * r, 4));
-    expect(width, closeTo(math.sqrt(3) * r, 4),
-        reason: 'a hexagon wider or narrower than √3·R reads as a squashed cell');
   });
 
   test('a node lands in exactly one cell, and the field is dense', () {
@@ -140,9 +131,10 @@ void main() {
       (lat: 47.6190, lon: -122.3210, pubKey: 'lonely'),
     ];
     final List<HexCell> cells = hexField(
-        points: points, box: box, circumradiusMetres: 100, maxCells: 1);
+        points: points, box: box, circumradiusMetres: 250, maxCells: 1);
     expect(cells.length, 1);
-    expect(cells.single.count, 9);
+    expect(cells.single.count, 9,
+        reason: 'nine points a few metres apart share one cell at 250 m');
   });
 
   // The field is a grid of bins, so a bin has to look the same at every zoom:
@@ -220,6 +212,38 @@ void main() {
           reason: 'no latitude was shared, so the lattice moved with the camera');
     });
 
+    test('a resize cannot move the lattice', () {
+      // The owner saw the hexagons a hair off from where they were after
+      // swiping up to the app switcher and coming back. The cause was the cell
+      // size: it came from ground metres under the camera, so metres per degree
+      // of longitude — a cosine of the box's centre latitude — was part of the
+      // frame. A ten-thousandth of a degree of latitude, which a window resize
+      // or an app switch can produce, rescaled the frame and slid every cell
+      // about a hundredth of a cell.
+      HexCell cellAt(GeoBox b) => hexField(
+            points: const <DensityPoint>[(lat: 38.92, lon: -104.79, pubKey: 'p')],
+            box: b,
+            circumradiusMetres: 250,
+          ).single;
+
+      const GeoBox a =
+          GeoBox(south: 38.90, west: -104.80, north: 38.95, east: -104.75);
+      const GeoBox b = GeoBox(
+          south: 38.9001, west: -104.7999, north: 38.9501, east: -104.7499);
+      final HexCell ca = cellAt(a);
+      final HexCell cb = cellAt(b);
+      expect(cb.centre.latitude, ca.centre.latitude,
+          reason: 'the cell under a fixed point moved north');
+      expect(cb.centre.longitude, ca.centre.longitude,
+          reason: 'the cell under a fixed point moved east');
+
+      // And the corners come along with it, so the drawn field is unmoved.
+      for (int i = 0; i < 6; i++) {
+        expect(cb.corners[i].latitude, ca.corners[i].latitude);
+        expect(cb.corners[i].longitude, ca.corners[i].longitude);
+      }
+    });
+
     test('a cell is drawn at the width its column pitch gave it', () {
       // A world view: the box centre is far from the cells at its edges, which
       // is where recomputing metres-per-longitude per cell separated the columns.
@@ -230,23 +254,19 @@ void main() {
           includeEmpty: true);
       expect(cells, isNotEmpty);
       double widthOf(HexCell c) {
-        final double west = c.corners
-            .map((LatLng p) => p.longitude)
-            .reduce((double a, double b) => a < b ? a : b);
         final double east = c.corners
-            .map((LatLng p) => p.longitude)
+            .map((LatLng p) => mercatorX(p.longitude))
             .reduce((double a, double b) => a > b ? a : b);
-        // Measured with the box's own scale, the one the lattice laid the cells
-        // out with. Using each cell's latitude here would re-introduce exactly
-        // the error the fix removes and measure nothing.
-        final double lat0 = (30 + 60) / 2;
-        return (east - west) *
-            kMetresPerDegLatHex *
-            math.cos(lat0 * math.pi / 180).abs();
+        final double west = c.corners
+            .map((LatLng p) => mercatorX(p.longitude))
+            .reduce((double a, double b) => a < b ? a : b);
+        return east - west;
       }
 
-      // In ground metres at the cell's own latitude, every cell must measure the
-      // same width, √3·R, whichever row it is on.
+      // Every cell must measure the same width in the plane the lattice is laid
+      // out in, √3·R, whichever row it is on — including a box whose cells are
+      // thirty degrees apart, which is where a per-cell scale used to separate
+      // the columns by forty percent.
       final double pitch = math.sqrt(3) * 500000;
       for (final HexCell c in cells) {
         expect(widthOf(c), closeTo(pitch, pitch * 0.02),

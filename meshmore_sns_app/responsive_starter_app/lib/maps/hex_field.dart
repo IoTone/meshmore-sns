@@ -29,6 +29,43 @@ import 'tile_math.dart';
 /// is not a survey.
 const double kMetresPerDegLatHex = 111320.0;
 
+/// The sphere the map's own projection uses.
+///
+/// The lattice is laid out in the projection's metres, not in ground metres.
+/// Ground metres need a scale per place — metres per degree of longitude is a
+/// cosine of the latitude — and taking that cosine at the centre of the box made
+/// the cell size a property of the *camera*: nudge the box by a ten-thousandth
+/// of a degree, as a window resize or returning from the app switcher does, and
+/// every hexagon moved by a fraction of a cell. The projection's metres are the
+/// same at every latitude, so the lattice is the same field over the same ground
+/// for every box that covers it, and a cell is a regular hexagon on screen at
+/// every zoom and every latitude.
+const double kMercatorRadiusMetres = 6378137.0;
+
+/// Web Mercator, the projection the tiles and the screen share.
+double mercatorX(double lon) => lon * math.pi / 180 * kMercatorRadiusMetres;
+
+double mercatorY(double lat) {
+  final double c = lat.clamp(-85.05112878, 85.05112878);
+  return math.log(math.tan(math.pi / 4 + c * math.pi / 360)) *
+      kMercatorRadiusMetres;
+}
+
+double mercatorLon(double x) => x / kMercatorRadiusMetres * 180 / math.pi;
+
+double mercatorLat(double y) =>
+    (2 * math.atan(math.exp(y / kMercatorRadiusMetres)) - math.pi / 2) *
+    180 /
+    math.pi;
+
+/// How many ground metres one projection metre is worth at [lat].
+///
+/// The projection stretches as the secant of the latitude, so a cell that is `R`
+/// projection metres across covers `R·cos(lat)` metres of ground. A cell is a
+/// size on the glass; this is what that size means under it.
+double groundPerProjectionMetre(double lat) =>
+    math.cos(lat * math.pi / 180).abs().clamp(0.0, 1.0);
+
 /// One hexagon: where it is, which lattice cell it is, and what fell inside it.
 class HexCell {
   const HexCell({
@@ -86,10 +123,6 @@ List<HexCell> hexField({
   bool includeEmpty = false,
 }) {
   if (circumradiusMetres <= 0) return const <HexCell>[];
-  final double lat0 = (box.south + box.north) / 2;
-  final double metresPerLon =
-      kMetresPerDegLatHex * math.cos(lat0 * math.pi / 180).abs();
-  if (metresPerLon < 1) return const <HexCell>[];
 
   // Pointy-top lattice: width = √3·R, vertical pitch = 1.5·R, odd columns
   // pushed down by half a pitch (equivalently odd rows pushed east by half a
@@ -101,27 +134,24 @@ List<HexCell> hexField({
   // It used to start at the box's own north-west corner, so every pan moved the
   // origin, every cell moved with it, and the hexagons therefore held their
   // screen position while the ground slid underneath — a field pinned to the
-  // glass. Snapping the origin to a whole number of cells in a global metre
-  // frame makes the lattice a property of the ground: pan by less than one cell
-  // and the hexagons stay put.
-  final double anchorX =
-      ((box.west * metresPerLon) / width).floorToDouble() * width;
-  final double anchorY =
-      (((90 - box.north) * kMetresPerDegLatHex) / pitchY).floorToDouble() *
-          pitchY;
-  final double originLat = 90 - anchorY / kMetresPerDegLatHex;
-  final double originLon = anchorX / metresPerLon;
+  // glass. Snapping the origin to a whole number of cells in the projection's
+  // own metres makes the lattice a property of the ground: pan by less than one
+  // cell and the hexagons stay put.
+  final double originX = (mercatorX(box.west) / width).floorToDouble() * width;
+  final double originY =
+      (mercatorY(box.north) / pitchY).floorToDouble() * pitchY;
 
   ({double x, double y}) toMetres(double lat, double lon) => (
-        x: (lon - originLon) * metresPerLon,
-        y: (originLat - lat) * kMetresPerDegLatHex,
+        x: mercatorX(lon) - originX,
+        // The row index counts south, so the projection's northward metres are
+        // negated once here rather than at every use.
+        y: originY - mercatorY(lat),
       );
 
   LatLng toLatLng(int col, int row) {
     final double x = col * width + (row.isOdd ? width / 2 : 0);
     final double y = row * pitchY;
-    return LatLng(originLat - y / kMetresPerDegLatHex,
-        originLon + x / metresPerLon);
+    return LatLng(mercatorLat(originY - y), mercatorLon(originX + x));
   }
 
   (int, int) cellOf(double lat, double lon) {
@@ -142,12 +172,11 @@ List<HexCell> hexField({
   // scatter.
   if (includeEmpty) {
     final int cols =
-        ((box.east - box.west).abs() * metresPerLon / width).ceil() + 2;
-    final int rows = ((box.north - box.south).abs() *
-                kMetresPerDegLatHex /
-                pitchY)
-            .ceil() +
-        2;
+        ((mercatorX(box.east) - mercatorX(box.west)).abs() / width).ceil() + 2;
+    final int rows =
+        ((mercatorY(box.north) - mercatorY(box.south)).abs() / pitchY)
+                .ceil() +
+            2;
     for (int row = -1; row <= rows; row++) {
       for (int col = -1; col <= cols; col++) {
         buckets.putIfAbsent((col, row), () => <String>[]);
@@ -179,26 +208,24 @@ List<HexCell> hexField({
         row: k.$2,
         centre: toLatLng(k.$1, k.$2),
         points: List<String>.unmodifiable(buckets[k]!),
-        corners: _cornersAt(toLatLng(k.$1, k.$2), circumradiusMetres,
-            metresPerLon),
+        corners: _cornersAt(mercatorX(toLatLng(k.$1, k.$2).longitude),
+            mercatorY(toLatLng(k.$1, k.$2).latitude), circumradiusMetres),
       ),
   ];
 }
 
-/// The six corners, with an explicit longitude scale.
+/// The six corners of a cell centred at the projection point `(x, y)`.
 ///
-/// The scale is a parameter here because the lattice owns it: a cell must be
-/// drawn at the width its own column pitch assumed, not at the width its
-/// latitude would give (see [HexCell.corners]).
-List<LatLng> _cornersAt(
-    LatLng centre, double circumradiusMetres, double metresPerLon) {
+/// Built in the projection's own metres, which is what makes a cell a regular
+/// hexagon on screen: the projection is conformal, so a regular shape in its
+/// metres is a regular shape in its pixels.
+List<LatLng> _cornersAt(double x, double y, double circumradiusMetres) {
   final List<LatLng> out = <LatLng>[];
   for (int i = 0; i < 6; i++) {
     final double a = 60 * i * math.pi / 180;
     final double north = math.cos(a) * circumradiusMetres;
     final double east = math.sin(a) * circumradiusMetres;
-    out.add(LatLng(centre.latitude + north / kMetresPerDegLatHex,
-        centre.longitude + east / (metresPerLon < 1 ? 1 : metresPerLon)));
+    out.add(LatLng(mercatorLat(y + north), mercatorLon(x + east)));
   }
   return out;
 }
@@ -207,21 +234,11 @@ List<LatLng> _cornersAt(
 ///
 /// Pointy-top, so the corners sit at the top and bottom rather than the sides,
 /// and the width is `√3·R` — the ratio a flattened field gets wrong.
-List<LatLng> hexCorners(LatLng centre, double circumradiusMetres) {
-  final double metresPerLon =
-      kMetresPerDegLatHex * math.cos(centre.latitude * math.pi / 180).abs();
-  final List<LatLng> out = <LatLng>[];
-  for (int i = 0; i < 6; i++) {
+List<LatLng> hexCorners(LatLng centre, double circumradiusMetres) =>
     // 60·i degrees clockwise *from north*, so the first corner points up and the
     // hexagon stands on a point: the width is √3·R and the height 2R.
-    final double a = 60 * i * math.pi / 180;
-    final double north = math.cos(a) * circumradiusMetres;
-    final double east = math.sin(a) * circumradiusMetres;
-    out.add(LatLng(centre.latitude + north / kMetresPerDegLatHex,
-        centre.longitude + east / (metresPerLon < 1 ? 1 : metresPerLon)));
-  }
-  return out;
-}
+    _cornersAt(mercatorX(centre.longitude), mercatorY(centre.latitude),
+        circumradiusMetres);
 
 /// How opaque a cell is drawn, from how many nodes it holds.
 ///
@@ -307,6 +324,22 @@ double hexRadiusForZoom({
 ///
 /// The ladder is √2, the same ratio as half a zoom level, so a step is a
 /// visible change in cell size and never a jitter.
+/// The projection's metres per pixel at [zoom].
+///
+/// This is what a cell size must be derived from once the lattice lives in the
+/// projection's frame: ground metres per pixel carry the latitude, and a cell
+/// size that carries the latitude is the defect this replaced.
+double hexMetresPerPixel(double zoom) {
+  if (!zoom.isFinite) return 156543.03392;
+  return 156543.03392 / math.pow(2, zoom).toDouble();
+}
+
+/// The cell radius for [zoom], quantised as a pinch needs.
+double hexRadiusForZoomLevel(double zoom, {double radiusPx = kHexRadiusPx}) {
+  if (radiusPx <= 0) return quantiseHexRadius(kDefaultHexCircumradiusMetres);
+  return quantiseHexRadius(radiusPx * hexMetresPerPixel(zoom));
+}
+
 double quantiseHexRadius(double metres) {
   if (!metres.isFinite || metres <= 0) return kDefaultHexCircumradiusMetres;
   const double step = 1.4142135623730951; // √2
