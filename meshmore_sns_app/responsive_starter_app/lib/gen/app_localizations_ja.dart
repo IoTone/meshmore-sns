@@ -6710,4 +6710,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String diagnosticsTelemetryAskedLine(int n) {
     return 'このセッションで送ったテレメトリ要求 $n 件';
   }
+
+  @override
+  String mapsPackRate(String rate, String eta) {
+    return '毎秒 $rate タイル · $eta';
+  }
+
+  @override
+  String get mapsEtaUnderMinute => '残り 1 分未満';
+
+  @override
+  String mapsEtaMinutes(int n) {
+    return '残り約 $n 分';
+  }
+
+  @override
+  String get mapsEtaUnknown => '残り時間を計算中';
 }

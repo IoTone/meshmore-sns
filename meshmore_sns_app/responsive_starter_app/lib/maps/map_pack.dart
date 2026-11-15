@@ -42,6 +42,8 @@ class MapPack {
     this.missing = 0,
     int? updatedMs,
     this.updateStartedMs,
+    this.passStartedMs,
+    this.passStartDone = 0,
   }) : updatedMs = updatedMs ?? createdMs;
 
   final String id;
@@ -68,6 +70,14 @@ class MapPack {
 
   /// Tiles the server has nothing for (outside its coverage).
   int missing;
+
+  /// When the current pass began, and how many tiles were already held then.
+  ///
+  /// Together they are what makes a rate measurable: `(done - passStartDone)`
+  /// over `now - passStartedMs`. Without them the only progress a reader saw was
+  /// a fraction, and "1234 of 2000" says nothing about how long is left.
+  int? passStartedMs;
+  int passStartDone;
 
   /// Delete this many days after [updatedMs]; 0 = keep.
   int keepDays;
@@ -98,6 +108,8 @@ class MapPack {
         'done': done,
         'missing': missing,
         'keep': keepDays,
+        'passStart': passStartedMs,
+        'passDone': passStartDone,
       };
 
   static MapPack fromJson(Map<String, Object?> j) => MapPack(
@@ -117,5 +129,10 @@ class MapPack {
         done: (j['done'] as num?)?.toInt() ?? 0,
         missing: (j['missing'] as num?)?.toInt() ?? 0,
         keepDays: (j['keep'] as num?)?.toInt() ?? 0,
+        // A pass that was running when the app closed is not still running, so
+        // the timing is dropped rather than resumed against a wall clock that
+        // moved. The rate starts again from the next pass.
+        passStartedMs: null,
+        passStartDone: 0,
       );
 }

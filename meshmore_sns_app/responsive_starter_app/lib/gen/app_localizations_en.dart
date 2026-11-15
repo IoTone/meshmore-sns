@@ -6988,4 +6988,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String diagnosticsTelemetryAskedLine(int n) {
     return '$n telemetry requests sent this session';
   }
+
+  @override
+  String mapsPackRate(String rate, String eta) {
+    return '$rate tiles a second · $eta';
+  }
+
+  @override
+  String get mapsEtaUnderMinute => 'less than a minute left';
+
+  @override
+  String mapsEtaMinutes(int n) {
+    return 'about $n min left';
+  }
+
+  @override
+  String get mapsEtaUnknown => 'estimating the time left';
 }

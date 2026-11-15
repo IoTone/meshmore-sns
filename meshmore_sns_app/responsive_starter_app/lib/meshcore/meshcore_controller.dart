@@ -2471,7 +2471,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return _messagesByChannel.putIfAbsent(
         c,
         () => _messages
-            .where((ChatMessage m) => m.channelIdx == c)
+            .where((ChatMessage m) => m.channelIdx == c && !m.hidden)
             .toList(growable: false));
   }
 
@@ -3039,6 +3039,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return _messages
         .where((ChatMessage m) =>
             m.peerPubKeyHex != null &&
+            !m.hidden &&
             (m.peerPubKeyHex == peerPubKeyHex ||
                 m.peerPubKeyHex == prefix))
         .toList(growable: false);
@@ -3349,7 +3350,8 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   }
 
   Future<ChatMessage?> sendDirectText(
-      String peerPubKeyHex, String text, {bool urgent = false}) async {
+      String peerPubKeyHex, String text,
+      {bool urgent = false, bool hidden = false}) async {
     final String t = text.trim();
     if (t.isEmpty || !isReady || peerPubKeyHex.length < 12) return null;
     // A blocked key is refused before a row is written: there is nothing to
@@ -3379,6 +3381,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       channelIdx: -1,
       text: t,
       outgoing: true,
+      hidden: hidden,
       peerPubKeyHex: peerPubKeyHex,
       delivery: MessageDelivery.sending,
     );
@@ -3664,9 +3667,15 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
             emoji: emoji,
             hash: hash,
           );
+    // `hidden`: the line is the wire format for a reaction, not something a
+    // reader should see in the thread. The reaction shows as a chip on the
+    // message it names, and the row exists only so the radio's acknowledgement
+    // has something to be credited to.
     final bool sent = dm
-        ? await sendDirectText(target.peerPubKeyHex!, line) != null
-        : await sendChannelTextTo(target.channelIdx, line) != null;
+        ? await sendDirectText(target.peerPubKeyHex!, line, hidden: true) !=
+            null
+        : await sendChannelTextTo(target.channelIdx, line, hidden: true) !=
+            null;
     if (!sent) return false;
     final List<String?> who = target.reactions.putIfAbsent(emoji, () => <String?>[]);
     if (!who.contains(own)) who.add(own);
@@ -5265,7 +5274,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// See [sendDirectText] for [urgent]: an alarm is written even when the
   /// app's duty-cycle window is full, and is charged all the same.
   Future<ChatMessage?> sendChannelTextTo(int channelIdx, String text,
-      {bool urgent = false}) async {
+      {bool urgent = false, bool hidden = false}) async {
     final String t = text.trim();
     if (t.isEmpty || !isReady) return null;
     // A capability the radio has denied is a local refusal with its own
@@ -5290,6 +5299,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       channelIdx: channelIdx,
       text: t,
       outgoing: true,
+      hidden: hidden,
       delivery: MessageDelivery.sending,
     );
     _addMessage(m);

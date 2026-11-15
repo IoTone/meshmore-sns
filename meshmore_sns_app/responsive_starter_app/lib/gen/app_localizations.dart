@@ -11631,6 +11631,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} telemetry requests sent this session'**
   String diagnosticsTelemetryAskedLine(int n);
+
+  /// Under a downloading pack: the measured rate and the estimate for the rest of the pass.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate} tiles a second · {eta}'**
+  String mapsPackRate(String rate, String eta);
+
+  /// No description provided for @mapsEtaUnderMinute.
+  ///
+  /// In en, this message translates to:
+  /// **'less than a minute left'**
+  String get mapsEtaUnderMinute;
+
+  /// No description provided for @mapsEtaMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'about {n} min left'**
+  String mapsEtaMinutes(int n);
+
+  /// No description provided for @mapsEtaUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'estimating the time left'**
+  String get mapsEtaUnknown;
 }
 
 class _AppLocalizationsDelegate

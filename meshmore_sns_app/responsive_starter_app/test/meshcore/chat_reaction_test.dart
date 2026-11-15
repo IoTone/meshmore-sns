@@ -1,8 +1,13 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshcore/meshcore.dart';
 import 'package:meshmore_sns_app/chat/reactions.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
+import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'fake_transport.dart';
 
 /// A reaction is folded into the message it names, and the hash is what does
 /// the folding. This pins the two halves together: the line our composer would
@@ -70,5 +75,43 @@ void main() {
     expect(back.reactions['👍'], <String?>['Sam', 'Kim']);
     expect(back.reactions['•'], <String?>[null],
         reason: 'a reaction with no identity keeps its null sender');
+  });
+
+  test('reacting folds the emoji in and adds no line to the thread', () async {
+    // A reaction goes out as a text line, so sending one wrote an ordinary row
+    // holding `@[name]🙂\n<hash>`: the reactor's own thread showed the wire
+    // format as chat. The row still exists for the ledger, but it is not a line
+    // a reader sees.
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    addTearDown(mc.dispose);
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    fake.emit(channelMsgFrame(text: 'Sam: good morning'));
+    await Future<void>.delayed(Duration.zero);
+
+    final List<ChatMessage> before = mc.messagesFor(0);
+    expect(before, hasLength(1));
+    final ChatMessage target = before.single;
+
+    expect(await mc.reactTo(target, '👍'), isTrue);
+    await Future<void>.delayed(Duration.zero);
+
+    final List<ChatMessage> after = mc.messagesFor(0);
+    expect(after, hasLength(1),
+        reason: 'the reaction is not a second line in the thread');
+    expect(after.single.reactions['👍'], isNotNull,
+        reason: 'it is folded into the message it names');
+    // The row is still in the store, so the radio's acknowledgement has
+    // something to be credited to.
+    expect(mc.allMessages.where((ChatMessage m) => m.hidden), hasLength(1));
+    final String wire = mc.allMessages.firstWhere((ChatMessage m) => m.hidden).text;
+    expect(Reactions.parse(wire)?.emoji, '👍',
+        reason: 'the hidden row is the wire line, in the format other clients read');
   });
 }

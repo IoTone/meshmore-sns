@@ -278,4 +278,36 @@ void main() {
     expect(hexCellsForViewport(width: double.nan, height: 100), 400);
   });
 
+
+  group('the field keeps up with a pinch', () {
+    test('a continuous radius is quantised onto a half-octave ladder', () {
+      // The radius used to be continuous, so every frame of a pinch changed the
+      // memo key and rebuilt the lattice. It rounds to √2 steps now, which is
+      // half a zoom level: a cell size that visibly changes once, not jitter.
+      final double a = quantiseHexRadius(100);
+      final double b = quantiseHexRadius(102);
+      final double c = quantiseHexRadius(160);
+      expect(b, a, reason: 'a two percent change is not a new cell size');
+      expect(c, greaterThan(a));
+      // Every result is on the ladder, so the same input always gives the same
+      // key.
+      expect(quantiseHexRadius(a), a);
+      expect(quantiseHexRadius(quantiseHexRadius(137.5)),
+          quantiseHexRadius(137.5));
+    });
+
+    test('a pinch steps the radius about twice per doubling', () {
+      int steps = 0;
+      double last = quantiseHexRadius(10);
+      for (double m = 10; m < 20; m += 0.05) {
+        final double q = quantiseHexRadius(m);
+        if (q != last) {
+          steps++;
+          last = q;
+        }
+      }
+      expect(steps, inInclusiveRange(1, 3),
+          reason: 'a doubling should cross the ladder once or twice');
+    });
+  });
 }

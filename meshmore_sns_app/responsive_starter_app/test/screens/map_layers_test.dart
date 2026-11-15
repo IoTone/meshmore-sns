@@ -191,6 +191,16 @@ void main() {
     row.onChanged!(false);
     await t.pump();
     expect(layer.visible, isFalse);
+    // And the switch itself moves. The sheet's list used to be captured before
+    // the tap, so `setSheet` rebuilt it with the old value and the switch only
+    // moved after the sheet was closed and reopened.
+    expect(
+        t
+            .widget<SwitchListTile>(find
+                .byKey(ValueKey<String>('map-layer-${layer.id}')))
+            .value,
+        isFalse,
+        reason: 'the switch has to follow the layer it switches');
     expect(hasEventMarker(), isFalse);
     expect(find.byWidgetPredicate((Widget w) => w is PolygonLayer), findsNothing);
     expect(find.byWidgetPredicate((Widget w) => w is PolylineLayer), findsNothing);

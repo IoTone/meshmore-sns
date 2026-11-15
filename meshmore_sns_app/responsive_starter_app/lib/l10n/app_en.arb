@@ -4772,5 +4772,27 @@
         "type": "int"
       }
     }
-  }
+  },
+  "mapsPackRate": "{rate} tiles a second · {eta}",
+  "@mapsPackRate": {
+    "description": "Under a downloading pack: the measured rate and the estimate for the rest of the pass.",
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "eta": {
+        "type": "String"
+      }
+    }
+  },
+  "mapsEtaUnderMinute": "less than a minute left",
+  "mapsEtaMinutes": "about {n} min left",
+  "@mapsEtaMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "mapsEtaUnknown": "estimating the time left"
 }

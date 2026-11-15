@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:math' show Random;
 import 'dart:typed_data';
 
@@ -549,6 +550,74 @@ void main() {
           const Duration(days: 30),
           reason: 'a longer server life is never shortened');
       expect(m.tileTtl(null, kOsmVector), const Duration(days: 7));
+      m.dispose();
+    });
+
+    test('a pass overlaps its requests instead of sleeping between them',
+        () async {
+      // One request at a time made the download latency-bound: a 200 ms round
+      // trip plus the old 150 ms sleep is four tiles a second. The pass runs
+      // `concurrency` workers now, so the host's latency is overlapped.
+      int inFlight = 0;
+      int peak = 0;
+      final MapsController m = MapsController(
+        rootDir: () async => dir,
+        fetcher: (Uri u,
+            {String? etag, int? ifModifiedSinceMs, int? maxBytes}) async {
+          inFlight++;
+          peak = math.max(peak, inFlight);
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+          inFlight--;
+          return FetchResult(FetchStatus.ok, bytes: Uint8List(100));
+        },
+        clock: () => now,
+        pace: Duration.zero,
+        concurrency: 3,
+      );
+      await m.load();
+      // A box wide enough to be more than one tile per zoom: the shared `sf`
+      // fixture is a single tile, which cannot show overlap.
+      await m.createPack(
+          name: 'SF',
+          source: kUsgsTopo,
+          box: const GeoBox(
+              south: 37.70, west: -122.52, north: 37.81, east: -122.35),
+          minZoom: 12,
+          maxZoom: 13);
+      await m.idle();
+      expect(m.packs.single.state, PackState.complete);
+      expect(peak, greaterThan(1),
+          reason: 'the pass never had two requests in flight');
+      expect(peak, lessThanOrEqualTo(3),
+          reason: 'and it never exceeded the concurrency it was given');
+      m.dispose();
+    });
+
+    test('the rate and the time left are measured from the pass', () async {
+      final MapsController m = make();
+      await m.load();
+      final MapPack p = MapPack(
+        id: 'p1',
+        name: 'SF',
+        sourceId: kUsgsTopo.id,
+        box: sf,
+        minZoom: 12,
+        maxZoom: 13,
+        createdMs: now.millisecondsSinceEpoch,
+        total: 1000,
+      );
+      // Ten seconds in, 200 of 1000 tiles done: 20 a second, 800 left, so 40 s.
+      p
+        ..passStartedMs = now.millisecondsSinceEpoch - 10000
+        ..passStartDone = 0
+        ..done = 200;
+      expect(m.packRate(p), closeTo(20, 0.001));
+      expect(m.packEta(p)!.inSeconds, 40);
+      // Before a second has passed there is nothing to measure, and a guess
+      // would be worse than the word "estimating".
+      p.passStartedMs = now.millisecondsSinceEpoch - 500;
+      expect(m.packRate(p), isNull);
+      expect(m.packEta(p), isNull);
       m.dispose();
     });
 

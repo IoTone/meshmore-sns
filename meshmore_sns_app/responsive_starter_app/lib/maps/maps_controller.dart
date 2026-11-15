@@ -90,7 +90,8 @@ class MapsController extends ChangeNotifier with SafeNotifier {
     Future<Directory> Function()? rootDir,
     MapFetcher? fetcher,
     DateTime Function()? clock,
-    this.pace = const Duration(milliseconds: 150),
+    this.pace = const Duration(milliseconds: 40),
+    this.concurrency = 3,
     String Function()? appVersion,
     this.prefsKey = 'maps.state.v1',
     this.retryFloor = const Duration(seconds: 30),
@@ -123,6 +124,14 @@ class MapsController extends ChangeNotifier with SafeNotifier {
 
   /// Shortest wait before a parked download tries again.
   final Duration retryFloor;
+
+  /// How many tile requests may be in flight at once.
+  ///
+  /// One at a time made the download latency-bound: a 200 ms round trip plus the
+  /// old 150 ms sleep is four tiles a second, so a 2000-tile pack was five
+  /// minutes of mostly waiting. Three in flight overlaps the round trips without
+  /// turning a tile host into a target.
+  final int concurrency;
 
   final math.Random _random;
 
@@ -875,6 +884,10 @@ class MapsController extends ChangeNotifier with SafeNotifier {
   }
 
   /// One pass over a pack. False when the network went away.
+  ///
+  /// [concurrency] workers pull from one iterator, so the pass is limited by the
+  /// host's latency rather than by a sleep between requests. The budget check is
+  /// serialised: two workers that both saw room would both spend it.
   Future<bool> _runPack(MapPack p) async {
     final TileStore store = _store!;
     final MapSource? src = sourceById(p.sourceId);
@@ -888,75 +901,157 @@ class MapsController extends ChangeNotifier with SafeNotifier {
     // Budget checks use the larger of the plan and what this server
     // actually sends, so a heavy server can't overshoot by much.
     int perTile = src.bytesPerTile;
-    for (final (int z, int x, int y) in tilesIn(p.box, p.minZoom, p.maxZoom)) {
-      if (isDisposed || !packs.contains(p)) return true;
-      if (p.state != PackState.downloading && p.state != PackState.updating) {
-        return true;
-      }
-      final String key = TileStore.keyOf(src.id, z, x, y);
-      final TileMeta? meta = store.meta(key);
-      final bool refresh = p.state == PackState.updating &&
-          meta != null &&
-          meta.fetchedMs < (p.updateStartedMs ?? 0);
-      if (meta != null && !refresh) {
-        store.addToPack(key, p.id);
+    final Iterator<(int, int, int)> tiles =
+        tilesIn(p.box, p.minZoom, p.maxZoom).iterator;
+    // The rate is measured from here, so the row can say how long is left.
+    p
+      ..passStartedMs = _now
+      ..passStartDone = p.done;
+    bool stop = false;
+    bool networkGone = false;
+    // Bytes this pass has promised to the disk but not yet written. With more
+    // than one worker in flight, checking the budget per tile is not enough: two
+    // workers that both saw room would both spend it, and the pack would land
+    // over budget by up to `concurrency` tiles.
+    int reserved = 0;
+
+    Future<void> worker() async {
+      while (!stop) {
+        if (isDisposed || !packs.contains(p)) {
+          stop = true;
+          return;
+        }
+        if (p.state != PackState.downloading && p.state != PackState.updating) {
+          stop = true;
+          return;
+        }
+        // `moveNext` is synchronous, so two workers cannot take the same tile.
+        if (!tiles.moveNext()) return;
+        final (int z, int x, int y) = tiles.current;
+        final String key = TileStore.keyOf(src.id, z, x, y);
+        final TileMeta? meta = store.meta(key);
+        final bool refresh = p.state == PackState.updating &&
+            meta != null &&
+            meta.fetchedMs < (p.updateStartedMs ?? 0);
+        if (meta != null && !refresh) {
+          store.addToPack(key, p.id);
+          done++;
+          _progress(p, done, missing);
+          continue;
+        }
+        final int claim = perTile;
+        if (meta == null) {
+          if (!await _fitsSerial(claim + reserved)) {
+            p
+              ..state = PackState.overBudget
+              ..done = done
+              ..missing = missing;
+            _changed();
+            stop = true;
+            return;
+          }
+          reserved += claim;
+        }
+        await _pacer.wait(pace);
+        if (stop) return;
+        final FetchResult r = await _fetch(src.tileUri(z, x, y),
+            etag: refresh ? meta.etag : null,
+            ifModifiedSinceMs: refresh ? meta.fetchedMs : null);
+        _noteFetch(r.status);
+        switch (r.status) {
+          case FetchStatus.ok:
+            if (!packs.contains(p)) {
+              stop = true;
+              return;
+            }
+            perTile = math.max(perTile, r.bytes!.length);
+            await store.write(key, r.bytes!,
+                maxAge: r.maxAge ?? packMaxAgeDefault,
+                etag: r.etag,
+                packId: p.id);
+            reserved -= claim;
+          case FetchStatus.notModified:
+            store.revalidated(key, r.maxAge ?? packMaxAgeDefault, packId: p.id);
+          case FetchStatus.missing:
+            missing++;
+            reserved -= claim;
+          case FetchStatus.failed:
+            reserved -= claim;
+            p
+              ..state = PackState.waitingForNetwork
+              ..done = done
+              ..missing = missing;
+            _changed();
+            _scheduleRetry();
+            stop = true;
+            networkGone = true;
+            return;
+        }
         done++;
         _progress(p, done, missing);
-        continue;
       }
-      if (meta == null && !await _fits(perTile)) {
-        p
-          ..state = PackState.overBudget
-          ..done = done
-          ..missing = missing;
-        _changed();
-        return true;
-      }
-      final FetchResult r = await _fetch(src.tileUri(z, x, y),
-          etag: refresh ? meta.etag : null,
-          ifModifiedSinceMs: refresh ? meta.fetchedMs : null);
-      _noteFetch(r.status);
-      switch (r.status) {
-        case FetchStatus.ok:
-          if (!packs.contains(p)) return true;
-          perTile = math.max(perTile, r.bytes!.length);
-          await store.write(key, r.bytes!,
-              maxAge: r.maxAge ?? packMaxAgeDefault, etag: r.etag, packId: p.id);
-        case FetchStatus.notModified:
-          store.revalidated(key, r.maxAge ?? packMaxAgeDefault, packId: p.id);
-        case FetchStatus.missing:
-          missing++;
-        case FetchStatus.failed:
-          p
-            ..state = PackState.waitingForNetwork
-            ..done = done
-            ..missing = missing;
-          _changed();
-          _scheduleRetry();
-          return false;
-      }
-      done++;
-      _progress(p, done, missing);
-      if (pace > Duration.zero) await Future<void>.delayed(pace);
     }
+
+    await Future.wait(<Future<void>>[
+      for (int i = 0; i < math.max(1, concurrency); i++) worker(),
+    ]);
+    if (networkGone) return false;
+    if (stop) return true;
     p
       ..done = p.total
       ..missing = missing
       ..state = PackState.complete
       ..updatedMs = _now
-      ..updateStartedMs = null;
+      ..updateStartedMs = null
+      ..passStartedMs = null;
     _changed();
     return true;
+  }
+
+  /// The shared request budget, so [concurrency] workers do not multiply the
+  /// rate the pace was chosen to allow.
+  final _Pacer _pacer = _Pacer();
+
+  /// Serialises the budget check: it trims the view cache and then re-reads the
+  /// total, and two workers interleaving that would both spend the same room.
+  Future<void> _budgetTail = Future<void>.value();
+
+  Future<bool> _fitsSerial(int bytes) {
+    final Future<bool> next = _budgetTail.then((_) => _fits(bytes));
+    _budgetTail = next.then((_) {}, onError: (Object _) {});
+    return next;
   }
 
   void _progress(MapPack p, int done, int missing) {
     p
       ..done = done
       ..missing = missing;
-    if (done % 25 == 0) {
-      if (done % 500 == 0) unawaited(_save());
-      notifyListeners();
-    }
+    // Every tile, not every twenty-fifth: the bar is the only thing a reader
+    // watches during a download, and a bar that jumps in twenty-five-tile steps
+    // reads as a stall. A notification is a rebuild of one row, and the pass is
+    // rate-limited anyway.
+    if (done % 500 == 0) unawaited(_save());
+    notifyListeners();
+  }
+
+  /// Tiles per second over the current pass, or null before it can be measured.
+  double? packRate(MapPack p) {
+    final int? started = p.passStartedMs;
+    if (started == null) return null;
+    final int elapsed = _now - started;
+    if (elapsed < 1000) return null;
+    final int moved = p.done - p.passStartDone;
+    if (moved <= 0) return null;
+    return moved * 1000 / elapsed;
+  }
+
+  /// How long the rest of the pass should take at the rate so far.
+  Duration? packEta(MapPack p) {
+    final double? rate = packRate(p);
+    if (rate == null || rate <= 0) return null;
+    final int left = p.total - p.done;
+    if (left <= 0) return null;
+    return Duration(milliseconds: (left * 1000 / rate).round());
   }
 
   /// Room for [bytes] more pinned data? Evicts view tiles to make it.
@@ -1561,4 +1656,26 @@ class _SourceHealth {
   int fails = 0;
   int step = 0; // seconds, doubles per gate opening
   int untilMs = 0;
+}
+
+/// A shared request budget for one download pass.
+///
+/// The pace used to be a sleep after every tile, which made the pass
+/// latency-bound and left the rate at whatever one request plus one sleep
+/// allowed. A token bucket keeps the same promise — no more than one request per
+/// [pace] on average — while letting [MapsController.concurrency] workers overlap
+/// their round trips, so the pass is limited by the host rather than by the
+/// sleep.
+class _Pacer {
+  /// When the next request may go out.
+  int _nextMs = 0;
+
+  Future<void> wait(Duration pace) async {
+    if (pace <= Duration.zero) return;
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final int at = _nextMs > now ? _nextMs : now;
+    _nextMs = at + pace.inMilliseconds;
+    final int delay = at - now;
+    if (delay > 0) await Future<void>.delayed(Duration(milliseconds: delay));
+  }
 }

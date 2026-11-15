@@ -64,7 +64,7 @@ void main() {
 
     expect(find.textContaining('LINKED'), findsOneWidget);
     expect(find.byTooltip('Connect'), findsNothing);
-    expect(find.textContaining('self-info'), findsOneWidget);
+    expect(find.textContaining('checked in'), findsOneWidget);
 
     // An inbound channel message lands in the recent feed.
     final Uint8List chMsg = Uint8List.fromList(<int>[

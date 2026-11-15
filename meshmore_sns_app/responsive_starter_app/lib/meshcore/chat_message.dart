@@ -47,6 +47,7 @@ class ChatMessage {
     this.failReason,
     this.failCause,
     this.mp1,
+    this.hidden = false,
     Map<String, List<String?>>? reactions,
   })  : id = id ?? _genId(),
         reactions = reactions ?? <String, List<String?>>{},
@@ -66,6 +67,16 @@ class ChatMessage {
 
   final int channelIdx;
   String text;
+
+  /// True for a row that is bookkeeping rather than a message.
+  ///
+  /// A reaction goes out as a text line in MeshCore One's grammar, so sending
+  /// one wrote an ordinary row containing `@[name]🙂\n<hash>`: the reactor's own
+  /// thread showed the wire format as chat text. The row still exists, because
+  /// it is how the ledger attributes the radio's acknowledgement to what was
+  /// sent, and because the reaction itself is folded into the message it names.
+  /// It is simply not a line a reader should see.
+  final bool hidden;
 
   /// The MP1 preview this row carries, as the channel datagram it arrived in.
   ///
@@ -166,6 +177,7 @@ class ChatMessage {
         // `m` for the MP1 preview. Base64 rather than a byte list: the row is
         // written on every message, and 163 numbers is five times the payload.
         if (mp1 != null) 'm': base64Encode(mp1!),
+        if (hidden) 'h': true,
         if (reactions.isNotEmpty)
           'e': <String, List<String?>>{
             for (final MapEntry<String, List<String?>> e in reactions.entries)
@@ -236,6 +248,7 @@ class ChatMessage {
         final String b64 => _tryBase64(b64),
         _ => null,
       },
+      hidden: j['h'] == true,
       reactions: switch (j['e']) {
         final Map<Object?, Object?> m => <String, List<String?>>{
             for (final MapEntry<Object?, Object?> e in m.entries)

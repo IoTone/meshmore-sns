@@ -3072,5 +3072,26 @@
         "type": "int"
       }
     }
-  }
+  },
+  "mapsPackRate": "毎秒 {rate} タイル · {eta}",
+  "@mapsPackRate": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "eta": {
+        "type": "String"
+      }
+    }
+  },
+  "mapsEtaUnderMinute": "残り 1 分未満",
+  "mapsEtaMinutes": "残り約 {n} 分",
+  "@mapsEtaMinutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "mapsEtaUnknown": "残り時間を計算中"
 }

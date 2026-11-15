@@ -295,6 +295,33 @@ double hexRadiusForZoom({
   return radiusPx * metresPerPixel;
 }
 
+/// The cell size a pinch actually uses.
+///
+/// [hexRadiusForZoom] is continuous, so a pinch changes it on every frame, and
+/// the field is memoised on it: every frame of a zoom rebuilt the whole lattice
+/// and re-anchored it, which is why the hexagons lagged the ground and the
+/// newly exposed edges were bare until the next frame's field landed. Rounding
+/// the radius to a ladder of half-octaves means a pinch crosses a step at most
+/// twice per doubling, and between steps the cells simply scale with the map —
+/// they stay on the ground they were drawn on.
+///
+/// The ladder is √2, the same ratio as half a zoom level, so a step is a
+/// visible change in cell size and never a jitter.
+double quantiseHexRadius(double metres) {
+  if (!metres.isFinite || metres <= 0) return kDefaultHexCircumradiusMetres;
+  const double step = 1.4142135623730951; // √2
+  final double exponent = math.log(metres) / math.log(step);
+  return math.pow(step, exponent.round()).toDouble();
+}
+
+/// How far the field is built past the viewport, as a fraction of its size.
+///
+/// A field built exactly to the visible box has no cells outside it, so the
+/// moment a zoom-out or a pan exposes new ground the edge is bare until the
+/// next field is built. A third of a screen of margin means the common gesture
+/// lands inside cells that already exist.
+const double kHexFieldPad = 0.34;
+
 /// The number of cells a viewport of [width] by [height] pixels can hold, at
 /// [radiusPx].
 ///

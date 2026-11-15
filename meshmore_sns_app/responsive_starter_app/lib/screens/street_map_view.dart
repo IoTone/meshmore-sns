@@ -1447,9 +1447,16 @@ class _StreetMapViewState extends State<StreetMapView> {
       builder: (BuildContext c) {
         final MmSkin skin = c.skin;
         final ColorScheme cs = Theme.of(c).colorScheme;
-        final List<EventLayer> layers = maps?.layers ?? const <EventLayer>[];
         return StatefulBuilder(
-          builder: (BuildContext c2, StateSetter setSheet) => SafeArea(
+          builder: (BuildContext c2, StateSetter setSheet) {
+          // Read the layers on every rebuild of the sheet. It used to be read
+          // once, outside the builder, so the list the switches were drawn from
+          // was captured before the tap: `setSheet` rebuilt the sheet with the
+          // same stale `visible` flags, and a layer's switch did not move until
+          // the sheet was closed and reopened.
+          final List<EventLayer> layers =
+              maps?.layers ?? const <EventLayer>[];
+          return SafeArea(
             top: false,
             child: ListView(
               key: const ValueKey<String>('map-overlays-sheet'),
@@ -1473,7 +1480,17 @@ class _StreetMapViewState extends State<StreetMapView> {
                   ListTile(
                     key: ValueKey<String>('map-basemap-${src.id}'),
                     dense: true,
-                    leading: Icon(
+                    leading: Icon(Icons.map_outlined,
+                        color: skin.color.fgMuted),
+                    title: Text(src.name,
+                        style: TextStyle(
+                            color: skin.color.fg,
+                            fontSize: skin.type.sizeBody)),
+                    // The affordance is the radio, in the trailing slot where
+                    // this app puts "which one is chosen", and there is no
+                    // chevron: this row selects the basemap where it stands, and
+                    // an arrow promised a page that never opened.
+                    trailing: Icon(
                       src.id == currentSourceId
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
@@ -1481,11 +1498,6 @@ class _StreetMapViewState extends State<StreetMapView> {
                           ? skin.color.accent
                           : skin.color.fgMuted,
                     ),
-                    title: Text(src.name,
-                        style: TextStyle(
-                            color: skin.color.fg,
-                            fontSize: skin.type.sizeBody)),
-                    trailing: const Icon(Icons.chevron_right),
                     subtitle: src.attribution.isEmpty
                         ? null
                         : Text(src.attribution,
@@ -1568,7 +1580,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                 ),
               ],
             ),
-          ),
+          );
+          },
         );
       },
     );

@@ -279,6 +279,14 @@ Future<int?> pickKeepDays(BuildContext context, int current) {
 
 enum _PackAction { pause, resume, update, keep, delete }
 
+/// "about 3 min left", or "less than a minute" when the estimate is small.
+String _eta(AppLocalizations l, Duration? eta) {
+  if (eta == null) return l.mapsEtaUnknown;
+  if (eta.inSeconds < 60) return l.mapsEtaUnderMinute;
+  final int minutes = (eta.inSeconds / 60).round();
+  return l.mapsEtaMinutes(minutes);
+}
+
 class _PackRow extends StatelessWidget {
   const _PackRow({required this.pack});
   final MapPack pack;
@@ -314,6 +322,17 @@ class _PackRow extends StatelessWidget {
               '${p.missing > 0 ? ' · ${l.mapsMissing(p.missing)}' : ''}',
               style: sub,
             ),
+            // How fast, and how long. A fraction alone says nothing about
+            // whether to wait or come back later, and the download is the one
+            // thing in this app a reader sits and watches.
+            if (running && maps.packRate(p) != null)
+              Text(
+                l.mapsPackRate(
+                    maps.packRate(p)!.toStringAsFixed(1),
+                    _eta(l, maps.packEta(p))),
+                key: ValueKey<String>('pack-rate-${p.id}'),
+                style: sub,
+              ),
             Text(expiryText(l, p.expiresAtMs), style: sub),
             if (p.state != PackState.complete)
               Padding(
