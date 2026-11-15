@@ -610,21 +610,26 @@ class _MediaComposerState extends State<MediaComposer> {
     final String text = mode == MediaMode.preview
         ? l.photoModeLinePreview
         : l.photoModeLine(_modeLabel(l, mode), mode.bytes);
+    // One line for the fact, then the link on its own line. Side by side, the
+    // link took a third of the width and the mode wrapped under it, which read
+    // as a button sitting on top of a sentence.
     return Padding(
       padding: EdgeInsets.only(bottom: skin.space.step(2)),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Expanded(
-            child: Text(text,
-                key: const ValueKey<String>('photo-mode-line'),
-                style: TextStyle(
-                    color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
-          ),
-          MmAction(
-            key: const ValueKey<String>('photo-mode-settings'),
-            dense: true,
-            label: l.photoModeSettings,
-            onPressed: () => context.push('/settings/chat'),
+          Text(text,
+              key: const ValueKey<String>('photo-mode-line'),
+              style: TextStyle(
+                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+          Align(
+            alignment: Alignment.centerRight,
+            child: MmAction(
+              key: const ValueKey<String>('photo-mode-settings'),
+              dense: true,
+              label: l.photoModeSettings,
+              onPressed: () => context.push('/settings/chat'),
+            ),
           ),
         ],
       ),

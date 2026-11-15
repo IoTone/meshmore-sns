@@ -353,9 +353,21 @@ class _StreetMapViewState extends State<StreetMapView> {
 
   static const double _kFieldZoomSettle = 0.004;
 
+  /// True from the first frame of a camera gesture until it settles.
+  ///
+  /// The field is not drawn while this is set. A screen of field is ~1,600
+  /// polygons, and flutter_map builds and culls every one of them on every
+  /// camera frame: during a pinch that is the difference between a lattice that
+  /// tracks the map and one that lags it by a visible beat. Nothing is lost by
+  /// hiding it — the cells were measured for the zoom the reader is leaving.
+  bool _cameraMoving = false;
+
   Timer? _fieldRebuild;
   void _scheduleFieldRebuild() {
-    if (_fieldRebuild?.isActive ?? false) return;
+    // Re-arm on every call: a gesture that keeps moving keeps pushing the
+    // rebuild out, and the field only comes back when the camera has stopped for
+    // the whole window.
+    _fieldRebuild?.cancel();
     _fieldRebuild = Timer(const Duration(milliseconds: 140), () {
       _fieldRebuild = null;
       if (!mounted) return;
@@ -364,6 +376,7 @@ class _StreetMapViewState extends State<StreetMapView> {
       // a function of the rounded zoom.
       _hexKey = '';
       _fieldZoom = _zoom;
+      _cameraMoving = false;
       setState(() {});
     });
   }
@@ -1984,7 +1997,8 @@ class _StreetMapViewState extends State<StreetMapView> {
     final bool zooming = !_fieldZoom.isNaN &&
         (_zoom - _fieldZoom).abs() > _kFieldZoomSettle;
     if (zooming) _scheduleFieldRebuild();
-    final List<HexCell> hexes = zooming
+    // Nothing is drawn while the camera is in motion: see [_cameraMoving].
+    final List<HexCell> hexes = (zooming || _cameraMoving)
         ? const <HexCell>[]
         : _hexCache.where(mappable).toList(growable: false);
 
@@ -2193,6 +2207,13 @@ class _StreetMapViewState extends State<StreetMapView> {
                 // what the next launch should reopen at.
                 if (hasGesture) {
                   _userMoved = true;
+                  // Hide the field for the duration of the gesture and bring it
+                  // back when the camera stops. One `setState` per gesture, not
+                  // one per frame.
+                  if (!_cameraMoving) {
+                    _cameraMoving = true;
+                    _scheduleFieldRebuild();
+                  }
                   _userCentre = cam.center;
                   // A zoom step changes the cell size, and the field is built for
                   // one cell size at a time: the old cells describe a lattice that

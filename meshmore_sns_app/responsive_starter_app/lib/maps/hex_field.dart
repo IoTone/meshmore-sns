@@ -148,12 +148,6 @@ List<HexCell> hexField({
         y: originY - mercatorY(lat),
       );
 
-  LatLng toLatLng(int col, int row) {
-    final double x = col * width + (row.isOdd ? width / 2 : 0);
-    final double y = row * pitchY;
-    return LatLng(mercatorLat(originY - y), mercatorLon(originX + x));
-  }
-
   (int, int) cellOf(double lat, double lon) {
     final ({double x, double y}) m = toMetres(lat, lon);
     // The cell whose **centre** is nearest, not "round the row, then round the
@@ -193,6 +187,8 @@ List<HexCell> hexField({
   // and a handful of floating hexagons is not that. Empty cells are drawn at the
   // faintest step of the same ramp, so density reads as a shape rather than as a
   // scatter.
+  int latticeRows = 0;
+  int latticeCols = 0;
   if (includeEmpty) {
     final int cols =
         ((mercatorX(box.east) - mercatorX(box.west)).abs() / width).ceil() + 2;
@@ -200,6 +196,8 @@ List<HexCell> hexField({
         ((mercatorY(box.north) - mercatorY(box.south)).abs() / pitchY)
                 .ceil() +
             2;
+    latticeRows = rows;
+    latticeCols = cols;
     for (int row = -1; row <= rows; row++) {
       for (int col = -1; col <= cols; col++) {
         buckets.putIfAbsent((col, row), () => <String>[]);
@@ -220,21 +218,69 @@ List<HexCell> hexField({
   // A field is read as a whole, so it is emitted row by row rather than sorted:
   // sorting by count and then capping gave an arbitrary scatter of hexagons near
   // the top of the screen. Only the occupied-only mode wants "the busiest ones".
+  //
+  // The row-major order used to be produced by sorting every key with a
+  // comparator closure — an O(n log n) sort of ~1,600 keys per rebuild, for an
+  // order the lattice already has. Walking the rows instead costs nothing.
+  final List<HexCell> out = <HexCell>[];
+  if (includeEmpty) {
+    for (int row = -1; row <= latticeRows; row++) {
+      for (int col = -1; col <= latticeCols; col++) {
+        final List<String>? held = buckets[(col, row)];
+        if (held == null) continue;
+        if (out.length >= maxCells) return out;
+        out.add(_cellAt(col, row, held, circumradiusMetres, originX, originY,
+            width, pitchY));
+      }
+    }
+    return out;
+  }
   final List<(int, int)> keys = buckets.keys.toList()
-    ..sort(includeEmpty
-        ? ((a, b) => a.$2 == b.$2 ? a.$1.compareTo(b.$1) : a.$2.compareTo(b.$2))
-        : ((a, b) => buckets[b]!.length.compareTo(buckets[a]!.length)));
-  return <HexCell>[
-    for (final (int, int) k in keys.take(maxCells))
-      HexCell(
-        col: k.$1,
-        row: k.$2,
-        centre: toLatLng(k.$1, k.$2),
-        points: List<String>.unmodifiable(buckets[k]!),
-        corners: _cornersAt(mercatorX(toLatLng(k.$1, k.$2).longitude),
-            mercatorY(toLatLng(k.$1, k.$2).latitude), circumradiusMetres),
-      ),
-  ];
+    ..sort((a, b) => buckets[b]!.length.compareTo(buckets[a]!.length));
+  for (final (int, int) k in keys) {
+    if (out.length >= maxCells) break;
+    out.add(_cellAt(k.$1, k.$2, buckets[k]!, circumradiusMetres, originX,
+        originY, width, pitchY));
+  }
+  return out;
+}
+
+/// One cell, from one projection point.
+///
+/// The centre and the six corners all derive from the same `(x, y)` in the
+/// projection's metres. The angles are symmetric, so six corners hold only four
+/// distinct latitudes and three distinct longitudes: asking `mercatorLat` for
+/// each of the six separately was twelve transcendental calls per cell, i.e.
+/// ~19,000 for one screen of field, which is why the lattice arrived a beat after
+/// the map had drawn.
+HexCell _cellAt(int col, int row, List<String> points, double radius,
+    double originX, double originY, double width, double pitchY) {
+  final double x = col * width + (row.isOdd ? width / 2 : 0);
+  final double px = originX + x;
+  final double py = originY - row * pitchY;
+  // 0.866025… is sin 60: the east offset of a corner of a pointy-top hexagon.
+  const double east = 0.8660254037844386;
+  final double latNorth = mercatorLat(py + radius);
+  final double latHalfNorth = mercatorLat(py + radius * 0.5);
+  final double latHalfSouth = mercatorLat(py - radius * 0.5);
+  final double latSouth = mercatorLat(py - radius);
+  final double lonCentre = mercatorLon(px);
+  final double lonEast = mercatorLon(px + radius * east);
+  final double lonWest = mercatorLon(px - radius * east);
+  return HexCell(
+    col: col,
+    row: row,
+    centre: LatLng(mercatorLat(py), lonCentre),
+    points: List<String>.unmodifiable(points),
+    corners: <LatLng>[
+      LatLng(latNorth, lonCentre),
+      LatLng(latHalfNorth, lonEast),
+      LatLng(latHalfSouth, lonEast),
+      LatLng(latSouth, lonCentre),
+      LatLng(latHalfSouth, lonWest),
+      LatLng(latHalfNorth, lonWest),
+    ],
+  );
 }
 
 /// The six corners of a cell centred at the projection point `(x, y)`.
