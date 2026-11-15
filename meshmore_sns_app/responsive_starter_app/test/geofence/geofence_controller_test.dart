@@ -347,4 +347,90 @@ void main() {
     ]);
     expect(g.fences, isEmpty);
   });
+
+  group('reshape', _reshapeTests);
+}
+
+/// Reshaping a drawn fence.
+///
+/// A fence could be renamed and re-radiused and nothing else: the corners were
+/// what the reader drew and the app offered no way to move one, so a fence
+/// drawn slightly wrong had to be deleted and drawn again, losing its crossing
+/// log with it. `updatePolygon` replaces the corners and keeps the identity.
+void _reshapeTests() {
+  List<FencePoint> square(double dx) => <FencePoint>[
+        FencePoint(0.001 + dx, 0.001),
+        FencePoint(0.001 + dx, 0.003),
+        FencePoint(0.003 + dx, 0.003),
+        FencePoint(0.003 + dx, 0.001),
+      ];
+
+  test('a reshape keeps the id, the name and the log, and moves the corners',
+      () async {
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    addTearDown(g.dispose);
+    await g.load();
+    await g.addPolygonFence(label: 'Yard', polygon: square(0));
+    final String id = g.fences.single.id;
+
+    await g.updatePolygon(id: id, polygon: square(0.01));
+
+    final StoredGeofence after = g.fences.single;
+    expect(after.id, id, reason: 'a reshape is not a new fence');
+    expect(after.label, 'Yard');
+    expect(after.polygon!.first.lat, closeTo(0.011, 1e-9),
+        reason: 'the corners are the ones that were dragged');
+    expect(g.fences, hasLength(1));
+  });
+
+  test('the reshape survives a relaunch', () async {
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    await g.load();
+    await g.addPolygonFence(label: 'Yard', polygon: square(0));
+    final String id = g.fences.single.id;
+    await g.updatePolygon(id: id, polygon: square(0.01));
+    g.dispose();
+
+    final GeofenceController next = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    addTearDown(next.dispose);
+    await next.load();
+    expect(next.fences.single.polygon!.first.lat, closeTo(0.011, 1e-9));
+  });
+
+  test('two corners are refused, because they are not a fence', () async {
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    addTearDown(g.dispose);
+    await g.load();
+    await g.addPolygonFence(label: 'Yard', polygon: square(0));
+    final String id = g.fences.single.id;
+
+    await g.updatePolygon(id: id, polygon: square(0).take(2).toList());
+
+    expect(g.fences.single.polygon, hasLength(4),
+        reason: 'a refused reshape leaves the fence as it was');
+  });
+
+  test('the crossing log is not the shape, so it stays', () async {
+    final GeofenceController g = GeofenceController(
+        mc: MeshcoreController(), clock: () => t0, autoTick: false);
+    addTearDown(g.dispose);
+    await g.load();
+    await g.addPolygonFence(label: 'Yard', polygon: square(0));
+    final String id = g.fences.single.id;
+    g.sample(OwnLocation(
+      latitude: 0.002,
+      longitude: 0.002,
+      source: OwnLocationSource.phoneFix,
+    ));
+    expect(g.alerts, hasLength(1), reason: 'standing inside is an entry');
+
+    await g.updatePolygon(id: id, polygon: square(0.01));
+
+    expect(g.alerts, hasLength(1),
+        reason: 'moving a boundary is not a crossing');
+  });
 }

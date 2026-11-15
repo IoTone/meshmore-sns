@@ -257,6 +257,36 @@ final class GeofenceController extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
+  /// Replace a drawn fence's corners, keeping its identity.
+  ///
+  /// A reshape is not a new fence: the id, the name and the crossing log stay,
+  /// because the reader moved a boundary rather than drawing a second one. The
+  /// watch keeps its inside state for the same reason a rename does: if the new
+  /// boundary excludes the reader, the next sample reports the leave, which is
+  /// true and is what moving the boundary means. Re-deriving from "outside"
+  /// would fire an entry for a crossing that never happened.
+  Future<void> updatePolygon({
+    required String id,
+    required List<FencePoint> polygon,
+  }) async {
+    if (polygon.length < 3) return;
+    final int at = _fences.indexWhere((StoredGeofence f) => f.id == id);
+    if (at < 0) return;
+    final StoredGeofence old = _fences[at];
+    final StoredGeofence next = StoredGeofence(
+      id: old.id,
+      label: old.label,
+      latitude: old.latitude,
+      longitude: old.longitude,
+      radiusMeters: old.radiusMeters,
+      polygon: polygon,
+    );
+    _fences[at] = next;
+    _watches[id]?.rebase(next.toEngine());
+    await GeofenceStore.save(_fences);
+    notifyListeners();
+  }
+
   /// Forget every crossing, on disk and in memory.
   ///
   /// A log you cannot clear is a log you did not agree to. Deleting a fence

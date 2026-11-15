@@ -5064,6 +5064,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get geofenceEdit => 'フェンスを編集';
 
   @override
+  String get geofenceReshape => '地図で形を変える';
+
+  @override
+  String get geofenceReshapeStarted => '角をドラッグして保存してください。キャンセルすると元の形のままです。';
+
+  @override
   String get geofenceSearchHint => 'フェンスを検索';
 
   @override

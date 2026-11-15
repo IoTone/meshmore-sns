@@ -8872,6 +8872,18 @@ abstract class AppLocalizations {
   /// **'Edit fence'**
   String get geofenceEdit;
 
+  /// No description provided for @geofenceReshape.
+  ///
+  /// In en, this message translates to:
+  /// **'Reshape on the map'**
+  String get geofenceReshape;
+
+  /// No description provided for @geofenceReshapeStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag a corner, then Save. Cancel keeps the old shape.'**
+  String get geofenceReshapeStarted;
+
   /// No description provided for @geofenceSearchHint.
   ///
   /// In en, this message translates to:

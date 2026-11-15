@@ -650,6 +650,11 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// first map that can obey it. It is taken once, so a later pan is not undone
   /// by a request that was already answered.
   void _onViewStateRequest() {
+    // A reshape is asked for the same way a camera move is, and answered here
+    // for the same reason: the fence list cannot reach this State, and the map
+    // is the only surface that can drag a corner.
+    final String? reshape = _viewState?.takeReshapeFence();
+    if (reshape != null) _beginReshape(reshape);
     final ({LatLng centre, double zoom})? asked = _viewState?.takeRequest();
     if (asked == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -786,6 +791,52 @@ class _StreetMapViewState extends State<StreetMapView> {
     cue?.play(CueKind.taskOk);
   }
 
+  /// The fence whose corners are being dragged, or null when this is a new
+  /// drawing.
+  ///
+  /// Reshaping reuses the drawing flow rather than a second editor: the corner
+  /// handles, the drag maths and the "at least three corners" rule are the same
+  /// interaction, and a second implementation would drift from the first.
+  String? _reshapingId;
+
+  /// Open an existing fence's corners for dragging.
+  ///
+  /// The fence is loaded into the draft and the camera is moved to it, so the
+  /// reader starts on the shape they asked to change rather than on whatever
+  /// the map was showing.
+  void _beginReshape(String id) {
+    final GeofenceController? fences =
+        Provider.of<GeofenceController?>(context, listen: false);
+    final StoredGeofence? fence = fences?.fences
+        .where((StoredGeofence f) => f.id == id)
+        .firstOrNull;
+    final List<FencePoint>? poly = fence?.polygon;
+    if (fence == null || poly == null || poly.length < 3) return;
+    final List<LatLng> corners = <LatLng>[
+      for (final FencePoint p in poly) LatLng(p.lat, p.lon),
+    ];
+    setState(() {
+      _reshapingId = id;
+      _draft = corners;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      try {
+        _map.fitCamera(CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints(corners),
+          padding: const EdgeInsets.all(48),
+        ));
+      } catch (_) {
+        // The map has not rendered yet; the corners are still loaded and the
+        // reader can pan to them.
+      }
+    });
+    ScaffoldMessenger.maybeOf(context)
+      ?..clearSnackBars()
+      ..showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context).geofenceReshapeStarted)));
+  }
+
   /// Begin drawing a fence, with the long-press point as its first corner.
   void _startDrawing(LatLng first) {
     setState(() => _draft = <LatLng>[first]);
@@ -795,7 +846,10 @@ class _StreetMapViewState extends State<StreetMapView> {
           content: Text(AppLocalizations.of(context).geofenceDrawStarted)));
   }
 
-  void _cancelDrawing() => setState(() => _draft = const <LatLng>[]);
+  void _cancelDrawing() => setState(() {
+        _draft = const <LatLng>[];
+        _reshapingId = null;
+      });
 
   /// Move one corner, from a drag on its handle.
   ///
@@ -843,14 +897,26 @@ class _StreetMapViewState extends State<StreetMapView> {
     );
     if (made == null || !mounted || fences == null) return;
     final CueService? cue = context.cue;
-    await fences.addPolygonFence(
-      label: made.label.isEmpty
-          ? l.geofenceDefaultName(fences.fences.length + 1)
-          : made.label,
-      polygon: corners,
-    );
+    final String? reshaping = _reshapingId;
+    if (reshaping != null) {
+      // A reshape keeps the fence's identity, its name and its crossing log:
+      // the reader moved a boundary, they did not draw a new fence.
+      await fences.updatePolygon(id: reshaping, polygon: corners);
+    } else {
+      await fences.addPolygonFence(
+        label: made.label.isEmpty
+            ? l.geofenceDefaultName(fences.fences.length + 1)
+            : made.label,
+        polygon: corners,
+      );
+    }
     cue?.play(CueKind.taskOk);
-    if (mounted) setState(() => _draft = const <LatLng>[]);
+    if (mounted) {
+      setState(() {
+        _draft = const <LatLng>[];
+        _reshapingId = null;
+      });
+    }
   }
 
   /// One fence, drawn as an area with a boundary rather than as a line.

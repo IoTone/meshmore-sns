@@ -5266,6 +5266,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get geofenceEdit => 'Edit fence';
 
   @override
+  String get geofenceReshape => 'Reshape on the map';
+
+  @override
+  String get geofenceReshapeStarted =>
+      'Drag a corner, then Save. Cancel keeps the old shape.';
+
+  @override
   String get geofenceSearchHint => 'Search fences';
 
   @override

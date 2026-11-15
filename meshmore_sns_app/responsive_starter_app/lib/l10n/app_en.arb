@@ -3553,6 +3553,8 @@
   "actionSave": "Save",
   "geofenceEditTitle": "Change this fence",
   "geofenceEdit": "Edit fence",
+  "geofenceReshape": "Reshape on the map",
+  "geofenceReshapeStarted": "Drag a corner, then Save. Cancel keeps the old shape.",
   "geofenceSearchHint": "Search fences",
   "geofenceNoMatches": "No fence has that name.",
   "geofenceShowAll": "Show all on the map",

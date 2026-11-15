@@ -34,6 +34,7 @@ class GeofenceCreateSheet extends StatefulWidget {
     this.initialLabel,
     this.editing = false,
     this.polygon,
+    this.onReshape,
   });
 
   final double latitude;
@@ -51,9 +52,14 @@ class GeofenceCreateSheet extends StatefulWidget {
   /// The corners of a drawn fence, or null for a circle.
   ///
   /// A polygon has no radius to slide, so the sheet shows its shape instead and
-  /// offers the name. Reshaping is not offered here: the shape is what the
-  /// reader drew on the map, and a slider cannot express it.
+  /// offers the name. Its shape is not edited here: a slider cannot express a
+  /// corner, so [onReshape] hands the reader back to the map, where the corners
+  /// they drew are draggable.
   final List<FencePoint>? polygon;
+
+  /// Offered only for a polygon that already exists: it closes this sheet and
+  /// asks the map to open the shape's corners. Null hides the action.
+  final VoidCallback? onReshape;
 
   bool get isPolygon => polygon != null && polygon!.length >= 3;
 
@@ -202,6 +208,20 @@ class _GeofenceCreateSheetState extends State<GeofenceCreateSheet> {
               spacing: skin.space.rowGap,
               runSpacing: skin.space.rowGap,
               children: <Widget>[
+                // Below the two actions a reader expects, and only for a shape
+                // that can be reshaped. It closes this sheet rather than
+                // opening a second one: the corners are dragged on the map, and
+                // two editors for one shape would drift apart.
+                if (widget.onReshape != null && widget.isPolygon)
+                  MmAction(
+                    key: const ValueKey<String>('geofence-reshape'),
+                    icon: Icons.polyline_outlined,
+                    label: l.geofenceReshape,
+                    onPressed: () {
+                      Navigator.pop(context);
+                      widget.onReshape!();
+                    },
+                  ),
                 MmAction(
                   key: const ValueKey<String>('geofence-cancel'),
                   icon: Icons.close,

@@ -21,7 +21,10 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   Future<void> pump(WidgetTester t,
-      {FormatPrefs? prefs, List<FencePoint>? polygon, Size? size}) async {
+      {FormatPrefs? prefs,
+      List<FencePoint>? polygon,
+      Size? size,
+      VoidCallback? onReshape}) async {
     await t.binding.setSurfaceSize(size ?? const Size(420, 900));
     addTearDown(() => t.binding.setSurfaceSize(null));
     final GeofenceController fences =
@@ -48,6 +51,7 @@ void main() {
               latitude: 40,
               longitude: -105,
               polygon: polygon,
+              onReshape: onReshape,
             ),
           ),
         ),
@@ -175,6 +179,33 @@ void main() {
     expect(find.text('3 corners'), findsOneWidget);
     // The name is still the thing being asked for.
     expect(find.byKey(const ValueKey<String>('geofence-name')), findsOneWidget);
+  });
+
+  testWidgets('a drawn fence offers the map to reshape, and a circle does not',
+      (WidgetTester t) async {
+    // The corners are dragged on the map, so the only honest control here is
+    // the one that hands the reader there. A circle has no corners to move, so
+    // it must not offer it.
+    int asked = 0;
+    await pump(
+      t,
+      polygon: const <FencePoint>[
+        FencePoint(40.0, -105.0),
+        FencePoint(40.0, -104.99),
+        FencePoint(40.001, -104.99),
+      ],
+      onReshape: () => asked++,
+    );
+    final Finder reshape = find.byKey(const ValueKey<String>('geofence-reshape'));
+    expect(reshape, findsOneWidget);
+    await t.tap(reshape);
+    await t.pumpAndSettle();
+    expect(asked, 1);
+  });
+
+  testWidgets('a circle offers no reshape', (WidgetTester t) async {
+    await pump(t, onReshape: () {});
+    expect(find.byKey(const ValueKey<String>('geofence-reshape')), findsNothing);
   });
 
   testWidgets('the drawn-fence sheet holds a 320 dp phone at 200 % text',

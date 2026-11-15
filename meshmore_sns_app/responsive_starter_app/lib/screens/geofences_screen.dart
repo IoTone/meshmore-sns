@@ -126,9 +126,13 @@ class _GeofencesScreenState extends State<GeofencesScreen> {
         initialRadiusMeters: fence.radiusMeters,
         initialLabel: fence.label,
         editing: true,
-        // A drawn fence is renamed here, not reshaped: the shape is what the
-        // reader drew on the map, and a radius slider cannot express it.
         polygon: fence.polygon,
+        // A drawn fence's corners are dragged on the map, so the sheet hands
+        // the reader there instead of pretending a slider can express a corner.
+        onReshape: () {
+          _viewState(context)?.requestReshapeFence(fence.id);
+          context.read<ShellViewRequest?>()?.openMap();
+        },
       ),
     );
     if (made == null) return;

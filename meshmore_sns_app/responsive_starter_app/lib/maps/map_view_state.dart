@@ -105,6 +105,26 @@ class MapViewState extends ChangeNotifier with WidgetsBindingObserver {
     return r;
   }
 
+  /// A fence whose corners the reader asked to move, by id.
+  ///
+  /// Reshaping is a map interaction, so it is asked for from the fence list and
+  /// answered by the first map that exists. Taken once and cleared, like
+  /// [_request], for the same reason.
+  String? _reshapeFence;
+
+  /// Ask the map to open [id]'s corners for dragging.
+  void requestReshapeFence(String id) {
+    _reshapeFence = id;
+    notifyListeners();
+  }
+
+  /// Take the pending reshape, if there is one.
+  String? takeReshapeFence() {
+    final String? id = _reshapeFence;
+    _reshapeFence = null;
+    return id;
+  }
+
   /// Forget everything. Called when the app leaves the foreground.
   void discard() {
     if (_centre == null && _zoom == null && _sourceId == null) return;
