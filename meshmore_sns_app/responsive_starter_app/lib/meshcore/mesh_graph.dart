@@ -136,6 +136,58 @@ class MeshGraph {
     List<DiscoveredNode>? filteredNodes,
     int maxHops = noLimit,
   }) {
+    // The tree asks for this on every controller notification, and a battery
+    // poll or a contact timestamp is a notification that changes nothing the
+    // drawing depends on. The signature covers exactly what the build reads, so
+    // an unchanged mesh reuses the graph and any change rebuilds it.
+    final String signature = _signature(mc, filteredNodes, maxHops);
+    final MeshGraph? cached = _cached;
+    if (cached != null && _cachedSignature == signature) return cached;
+    final MeshGraph built =
+        _build(mc, filteredNodes: filteredNodes, maxHops: maxHops);
+    _cached = built;
+    _cachedSignature = signature;
+    return built;
+  }
+
+  /// One entry, because there is one tree: a per-controller cache would hold
+  /// graphs for controllers that no longer exist.
+  static MeshGraph? _cached;
+  static String? _cachedSignature;
+
+  /// Everything [_build] reads, and nothing else.
+  ///
+  /// `lastHeardUnix` is deliberately absent: it moves on every advert and every
+  /// battery poll without moving a node, and including it would rebuild the tree
+  /// for a change the tree cannot show. The entries are sorted by key so the
+  /// controller's own "most recently heard first" ordering, which is a function
+  /// of the timestamps, cannot reorder the signature.
+  static String _signature(
+    MeshcoreController mc,
+    List<DiscoveredNode>? filteredNodes,
+    int maxHops,
+  ) {
+    final List<String> rows = <String>[
+      for (final DiscoveredNode n in mc.nodes)
+        '${n.pubKeyHex}:${n.name}:${n.type}:${n.hopCount}:'
+            '${n.viaFlood}:${n.outPathHashSize}:'
+            '${n.outPathHashes?.join(',') ?? ''}',
+    ]..sort();
+    return <String>[
+      '${identityHashCode(mc)}',
+      '$maxHops',
+      mc.selfInfo?.name ?? '',
+      mc.ownPubKeyHex ?? '',
+      filteredNodes == null ? '-' : '${identityHashCode(filteredNodes)}',
+      ...rows,
+    ].join('|');
+  }
+
+  static MeshGraph _build(
+    MeshcoreController mc, {
+    List<DiscoveredNode>? filteredNodes,
+    int maxHops = noLimit,
+  }) {
     const String selfId = 'self';
     final Map<String, MeshGraphNode> byId = <String, MeshGraphNode>{
       selfId: MeshGraphNode(

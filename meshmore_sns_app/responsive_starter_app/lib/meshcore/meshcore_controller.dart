@@ -338,6 +338,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       _nodes.remove(k);
       _contacts.remove(k);
     }
+    _nodesChanged();
     notifyListeners();
   }
 
@@ -1912,6 +1913,29 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
 
   final Map<String, DiscoveredNode> _nodes = <String, DiscoveredNode>{};
 
+  /// Bumped whenever [_nodes] changes, so the repeater prefix map below can be
+  /// reused instead of rebuilt.
+  int _nodesRevision = 0;
+
+  /// The repeater prefix map, per route width, and the revision it was built
+  /// from.
+  ///
+  /// [topologyHopsFor] is called once per peer when the tree is built, and it
+  /// used to walk every contact to build this map each time: one graph was
+  /// O(n^2) in the number of contacts, and the tree rebuilds on every
+  /// notification. At 400 contacts that is 160 000 map insertions several times
+  /// a second, which is a plausible contributor to the app "periodically
+  /// stopping to respond".
+  int _prefixRevision = -1;
+  final Map<int, ({Map<String, DiscoveredNode> byPrefix, Set<String> ambiguous})>
+      _prefixCache =
+      <int, ({Map<String, DiscoveredNode> byPrefix, Set<String> ambiguous})>{};
+
+  /// Every write to [_nodes] goes through here, so the cache cannot go stale.
+  void _nodesChanged() {
+    _nodesRevision++;
+  }
+
   /// Discovered nodes, most-recently-heard first.
   List<DiscoveredNode> get nodes {
     final List<DiscoveredNode> v = _nodes.values.toList()
@@ -2006,18 +2030,32 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     // Repeaters by their truncated key, at this route's width. A prefix two
     // repeaters share is ambiguous and names neither: picking the first would
     // draw a route through a node that may not be on it.
-    final Map<String, DiscoveredNode> byPrefix = <String, DiscoveredNode>{};
-    final Set<String> ambiguous = <String>{};
-    for (final DiscoveredNode n in _nodes.values) {
-      if (n.type != kAdvTypeRepeater) continue;
-      if (n.pubKeyHex.length < chars) continue;
-      final String prefix = n.pubKeyHex.substring(0, chars).toLowerCase();
-      if (byPrefix.containsKey(prefix)) {
-        ambiguous.add(prefix);
-      } else {
-        byPrefix[prefix] = n;
-      }
+    //
+    // Built once per width and reused until the contact set changes: this runs
+    // once per peer in `MeshGraph.fromController`, so rebuilding it per call
+    // made one graph quadratic in the contacts and the tree rebuilds on every
+    // notification.
+    if (_prefixRevision != _nodesRevision) {
+      _prefixCache.clear();
+      _prefixRevision = _nodesRevision;
     }
+    final ({Map<String, DiscoveredNode> byPrefix, Set<String> ambiguous})
+        named = _prefixCache.putIfAbsent(width, () {
+      final Map<String, DiscoveredNode> byPrefix =
+          <String, DiscoveredNode>{};
+      final Set<String> ambiguous = <String>{};
+      for (final DiscoveredNode n in _nodes.values) {
+        if (n.type != kAdvTypeRepeater) continue;
+        if (n.pubKeyHex.length < chars) continue;
+        final String prefix = n.pubKeyHex.substring(0, chars).toLowerCase();
+        if (byPrefix.containsKey(prefix)) {
+          ambiguous.add(prefix);
+        } else {
+          byPrefix[prefix] = n;
+        }
+      }
+      return (byPrefix: byPrefix, ambiguous: ambiguous);
+    });
 
     final List<TopologyHop> hops = <TopologyHop>[];
     for (int i = 0; i + width <= bytes.length; i += width) {
@@ -2027,7 +2065,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
           .join();
       hops.add(TopologyHop(
         hash: hex,
-        node: ambiguous.contains(hex) ? null : byPrefix[hex],
+        node: named.ambiguous.contains(hex) ? null : named.byPrefix[hex],
       ));
     }
     return List<TopologyHop>.unmodifiable(hops);
@@ -3053,6 +3091,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         lastHeardUnix: now,
         viaAdvert: false,
       );
+      _nodesChanged();
     }
     await reconcileIdentity(fromPubKeyHex: fromPubKeyHex, toPubKeyHex: to);
     // Make the radio able to route DMs to the new key (channel already
@@ -3215,6 +3254,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     // re-synced old contact is pruned on every ingest from here on...
     _nodes.remove(fromPubKeyHex);
     _contacts.remove(fromPubKeyHex);
+    _nodesChanged();
     _superseded.add(fromPubKeyHex);
     unawaited(SupersededStore.save(_superseded));
     notifyListeners();
@@ -5616,6 +5656,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       _contacts[_hex(c.publicKey)] = c;
       _saveContactsSoon();
       _nodes[_hex(c.publicKey)] = _nodeFromContact(c);
+      _nodesChanged();
     } else if (f is AdvertFrame) {
       _upsertAdvert(f.advert);
     } else if (f is RfLogFrame) {
@@ -5720,6 +5761,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       outPathHashes: prev?.outPathHashes,
       viaFlood: prev?.viaFlood ?? false,
     );
+    _nodesChanged();
     // F8 — peer's advertised position is a "the mesh extends to
     // here" observation. Same coverage bucket as own-location
     // samples; the FabricSurveyView shades both.
