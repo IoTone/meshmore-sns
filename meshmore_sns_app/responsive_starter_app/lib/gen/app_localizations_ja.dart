@@ -4658,7 +4658,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sosTitle => '緊急';
 
   @override
-  String get sosEntryTooltip => '緊急警報とチェックイン';
+  String get sosEntryTooltip => '緊急警報';
 
   @override
   String sosGoesToChannel(String name) {

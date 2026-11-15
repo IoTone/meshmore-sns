@@ -3214,7 +3214,7 @@
   "degradedMapOffline": "Map tiles cannot be fetched. The bundled basemap and anything already on disk still draw.",
   "@degradedMapOffline": {},
   "sosTitle": "Emergency",
-  "sosEntryTooltip": "Emergency alarm and check-in",
+  "sosEntryTooltip": "Emergency alarm",
   "sosGoesToChannel": "Channel {name}",
   "@sosGoesToChannel": {
     "placeholders": {

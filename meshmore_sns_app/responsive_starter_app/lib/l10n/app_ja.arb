@@ -2285,7 +2285,7 @@
   "degradedNoLocation": "位置情報が無効のため、距離・方位・場所のタグの基準がありません。それ以外は動作します。",
   "degradedMapOffline": "地図タイルを取得できません。同梱のベースマップと保存済みのタイルは表示されます。",
   "sosTitle": "緊急",
-  "sosEntryTooltip": "緊急警報とチェックイン",
+  "sosEntryTooltip": "緊急警報",
   "sosGoesToChannel": "チャンネル {name}",
   "sosGoesToContacts": "{count, plural, =0{直接送信なし} other{連絡先 {count} 件へ直接送信}}",
   "sosInRange": "電波の届く範囲にいる人以外には通知されません。",

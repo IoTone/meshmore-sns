@@ -4833,7 +4833,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sosTitle => 'Emergency';
 
   @override
-  String get sosEntryTooltip => 'Emergency alarm and check-in';
+  String get sosEntryTooltip => 'Emergency alarm';
 
   @override
   String sosGoesToChannel(String name) {

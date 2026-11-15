@@ -8197,7 +8197,7 @@ abstract class AppLocalizations {
   /// No description provided for @sosEntryTooltip.
   ///
   /// In en, this message translates to:
-  /// **'Emergency alarm and check-in'**
+  /// **'Emergency alarm'**
   String get sosEntryTooltip;
 
   /// No description provided for @sosGoesToChannel.
