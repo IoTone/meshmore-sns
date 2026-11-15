@@ -1,6 +1,10 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 
+import 'dart:convert';
+import 'dart:typed_data';
+
+import '../media/mp1.dart';
 import 'failure.dart';
 
 /// Delivery lifecycle of an **outgoing** message. Null on incoming
@@ -42,6 +46,7 @@ class ChatMessage {
     this.expectedAck,
     this.failReason,
     this.failCause,
+    this.mp1,
     Map<String, List<String?>>? reactions,
   })  : id = id ?? _genId(),
         reactions = reactions ?? <String, List<String?>>{},
@@ -61,6 +66,27 @@ class ChatMessage {
 
   final int channelIdx;
   String text;
+
+  /// The MP1 preview this row carries, as the channel datagram it arrived in.
+  ///
+  /// A preview is not chat text: it arrives as one channel datagram
+  /// (`0xFF50`), so without this the picture would exist only in the strip above
+  /// the composer, away from the moment it arrived. The packed bytes are kept
+  /// rather than the decoded pixels: 163 bytes at most, and the palette grid is
+  /// a pure function of them, so a restart costs a decode rather than a cache.
+  final Uint8List? mp1;
+
+  /// The preview, decoded once per row.
+  Mp1Image? get mp1Image {
+    if (_mp1Image != null || _mp1Tried) return _mp1Image;
+    _mp1Tried = true;
+    final Uint8List? bytes = mp1;
+    if (bytes == null) return null;
+    return _mp1Image = decodeMp1Preview(bytes).image;
+  }
+
+  Mp1Image? _mp1Image;
+  bool _mp1Tried = false;
 
   /// Reactions on this message: emoji to the senders who chose it.
   ///
@@ -137,12 +163,23 @@ class ChatMessage {
         // the channel is 0 in that case, which is where a failed send on the
         // public channel belongs.
         if (failCause != null) 'x': failCause!.name,
+        // `m` for the MP1 preview. Base64 rather than a byte list: the row is
+        // written on every message, and 163 numbers is five times the payload.
+        if (mp1 != null) 'm': base64Encode(mp1!),
         if (reactions.isNotEmpty)
           'e': <String, List<String?>>{
             for (final MapEntry<String, List<String?>> e in reactions.entries)
               e.key: e.value,
           },
       };
+
+  static Uint8List? _tryBase64(String value) {
+    try {
+      return base64Decode(value);
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Reads a persisted cause name. An unknown name (a row written by a newer
   /// build) becomes null, so the row keeps its older sentence rather than
@@ -192,6 +229,13 @@ class ChatMessage {
       delivery: delivery,
       expectedAck: (j['k'] as num?)?.toInt(),
       failReason: reason,
+      // A preview saved by a build that wrote it, read by one that can draw it.
+      // A body that will not decode is dropped rather than throwing: one bad row
+      // must not cost the history it lives in.
+      mp1: switch (j['m']) {
+        final String b64 => _tryBase64(b64),
+        _ => null,
+      },
       reactions: switch (j['e']) {
         final Map<Object?, Object?> m => <String, List<String?>>{
             for (final MapEntry<Object?, Object?> e in m.entries)

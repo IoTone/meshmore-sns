@@ -331,7 +331,9 @@ Future<void> startApp() async {
         // Both halves of "announce, then fetch": previews heard on a channel and
         // requests for offers this session still holds. It listens from the app,
         // so a request is answered whichever tab is open.
-        Provider<MediaFetchService>(
+        // A notifier rather than a plain provider: a picture that finishes
+        // arriving has to reach the row and the strip that are showing it.
+        ChangeNotifierProvider<MediaFetchService>(
           create: (BuildContext ctx) => MediaFetchService(
             mc: ctx.read<MeshcoreController>(),
             offers: ctx.read<MediaOfferStore>(),
@@ -339,7 +341,6 @@ Future<void> startApp() async {
             // decoded by the one library that is already bundled.
             codec: const AvifMediaCodec(),
           )..attach(),
-          dispose: (_, MediaFetchService s) => s.dispose(),
         ),
         // R59 — the bot. `pskFor` is what makes the "never on Public"
         // refusal real: it reads the slot's live key off the radio,

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
@@ -34,7 +35,9 @@ import '../media/mp1.dart';
 import '../media/media_inbox.dart';
 import '../media/media_transfer.dart';
 import '../media/photo_inbox.dart';
+import '../media/media_prefs.dart';
 import '../media/received_photos_sheet.dart';
+import '../ui/mp1_preview.dart';
 import '../voice/voice_capture.dart';
 import '../voice/voice_codec.dart';
 import '../voice/voice_composer.dart';
@@ -64,9 +67,8 @@ import '../theme/mm_tokens.dart';
 import '../tts/tts_controller.dart';
 import '../ui/mm_components.dart';
 import '../util/provider_lookup.dart';
-import '../ui/mp1_preview.dart';
-import '../ui/mm_scaffold.dart';
 import '../util/clock_model.dart';
+import '../ui/mm_scaffold.dart';
 import '../util/share.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
@@ -1541,6 +1543,17 @@ class _MessageRowState extends State<_MessageRow> {
     );
   }
 
+  /// The preview this row carries, drawn as the palette grid it is.
+  ///
+  /// A preview arrives as one channel datagram, so it is the row's own content
+  /// rather than something that arrives later: without it the thread shows an
+  /// empty line where somebody sent a picture.
+  Widget? _picture(MmSkin skin) {
+    final Mp1Image? image = m.mp1Image;
+    if (image == null) return null;
+    return _MessagePicture(image: image, skin: skin);
+  }
+
   // --- terminal log (SEELE / NERV / Recon) ---------------------------
   Widget _log(BuildContext context, MmSkin skin) {
     final AppLocalizations l = AppLocalizations.of(context);
@@ -1549,7 +1562,8 @@ class _MessageRowState extends State<_MessageRow> {
     if (skin.type.sansLabels) {
       final ({String? sender, String body}) s = _split();
       final Place? place = PlaceEchoLine.placeOf(m);
-      return StudioMessageRow(
+      final Widget? picture = _picture(skin);
+      final Widget row = StudioMessageRow(
           message: m,
           body: s.body,
           sender: s.sender,
@@ -1557,6 +1571,11 @@ class _MessageRowState extends State<_MessageRow> {
               ? null
               : PlaceEchoLine(place: place, store: context.read<PlaceStore>()),
           onAction: onAction);
+      if (picture == null) return row;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[row, picture],
+      );
     }
     final String mono = skin.type.monoFamily;
     final ({String? sender, String body}) parts = _split();
@@ -1600,9 +1619,11 @@ class _MessageRowState extends State<_MessageRow> {
                         padding: EdgeInsets.only(bottom: 2),
                         child: BotTag(),
                       ),
-                    Text(stripBotMarker(m.text),
-                        style:
-                            TextStyle(color: skin.color.fg, fontFamily: mono)),
+                    if (m.text.isNotEmpty)
+                      Text(stripBotMarker(m.text),
+                          style: TextStyle(
+                              color: skin.color.fg, fontFamily: mono)),
+                    if (_picture(skin) case final Widget picture) picture,
                     if (PlaceEchoLine.placeOf(m) case final Place place)
                       PlaceEchoLine(
                           place: place, store: context.read<PlaceStore>()),
@@ -1652,6 +1673,7 @@ class _MessageRowState extends State<_MessageRow> {
       bodyColor: skin.color.fg,
       bodyFamily: skin.type.bodyFamily,
       metaColor: skin.color.fgMuted,
+      picture: _picture(skin),
     );
   }
 
@@ -1703,12 +1725,14 @@ class _MessageRowState extends State<_MessageRow> {
               padding: const EdgeInsets.only(bottom: 2),
               child: BotTag(color: ink),
             ),
-          Text(stripBotMarker(s.body),
-              style: TextStyle(
-                  color: ink,
-                  fontFamily: skin.type.bodyFamily,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3)),
+          if (s.body.isNotEmpty)
+            Text(stripBotMarker(s.body),
+                style: TextStyle(
+                    color: ink,
+                    fontFamily: skin.type.bodyFamily,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3)),
+          if (_picture(skin) case final Widget picture) picture,
           const SizedBox(height: 2),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -1787,6 +1811,7 @@ class _MessageRowState extends State<_MessageRow> {
     String? bodyFamily,
     FontWeight? bodyWeight,
     required Color metaColor,
+    Widget? picture,
   }) {
     return Align(
       alignment: m.outgoing ? Alignment.centerRight : Alignment.centerLeft,
@@ -1833,12 +1858,14 @@ class _MessageRowState extends State<_MessageRow> {
                     ),
                   ],
                 ),
-                Text(body,
-                    style: TextStyle(
-                        color: bodyColor,
-                        fontFamily: bodyFamily,
-                        fontWeight: bodyWeight,
-                        height: 1.3)),
+                if (body.isNotEmpty)
+                  Text(body,
+                      style: TextStyle(
+                          color: bodyColor,
+                          fontFamily: bodyFamily,
+                          fontWeight: bodyWeight,
+                          height: 1.3)),
+                if (picture != null) picture,
                 if (PlaceEchoLine.placeOf(m) case final Place place)
                   PlaceEchoLine(
                       place: place, store: context.read<PlaceStore>()),
@@ -2224,6 +2251,106 @@ class _PhotoAnnouncementStrip extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// A picture inside a message row.
+///
+/// Three states, one thumbnail: the preview while the full picture is unfetched,
+/// the decoded picture once it is, and the same palette grid after a restart
+/// because the row kept the datagram rather than the pixels.
+///
+/// The not-fetched line is text, not a control. Asking for the pixels is the
+/// strip above the composer, which is the one place allowed to spend that
+/// airtime; a second button here would be a second way to ask for the same
+/// thing, and the row is not where a reader looks to spend it.
+class _MessagePicture extends StatefulWidget {
+  const _MessagePicture({required this.image, required this.skin});
+
+  final Mp1Image image;
+  final MmSkin skin;
+
+  @override
+  State<_MessagePicture> createState() => _MessagePictureState();
+}
+
+class _MessagePictureState extends State<_MessagePicture> {
+  /// Grey until App settings says otherwise, which is also the default.
+  bool _color = false;
+
+  @override
+  void initState() {
+    super.initState();
+    MediaPrefs.colorPhotos().then((bool v) {
+      if (mounted && v) setState(() => _color = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = widget.skin;
+    // A thumbnail, not a billboard: four body heights, so it grows with the
+    // text a reader chose and never dominates the line it arrived in.
+    final double side = (skin.type.sizeBody * 4).clamp(48.0, 96.0);
+    final MediaFetchService? fetch = watchOrNull<MediaFetchService>(context);
+    final MediaPhoto? full = fetch?.loaded[widget.image.transferId];
+    final bool waiting = full == null && widget.image.upgradeChunks > 0;
+    return Padding(
+      padding: EdgeInsets.only(top: skin.space.labelToControl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Semantics(
+            image: true,
+            label: l.mediaPhotoSemantics,
+            child: InkWell(
+              key: ValueKey<String>('message-picture-${widget.image.transferId}'),
+              onTap: () => _open(context, l),
+              child: full != null
+                  ? RgbaThumbnail(photo: full, size: side)
+                  : Mp1PreviewImage(
+                      image: widget.image, size: side, color: _color),
+            ),
+          ),
+          if (waiting)
+            Padding(
+              padding: EdgeInsets.only(top: skin.space.insideText),
+              child: Text(
+                l.photoAnnounceLoad(widget.image.upgradeChunks),
+                style: TextStyle(
+                    color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Full size, in a dialog, over the row that carries it.
+  void _open(BuildContext context, AppLocalizations l) {
+    final MmSkin skin = widget.skin;
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext c) => AlertDialog(
+        backgroundColor: skin.color.surface,
+        content: Mp1PreviewImage(
+          image: widget.image,
+          size: math.min(MediaQuery.sizeOf(c).width - 96, 336),
+          color: _color,
+        ),
+        actions: <Widget>[
+          // MmAction, not a TextButton: a bare text button reads as a label,
+          // and the guard in test/ui/tap_affordance_guard_test.dart holds that
+          // line for every surface in the app.
+          MmAction(
+            label: l.mediaClose,
+            onPressed: () => Navigator.of(c).pop(),
+          ),
+        ],
       ),
     );
   }

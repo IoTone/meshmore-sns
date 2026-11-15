@@ -2420,6 +2420,34 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     if (!_taskErrors.isClosed) _taskErrors.add(op);
   }
 
+  /// Records an MP1 preview heard on a channel as a thread row.
+  ///
+  /// A preview arrives as a channel datagram, not as text, so the thread would
+  /// otherwise have no row where the picture arrived: it would exist only in the
+  /// strip above the composer, sorted by when the strip noticed rather than by
+  /// when the sender sent it. The row carries the datagram's bytes, so it is
+  /// redrawn from the same palette grid after a restart and the full picture can
+  /// replace it once fetched.
+  ///
+  /// One row per transfer. A sender that repeats its preview (a retry, a second
+  /// datagram repeating the first) must not stack rows that say the same thing.
+  void recordPicturePreview({
+    required int channelIdx,
+    required Uint8List payload,
+    required int transferId,
+    required DateTime at,
+  }) {
+    if (_seenInbound('p|$channelIdx|$transferId')) return;
+    _addMessage(ChatMessage(
+      channelIdx: channelIdx,
+      text: '',
+      outgoing: false,
+      at: at,
+      mp1: payload,
+    ));
+    notifyListeners();
+  }
+
   void _addMessage(ChatMessage m) {
     _messages.add(m);
     if (_messages.length > _messagesCap) {

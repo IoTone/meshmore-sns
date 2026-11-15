@@ -1,7 +1,9 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
-import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
+
 
 import '../meshcore/channel_datagram.dart';
 import '../meshcore/chat_message.dart';
@@ -33,8 +35,6 @@ final class PhotoAnnouncement {
   int get id => image.transferId;
 }
 
-/// Both halves of "a picture is fetched, never broadcast".
-///
 /// The receiving half listens on the channel for two things: an MP1 preview
 /// (`0xFF50`) and a request line (`[IMG1:<id>:<key>]`). The sending half sees a
 /// request for an offer it is still holding and answers it with raw records
@@ -44,7 +44,13 @@ final class PhotoAnnouncement {
 /// sent, and the pixels go out as `CMD_SEND_RAW_DATA`, which the firmware
 /// refuses to flood (`MyMesh.cpp:1519-1533`). A requester the radio has no path
 /// for cannot be served, and is told so rather than being flooded at.
-final class MediaFetchService {
+/// Both halves of "a picture is fetched, never broadcast".
+///
+/// A [ChangeNotifier] because a surface shows the result: the strip above the
+/// composer and the row the preview arrived in both read [loaded], and a picture
+/// that finished arriving has to reach them without waiting for some unrelated
+/// rebuild to redraw it.
+final class MediaFetchService extends ChangeNotifier {
   MediaFetchService({
     required this.mc,
     required this.offers,
@@ -64,6 +70,23 @@ final class MediaFetchService {
   /// Pictures that finished arriving, by offer id.
   final Map<int, MediaPhoto> _loaded = <int, MediaPhoto>{};
   Map<int, MediaPhoto> get loaded => Map<int, MediaPhoto>.unmodifiable(_loaded);
+
+  /// Puts a decoded picture in the map a surface reads, for tests.
+  ///
+  /// The alternative is driving a whole AVIF transfer through a fake radio to
+  /// arrive at one row state, which tests the codec rather than the row. The
+  /// seam is the map itself: a surface reads `loaded[id]` and nothing else.
+  @visibleForTesting
+  void seedLoadedPicture(int id, MediaPhoto photo) {
+    _loaded[id] = photo;
+    notifyListeners();
+  }
+
+  /// Keeps a picture that finished arriving, and says so.
+  void _keepLoaded(int id, MediaPhoto photo) {
+    _loaded[id] = photo;
+    notifyListeners();
+  }
   final List<PhotoAnnouncement> _held = <PhotoAnnouncement>[];
   final Map<int, MediaFetchInbox> _inbox = <int, MediaFetchInbox>{};
   final List<StreamSubscription<Object?>> _subs =
@@ -90,12 +113,14 @@ final class MediaFetchService {
     _subs.add(mc.incomingRawData.listen(acceptRecord));
   }
 
+  @override
   Future<void> dispose() async {
     for (final StreamSubscription<Object?> s in _subs) {
       await s.cancel();
     }
     _subs.clear();
     await _announcements.close();
+    super.dispose();
   }
 
   void _onDatagram(ChannelDatagram d) {
@@ -119,6 +144,15 @@ final class MediaFetchService {
     while (_held.length > 16) {
       _held.removeAt(0);
     }
+    // A row in the thread, where the picture arrived, not only a thumbnail in
+    // the strip above the composer. It is the same datagram: the row holds the
+    // bytes and draws the palette grid the strip draws.
+    mc.recordPicturePreview(
+      channelIdx: d.channelIndex,
+      payload: d.blob,
+      transferId: a.id,
+      at: a.at,
+    );
     if (!_announcements.isClosed) _announcements.add(a);
   }
 
@@ -190,7 +224,7 @@ final class MediaFetchService {
     if (c == null) return;
     try {
       final MediaPhoto photo = await c.decode(payload);
-      _loaded[id] = photo;
+      _keepLoaded(id, photo);
       _onLoaded?.call(id, photo);
     } catch (_) {
       // A payload this build cannot read is not a crash: the announcement stays

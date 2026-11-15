@@ -12,17 +12,31 @@ import '../media/media_photo.dart';
 /// that shows it. Decoding it into a picture first would be work for a picture
 /// the reader has not asked for yet.
 class Mp1PreviewImage extends StatelessWidget {
-  const Mp1PreviewImage({super.key, required this.image, this.size = 56});
+  const Mp1PreviewImage({
+    super.key,
+    required this.image,
+    this.size = 56,
+    this.color = true,
+  });
 
   final Mp1Image image;
   final double size;
+
+  /// Colour, or the palette in Rec. 601 luma.
+  ///
+  /// Photos are grey unless the reader asked for colour (App settings), and a
+  /// preview is a photo: the choice is about what a picture costs on the mesh,
+  /// and it applies to every picture the app shows. The luma weights are
+  /// [MediaPhoto.inGrayscale]'s, so a preview and a fetched picture of the same
+  /// scene grey the same way.
+  final bool color;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(painter: _Mp1Painter(image)),
+      child: CustomPaint(painter: _Mp1Painter(image, color: color)),
     );
   }
 }
@@ -44,6 +58,10 @@ class RgbaThumbnail extends StatelessWidget {
         child: CustomPaint(painter: _RgbaPainter(photo)),
       );
 }
+
+/// Rec. 601 luma, the weights a phone camera's own luma uses.
+int _luma(int r, int g, int b) =>
+    (0.299 * r + 0.587 * g + 0.114 * b).round().clamp(0, 255);
 
 class _RgbaPainter extends CustomPainter {
   _RgbaPainter(this.photo);
@@ -73,9 +91,10 @@ class _RgbaPainter extends CustomPainter {
 }
 
 class _Mp1Painter extends CustomPainter {
-  _Mp1Painter(this.image);
+  _Mp1Painter(this.image, {this.color = true});
 
   final Mp1Image image;
+  final bool color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -86,7 +105,10 @@ class _Mp1Painter extends CustomPainter {
       for (int x = 0; x < image.width; x++) {
         final int idx = image.indices[y * image.width + x];
         final Mp1Colour c = image.palette.colours[idx.clamp(0, image.palette.colours.length - 1)];
-        paint.color = Color.fromARGB(0xFF, c.r, c.g, c.b);
+        paint.color = color
+            ? Color.fromARGB(0xFF, c.r, c.g, c.b)
+            : Color.fromARGB(0xFF, _luma(c.r, c.g, c.b), _luma(c.r, c.g, c.b),
+                _luma(c.r, c.g, c.b));
         canvas.drawRect(
           Rect.fromLTWH(x * px, y * py, px + 0.5, py + 0.5),
           paint,
@@ -96,5 +118,6 @@ class _Mp1Painter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_Mp1Painter old) => old.image != image;
+  bool shouldRepaint(_Mp1Painter old) =>
+      old.image != image || old.color != color;
 }
