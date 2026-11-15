@@ -667,7 +667,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get personalizationAudioMasterDisabled => '「視覚 + 触覚のみ」により無効';
 
   @override
-  String get personalizationAudioMasterEnabled => '既定で ON; 補助としてのみ';
+  String get personalizationAudioMasterEnabled => '既定で ON。 補助としてのみ';
 
   @override
   String get personalizationCueVolume => '通知音の音量';
@@ -695,7 +695,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get demoTooltip =>
-      'デモモード — MeshCore 無線機なし。コンパニオンなしでチャンネル・設定・ドキュメントを試せます。';
+      'デモモード 、 MeshCore 無線機なし。コンパニオンなしでチャンネル・設定・ドキュメントを試せます。';
 
   @override
   String get demoModeRow => 'MeshCore 無線機なし';
@@ -808,17 +808,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodesFloodAdvert => 'フラッドアドバート';
 
   @override
-  String get nodesFloodAdvertBody => 'メッシュ全体 — 隣接 + リピーター。発見に最適。';
+  String get nodesFloodAdvertBody => 'メッシュ全体 、 隣接 + リピーター。発見に最適。';
 
   @override
   String get nodesZeroHopAdvert => '直接アドバート';
 
   @override
-  String get nodesZeroHopAdvertBody => '隣接のみ — 再ブロードキャストなし。混雑したメッシュ向け。';
+  String get nodesZeroHopAdvertBody => '隣接のみ 、 再ブロードキャストなし。混雑したメッシュ向け。';
 
   @override
   String get nodesFloodAdvertSent =>
-      'フラッドアドバートを送信 — メッシュ全体に伝播します。相手側でも Advertise を実行するまで表示されません。';
+      'フラッドアドバートを送信 、 メッシュ全体に伝播します。相手側でも Advertise を実行するまで表示されません。';
 
   @override
   String get nodesZeroHopAdvertSent => '直接届く範囲のラジオにだけ送りました。';
@@ -883,7 +883,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get nodesStatusOffline => '未接続 — 「MeshCore 無線機に接続」を開いてください';
+  String get nodesStatusOffline => '未接続 、 「MeshCore 無線機に接続」を開いてください';
 
   @override
   String get nodesFarBadge => '遠距離';
@@ -1022,7 +1022,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String deviceRegionLoadedOffline(String label) {
-    return '$label を読み込みました — デバイス接続時に「適用」してください。';
+    return '$label を読み込みました 、 デバイス接続時に「適用」してください。';
   }
 
   @override
@@ -1107,7 +1107,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locMaster => '自動公開';
 
   @override
-  String get locMasterOn => 'オン — 現在地をアドバートに載せて送ります';
+  String get locMasterOn => 'オン 、 現在地をアドバートに載せて送ります';
 
   @override
   String get locMasterOff => 'オフ';
@@ -1271,7 +1271,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bootStarting => '起動中';
 
   @override
-  String get bootHeader => 'MESHMORE  /  同期中';
+  String get bootHeader => 'MESHMORE / 同期中';
 
   @override
   String get bootConnecting => 'ラジオに接続中…';
@@ -1283,13 +1283,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bootReady => 'メッシュ オンライン';
 
   @override
-  String get bootOffline => 'オフライン — 「MeshCore 無線機に接続」を開いてください';
+  String get bootOffline => 'オフライン 、 「MeshCore 無線機に接続」を開いてください';
 
   @override
   String get bootSkip => 'スキップ';
 
   @override
-  String get bootSubtitle => '待機  /  WAIT';
+  String get bootSubtitle => '待機 / WAIT';
 
   @override
   String eventAdvert(String name) {
@@ -1367,7 +1367,7 @@ class AppLocalizationsJa extends AppLocalizations {
       other: '古いメッセージ$count件が削除済み',
       one: '古いメッセージ1件が削除済み',
     );
-    return '$_temp0 — 各会話は最新の$cap件を保持します';
+    return '$_temp0 、 各会話は最新の$cap件を保持します';
   }
 
   @override
@@ -1428,7 +1428,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get diagnosticsPlaceStoreWriteFailed =>
-      '最後の保存が届きませんでした — ピンは再起動後に残りません';
+      '最後の保存が届きませんでした 、 ピンは再起動後に残りません';
 
   @override
   String get diagnosticsPlaceStoreOk => '保存済み';
@@ -1473,7 +1473,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chatBudgetTooLong(int over) {
-    return '$over バイト超過 — 無線機は残りを通知せずに切り捨てます';
+    return '$over バイト超過 、 無線機は残りを通知せずに切り捨てます';
   }
 
   @override
@@ -1593,7 +1593,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String nodeIdentityBody(String name, int count) {
-    return '「$name」は新しいキーで稼働中です — 相手の端末で削除・再追加された可能性があります。お気に入り・タグ・保存済みメッセージ $count 件を現在のキーに移動しますか？';
+    return '「$name」は新しいキーで稼働中です 、 相手の端末で削除・再追加された可能性があります。お気に入り・タグ・保存済みメッセージ $count 件を現在のキーに移動しますか？';
   }
 
   @override
@@ -1628,7 +1628,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodeIdentityLinkNoMatch =>
-      '一致するノードがありません — 検索をクリアするか、完全なキーを貼り付けて直接リンクしてください。';
+      '一致するノードがありません 、 検索をクリアするか、完全なキーを貼り付けて直接リンクしてください。';
 
   @override
   String get nodeIdentityLinkUseKey => 'このキーにリンク';
@@ -1644,7 +1644,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nodeDetailAddDeviceContactFailed =>
-      '連絡先を追加できませんでした — リンクを確認して再試行してください。';
+      '連絡先を追加できませんでした 、 リンクを確認して再試行してください。';
 
   @override
   String get nodeDetailRemoveDeviceContact => 'デバイスの連絡先から削除';
@@ -1920,7 +1920,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get weatherEmpty =>
-      '環境データを報告しているノードはまだありません。\nセンサー搭載ノードが照会されると表示されます — アプリ設定で「ノードのテレメトリを収集」を有効にしてください。';
+      '環境データを報告しているノードはまだありません。\nセンサー搭載ノードが照会されると表示されます 、 アプリ設定で「ノードのテレメトリを収集」を有効にしてください。';
 
   @override
   String get weatherSelfNoTelemetry =>
@@ -1947,7 +1947,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get docsProtocolTitle => 'プロトコル';
 
   @override
-  String get docsProtocolSub => 'MeshCore コンパニオン無線プロトコル — フレーム、オペコード、フロー。';
+  String get docsProtocolSub => 'MeshCore コンパニオン無線プロトコル 、 フレーム、オペコード、フロー。';
 
   @override
   String get docsFirmwareTitle => 'ファームウェア';
@@ -1957,7 +1957,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String docsFirmwareSubVersion(String version) {
-    return 'MeshCore ファームウェア — $version に対応。';
+    return 'MeshCore ファームウェア 、 $version に対応。';
   }
 
   @override
@@ -2093,7 +2093,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get snsCellsLegendDecay => '直近1時間のみ追跡。保存はされません。';
 
   @override
-  String get meshTreeEmpty => 'コンタクト同期を待機中 — ツリーは各コンタクトの outPath から構築されます。';
+  String get meshTreeEmpty => 'コンタクト同期を待機中 、 ツリーは各コンタクトの outPath から構築されます。';
 
   @override
   String meshTreeFilteredEmptyFor(String stop, int count) {
@@ -2440,7 +2440,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsKeyHashtagHint => '例: #mygroup';
 
   @override
-  String get channelsKeyHashtagHelper => 'sha256(\"#タグ\") から鍵を導出 — # も鍵の一部です';
+  String get channelsKeyHashtagHelper => 'sha256(\"#タグ\") から鍵を導出 、 # も鍵の一部です';
 
   @override
   String get channelsKeyHexHint => '16 進 32 文字 (16 バイト)';
@@ -2477,7 +2477,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get channelsTagWeakCommon =>
-      '一般的な単語は推測されやすい — 攻撃者にタグ総当りを許します。独自の表現を使用してください。';
+      '一般的な単語は推測されやすい 、 攻撃者にタグ総当りを許します。独自の表現を使用してください。';
 
   @override
   String get channelsSlot0WarnTitle => 'Public チャンネルを上書きしますか?';
@@ -2543,7 +2543,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get channelsShakeBody =>
-      'スマートフォンを振ってください — 検出された動きサンプルがハッシュに加算されます。リングが満たされたら停止。';
+      'スマートフォンを振ってください 、 検出された動きサンプルがハッシュに加算されます。リングが満たされたら停止。';
 
   @override
   String channelsShakeProgress(int accepted, int target, int pct) {
@@ -2629,7 +2629,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'まだ GPS を取得できません。屋外で位置情報をオンにして試してください。';
 
   @override
-  String get deviceRegionSuggestNoMatch => '現在地が出荷時プリセットの対象外です — 手動で選択してください。';
+  String get deviceRegionSuggestNoMatch => '現在地が出荷時プリセットの対象外です 、 手動で選択してください。';
 
   @override
   String get deviceRegionDisclaimerShort => '利用者どうしの値で、規制当局の確認はありません。';
@@ -2642,7 +2642,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get presetUsCanada => '米国 / カナダ';
 
   @override
-  String get presetUsArizona => '米国 — アリゾナ';
+  String get presetUsArizona => '米国 、 アリゾナ';
 
   @override
   String get presetJpAribT108 => '日本（ARIB STD-T108）';
@@ -2766,7 +2766,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRadioRevertUnavailable => '元に戻せるのは一度だけです。';
 
   @override
-  String get deviceRadioRevertFailed => '元に戻せませんでした — 無線機は直前の値のままです。';
+  String get deviceRadioRevertFailed => '元に戻せませんでした 、 無線機は直前の値のままです。';
 
   @override
   String get radioHealthTitle => 'MeshCore 無線機の状態';
@@ -2857,7 +2857,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceToastNameEmpty => 'ノード名を入力してください';
 
   @override
-  String get deviceToastNameSet => '名前を更新 — 隣接ノードへ再アドバート中';
+  String get deviceToastNameSet => '名前を更新 、 隣接ノードへ再アドバート中';
 
   @override
   String deviceToastSendFailed(String error) {
@@ -2865,7 +2865,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceToastNoDeviceYet => 'デバイス未応答 — 接続後に再試行';
+  String get deviceToastNoDeviceYet => 'デバイス未応答 、 接続後に再試行';
 
   @override
   String get deviceToastNoGpsYet => 'デバイスにまだ位置情報がありません (GPS 未取得)';
@@ -2900,7 +2900,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceLocPermDenied => 'スマートフォン GPS 取得には位置情報の許可が必要です。';
 
   @override
-  String get deviceLocPermDeniedPerm => '位置情報が永続的に拒否されました — OS 設定で許可してください。';
+  String get deviceLocPermDeniedPerm => '位置情報が永続的に拒否されました 、 OS 設定で許可してください。';
 
   @override
   String get deviceOpenSettings => '設定を開く';
@@ -2964,7 +2964,7 @@ class AppLocalizationsJa extends AppLocalizations {
       '0 が既定です。大きくすると、その数だけ多くのラジオの確認を待ってから送信済みとみなします。';
 
   @override
-  String get otherSentSnack => 'OTHER PARAMS を送信 — デバイス側の書込に時間がかかる場合があります。';
+  String get otherSentSnack => 'OTHER PARAMS を送信 、 デバイス側の書込に時間がかかる場合があります。';
 
   @override
   String get otherAwaitingDevice => '端末を待っています';
@@ -2992,13 +2992,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get batteryCharging => '充電中';
 
   @override
-  String get batteryChargingNote => '充電中 — 残り時間の推定は一時停止しています。';
+  String get batteryChargingNote => '充電中 、 残り時間の推定は一時停止しています。';
 
   @override
   String get batteryTimeToEmpty => '残り時間';
 
   @override
-  String get batteryEstimating => '消費データを収集中 — 数分間の放電後に推定値が表示されます。';
+  String get batteryEstimating => '消費データを収集中 、 数分間の放電後に推定値が表示されます。';
 
   @override
   String get batteryDrainRate => '消費レート';
@@ -3040,7 +3040,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get batterySpecGeneric =>
-      '不明なハードウェア — 汎用の単セル Li-ion モデルを使用します。定格容量での照合ができないため、推定は実測消費に依存します。';
+      '不明なハードウェア 、 汎用の単セル Li-ion モデルを使用します。定格容量での照合ができないため、推定は実測消費に依存します。';
 
   @override
   String batterySpecCapacity(int mah) {
@@ -3088,10 +3088,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deliveryDelivered => '配信完了 (受信側が確認)';
 
   @override
-  String get deliveryFailed => '未配信 — 確認応答なし、または送信失敗';
+  String get deliveryFailed => '未配信 、 確認応答なし、または送信失敗';
 
   @override
-  String get deliveryUnknown => 'アプリ終了中に送信 — 無線機が送信したかは不明です';
+  String get deliveryUnknown => 'アプリ終了中に送信 、 無線機が送信したかは不明です';
 
   @override
   String get settingsHubTools => 'ツール';
@@ -3101,7 +3101,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get toolsOffline =>
-      '未接続 — ツールには MeshCore 無線機が必要です。「MeshCore 無線機に接続」を開いてください';
+      '未接続 、 ツールには MeshCore 無線機が必要です。「MeshCore 無線機に接続」を開いてください';
 
   @override
   String get toolsRunning => '実行中';
@@ -3175,7 +3175,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toolSoakName => 'ソークテスト';
 
   @override
-  String get toolSoakSub => '連番メッセージを計数 — ボットと組み合わせ';
+  String get toolSoakSub => '連番メッセージを計数 、 ボットと組み合わせ';
 
   @override
   String get toolRangeName => 'レンジテスト';
@@ -3280,7 +3280,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pingTarget => '対象';
 
   @override
-  String get pingMethodStatus => 'ステータス要求 — リピーター・ルーム・センサーが応答します。';
+  String get pingMethodStatus => 'ステータス要求 、 リピーター・ルーム・センサーが応答します。';
 
   @override
   String get pingMethodTelemetry => '計測値を求めます。相手のラジオが共有している場合だけ応答します。';
@@ -3302,7 +3302,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pingWaiting => '待機中…';
 
   @override
-  String get pingNoContacts => '同期済みコンタクトがありません — Ping できるのはコンタクトのみです。';
+  String get pingNoContacts => '同期済みコンタクトがありません 、 Ping できるのはコンタクトのみです。';
 
   @override
   String get pingLastStatus => '直近のステータス';
@@ -3317,7 +3317,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get traceRoundTrip => '往復 (こちらに戻す)';
 
   @override
-  String get traceNoRoute => '経路なし — 先にメッセージを送ってください';
+  String get traceNoRoute => '経路なし 、 先にメッセージを送ってください';
 
   @override
   String tracePath(String path) {
@@ -3348,7 +3348,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get traceReset => '経路をリセット';
 
   @override
-  String get traceResetDone => '経路をリセットしました — 次のメッセージはフラッドします。';
+  String get traceResetDone => '経路をリセットしました 、 次のメッセージはフラッドします。';
 
   @override
   String get traceNoRepeaters =>
@@ -3395,7 +3395,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get soakListening => '送信完了 — 遅れたエコーを待っています…';
+  String get soakListening => '送信完了 、 遅れたエコーを待っています…';
 
   @override
   String soakRun(String id) {
@@ -3898,7 +3898,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get elevationSelfAltUnknown => '高度: —';
+  String get elevationSelfAltUnknown => '高度: 、';
 
   @override
   String elevationSelfTemp(String c) {
@@ -4003,7 +4003,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String diagnosticsPairedLine(String name) {
-    return 'ペアリング済み: $name — 起動時に自動再接続します';
+    return 'ペアリング済み: $name 、 起動時に自動再接続します';
   }
 
   @override
@@ -5183,7 +5183,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String coverageEdges(int count) {
-    return '描画された応答 $count 件 — 応答のみで、推定したリンクはありません';
+    return '描画された応答 $count 件 、 応答のみで、推定したリンクはありません';
   }
 
   @override
@@ -5531,7 +5531,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String nodeMarkerSemantics(String name) {
-    return '$name — 詳細はタップ';
+    return '$name 、 詳細はタップ';
   }
 
   @override
@@ -5836,7 +5836,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnosticsPositionNone => 'なし';
 
   @override
-  String get sosWordsOptional => '任意 — 空にすると既定の文言で送信します。';
+  String get sosWordsOptional => '任意 、 空にすると既定の文言で送信します。';
 
   @override
   String sosHoldSummary(Object channel) {
@@ -6033,7 +6033,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeFindRouteNone => '経路は返ってきませんでした。';
 
   @override
-  String get nodeFindRouteDirect => '直接 — 範囲内の隣接ノードです。';
+  String get nodeFindRouteDirect => '直接 、 範囲内の隣接ノードです。';
 
   @override
   String nodeFindRouteTwoWay(Object back) {
@@ -6278,7 +6278,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get deviceAirtimeLimitUnknown => '送信時間上限: —';
+  String get deviceAirtimeLimitUnknown => '送信時間上限: 、';
 
   @override
   String deviceRepeatRanges(String ranges) {
@@ -6289,7 +6289,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get deviceRepeatNone => '中継: 報告なし';
 
   @override
-  String get deviceRepeatUnknown => '中継: —';
+  String get deviceRepeatUnknown => '中継: 、';
 
   @override
   String get diagnosticsSectionRadioAlerts => '無線機のアラート';

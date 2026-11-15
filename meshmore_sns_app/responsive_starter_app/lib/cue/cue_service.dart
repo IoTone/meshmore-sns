@@ -52,6 +52,13 @@ enum CueKind {
   /// acknowledged, etc.).
   taskOk,
 
+  /// Walked into a fence.
+  geofenceEnter,
+
+  /// Walked out of one. Two facts, two cues: the same sound for both told a
+  /// reader that something happened but not what.
+  geofenceExit,
+
   /// Long-running task **failed** (send threw, scan timed out without
   /// any inbound, connect attempt failed). Less harsh than `alert`;
   /// alert is reserved for protocol-level critical errors.
@@ -156,6 +163,10 @@ _HTier _tierOf(CueKind k) => switch (k) {
       CueKind.send ||
       CueKind.boot =>
         _HTier.positive,
+      // A crossing is an arrival or a departure, not a warning: entering a
+      // place you chose is positive, leaving it is neutral information.
+      CueKind.geofenceEnter => _HTier.arrival,
+      CueKind.geofenceExit => _HTier.ambient,
       CueKind.linkDown || CueKind.taskError => _HTier.negative,
       CueKind.alert => _HTier.critical,
       CueKind.navNext ||

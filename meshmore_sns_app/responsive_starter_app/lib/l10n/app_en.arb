@@ -284,11 +284,11 @@
   "termsSectionLocal": "WHAT STAYS ON THIS DEVICE",
   "termsLocalBody": "Messages, contacts, channels and settings are stored on this device. Message history, places, the movement trail and geofences are encrypted with a key this phone holds and cannot export. Coverage cells and the last day of channel activity are kept too, so the map and the activity report survive a restart: they are not encrypted, and Delete everything removes them with the rest. Cloud backup and device transfer are off for everything, so a new phone does not silently inherit it. Deleting the app deletes that data.",
   "termsSectionLeaves": "WHAT LEAVES THE DEVICE",
-  "termsLeavesBody": "Two things leave this device. What you send goes out over the radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking; the map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.",
+  "termsLeavesBody": "Two things leave this device. What you send goes out over the radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.",
   "termsSectionPermissions": "PERMISSIONS AND WHY",
   "termsPermissionsBody": "Bluetooth connects to the radio. Location is used for your own position and, on older Android, to allow a Bluetooth scan. Notifications are used for messages that arrive while the app is in the background. Refusing any of them leaves the app usable without a radio.",
   "termsSectionRetention": "HOW MUCH IS KEPT",
-  "termsRetentionBody": "Each conversation keeps its newest {cap} messages; older ones are dropped. A place expires when its own timer runs out, and is then gone.",
+  "termsRetentionBody": "Each conversation keeps its newest {cap} messages. Older ones are dropped. A place expires when its own timer runs out, and is then gone.",
   "@termsRetentionBody": {
     "placeholders": {
       "cap": {
@@ -353,7 +353,7 @@
   "personalizationAudioAlerts": "AUDIO ALERTS",
   "personalizationAudioMaster": "Audio alerts",
   "personalizationAudioMasterDisabled": "Disabled by \"visual + haptic only\"",
-  "personalizationAudioMasterEnabled": "On by default; augmentation only",
+  "personalizationAudioMasterEnabled": "On by default. Augmentation only",
   "personalizationCueVolume": "Cue volume",
   "personalizationCueVolumeSubtitle": "{percent} % of the phone's media volume",
   "personalizationCueStreamNote": "Cues play on the media stream. If you hear nothing, raise the phone media volume. A notification sound can be loud while this is quiet.",
@@ -361,7 +361,7 @@
   "dashboardAudioMute": "Mute alert sounds",
   "dashboardAudioUnmute": "Unmute alert sounds",
   "demoBanner": "DEMO",
-  "demoTooltip": "Demo mode — no MeshCore radio. Explore channels, settings and docs without a companion.",
+  "demoTooltip": "Demo mode. No MeshCore radio. Explore channels, settings and docs without a companion.",
   "demoModeRow": "No MeshCore radio",
   "demoModeSubtitle": "Explore the app offline",
   "firstRunHeader": "MESHMORE · WELCOME",
@@ -419,10 +419,10 @@
   "nodesAdvertise": "Advertise",
   "nodesSyncContacts": "Sync contacts",
   "nodesFloodAdvert": "Flood advert",
-  "nodesFloodAdvertBody": "Whole mesh — neighbours + repeaters. Best for discovery.",
+  "nodesFloodAdvertBody": "Whole mesh. Neighbours + repeaters. Best for discovery.",
   "nodesZeroHopAdvert": "Direct advert",
-  "nodesZeroHopAdvertBody": "Direct neighbours only — not rebroadcast. Quieter on a busy mesh.",
-  "nodesFloodAdvertSent": "Flood advert sent — it crosses the whole mesh. The other node must advertise too before it appears here.",
+  "nodesZeroHopAdvertBody": "Direct neighbours only. Not rebroadcast. Quieter on a busy mesh.",
+  "nodesFloodAdvertSent": "Flood advert sent. It crosses the whole mesh. The other node must advertise too before it appears here.",
   "nodesZeroHopAdvertSent": "Sent to radios in direct range only.",
   "nodesSearchHint": "name, short ID, or pub key…",
   "nodesFilterStarred": "Starred",
@@ -459,7 +459,7 @@
       }
     }
   },
-  "nodesStatusOffline": "Not connected — open Connect a MeshCore radio",
+  "nodesStatusOffline": "Not connected. Open Connect a MeshCore radio",
   "nodesFarBadge": "FAR",
   "nodesEmptyFiltered": "No nodes match this filter.",
   "nodesEmptyReady": "No nodes yet. A node appears once it announces itself.",
@@ -527,7 +527,7 @@
       }
     }
   },
-  "deviceRegionLoadedOffline": "{label} loaded — Apply when a device is connected.",
+  "deviceRegionLoadedOffline": "{label} loaded. Apply when a device is connected.",
   "@deviceRegionLoadedOffline": {
     "placeholders": {
       "label": {
@@ -596,7 +596,7 @@
   "locTileSubtitle": "Sends the phone's position to the radio",
   "deviceGpsIntervalWhy": "This firmware build decides how often the sensors are read, so the app cannot change it.",
   "locMaster": "Auto-publish",
-  "locMasterOn": "On — your position goes out with your adverts",
+  "locMasterOn": "On. Your position goes out with your adverts",
   "locMasterOff": "Off",
   "locInterval": "Periodic interval",
   "locMovement": "Smart broadcast (on movement)",
@@ -646,7 +646,7 @@
       }
     }
   },
-  "gridEmpty": "No nodes in range yet.\n\nA node appears once it announces itself.",
+  "gridEmpty": "No nodes in range yet. A node appears once it announces itself.",
   "gridStatusCounts": "{visible} shown · {known} known · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
   "@gridStatusCounts": {
     "placeholders": {
@@ -721,13 +721,13 @@
   "settingsHubChannels": "Channels",
   "settingsHubDiagnostics": "MeshCore radio connection",
   "bootStarting": "STARTING",
-  "bootHeader": "MESHMORE  /  SYNCHRONIZING",
+  "bootHeader": "MESHMORE / SYNCHRONIZING",
   "bootConnecting": "CONNECTING TO RADIO…",
   "bootHandshaking": "HANDSHAKING…",
   "bootReady": "MESH ONLINE",
-  "bootOffline": "OFFLINE — open Connect a MeshCore radio",
+  "bootOffline": "OFFLINE. Open Connect a MeshCore radio",
   "bootSkip": "SKIP",
-  "bootSubtitle": "WAIT  /  進行中",
+  "bootSubtitle": "WAIT / 進行中",
   "eventAdvert": "advert · {name}",
   "@eventAdvert": {
     "placeholders": {
@@ -817,7 +817,7 @@
   "chatManageChannels": "Manage channels",
   "chatTtsMuted": "TTS muted for this channel",
   "chatTtsActive": "TTS reading this channel",
-  "chatRetentionDropped": "{count, plural, =1{1 older message is gone} other{{count} older messages are gone}} — each conversation keeps its newest {cap}",
+  "chatRetentionDropped": "{count, plural, =1{1 older message is gone} other{{count} older messages are gone}}. Each conversation keeps its newest {cap}",
   "@chatRetentionDropped": {
     "placeholders": {
       "count": {
@@ -857,7 +857,7 @@
     }
   },
   "diagnosticsPlaceStore": "Places store",
-  "diagnosticsPlaceStoreWriteFailed": "the last save did not land — pins will not survive a restart",
+  "diagnosticsPlaceStoreWriteFailed": "the last save did not land. Pins will not survive a restart",
   "diagnosticsPlaceStoreOk": "saved",
   "mediaReceiveDropped": "{count, plural, =1{One earlier transfer was dropped to make room, so that picture stopped} other{{count} earlier transfers were dropped to make room, so those pictures stopped}}",
   "@mediaReceiveDropped": {
@@ -885,10 +885,10 @@
       }
     }
   },
-  "chatSendNotSent": "Not sent — the radio is not connected. Your message is back in the box.",
+  "chatSendNotSent": "Not sent. The radio is not connected. Your message is back in the box.",
   "chatSend": "Send",
   "chatBudgetNear": "Nearly at the limit: the radio counts its own name in these bytes",
-  "chatBudgetTooLong": "Too long by {over} bytes — the radio would cut the rest without telling you",
+  "chatBudgetTooLong": "Too long by {over} bytes. The radio would cut the rest without telling you",
   "@chatBudgetTooLong": {
     "placeholders": {
       "over": {
@@ -941,7 +941,7 @@
       }
     }
   },
-  "nodeDetailSignatureMutedHint": "Audio is muted — you will feel the vibration but not hear it.",
+  "nodeDetailSignatureMutedHint": "Audio is muted. You will feel the vibration but not hear it.",
   "dmEmpty": "No messages yet",
   "dmOpenPeerDetail": "Contact details",
   "dmSpeech": "Read this conversation aloud",
@@ -963,7 +963,7 @@
   "actionDeleteLocal": "Delete locally",
   "actionCopied": "Copied to clipboard",
   "actionDeleteConfirmTitle": "Delete this message locally?",
-  "actionDeleteConfirmBody": "This removes the row from your local history. MeshCore has no recall — the recipient still has it.",
+  "actionDeleteConfirmBody": "This removes the row from your local history. MeshCore has no recall. The recipient still has it.",
   "actionCancel": "Cancel",
   "actionDelete": "Delete",
   "nodeDetailSelf": "Your own node.",
@@ -972,7 +972,7 @@
   "nodeDetailRecentDms": "RECENT DMS",
   "nodeDetailMessage": "Message",
   "nodeIdentityTitle": "Contact key changed",
-  "nodeIdentityBody": "“{name}” is active under a new key — likely deleted and re-added on their device. Move your star, tags, and {count} saved messages to the current key?",
+  "nodeIdentityBody": "“{name}” is active under a new key. Likely deleted and re-added on their device. Move your star, tags, and {count} saved messages to the current key?",
   "@nodeIdentityBody": {
     "placeholders": {
       "name": {
@@ -1002,15 +1002,15 @@
   },
   "nodeIdentityLinkAction": "New key: link this contact",
   "nodeIdentityLinkTitle": "Link a changed key",
-  "nodeIdentityLinkHelp": "Same contact, new key. Pick the node or paste the key; your star, tags and messages move over.",
+  "nodeIdentityLinkHelp": "Same contact, new key. Pick the node or paste the key. Your star, tags and messages move over.",
   "nodeIdentityLinkEmpty": "No other nodes yet. Wait for the new key to advertise, or paste it.",
   "nodeIdentityLinkSearchHint": "Filter by name, or paste a public key",
-  "nodeIdentityLinkNoMatch": "No nodes match — clear the search, or paste the full key to link directly.",
+  "nodeIdentityLinkNoMatch": "No nodes match. Clear the search, or paste the full key to link directly.",
   "nodeIdentityLinkUseKey": "Link to this key",
   "nodeDetailNotDeviceContact": "Not in the radio's contacts, so DMs may not route.",
   "nodeDetailAddDeviceContact": "Add to device contacts",
   "nodeDetailAddDeviceContactDone": "Added. DMs will route.",
-  "nodeDetailAddDeviceContactFailed": "Couldn't add the contact — check the link and try again.",
+  "nodeDetailAddDeviceContactFailed": "Couldn't add the contact. Check the link and try again.",
   "nodeDetailRemoveDeviceContact": "Remove from device contacts",
   "nodeDetailRemoveDeviceContactConfirm": "Remove “{name}” from the radio's contacts? You can add them again later.",
   "@nodeDetailRemoveDeviceContactConfirm": {
@@ -1057,7 +1057,7 @@
       }
     }
   },
-  "deviceContactsNeedLocation": "No location set, so distance can't be measured — only location-hidden contacts are caught. Set your position to also remove far-away GPS contacts.",
+  "deviceContactsNeedLocation": "No location set, so distance can't be measured. Only location-hidden contacts are caught. Set your position to also remove far-away GPS contacts.",
   "deviceContactsRemoveOutOfRangeDone": "Removed {count} out-of-range contacts.",
   "@deviceContactsRemoveOutOfRangeDone": {
     "placeholders": {
@@ -1131,7 +1131,7 @@
   "nodeDetailTags": "TAGS",
   "nodeDetailAddTag": "tag",
   "nodeDetailAddTagTitle": "Add tag",
-  "nodeDetailAddTagHint": "e.g. repeater, work, ham-club",
+  "nodeDetailAddTagHint": "e.g. Repeater, work, ham-club",
   "nodeDetailAddTagSuggestions": "RECENTLY USED",
   "nodeDetailAddTagApply": "Add",
   "nodeDetailInRange": "IN RANGE",
@@ -1184,7 +1184,7 @@
   "wxMicroclimatesHeader": "MICROCLIMATES (by place)",
   "wxMicroclimateNearby": "nearby",
   "wxMeasured": "measured",
-  "wxAmbientEmpty": "No measured weather report on this channel in the last 24 h. A number and a unit is a report; \"rain later\" is not.",
+  "wxAmbientEmpty": "No measured weather report on this channel in the last 24 h. A number and a unit is a report. \"rain later\" is not.",
   "wxMentionsShort": "{count} mentions",
   "@wxMentionsShort": {
     "placeholders": {
@@ -1204,9 +1204,9 @@
   "wxCondStorm": "Storm",
   "wxCondHeat": "Hot",
   "wxCondCold": "Cold",
-  "weatherEmpty": "No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled — enable \"Gather node telemetry\" in App settings.",
+  "weatherEmpty": "No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled. Enable \"Gather node telemetry\" in App settings.",
   "weatherSelfNoTelemetry": "This device hasn't returned telemetry yet. Make sure you're connected, then reopen this view.",
-  "weatherSelfNoEnv": "Environment telemetry isn't supported by this device's firmware.\nIt reported: {types}.\nThe sensor (e.g. the T1000-E's BME280) needs a MeshCore sensor build — the standard build sends only battery and GPS. This is the device, not a setting.",
+  "weatherSelfNoEnv": "Environment telemetry isn't supported by this device's firmware.\nIt reported: {types}.\nThe sensor (e.g. The T1000-E's BME280) needs a MeshCore sensor build. The standard build sends only battery and GPS. This is the device, not a setting.",
   "@weatherSelfNoEnv": {
     "placeholders": {
       "types": {
@@ -1225,10 +1225,10 @@
   "docsHubSubtitle": "Protocol, firmware, app and field notes, offline.",
   "docsHubFooter": "Documentation is cached on-device for offline reading. Tap a doc, then ↻ to pull the latest. Upstream: meshcore-dev/MeshCore.",
   "docsProtocolTitle": "Protocol",
-  "docsProtocolSub": "MeshCore companion radio protocol — frames, opcodes, and flow.",
+  "docsProtocolSub": "MeshCore companion radio protocol. Frames, opcodes, and flow.",
   "docsFirmwareTitle": "Firmware",
   "docsFirmwareSub": "MeshCore firmware overview (README).",
-  "docsFirmwareSubVersion": "MeshCore firmware — matched to {version}.",
+  "docsFirmwareSubVersion": "MeshCore firmware. Matched to {version}.",
   "@docsFirmwareSubVersion": {
     "placeholders": {
       "version": {
@@ -1239,7 +1239,7 @@
   "docsAppTitle": "App",
   "docsAppSub": "How Meshmore SNS works, and how it uses the mesh.",
   "docsDevicesTitle": "Devices",
-  "docsDevicesSub": "Field notes and quirks for the radios we run — T1000-E, Wio Tracker L1 Pro, Heltec V3.",
+  "docsDevicesSub": "Field notes and quirks for the radios we run. T1000-E, Wio Tracker L1 Pro, Heltec V3.",
   "docsRefresh": "Refresh from GitHub",
   "docsUpdated": "Updated to the latest version",
   "docsUpToDate": "Already up to date",
@@ -1329,14 +1329,14 @@
     }
   },
   "snsCellsLegendTitle": "MESSAGE HEAT",
-  "snsCellsLegendDesc": "A live social-activity heat map. Each observed message warms its cell; cells cool over a one-hour horizon.",
+  "snsCellsLegendDesc": "A live social-activity heat map. Each observed message warms its cell. Cells cool over a one-hour horizon.",
   "snsCellsLegendHot": "Bright red = busy (≈5+ messages in the last minute).",
-  "snsCellsLegendCool": "Fading to white = quieting down; gone after ~1 h idle.",
+  "snsCellsLegendCool": "Fading to white = quieting down. Gone after ~1 h idle.",
   "snsCellsLegendToast": "New messages flash as a toast near their source, then vanish.",
   "snsCellsLegendChannel": "Channel messages carry the sender's name: they warm the sender's cell when we know where they are, otherwise your own cell.",
-  "snsCellsLegendDecay": "Only the last hour is tracked; nothing is stored.",
-  "meshTreeEmpty": "Waiting for contact sync — the tree is built from each contact's outPath.",
-  "meshTreeFilteredEmptyFor": "{count, plural, =1{No peer has a learned route at {stop}. 1 is heard without one — Flood / All shows it.} other{No peer has a learned route at {stop}. {count} are heard without one — Flood / All shows them.}}",
+  "snsCellsLegendDecay": "Only the last hour is tracked. Nothing is stored.",
+  "meshTreeEmpty": "Waiting for contact sync. The tree is built from each contact's outPath.",
+  "meshTreeFilteredEmptyFor": "{count, plural, =1{No peer has a learned route at {stop}. 1 is heard without one. Flood / All shows it.} other{No peer has a learned route at {stop}. {count} are heard without one. Flood / All shows them.}}",
   "meshTreeLearnRoutes": "Ask the radio for routes",
   "meshTreeLearning": "Asking the radio…",
   "meshTreeNoRoutes": "This radio has not learned any routes yet, so every peer is drawn. The stop appears once it does.",
@@ -1478,7 +1478,7 @@
   "channelCreateCreated": "Channel created.",
   "channelCreateTitle": "New channel",
   "channelCreateIntro": "Name it, then say who should be able to read it.",
-  "channelCreateNameHint": "e.g. basecamp",
+  "channelCreateNameHint": "e.g. Basecamp",
   "channelCreateNameKeyedTitle": "Anyone who knows the name",
   "channelCreateNameKeyedBody": "The key comes from the name, so every radio that types the same name joins. Nothing else can read it.",
   "channelCreatePublicTitle": "The public channel",
@@ -1633,7 +1633,7 @@
   "channelsKeyHex": "Hex",
   "channelsKeyPublicBody": "Uses the well-known Public channel key.",
   "channelsKeyHashtagHint": "e.g. #mygroup",
-  "channelsKeyHashtagHelper": "Key derived from sha256(\"#tag\") — the # is part of the key",
+  "channelsKeyHashtagHelper": "Key derived from sha256(\"#tag\"). The # is part of the key",
   "channelsKeyHexHint": "32 hex chars (16 bytes)",
   "channelsErrorTag": "Enter a #hashtag",
   "channelsErrorHex": "The key must be 32 characters, 0-9 or A-F",
@@ -1645,7 +1645,7 @@
   "channelsHexCopy": "Copy",
   "channelsHexCopied": "Key copied",
   "channelsTagWeakShort": "Short tags are guessable. Use 12+ chars or unusual phrasing.",
-  "channelsTagWeakCommon": "Common words are guessable — an attacker can grind tags. Use unusual phrasing.",
+  "channelsTagWeakCommon": "Common words are guessable. An attacker can grind tags. Use unusual phrasing.",
   "channelsSlot0WarnTitle": "Overwriting the Public channel?",
   "channelsSlot0WarnBody": "Channel 0 is the shared public channel. A private key here means you can only talk to radios using that same key, and you lose the public channel. Continue?",
   "channelsSlot0WarnContinue": "Overwrite channel 0",
@@ -1685,7 +1685,7 @@
   "channelsClearedDefaultSnack": "Launch default cleared",
   "channelsKeyShake": "Shake",
   "channelsShakeTitle": "Shake to roll dice",
-  "channelsShakeBody": "Shake your phone — each accepted motion sample feeds the hash. Stop once the ring fills.",
+  "channelsShakeBody": "Shake your phone. Each accepted motion sample feeds the hash. Stop once the ring fills.",
   "channelsShakeProgress": "{accepted} of {target} samples · {pct}%",
   "@channelsShakeProgress": {
     "placeholders": {
@@ -1728,7 +1728,7 @@
   "deviceRegionFamilyAsiaPacific": "Asia-Pacific",
   "deviceRegionFamilyOther": "Other",
   "deviceRegionSuggestTitle": "Use the preset for your location?",
-  "deviceRegionSuggestBody": "Your phone GPS ({lat}, {lon}) matches {label}. Check it is legal where you are before applying — especially outside the country you set it up in.",
+  "deviceRegionSuggestBody": "Your phone GPS ({lat}, {lon}) matches {label}. Check it is legal where you are before applying. Especially outside the country you set it up in.",
   "@deviceRegionSuggestBody": {
     "placeholders": {
       "lat": {
@@ -1744,11 +1744,11 @@
   },
   "deviceRegionSuggestApply": "Use it",
   "deviceRegionSuggestNoFix": "No GPS fix yet. Try outdoors with location on.",
-  "deviceRegionSuggestNoMatch": "Your location doesn't match any shipped country preset — pick one manually.",
+  "deviceRegionSuggestNoMatch": "Your location doesn't match any shipped country preset. Pick one manually.",
   "deviceRegionDisclaimerShort": "Shared by users, not checked by a regulator.",
-  "deviceRegionDisclaimer": "These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification; most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.",
+  "deviceRegionDisclaimer": "These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification. Most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.",
   "presetUsCanada": "USA / Canada",
-  "presetUsArizona": "USA — Arizona",
+  "presetUsArizona": "USA. Arizona",
   "presetJpAribT108": "Japan (ARIB STD-T108)",
   "presetJpMeshcore": "Japan (MeshCore-JP)",
   "presetEuUkLong": "EU / UK (Long Range)",
@@ -1803,7 +1803,7 @@
       }
     }
   },
-  "deviceRadioSilent": "No answer for {param} within five seconds — the write may not have applied.",
+  "deviceRadioSilent": "No answer for {param} within five seconds. The write may not have applied.",
   "@deviceRadioSilent": {
     "placeholders": {
       "param": {
@@ -1823,7 +1823,7 @@
   "deviceRadioRevert": "Undo radio change",
   "deviceRadioReverted": "Previous operating point restored.",
   "deviceRadioRevertUnavailable": "Undo is one use only.",
-  "deviceRadioRevertFailed": "Undo did not apply — the radio kept its last values.",
+  "deviceRadioRevertFailed": "Undo did not apply. The radio kept its last values.",
   "radioHealthTitle": "MeshCore radio health",
   "radioHealthRead": "Read",
   "radioHealthReading": "Reading…",
@@ -1888,7 +1888,7 @@
   "deviceAdvertSourcePinned": "Pinned",
   "deviceAdvertSourceGps": "Device GPS",
   "deviceToastNameEmpty": "Enter a node name",
-  "deviceToastNameSet": "Name updated — re-advertising to neighbours",
+  "deviceToastNameSet": "Name updated. Re-advertising to neighbours",
   "deviceToastSendFailed": "Send failed: {error}",
   "@deviceToastSendFailed": {
     "placeholders": {
@@ -1897,18 +1897,18 @@
       }
     }
   },
-  "deviceToastNoDeviceYet": "Device hasn't reported yet — try once linked",
+  "deviceToastNoDeviceYet": "Device hasn't reported yet. Try once linked",
   "deviceToastNoGpsYet": "Device has no location yet (no GPS fix)",
   "deviceToastLoadedDeviceLoc": "Loaded device location · tap Set advert location to broadcast",
   "deviceToastGettingPhoneFix": "Getting phone GPS fix…",
   "deviceToastPhoneFixFailed": "Phone GPS fix failed (services off or timeout)",
   "deviceToastNoFixReturned": "No fix returned",
   "deviceToastGotPhoneLoc": "Got phone location · tap Set advert location to broadcast",
-  "deviceToastInvalidLatLon": "Enter valid lat (−90..90) and lon (−180..180)",
+  "deviceToastInvalidLatLon": "Enter valid lat (−90.90) and lon (−180.180)",
   "deviceToastAdvertLocSet": "Advert location set",
   "deviceToastInvalidRadio": "Enter valid numbers for freq/BW/SF/CR",
   "deviceLocPermDenied": "Location permission needed for a phone GPS fix.",
-  "deviceLocPermDeniedPerm": "Location permission permanently denied — open OS settings to grant it.",
+  "deviceLocPermDeniedPerm": "Location permission permanently denied. Open OS settings to grant it.",
   "deviceOpenSettings": "Open settings",
   "connectionDiagnosticsRow": "Diagnostics and tools",
   "connectionDiagnosticsExplainer": "Raw frames, fixtures and test commands.",
@@ -1929,7 +1929,7 @@
   "otherTelemetryModeHelp": "Who may request battery, GPS and environment data from this device.",
   "otherMultiAcksLabel": "Extra confirmations (0–3)",
   "otherMultiAcksHelper": "0 is the default. Higher waits for that many more radios to confirm before calling a send confirmed.",
-  "otherSentSnack": "OTHER PARAMS sent — device-side write may take a moment.",
+  "otherSentSnack": "OTHER PARAMS sent. Device-side write may take a moment.",
   "otherAwaitingDevice": "Awaiting device",
   "batteryTitle": "Battery",
   "batteryConfigSubtitle": "Charge, drain rate, and time-to-empty estimate",
@@ -1938,9 +1938,9 @@
   "batteryResetConfirm": "Clear all stored battery history? The runtime estimate will rebuild as new readings arrive.",
   "batteryVoltageLabel": "VOLTAGE",
   "batteryCharging": "Charging",
-  "batteryChargingNote": "Charging — runtime estimate paused.",
+  "batteryChargingNote": "Charging. Runtime estimate paused.",
   "batteryTimeToEmpty": "TIME TO EMPTY",
-  "batteryEstimating": "Gathering drain data — an estimate appears after a few minutes of discharge.",
+  "batteryEstimating": "Gathering drain data. An estimate appears after a few minutes of discharge.",
   "batteryDrainRate": "Drain rate",
   "batteryBasis": "Basis",
   "batteryBasisObserved": "measured over {span} of discharge",
@@ -1960,7 +1960,7 @@
   "batteryMethodRated": "Rated estimate",
   "batteryMethodNone": "Gathering data",
   "batterySpecTitle": "DEVICE MODEL",
-  "batterySpecGeneric": "Unknown hardware — using a generic single-cell Li-ion model. The estimate relies on observed drain (no nameplate capacity to cross-check).",
+  "batterySpecGeneric": "Unknown hardware. Using a generic single-cell Li-ion model. The estimate relies on observed drain (no nameplate capacity to cross-check).",
   "batterySpecCapacity": "Capacity: {mah} mAh",
   "@batterySpecCapacity": {
     "placeholders": {
@@ -2023,11 +2023,11 @@
   "deliverySending": "Sending…",
   "deliverySent": "Sent into the mesh",
   "deliveryDelivered": "Delivered (recipient acknowledged)",
-  "deliveryFailed": "Not delivered — no acknowledgement or send failed",
-  "deliveryUnknown": "Sent while the app was closing — whether the radio transmitted it is not knowable",
+  "deliveryFailed": "Not delivered. No acknowledgement or send failed",
+  "deliveryUnknown": "Sent while the app was closing. Whether the radio transmitted it is not knowable",
   "settingsHubTools": "Tools",
   "toolsTitle": "Tools",
-  "toolsOffline": "Not connected — the tools need the MeshCore radio. Open Connect a MeshCore radio",
+  "toolsOffline": "Not connected. The tools need the MeshCore radio. Open Connect a MeshCore radio",
   "toolsRunning": "RUNNING",
   "toolsStart": "Start",
   "toolsStop": "Stop",
@@ -2077,7 +2077,7 @@
   "toolDiscoverName": "Discover nearby",
   "toolDiscoverSub": "Repeaters that hear us, SNR both ways",
   "toolSoakName": "Soak test",
-  "toolSoakSub": "Sequenced messages, counted — pairs with the bot",
+  "toolSoakSub": "Sequenced messages, counted. Pairs with the bot",
   "toolRangeName": "Range test",
   "toolRangeSub": "Beacon or log, with SNR and distance",
   "toolFailNotConnected": "Not connected to a radio.",
@@ -2121,7 +2121,7 @@
   "statsBattery": "Battery",
   "statsNotFetched": "Not fetched yet.",
   "pingTarget": "TARGET",
-  "pingMethodStatus": "Status request — repeaters, rooms and sensors answer this.",
+  "pingMethodStatus": "Status request. Repeaters, rooms and sensors answer this.",
   "pingMethodTelemetry": "Asks for readings. The other radio answers only if it shares them with you.",
   "pingSummary": "{sent} sent · {replied} replied · {lost} lost",
   "@pingSummary": {
@@ -2153,12 +2153,12 @@
   },
   "pingLost": "lost",
   "pingWaiting": "waiting…",
-  "pingNoContacts": "No synced contacts yet — only contacts can be pinged.",
+  "pingNoContacts": "No synced contacts yet. Only contacts can be pinged.",
   "pingLastStatus": "LAST STATUS",
   "traceToNode": "To a node",
   "traceManual": "Manual",
   "traceRoundTrip": "Round trip (come back to us)",
-  "traceNoRoute": "no route — send it a message first",
+  "traceNoRoute": "no route. Send it a message first",
   "tracePath": "path {path}",
   "@tracePath": {
     "placeholders": {
@@ -2167,7 +2167,7 @@
       }
     }
   },
-  "traceManualHint": "hashes, e.g. a1,7f,a1",
+  "traceManualHint": "hashes, e.g. A1,7f,a1",
   "traceInvalid": "Enter one or more hex bytes.",
   "traceRun": "Trace",
   "traceNoAnswer": "no answer",
@@ -2184,7 +2184,7 @@
     }
   },
   "traceReset": "Reset route",
-  "traceResetDone": "Route reset — the next message floods.",
+  "traceResetDone": "Route reset. The next message floods.",
   "traceNoRepeaters": "Trace needs a repeater on the way: pick a repeater, or a contact reached through one.",
   "discoverStart": "Discover",
   "discoverListening": "Listening… {s} s",
@@ -2246,7 +2246,7 @@
       }
     }
   },
-  "soakListening": "Sends done — listening for late echoes…",
+  "soakListening": "Sends done. Listening for late echoes…",
   "soakRun": "run {id}",
   "@soakRun": {
     "placeholders": {
@@ -2274,7 +2274,7 @@
   "rangeSender": "Sender",
   "rangeReceiver": "Receiver",
   "rangeChannel": "CHANNEL",
-  "rangeHint": "Both radios on the same private channel. The sender beacons; the receiver walks and logs.",
+  "rangeHint": "Both radios on the same private channel. The sender beacons. The receiver walks and logs.",
   "rangeBeacons": "{n} beacons sent",
   "@rangeBeacons": {
     "placeholders": {
@@ -2378,7 +2378,7 @@
     }
   },
   "mapsPacksBundle": "Built-in list",
-  "mapsPacksUnreadable": "Couldn't read the published list; showing the built-in one.",
+  "mapsPacksUnreadable": "Couldn't read the published list. Showing the built-in one.",
   "mapsPackInstall": "Download",
   "mapsPackLicence": "{licence} · {attribution}",
   "@mapsPackLicence": {
@@ -2585,7 +2585,7 @@
       }
     }
   },
-  "elevationSelfAltUnknown": "alt: —",
+  "elevationSelfAltUnknown": "alt:.",
   "elevationSelfTemp": "temp: {c} °C",
   "@elevationSelfTemp": {
     "placeholders": {
@@ -2610,7 +2610,7 @@
   "diagnosticsStateReady": "ready",
   "diagnosticsStateReconnecting": "reconnecting",
   "diagnosticsStateFailed": "failed",
-  "diagnosticsConnectingSuffix": " · connecting…",
+  "diagnosticsConnectingSuffix": "· connecting…",
   "diagnosticsDeviceLine": "device: {name} · {freq}MHz SF{sf}",
   "@diagnosticsDeviceLine": {
     "placeholders": {
@@ -2636,7 +2636,7 @@
       }
     }
   },
-  "diagnosticsChargingSuffix": " ⚡ charging",
+  "diagnosticsChargingSuffix": "⚡ charging",
   "diagnosticsReconnectLine": "reconnect attempt {n}",
   "@diagnosticsReconnectLine": {
     "placeholders": {
@@ -2645,7 +2645,7 @@
       }
     }
   },
-  "diagnosticsGaveUpSuffix": " (gave up)",
+  "diagnosticsGaveUpSuffix": "(gave up)",
   "diagnosticsErrorLine": "error: {error}",
   "@diagnosticsErrorLine": {
     "placeholders": {
@@ -2665,7 +2665,7 @@
       }
     }
   },
-  "diagnosticsMtuRefusedLine": "This phone link is {mtu} bytes and a full radio frame needs {need}. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.",
+  "diagnosticsMtuRefusedLine": "This phone link is {mtu} bytes and a full radio frame needs {need}. Reconnect to try again. A radio that caps the link smaller cannot carry every frame.",
   "@diagnosticsMtuRefusedLine": {
     "placeholders": {
       "mtu": {
@@ -2716,7 +2716,7 @@
     }
   },
   "diagnosticsForgetShort": "Forget",
-  "diagnosticsPairedLine": "Paired: {name} — auto-reconnects on startup",
+  "diagnosticsPairedLine": "Paired: {name}. Auto-reconnects on startup",
   "@diagnosticsPairedLine": {
     "placeholders": {
       "name": {
@@ -3031,15 +3031,15 @@
   "placeTypeCamp": "Camp",
   "placeTypeLook": "Look",
   "placeTypeOther": "Other",
-  "failureUnsupportedCommand": "The radio does not support that command. Its firmware is older than this app expects; update the radio or use a command it lists.",
+  "failureUnsupportedCommand": "The radio does not support that command. Its firmware is older than this app expects. Update the radio or use a command it lists.",
   "@failureUnsupportedCommand": {},
   "failureNotFound": "The radio could not find the target: the channel, contact or message is not on it. Refresh the contact list, then retry.",
   "@failureNotFound": {},
-  "failureTableFull": "The radio's queue or table is full, so it refused the request. Wait for it to drain, then retry; nothing was lost.",
+  "failureTableFull": "The radio's queue or table is full, so it refused the request. Wait for it to drain, then retry. Nothing was lost.",
   "@failureTableFull": {},
   "failureBadState": "The radio is busy with another operation and cannot start this one. Wait for the current operation to finish, then retry.",
   "@failureBadState": {},
-  "failureFileIoError": "The radio's storage refused the write. Its own log has the detail; retry once, and if it repeats the radio's filesystem needs attention.",
+  "failureFileIoError": "The radio's storage refused the write. Its own log has the detail. Retry once, and if it repeats the radio's filesystem needs attention.",
   "@failureFileIoError": {},
   "failureIllegalArgument": "The radio rejected the value or length as invalid. Check the field you changed: one value is outside what this firmware accepts.",
   "@failureIllegalArgument": {},
@@ -3055,7 +3055,7 @@
   "@failurePairingFailed": {},
   "failureStalePairing": "The radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.",
   "@failureStalePairing": {},
-  "failurePairingNotKept": "The radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.",
+  "failurePairingNotKept": "The radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.",
   "@failurePairingNotKept": {},
   "failureServiceMissing": "This device does not expose the MeshCore service, so it is probably not a MeshCore radio.",
   "@failureServiceMissing": {},
@@ -3074,13 +3074,13 @@
   },
   "failureFrameTruncated": "Part of a message did not arrive. The count is in Diagnostics.",
   "@failureFrameTruncated": {},
-  "failureFrameTrailingBytes": "A message carried extra bytes at the end. They were dropped; the count is in Diagnostics.",
+  "failureFrameTrailingBytes": "A message carried extra bytes at the end. They were dropped. The count is in Diagnostics.",
   "@failureFrameTrailingBytes": {},
-  "failureStorageFull": "The phone refused a write because storage is full. Nothing is being deleted silently; free space and the history stays as it is.",
+  "failureStorageFull": "The phone refused a write because storage is full. Nothing is being deleted silently. Free space and the history stays as it is.",
   "@failureStorageFull": {},
-  "failureRadioSilent": "The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.",
+  "failureRadioSilent": "The radio accepted the request but did not answer in time. It may still have carried it out. Check the radio before retrying.",
   "@failureRadioSilent": {},
-  "diagnosticsRadioChangedLine": "This radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay — they belong to the app. Contacts, channels and radio settings come from the radio, so they are this one's.",
+  "diagnosticsRadioChangedLine": "This radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay. They belong to the app. Contacts, channels and radio settings come from the radio, so they are this one's.",
   "@diagnosticsRadioChangedLine": {
     "placeholders": {
       "previous": {
@@ -3094,7 +3094,7 @@
   "diagnosticsRadioChangedAccept": "This is my radio",
   "failureAirtimeBudget": "This phone has used its own radio time limit for the last hour, so nothing was sent. It sends again as the hour rolls on.",
   "@failureAirtimeBudget": {},
-  "failureLinkTimeout": "The phone did not finish opening the radio link in time. Nothing was sent; retry to open it again.",
+  "failureLinkTimeout": "The phone did not finish opening the radio link in time. Nothing was sent. Retry to open it again.",
   "@failureLinkTimeout": {},
   "diagnosticsHandshakeLine": "link handshakes: {started} started, {timedOut} with no answer",
   "@diagnosticsHandshakeLine": {
@@ -3146,7 +3146,16 @@
   "airtimeCutoffSubtitle": "Refuse a send that would pass the hourly limit instead of only warning. One message in a quiet hour is worth more than twenty in a busy one.",
   "airtimeLeftInHour": "Time left this hour",
   "airtimeLeftValue": "$left of $budget",
-  "@airtimeLeftValue": {"placeholders": {"left": {"type": "String"}, "budget": {"type": "String"}}},
+  "@airtimeLeftValue": {
+    "placeholders": {
+      "left": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
   "airtimeCutoffOff": "The meter still counts. Nothing is refused.",
   "settingsAirtimeTitle": "Transmit time limit",
   "settingsAirtimeHelp": "Every frame this app sends is counted. At the limit it stops until the hour rolls on. The radio keeps its own legal limit either way.",
@@ -3190,15 +3199,15 @@
       }
     }
   },
-  "degradedStorageFull": "This phone refused a write because storage is full. Nothing was deleted to make room; free space and history continues.",
+  "degradedStorageFull": "This phone refused a write because storage is full. Nothing was deleted to make room. Free space and history continues.",
   "@degradedStorageFull": {},
   "degradedClockUnset": "The radio's clock has never been set, so times it reports are shown as time unknown until it is.",
   "@degradedClockUnset": {},
   "degradedBatteryCritical": "The radio's battery is low enough that its transmissions may be cut. Charge it before relying on a long send.",
   "@degradedBatteryCritical": {},
-  "degradedRadioAbsent": "No radio is connected. Everything already received stays readable; sending, telemetry and places wait until a radio connects.",
+  "degradedRadioAbsent": "No radio is connected. Everything already received stays readable. Sending, telemetry and places wait until a radio connects.",
   "@degradedRadioAbsent": {},
-  "degradedRadioSilent": "The radio is paired but has not answered. It may still have carried out the last request; check the radio before retrying.",
+  "degradedRadioSilent": "The radio is paired but has not answered. It may still have carried out the last request. Check the radio before retrying.",
   "@degradedRadioSilent": {},
   "degradedNoLocation": "Location is off, so distances, bearings and place tags have no fix. Everything else works.",
   "@degradedNoLocation": {},
@@ -3232,7 +3241,7 @@
       }
     }
   },
-  "sosHoldReleased": "Released too early — nothing was sent.",
+  "sosHoldReleased": "Released too early. Nothing was sent.",
   "sosNoIdentity": "The radio has not reported a name yet, so the alarm has no name to send.",
   "sosWords": "What is happening",
   "sosWordsHint": "Carried by every repeat, up to 96 bytes",
@@ -3281,7 +3290,7 @@
   "@sosSafeNotSent": {
     "description": "Ended panel after I'm safe, when the radio refused it or there was no link."
   },
-  "sosResumed": "This alarm was running when the app last closed. What is left of the hour continues; repeats missed while the app was closed were not sent.",
+  "sosResumed": "This alarm was running when the app last closed. What is left of the hour continues. Repeats missed while the app was closed were not sent.",
   "@sosResumed": {
     "description": "Running panel, when the alarm was restored from disk after a restart."
   },
@@ -3479,7 +3488,7 @@
   "@mediaDecodeFailed": {},
   "mediaPhotoSemantics": "Photo received over the mesh",
   "@mediaPhotoSemantics": {},
-  "placePhotoNotFetched": "Photo not fetched. The entry itself is complete; the picture is optional and may never arrive.",
+  "placePhotoNotFetched": "Photo not fetched. The entry itself is complete. The picture is optional and may never arrive.",
   "@placePhotoNotFetched": {},
   "placePhotoMayNotArrive": "The photo may not arrive. The text will.",
   "@placePhotoMayNotArrive": {},
@@ -3616,7 +3625,7 @@
   "coverageRefusedTooSoon": "The app paces itself: one ping every thirty seconds, so this one waits.",
   "coverageRefusedCellFresh": "This area was pinged within the hour. Standing still costs one ping an hour.",
   "coverageRefusedManualUsed": "This hour's manual ping is already spent.",
-  "coveragePacingNote": "This app paces its own pings; it cannot promise other devices do.",
+  "coveragePacingNote": "This app paces its own pings. It cannot promise other devices do.",
   "coveragePingNow": "Ping now (once an hour)",
   "coverageCellsSection": "Where you pinged",
   "coverageNoSamples": "Nothing recorded yet.",
@@ -3642,7 +3651,7 @@
       }
     }
   },
-  "coverageEdges": "{count} answers drawn — answers only, never an inferred link",
+  "coverageEdges": "{count} answers drawn. Answers only, never an inferred link",
   "@coverageEdges": {
     "placeholders": {
       "count": {
@@ -3787,9 +3796,9 @@
       }
     }
   },
-  "blockedKeysEmpty": "No key is blocked. Blocking a key hides what it sends — messages, notifications, places — on this device.",
+  "blockedKeysEmpty": "No key is blocked. Blocking a key hides what it sends, which is messages, notifications and places, on this device.",
   "blockedKeysCannotStopShort": "Local only",
-  "blockedKeysCannotStop": "A block is local to this app. The radio still receives and relays the packet; what stops is what this app shows.",
+  "blockedKeysCannotStop": "A block is local to this app. The radio still receives and relays the packet. What stops is what this app shows.",
   "blockedKeysUnblock": "Unblock",
   "blockedKeysSince": "Blocked {when}",
   "@blockedKeysSince": {
@@ -3820,7 +3829,7 @@
   "reportAction": "Export…",
   "reportSheetTitle": "Export this message",
   "reportObservationLabel": "What did you see? (optional)",
-  "reportNothingSent": "Nothing was sent. The app wrote a file on this device; you decide where it goes.",
+  "reportNothingSent": "Nothing was sent. The app wrote a file on this device. You decide where it goes.",
   "reportBundleWritten": "Saved to {path}",
   "@reportBundleWritten": {
     "placeholders": {
@@ -3833,7 +3842,7 @@
   "reportCopyBundle": "Copy the file",
   "reportCopied": "Copied.",
   "blockedKeysNotPersisted": "This list could not be saved on this device. It filters for now and will be empty after a restart.",
-  "blockedKeysUnreadable": "The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept; new blocks save normally.",
+  "blockedKeysUnreadable": "The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept. New blocks save normally.",
   "sosDestinationContactsLimit": "Up to {count} contacts",
   "sosDestinationChange": "Change",
   "sosDestinationPickerTitle": "Where the alarm goes",
@@ -3899,7 +3908,7 @@
   "settingsAppGroupSystem": "System",
   "aboutReplayIntro": "Replay the first-run screens",
   "toolsGroupDiagnostics": "MeshCore radio diagnostics",
-  "nodeMarkerSemantics": "{name} — tap for details",
+  "nodeMarkerSemantics": "{name}. Tap for details",
   "@nodeMarkerSemantics": {
     "placeholders": {
       "name": {
@@ -3975,7 +3984,7 @@
   "gridPurposeElevation": "How high each node is, against landmarks.",
   "mapNoPositionYet": "Your position is not known yet.",
   "mapNoPositionFind": "Find me",
-  "mapNoPositionAsking": "Finding you...",
+  "mapNoPositionAsking": "Finding you..",
   "mapLocationOffApp": "Location is off for this app.",
   "mapLocationAllow": "Allow location",
   "mapLocationBlockedApp": "Location is blocked for this app.",
@@ -4023,7 +4032,7 @@
     }
   },
   "rawRecordTitle": "Send a raw record",
-  "rawRecordHelp": "One record to one contact, addressed over its route. The radio answers OK or ERR; the peer sends nothing back.",
+  "rawRecordHelp": "One record to one contact, addressed over its route. The radio answers OK or ERR. The peer sends nothing back.",
   "rawRecordNoContact": "No contact has a direct route yet. A raw record is addressed, not flooded.",
   "rawRecordBytes": "Bytes (hex)",
   "rawRecordEmpty": "Type the bytes to send.",
@@ -4117,15 +4126,15 @@
   "diagnosticsPositionPolicy": "advert policy {policy}",
   "diagnosticsPositionPhone": "phone fix {source}",
   "diagnosticsPositionNone": "none",
-  "sosWordsOptional": "Optional — the default is used if you clear it.",
+  "sosWordsOptional": "Optional. The default is used if you clear it.",
   "sosHoldSummary": "Hold to send the words above to {channel}, with your name and position.",
   "sosUseDefaults": "Reset the destination",
-  "wxMicroclimateFromChat": "Read from this channel's messages; newest {ago}.",
+  "wxMicroclimateFromChat": "Read from this channel's messages. Newest {ago}.",
   "wxMicroclimateFromChatNoMessages": "Nothing measured yet: this reads reports people write in this channel, and only ones with a number and a unit.",
   "elevationAskNodes": "Ask nodes for altitude",
   "elevationAsking": "Asking…",
   "elevationNotADistance": "Dots line up side to side, not by distance.",
-  "meshbookEmptyDetail": "Messages on this channel fill it; the window is the last 24 hours.",
+  "meshbookEmptyDetail": "Messages on this channel fill it. The window is the last 24 hours.",
   "locTriggerManual": "you asked",
   "locTriggerPeriodic": "on the timer",
   "locTriggerMovement": "you moved",
@@ -4150,7 +4159,7 @@
   "storageClearAllTypeWord": "Type {word} to confirm",
   "storageClearAllConfirm": "Delete",
   "storageClearAllDone": "Deleted. The radio and your settings are untouched.",
-  "storageClearAllPartly": "{unfinished} of {total} stores did not finish. What is left is listed here; the radio and your settings are untouched.",
+  "storageClearAllPartly": "{unfinished} of {total} stores did not finish. What is left is listed here. The radio and your settings are untouched.",
   "@storageMaps": {
     "placeholders": {
       "used": {
@@ -4252,7 +4261,7 @@
   "nodeFindRoute": "Find the route",
   "nodeFindRouteHint": "Costs airtime.",
   "nodeFindRouteNone": "No route came back.",
-  "nodeFindRouteDirect": "Direct — a neighbour in range.",
+  "nodeFindRouteDirect": "Direct. A neighbour in range.",
   "nodeFindRouteTwoWay": "Back by {back}",
   "eventOneKeyRejected": "radio refused a message from {key}",
   "eventRadioRefused": "the radio refused that command",
@@ -4282,7 +4291,7 @@
   "settingsPinRemoved": "PIN removed. Pairing no longer asks for one.",
   "settingsPinConfirmRemove": "Remove the pairing PIN? Anyone in range could offer to pair, and the radio would still keep its own device list.",
   "repeaterSession": "Repeater session",
-  "repeaterSessionIntro": "A password opens a session on this repeater. It is the repeater's own secret, kept between it and you; the app does not store it.",
+  "repeaterSessionIntro": "A password opens a session on this repeater. It is the repeater's own secret, kept between it and you. The app does not store it.",
   "repeaterSignIn": "Sign in",
   "repeaterSignOut": "Sign out",
   "repeaterPasswordHint": "Repeater password",
@@ -4318,7 +4327,7 @@
     }
   },
   "deviceRadio2Never": "second profile: nothing heard this session",
-  "deviceRadio2Note": "A second profile takes 96-99 % of the radio's transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read; the second profile's own parameters are not shown.",
+  "deviceRadio2Note": "A second profile takes 96-99 % of the radio's transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read. The second profile's own parameters are not shown.",
   "deviceReadoutQuerying": "querying device…",
   "deviceReadoutFirmware": "firmware: {value}",
   "@deviceReadoutFirmware": {
@@ -4401,7 +4410,7 @@
       }
     }
   },
-  "deviceAirtimeLimitUnknown": "airtime limit: —",
+  "deviceAirtimeLimitUnknown": "airtime limit:.",
   "deviceRepeatRanges": "repeat: {ranges} MHz",
   "@deviceRepeatRanges": {
     "placeholders": {
@@ -4411,7 +4420,7 @@
     }
   },
   "deviceRepeatNone": "repeat: none reported",
-  "deviceRepeatUnknown": "repeat: —",
+  "deviceRepeatUnknown": "repeat:.",
   "diagnosticsSectionRadioAlerts": "Radio alerts",
   "diagnosticsRadioAlertsWhy": "The radio's own buzzer and vibration, for its own rules. Nothing in this app triggers them, and they keep working while the phone is away.",
   "diagnosticsBuzzer": "Buzzer",

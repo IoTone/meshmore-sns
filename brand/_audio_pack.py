@@ -566,6 +566,18 @@ CUES = {
         amp=0.60,
     ),
 
+    # Walking into a fence and walking out of one are two different facts. A
+    # reader who hears the same cue for both cannot tell which happened, so
+    # enter rises and exit falls, in the same two notes: the pair is learned once.
+    "geofenceEnter": dict(
+        score=[(1.0, 0.12), (1.5, 0.22)],
+        amp=0.52,
+    ),
+    "geofenceExit": dict(
+        score=[(1.5, 0.12), (1.0, 0.22)],
+        amp=0.52,
+    ),
+
     # ---- R58 signature slots -------------------------------------
     # A *signature* is the arrival sound for one specific peer: it
     # REPLACES `dmIn` for a peer the user has given an identity to.
@@ -702,6 +714,8 @@ MIN_DUR = {
     "taskOk": 0.40,
     "taskError": 0.35,
     "scanStart": 1.00,
+    "geofenceEnter": 0.50,
+    "geofenceExit": 0.50,
     "sig1": 0.45,
     "sig2": 0.45,
     "sig3": 0.45,

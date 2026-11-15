@@ -36,6 +36,8 @@ const Map<String, double> _minSeconds = <String, double>{
   'sig3': 0.45,
   'sig4': 0.45,
   'sig5': 0.45,
+  'geofenceEnter': 0.50,
+  'geofenceExit': 0.50,
   'boot': 0.55,
   'alert': 0.90,
   'scanStart': 1.00,

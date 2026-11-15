@@ -374,8 +374,16 @@ Future<void> startApp() async {
                   // A crossing is an alert, so it is heard: the fence screen is
                   // the one place a reader is guaranteed not to be when they
                   // walk through a fence.
-                  onRaised: (List<GeofenceAlert> raised) =>
-                      ctx.read<CueService>().play(CueKind.alert))
+                  onRaised: (List<GeofenceAlert> raised) {
+                    final CueService cues = ctx.read<CueService>();
+                    // Enter rises, exit falls, so the pair is learned once and
+                    // a crossing never sounds like the other direction.
+                    for (final GeofenceAlert a in raised) {
+                      cues.play(a.isEntry
+                          ? CueKind.geofenceEnter
+                          : CueKind.geofenceExit);
+                    }
+                  })
                 ..load()
                 ..start(),
         ),

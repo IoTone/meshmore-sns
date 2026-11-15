@@ -1055,7 +1055,7 @@ abstract class AppLocalizations {
   /// No description provided for @termsLeavesBody.
   ///
   /// In en, this message translates to:
-  /// **'Two things leave this device. What you send goes out over the radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking; the map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.'**
+  /// **'Two things leave this device. What you send goes out over the radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.'**
   String get termsLeavesBody;
 
   /// No description provided for @termsSectionPermissions.
@@ -1079,7 +1079,7 @@ abstract class AppLocalizations {
   /// No description provided for @termsRetentionBody.
   ///
   /// In en, this message translates to:
-  /// **'Each conversation keeps its newest {cap} messages; older ones are dropped. A place expires when its own timer runs out, and is then gone.'**
+  /// **'Each conversation keeps its newest {cap} messages. Older ones are dropped. A place expires when its own timer runs out, and is then gone.'**
   String termsRetentionBody(int cap);
 
   /// No description provided for @termsSectionChanges.
@@ -1301,7 +1301,7 @@ abstract class AppLocalizations {
   /// No description provided for @personalizationAudioMasterEnabled.
   ///
   /// In en, this message translates to:
-  /// **'On by default; augmentation only'**
+  /// **'On by default. Augmentation only'**
   String get personalizationAudioMasterEnabled;
 
   /// No description provided for @personalizationCueVolume.
@@ -1349,7 +1349,7 @@ abstract class AppLocalizations {
   /// No description provided for @demoTooltip.
   ///
   /// In en, this message translates to:
-  /// **'Demo mode — no MeshCore radio. Explore channels, settings and docs without a companion.'**
+  /// **'Demo mode. No MeshCore radio. Explore channels, settings and docs without a companion.'**
   String get demoTooltip;
 
   /// No description provided for @demoModeRow.
@@ -1553,7 +1553,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesFloodAdvertBody.
   ///
   /// In en, this message translates to:
-  /// **'Whole mesh — neighbours + repeaters. Best for discovery.'**
+  /// **'Whole mesh. Neighbours + repeaters. Best for discovery.'**
   String get nodesFloodAdvertBody;
 
   /// No description provided for @nodesZeroHopAdvert.
@@ -1565,13 +1565,13 @@ abstract class AppLocalizations {
   /// No description provided for @nodesZeroHopAdvertBody.
   ///
   /// In en, this message translates to:
-  /// **'Direct neighbours only — not rebroadcast. Quieter on a busy mesh.'**
+  /// **'Direct neighbours only. Not rebroadcast. Quieter on a busy mesh.'**
   String get nodesZeroHopAdvertBody;
 
   /// No description provided for @nodesFloodAdvertSent.
   ///
   /// In en, this message translates to:
-  /// **'Flood advert sent — it crosses the whole mesh. The other node must advertise too before it appears here.'**
+  /// **'Flood advert sent. It crosses the whole mesh. The other node must advertise too before it appears here.'**
   String get nodesFloodAdvertSent;
 
   /// No description provided for @nodesZeroHopAdvertSent.
@@ -1697,7 +1697,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesStatusOffline.
   ///
   /// In en, this message translates to:
-  /// **'Not connected — open Connect a MeshCore radio'**
+  /// **'Not connected. Open Connect a MeshCore radio'**
   String get nodesStatusOffline;
 
   /// No description provided for @nodesFarBadge.
@@ -1961,7 +1961,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionLoadedOffline.
   ///
   /// In en, this message translates to:
-  /// **'{label} loaded — Apply when a device is connected.'**
+  /// **'{label} loaded. Apply when a device is connected.'**
   String deviceRegionLoadedOffline(String label);
 
   /// No description provided for @mapFrozenBadge.
@@ -2105,7 +2105,7 @@ abstract class AppLocalizations {
   /// No description provided for @locMasterOn.
   ///
   /// In en, this message translates to:
-  /// **'On — your position goes out with your adverts'**
+  /// **'On. Your position goes out with your adverts'**
   String get locMasterOn;
 
   /// No description provided for @locMasterOff.
@@ -2195,7 +2195,7 @@ abstract class AppLocalizations {
   /// No description provided for @gridEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No nodes in range yet.\n\nA node appears once it announces itself.'**
+  /// **'No nodes in range yet. A node appears once it announces itself.'**
   String get gridEmpty;
 
   /// No description provided for @gridStatusCounts.
@@ -2381,7 +2381,7 @@ abstract class AppLocalizations {
   /// No description provided for @bootHeader.
   ///
   /// In en, this message translates to:
-  /// **'MESHMORE  /  SYNCHRONIZING'**
+  /// **'MESHMORE / SYNCHRONIZING'**
   String get bootHeader;
 
   /// No description provided for @bootConnecting.
@@ -2405,7 +2405,7 @@ abstract class AppLocalizations {
   /// No description provided for @bootOffline.
   ///
   /// In en, this message translates to:
-  /// **'OFFLINE — open Connect a MeshCore radio'**
+  /// **'OFFLINE. Open Connect a MeshCore radio'**
   String get bootOffline;
 
   /// No description provided for @bootSkip.
@@ -2417,7 +2417,7 @@ abstract class AppLocalizations {
   /// No description provided for @bootSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'WAIT  /  進行中'**
+  /// **'WAIT / 進行中'**
   String get bootSubtitle;
 
   /// No description provided for @eventAdvert.
@@ -2519,7 +2519,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatRetentionDropped.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 older message is gone} other{{count} older messages are gone}} — each conversation keeps its newest {cap}'**
+  /// **'{count, plural, =1{1 older message is gone} other{{count} older messages are gone}}. Each conversation keeps its newest {cap}'**
   String chatRetentionDropped(int count, int cap);
 
   /// No description provided for @chatHistoryUnreadableTitle.
@@ -2615,7 +2615,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsPlaceStoreWriteFailed.
   ///
   /// In en, this message translates to:
-  /// **'the last save did not land — pins will not survive a restart'**
+  /// **'the last save did not land. Pins will not survive a restart'**
   String get diagnosticsPlaceStoreWriteFailed;
 
   /// No description provided for @diagnosticsPlaceStoreOk.
@@ -2657,7 +2657,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatSendNotSent.
   ///
   /// In en, this message translates to:
-  /// **'Not sent — the radio is not connected. Your message is back in the box.'**
+  /// **'Not sent. The radio is not connected. Your message is back in the box.'**
   String get chatSendNotSent;
 
   /// No description provided for @chatSend.
@@ -2675,7 +2675,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatBudgetTooLong.
   ///
   /// In en, this message translates to:
-  /// **'Too long by {over} bytes — the radio would cut the rest without telling you'**
+  /// **'Too long by {over} bytes. The radio would cut the rest without telling you'**
   String chatBudgetTooLong(int over);
 
   /// No description provided for @chatMessageActions.
@@ -2741,7 +2741,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailSignatureMutedHint.
   ///
   /// In en, this message translates to:
-  /// **'Audio is muted — you will feel the vibration but not hear it.'**
+  /// **'Audio is muted. You will feel the vibration but not hear it.'**
   String get nodeDetailSignatureMutedHint;
 
   /// No description provided for @dmEmpty.
@@ -2831,7 +2831,7 @@ abstract class AppLocalizations {
   /// No description provided for @actionDeleteConfirmBody.
   ///
   /// In en, this message translates to:
-  /// **'This removes the row from your local history. MeshCore has no recall — the recipient still has it.'**
+  /// **'This removes the row from your local history. MeshCore has no recall. The recipient still has it.'**
   String get actionDeleteConfirmBody;
 
   /// No description provided for @actionCancel.
@@ -2885,7 +2885,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeIdentityBody.
   ///
   /// In en, this message translates to:
-  /// **'“{name}” is active under a new key — likely deleted and re-added on their device. Move your star, tags, and {count} saved messages to the current key?'**
+  /// **'“{name}” is active under a new key. Likely deleted and re-added on their device. Move your star, tags, and {count} saved messages to the current key?'**
   String nodeIdentityBody(String name, int count);
 
   /// No description provided for @nodeIdentityOldKey.
@@ -2921,7 +2921,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeIdentityLinkHelp.
   ///
   /// In en, this message translates to:
-  /// **'Same contact, new key. Pick the node or paste the key; your star, tags and messages move over.'**
+  /// **'Same contact, new key. Pick the node or paste the key. Your star, tags and messages move over.'**
   String get nodeIdentityLinkHelp;
 
   /// No description provided for @nodeIdentityLinkEmpty.
@@ -2939,7 +2939,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeIdentityLinkNoMatch.
   ///
   /// In en, this message translates to:
-  /// **'No nodes match — clear the search, or paste the full key to link directly.'**
+  /// **'No nodes match. Clear the search, or paste the full key to link directly.'**
   String get nodeIdentityLinkNoMatch;
 
   /// No description provided for @nodeIdentityLinkUseKey.
@@ -2969,7 +2969,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailAddDeviceContactFailed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t add the contact — check the link and try again.'**
+  /// **'Couldn\'t add the contact. Check the link and try again.'**
   String get nodeDetailAddDeviceContactFailed;
 
   /// No description provided for @nodeDetailRemoveDeviceContact.
@@ -3065,7 +3065,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceContactsNeedLocation.
   ///
   /// In en, this message translates to:
-  /// **'No location set, so distance can\'t be measured — only location-hidden contacts are caught. Set your position to also remove far-away GPS contacts.'**
+  /// **'No location set, so distance can\'t be measured. Only location-hidden contacts are caught. Set your position to also remove far-away GPS contacts.'**
   String get deviceContactsNeedLocation;
 
   /// No description provided for @deviceContactsRemoveOutOfRangeDone.
@@ -3197,7 +3197,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeDetailAddTagHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. repeater, work, ham-club'**
+  /// **'e.g. Repeater, work, ham-club'**
   String get nodeDetailAddTagHint;
 
   /// No description provided for @nodeDetailAddTagSuggestions.
@@ -3377,7 +3377,7 @@ abstract class AppLocalizations {
   /// No description provided for @wxAmbientEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No measured weather report on this channel in the last 24 h. A number and a unit is a report; \"rain later\" is not.'**
+  /// **'No measured weather report on this channel in the last 24 h. A number and a unit is a report. \"rain later\" is not.'**
   String get wxAmbientEmpty;
 
   /// No description provided for @wxMentionsShort.
@@ -3455,7 +3455,7 @@ abstract class AppLocalizations {
   /// No description provided for @weatherEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled — enable \"Gather node telemetry\" in App settings.'**
+  /// **'No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled. Enable \"Gather node telemetry\" in App settings.'**
   String get weatherEmpty;
 
   /// No description provided for @weatherSelfNoTelemetry.
@@ -3467,7 +3467,7 @@ abstract class AppLocalizations {
   /// No description provided for @weatherSelfNoEnv.
   ///
   /// In en, this message translates to:
-  /// **'Environment telemetry isn\'t supported by this device\'s firmware.\nIt reported: {types}.\nThe sensor (e.g. the T1000-E\'s BME280) needs a MeshCore sensor build — the standard build sends only battery and GPS. This is the device, not a setting.'**
+  /// **'Environment telemetry isn\'t supported by this device\'s firmware.\nIt reported: {types}.\nThe sensor (e.g. The T1000-E\'s BME280) needs a MeshCore sensor build. The standard build sends only battery and GPS. This is the device, not a setting.'**
   String weatherSelfNoEnv(String types);
 
   /// No description provided for @weatherReporting.
@@ -3497,7 +3497,7 @@ abstract class AppLocalizations {
   /// No description provided for @docsProtocolSub.
   ///
   /// In en, this message translates to:
-  /// **'MeshCore companion radio protocol — frames, opcodes, and flow.'**
+  /// **'MeshCore companion radio protocol. Frames, opcodes, and flow.'**
   String get docsProtocolSub;
 
   /// No description provided for @docsFirmwareTitle.
@@ -3515,7 +3515,7 @@ abstract class AppLocalizations {
   /// No description provided for @docsFirmwareSubVersion.
   ///
   /// In en, this message translates to:
-  /// **'MeshCore firmware — matched to {version}.'**
+  /// **'MeshCore firmware. Matched to {version}.'**
   String docsFirmwareSubVersion(String version);
 
   /// No description provided for @docsAppTitle.
@@ -3539,7 +3539,7 @@ abstract class AppLocalizations {
   /// No description provided for @docsDevicesSub.
   ///
   /// In en, this message translates to:
-  /// **'Field notes and quirks for the radios we run — T1000-E, Wio Tracker L1 Pro, Heltec V3.'**
+  /// **'Field notes and quirks for the radios we run. T1000-E, Wio Tracker L1 Pro, Heltec V3.'**
   String get docsDevicesSub;
 
   /// No description provided for @docsRefresh.
@@ -3683,7 +3683,7 @@ abstract class AppLocalizations {
   /// No description provided for @snsCellsLegendDesc.
   ///
   /// In en, this message translates to:
-  /// **'A live social-activity heat map. Each observed message warms its cell; cells cool over a one-hour horizon.'**
+  /// **'A live social-activity heat map. Each observed message warms its cell. Cells cool over a one-hour horizon.'**
   String get snsCellsLegendDesc;
 
   /// No description provided for @snsCellsLegendHot.
@@ -3695,7 +3695,7 @@ abstract class AppLocalizations {
   /// No description provided for @snsCellsLegendCool.
   ///
   /// In en, this message translates to:
-  /// **'Fading to white = quieting down; gone after ~1 h idle.'**
+  /// **'Fading to white = quieting down. Gone after ~1 h idle.'**
   String get snsCellsLegendCool;
 
   /// No description provided for @snsCellsLegendToast.
@@ -3713,19 +3713,19 @@ abstract class AppLocalizations {
   /// No description provided for @snsCellsLegendDecay.
   ///
   /// In en, this message translates to:
-  /// **'Only the last hour is tracked; nothing is stored.'**
+  /// **'Only the last hour is tracked. Nothing is stored.'**
   String get snsCellsLegendDecay;
 
   /// No description provided for @meshTreeEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Waiting for contact sync — the tree is built from each contact\'s outPath.'**
+  /// **'Waiting for contact sync. The tree is built from each contact\'s outPath.'**
   String get meshTreeEmpty;
 
   /// Shown instead of the no-peers notice when the hop stop is what emptied the tree. The stop is named by its own label (Direct, <=3 hops, ...) rather than as a number, so it reads the same as the slider above it.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{No peer has a learned route at {stop}. 1 is heard without one — Flood / All shows it.} other{No peer has a learned route at {stop}. {count} are heard without one — Flood / All shows them.}}'**
+  /// **'{count, plural, =1{No peer has a learned route at {stop}. 1 is heard without one. Flood / All shows it.} other{No peer has a learned route at {stop}. {count} are heard without one. Flood / All shows them.}}'**
   String meshTreeFilteredEmptyFor(String stop, int count);
 
   /// No description provided for @meshTreeLearnRoutes.
@@ -3983,7 +3983,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelCreateNameHint.
   ///
   /// In en, this message translates to:
-  /// **'e.g. basecamp'**
+  /// **'e.g. Basecamp'**
   String get channelCreateNameHint;
 
   /// No description provided for @channelCreateNameKeyedTitle.
@@ -4295,7 +4295,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsKeyHashtagHelper.
   ///
   /// In en, this message translates to:
-  /// **'Key derived from sha256(\"#tag\") — the # is part of the key'**
+  /// **'Key derived from sha256(\"#tag\"). The # is part of the key'**
   String get channelsKeyHashtagHelper;
 
   /// No description provided for @channelsKeyHexHint.
@@ -4367,7 +4367,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsTagWeakCommon.
   ///
   /// In en, this message translates to:
-  /// **'Common words are guessable — an attacker can grind tags. Use unusual phrasing.'**
+  /// **'Common words are guessable. An attacker can grind tags. Use unusual phrasing.'**
   String get channelsTagWeakCommon;
 
   /// No description provided for @channelsSlot0WarnTitle.
@@ -4481,7 +4481,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsShakeBody.
   ///
   /// In en, this message translates to:
-  /// **'Shake your phone — each accepted motion sample feeds the hash. Stop once the ring fills.'**
+  /// **'Shake your phone. Each accepted motion sample feeds the hash. Stop once the ring fills.'**
   String get channelsShakeBody;
 
   /// No description provided for @channelsShakeProgress.
@@ -4619,7 +4619,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionSuggestBody.
   ///
   /// In en, this message translates to:
-  /// **'Your phone GPS ({lat}, {lon}) matches {label}. Check it is legal where you are before applying — especially outside the country you set it up in.'**
+  /// **'Your phone GPS ({lat}, {lon}) matches {label}. Check it is legal where you are before applying. Especially outside the country you set it up in.'**
   String deviceRegionSuggestBody(String lat, String lon, String label);
 
   /// No description provided for @deviceRegionSuggestApply.
@@ -4637,7 +4637,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionSuggestNoMatch.
   ///
   /// In en, this message translates to:
-  /// **'Your location doesn\'t match any shipped country preset — pick one manually.'**
+  /// **'Your location doesn\'t match any shipped country preset. Pick one manually.'**
   String get deviceRegionSuggestNoMatch;
 
   /// No description provided for @deviceRegionDisclaimerShort.
@@ -4649,7 +4649,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification; most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.'**
+  /// **'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every radio. In Japan the radio itself must carry 技適 (giteki) certification. Most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.'**
   String get deviceRegionDisclaimer;
 
   /// No description provided for @presetUsCanada.
@@ -4661,7 +4661,7 @@ abstract class AppLocalizations {
   /// No description provided for @presetUsArizona.
   ///
   /// In en, this message translates to:
-  /// **'USA — Arizona'**
+  /// **'USA. Arizona'**
   String get presetUsArizona;
 
   /// No description provided for @presetJpAribT108.
@@ -4853,7 +4853,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioSilent.
   ///
   /// In en, this message translates to:
-  /// **'No answer for {param} within five seconds — the write may not have applied.'**
+  /// **'No answer for {param} within five seconds. The write may not have applied.'**
   String deviceRadioSilent(String param);
 
   /// No description provided for @deviceRadioUnsupported.
@@ -4889,7 +4889,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadioRevertFailed.
   ///
   /// In en, this message translates to:
-  /// **'Undo did not apply — the radio kept its last values.'**
+  /// **'Undo did not apply. The radio kept its last values.'**
   String get deviceRadioRevertFailed;
 
   /// No description provided for @radioHealthTitle.
@@ -5051,7 +5051,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceToastNameSet.
   ///
   /// In en, this message translates to:
-  /// **'Name updated — re-advertising to neighbours'**
+  /// **'Name updated. Re-advertising to neighbours'**
   String get deviceToastNameSet;
 
   /// No description provided for @deviceToastSendFailed.
@@ -5063,7 +5063,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceToastNoDeviceYet.
   ///
   /// In en, this message translates to:
-  /// **'Device hasn\'t reported yet — try once linked'**
+  /// **'Device hasn\'t reported yet. Try once linked'**
   String get deviceToastNoDeviceYet;
 
   /// No description provided for @deviceToastNoGpsYet.
@@ -5105,7 +5105,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceToastInvalidLatLon.
   ///
   /// In en, this message translates to:
-  /// **'Enter valid lat (−90..90) and lon (−180..180)'**
+  /// **'Enter valid lat (−90.90) and lon (−180.180)'**
   String get deviceToastInvalidLatLon;
 
   /// No description provided for @deviceToastAdvertLocSet.
@@ -5129,7 +5129,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceLocPermDeniedPerm.
   ///
   /// In en, this message translates to:
-  /// **'Location permission permanently denied — open OS settings to grant it.'**
+  /// **'Location permission permanently denied. Open OS settings to grant it.'**
   String get deviceLocPermDeniedPerm;
 
   /// No description provided for @deviceOpenSettings.
@@ -5255,7 +5255,7 @@ abstract class AppLocalizations {
   /// No description provided for @otherSentSnack.
   ///
   /// In en, this message translates to:
-  /// **'OTHER PARAMS sent — device-side write may take a moment.'**
+  /// **'OTHER PARAMS sent. Device-side write may take a moment.'**
   String get otherSentSnack;
 
   /// No description provided for @otherAwaitingDevice.
@@ -5309,7 +5309,7 @@ abstract class AppLocalizations {
   /// No description provided for @batteryChargingNote.
   ///
   /// In en, this message translates to:
-  /// **'Charging — runtime estimate paused.'**
+  /// **'Charging. Runtime estimate paused.'**
   String get batteryChargingNote;
 
   /// No description provided for @batteryTimeToEmpty.
@@ -5321,7 +5321,7 @@ abstract class AppLocalizations {
   /// No description provided for @batteryEstimating.
   ///
   /// In en, this message translates to:
-  /// **'Gathering drain data — an estimate appears after a few minutes of discharge.'**
+  /// **'Gathering drain data. An estimate appears after a few minutes of discharge.'**
   String get batteryEstimating;
 
   /// No description provided for @batteryDrainRate.
@@ -5399,7 +5399,7 @@ abstract class AppLocalizations {
   /// No description provided for @batterySpecGeneric.
   ///
   /// In en, this message translates to:
-  /// **'Unknown hardware — using a generic single-cell Li-ion model. The estimate relies on observed drain (no nameplate capacity to cross-check).'**
+  /// **'Unknown hardware. Using a generic single-cell Li-ion model. The estimate relies on observed drain (no nameplate capacity to cross-check).'**
   String get batterySpecGeneric;
 
   /// No description provided for @batterySpecCapacity.
@@ -5471,13 +5471,13 @@ abstract class AppLocalizations {
   /// No description provided for @deliveryFailed.
   ///
   /// In en, this message translates to:
-  /// **'Not delivered — no acknowledgement or send failed'**
+  /// **'Not delivered. No acknowledgement or send failed'**
   String get deliveryFailed;
 
   /// No description provided for @deliveryUnknown.
   ///
   /// In en, this message translates to:
-  /// **'Sent while the app was closing — whether the radio transmitted it is not knowable'**
+  /// **'Sent while the app was closing. Whether the radio transmitted it is not knowable'**
   String get deliveryUnknown;
 
   /// No description provided for @settingsHubTools.
@@ -5495,7 +5495,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolsOffline.
   ///
   /// In en, this message translates to:
-  /// **'Not connected — the tools need the MeshCore radio. Open Connect a MeshCore radio'**
+  /// **'Not connected. The tools need the MeshCore radio. Open Connect a MeshCore radio'**
   String get toolsOffline;
 
   /// No description provided for @toolsRunning.
@@ -5627,7 +5627,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolSoakSub.
   ///
   /// In en, this message translates to:
-  /// **'Sequenced messages, counted — pairs with the bot'**
+  /// **'Sequenced messages, counted. Pairs with the bot'**
   String get toolSoakSub;
 
   /// No description provided for @toolRangeName.
@@ -5831,7 +5831,7 @@ abstract class AppLocalizations {
   /// No description provided for @pingMethodStatus.
   ///
   /// In en, this message translates to:
-  /// **'Status request — repeaters, rooms and sensors answer this.'**
+  /// **'Status request. Repeaters, rooms and sensors answer this.'**
   String get pingMethodStatus;
 
   /// No description provided for @pingMethodTelemetry.
@@ -5867,7 +5867,7 @@ abstract class AppLocalizations {
   /// No description provided for @pingNoContacts.
   ///
   /// In en, this message translates to:
-  /// **'No synced contacts yet — only contacts can be pinged.'**
+  /// **'No synced contacts yet. Only contacts can be pinged.'**
   String get pingNoContacts;
 
   /// No description provided for @pingLastStatus.
@@ -5897,7 +5897,7 @@ abstract class AppLocalizations {
   /// No description provided for @traceNoRoute.
   ///
   /// In en, this message translates to:
-  /// **'no route — send it a message first'**
+  /// **'no route. Send it a message first'**
   String get traceNoRoute;
 
   /// No description provided for @tracePath.
@@ -5909,7 +5909,7 @@ abstract class AppLocalizations {
   /// No description provided for @traceManualHint.
   ///
   /// In en, this message translates to:
-  /// **'hashes, e.g. a1,7f,a1'**
+  /// **'hashes, e.g. A1,7f,a1'**
   String get traceManualHint;
 
   /// No description provided for @traceInvalid.
@@ -5951,7 +5951,7 @@ abstract class AppLocalizations {
   /// No description provided for @traceResetDone.
   ///
   /// In en, this message translates to:
-  /// **'Route reset — the next message floods.'**
+  /// **'Route reset. The next message floods.'**
   String get traceResetDone;
 
   /// No description provided for @traceNoRepeaters.
@@ -6023,7 +6023,7 @@ abstract class AppLocalizations {
   /// No description provided for @soakListening.
   ///
   /// In en, this message translates to:
-  /// **'Sends done — listening for late echoes…'**
+  /// **'Sends done. Listening for late echoes…'**
   String get soakListening;
 
   /// No description provided for @soakRun.
@@ -6065,7 +6065,7 @@ abstract class AppLocalizations {
   /// No description provided for @rangeHint.
   ///
   /// In en, this message translates to:
-  /// **'Both radios on the same private channel. The sender beacons; the receiver walks and logs.'**
+  /// **'Both radios on the same private channel. The sender beacons. The receiver walks and logs.'**
   String get rangeHint;
 
   /// No description provided for @rangeBeacons.
@@ -6323,7 +6323,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapsPacksUnreadable.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t read the published list; showing the built-in one.'**
+  /// **'Couldn\'t read the published list. Showing the built-in one.'**
   String get mapsPacksUnreadable;
 
   /// No description provided for @mapsPackInstall.
@@ -6929,7 +6929,7 @@ abstract class AppLocalizations {
   /// No description provided for @elevationSelfAltUnknown.
   ///
   /// In en, this message translates to:
-  /// **'alt: —'**
+  /// **'alt:.'**
   String get elevationSelfAltUnknown;
 
   /// No description provided for @elevationSelfTemp.
@@ -6995,7 +6995,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsConnectingSuffix.
   ///
   /// In en, this message translates to:
-  /// **' · connecting…'**
+  /// **'· connecting…'**
   String get diagnosticsConnectingSuffix;
 
   /// No description provided for @diagnosticsDeviceLine.
@@ -7013,7 +7013,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsChargingSuffix.
   ///
   /// In en, this message translates to:
-  /// **' ⚡ charging'**
+  /// **'⚡ charging'**
   String get diagnosticsChargingSuffix;
 
   /// No description provided for @diagnosticsReconnectLine.
@@ -7025,7 +7025,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsGaveUpSuffix.
   ///
   /// In en, this message translates to:
-  /// **' (gave up)'**
+  /// **'(gave up)'**
   String get diagnosticsGaveUpSuffix;
 
   /// No description provided for @diagnosticsErrorLine.
@@ -7043,7 +7043,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsMtuRefusedLine.
   ///
   /// In en, this message translates to:
-  /// **'This phone link is {mtu} bytes and a full radio frame needs {need}. Reconnect to try again; a radio that caps the link smaller cannot carry every frame.'**
+  /// **'This phone link is {mtu} bytes and a full radio frame needs {need}. Reconnect to try again. A radio that caps the link smaller cannot carry every frame.'**
   String diagnosticsMtuRefusedLine(String mtu, String need);
 
   /// No description provided for @diagnosticsDatagramLine.
@@ -7092,7 +7092,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsPairedLine.
   ///
   /// In en, this message translates to:
-  /// **'Paired: {name} — auto-reconnects on startup'**
+  /// **'Paired: {name}. Auto-reconnects on startup'**
   String diagnosticsPairedLine(String name);
 
   /// No description provided for @diagnosticsSectionDeveloper.
@@ -7873,7 +7873,7 @@ abstract class AppLocalizations {
   /// No description provided for @failureUnsupportedCommand.
   ///
   /// In en, this message translates to:
-  /// **'The radio does not support that command. Its firmware is older than this app expects; update the radio or use a command it lists.'**
+  /// **'The radio does not support that command. Its firmware is older than this app expects. Update the radio or use a command it lists.'**
   String get failureUnsupportedCommand;
 
   /// No description provided for @failureNotFound.
@@ -7885,7 +7885,7 @@ abstract class AppLocalizations {
   /// No description provided for @failureTableFull.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s queue or table is full, so it refused the request. Wait for it to drain, then retry; nothing was lost.'**
+  /// **'The radio\'s queue or table is full, so it refused the request. Wait for it to drain, then retry. Nothing was lost.'**
   String get failureTableFull;
 
   /// No description provided for @failureBadState.
@@ -7897,7 +7897,7 @@ abstract class AppLocalizations {
   /// No description provided for @failureFileIoError.
   ///
   /// In en, this message translates to:
-  /// **'The radio\'s storage refused the write. Its own log has the detail; retry once, and if it repeats the radio\'s filesystem needs attention.'**
+  /// **'The radio\'s storage refused the write. Its own log has the detail. Retry once, and if it repeats the radio\'s filesystem needs attention.'**
   String get failureFileIoError;
 
   /// No description provided for @failureIllegalArgument.
@@ -7945,7 +7945,7 @@ abstract class AppLocalizations {
   /// No description provided for @failurePairingNotKept.
   ///
   /// In en, this message translates to:
-  /// **'The radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again; if it repeats, the fault is in the radio.'**
+  /// **'The radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.'**
   String get failurePairingNotKept;
 
   /// No description provided for @failureServiceMissing.
@@ -7975,25 +7975,25 @@ abstract class AppLocalizations {
   /// No description provided for @failureFrameTrailingBytes.
   ///
   /// In en, this message translates to:
-  /// **'A message carried extra bytes at the end. They were dropped; the count is in Diagnostics.'**
+  /// **'A message carried extra bytes at the end. They were dropped. The count is in Diagnostics.'**
   String get failureFrameTrailingBytes;
 
   /// No description provided for @failureStorageFull.
   ///
   /// In en, this message translates to:
-  /// **'The phone refused a write because storage is full. Nothing is being deleted silently; free space and the history stays as it is.'**
+  /// **'The phone refused a write because storage is full. Nothing is being deleted silently. Free space and the history stays as it is.'**
   String get failureStorageFull;
 
   /// No description provided for @failureRadioSilent.
   ///
   /// In en, this message translates to:
-  /// **'The radio accepted the request but did not answer in time. It may still have carried it out; check the radio before retrying.'**
+  /// **'The radio accepted the request but did not answer in time. It may still have carried it out. Check the radio before retrying.'**
   String get failureRadioSilent;
 
   /// No description provided for @diagnosticsRadioChangedLine.
   ///
   /// In en, this message translates to:
-  /// **'This radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay — they belong to the app. Contacts, channels and radio settings come from the radio, so they are this one\'s.'**
+  /// **'This radio is not the one this app last used ({previous} then, {current} now). Your history, tags, favourites and blocks stay. They belong to the app. Contacts, channels and radio settings come from the radio, so they are this one\'s.'**
   String diagnosticsRadioChangedLine(String previous, String current);
 
   /// No description provided for @diagnosticsRadioChangedAccept.
@@ -8011,7 +8011,7 @@ abstract class AppLocalizations {
   /// No description provided for @failureLinkTimeout.
   ///
   /// In en, this message translates to:
-  /// **'The phone did not finish opening the radio link in time. Nothing was sent; retry to open it again.'**
+  /// **'The phone did not finish opening the radio link in time. Nothing was sent. Retry to open it again.'**
   String get failureLinkTimeout;
 
   /// No description provided for @diagnosticsHandshakeLine.
@@ -8149,7 +8149,7 @@ abstract class AppLocalizations {
   /// No description provided for @degradedStorageFull.
   ///
   /// In en, this message translates to:
-  /// **'This phone refused a write because storage is full. Nothing was deleted to make room; free space and history continues.'**
+  /// **'This phone refused a write because storage is full. Nothing was deleted to make room. Free space and history continues.'**
   String get degradedStorageFull;
 
   /// No description provided for @degradedClockUnset.
@@ -8167,13 +8167,13 @@ abstract class AppLocalizations {
   /// No description provided for @degradedRadioAbsent.
   ///
   /// In en, this message translates to:
-  /// **'No radio is connected. Everything already received stays readable; sending, telemetry and places wait until a radio connects.'**
+  /// **'No radio is connected. Everything already received stays readable. Sending, telemetry and places wait until a radio connects.'**
   String get degradedRadioAbsent;
 
   /// No description provided for @degradedRadioSilent.
   ///
   /// In en, this message translates to:
-  /// **'The radio is paired but has not answered. It may still have carried out the last request; check the radio before retrying.'**
+  /// **'The radio is paired but has not answered. It may still have carried out the last request. Check the radio before retrying.'**
   String get degradedRadioSilent;
 
   /// No description provided for @degradedNoLocation.
@@ -8233,7 +8233,7 @@ abstract class AppLocalizations {
   /// No description provided for @sosHoldReleased.
   ///
   /// In en, this message translates to:
-  /// **'Released too early — nothing was sent.'**
+  /// **'Released too early. Nothing was sent.'**
   String get sosHoldReleased;
 
   /// No description provided for @sosNoIdentity.
@@ -8347,7 +8347,7 @@ abstract class AppLocalizations {
   /// Running panel, when the alarm was restored from disk after a restart.
   ///
   /// In en, this message translates to:
-  /// **'This alarm was running when the app last closed. What is left of the hour continues; repeats missed while the app was closed were not sent.'**
+  /// **'This alarm was running when the app last closed. What is left of the hour continues. Repeats missed while the app was closed were not sent.'**
   String get sosResumed;
 
   /// Running panel, honest limit of a one-second timer under Doze.
@@ -8719,7 +8719,7 @@ abstract class AppLocalizations {
   /// No description provided for @placePhotoNotFetched.
   ///
   /// In en, this message translates to:
-  /// **'Photo not fetched. The entry itself is complete; the picture is optional and may never arrive.'**
+  /// **'Photo not fetched. The entry itself is complete. The picture is optional and may never arrive.'**
   String get placePhotoNotFetched;
 
   /// No description provided for @placePhotoMayNotArrive.
@@ -9049,7 +9049,7 @@ abstract class AppLocalizations {
   /// No description provided for @coveragePacingNote.
   ///
   /// In en, this message translates to:
-  /// **'This app paces its own pings; it cannot promise other devices do.'**
+  /// **'This app paces its own pings. It cannot promise other devices do.'**
   String get coveragePacingNote;
 
   /// No description provided for @coveragePingNow.
@@ -9085,7 +9085,7 @@ abstract class AppLocalizations {
   /// No description provided for @coverageEdges.
   ///
   /// In en, this message translates to:
-  /// **'{count} answers drawn — answers only, never an inferred link'**
+  /// **'{count} answers drawn. Answers only, never an inferred link'**
   String coverageEdges(int count);
 
   /// No description provided for @coverageNotAMap.
@@ -9319,7 +9319,7 @@ abstract class AppLocalizations {
   /// No description provided for @blockedKeysEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No key is blocked. Blocking a key hides what it sends — messages, notifications, places — on this device.'**
+  /// **'No key is blocked. Blocking a key hides what it sends, which is messages, notifications and places, on this device.'**
   String get blockedKeysEmpty;
 
   /// No description provided for @blockedKeysCannotStopShort.
@@ -9331,7 +9331,7 @@ abstract class AppLocalizations {
   /// No description provided for @blockedKeysCannotStop.
   ///
   /// In en, this message translates to:
-  /// **'A block is local to this app. The radio still receives and relays the packet; what stops is what this app shows.'**
+  /// **'A block is local to this app. The radio still receives and relays the packet. What stops is what this app shows.'**
   String get blockedKeysCannotStop;
 
   /// No description provided for @blockedKeysUnblock.
@@ -9391,7 +9391,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportNothingSent.
   ///
   /// In en, this message translates to:
-  /// **'Nothing was sent. The app wrote a file on this device; you decide where it goes.'**
+  /// **'Nothing was sent. The app wrote a file on this device. You decide where it goes.'**
   String get reportNothingSent;
 
   /// No description provided for @reportBundleWritten.
@@ -9427,7 +9427,7 @@ abstract class AppLocalizations {
   /// No description provided for @blockedKeysUnreadable.
   ///
   /// In en, this message translates to:
-  /// **'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept; new blocks save normally.'**
+  /// **'The saved list could not be read, so nothing is blocked right now. A copy of the damaged file is kept. New blocks save normally.'**
   String get blockedKeysUnreadable;
 
   /// No description provided for @sosDestinationContactsLimit.
@@ -9655,7 +9655,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeMarkerSemantics.
   ///
   /// In en, this message translates to:
-  /// **'{name} — tap for details'**
+  /// **'{name}. Tap for details'**
   String nodeMarkerSemantics(String name);
 
   /// No description provided for @placePinSemantics.
@@ -9901,7 +9901,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapNoPositionAsking.
   ///
   /// In en, this message translates to:
-  /// **'Finding you...'**
+  /// **'Finding you..'**
   String get mapNoPositionAsking;
 
   /// No description provided for @mapLocationOffApp.
@@ -10021,7 +10021,7 @@ abstract class AppLocalizations {
   /// No description provided for @rawRecordHelp.
   ///
   /// In en, this message translates to:
-  /// **'One record to one contact, addressed over its route. The radio answers OK or ERR; the peer sends nothing back.'**
+  /// **'One record to one contact, addressed over its route. The radio answers OK or ERR. The peer sends nothing back.'**
   String get rawRecordHelp;
 
   /// No description provided for @rawRecordNoContact.
@@ -10177,7 +10177,7 @@ abstract class AppLocalizations {
   /// No description provided for @sosWordsOptional.
   ///
   /// In en, this message translates to:
-  /// **'Optional — the default is used if you clear it.'**
+  /// **'Optional. The default is used if you clear it.'**
   String get sosWordsOptional;
 
   /// No description provided for @sosHoldSummary.
@@ -10195,7 +10195,7 @@ abstract class AppLocalizations {
   /// No description provided for @wxMicroclimateFromChat.
   ///
   /// In en, this message translates to:
-  /// **'Read from this channel\'s messages; newest {ago}.'**
+  /// **'Read from this channel\'s messages. Newest {ago}.'**
   String wxMicroclimateFromChat(Object ago);
 
   /// No description provided for @wxMicroclimateFromChatNoMessages.
@@ -10225,7 +10225,7 @@ abstract class AppLocalizations {
   /// No description provided for @meshbookEmptyDetail.
   ///
   /// In en, this message translates to:
-  /// **'Messages on this channel fill it; the window is the last 24 hours.'**
+  /// **'Messages on this channel fill it. The window is the last 24 hours.'**
   String get meshbookEmptyDetail;
 
   /// No description provided for @locTriggerManual.
@@ -10375,7 +10375,7 @@ abstract class AppLocalizations {
   /// No description provided for @storageClearAllPartly.
   ///
   /// In en, this message translates to:
-  /// **'{unfinished} of {total} stores did not finish. What is left is listed here; the radio and your settings are untouched.'**
+  /// **'{unfinished} of {total} stores did not finish. What is left is listed here. The radio and your settings are untouched.'**
   String storageClearAllPartly(int unfinished, int total);
 
   /// No description provided for @chatMediaPrivateOnly.
@@ -10519,7 +10519,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodeFindRouteDirect.
   ///
   /// In en, this message translates to:
-  /// **'Direct — a neighbour in range.'**
+  /// **'Direct. A neighbour in range.'**
   String get nodeFindRouteDirect;
 
   /// No description provided for @nodeFindRouteTwoWay.
@@ -10699,7 +10699,7 @@ abstract class AppLocalizations {
   /// No description provided for @repeaterSessionIntro.
   ///
   /// In en, this message translates to:
-  /// **'A password opens a session on this repeater. It is the repeater\'s own secret, kept between it and you; the app does not store it.'**
+  /// **'A password opens a session on this repeater. It is the repeater\'s own secret, kept between it and you. The app does not store it.'**
   String get repeaterSessionIntro;
 
   /// No description provided for @repeaterSignIn.
@@ -10873,7 +10873,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadio2Note.
   ///
   /// In en, this message translates to:
-  /// **'A second profile takes 96-99 % of the radio\'s transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read; the second profile\'s own parameters are not shown.'**
+  /// **'A second profile takes 96-99 % of the radio\'s transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read. The second profile\'s own parameters are not shown.'**
   String get deviceRadio2Note;
 
   /// No description provided for @deviceReadoutQuerying.
@@ -10939,7 +10939,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceAirtimeLimitUnknown.
   ///
   /// In en, this message translates to:
-  /// **'airtime limit: —'**
+  /// **'airtime limit:.'**
   String get deviceAirtimeLimitUnknown;
 
   /// No description provided for @deviceRepeatRanges.
@@ -10957,7 +10957,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRepeatUnknown.
   ///
   /// In en, this message translates to:
-  /// **'repeat: —'**
+  /// **'repeat:.'**
   String get deviceRepeatUnknown;
 
   /// No description provided for @diagnosticsSectionRadioAlerts.
