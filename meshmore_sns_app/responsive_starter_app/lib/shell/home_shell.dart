@@ -323,21 +323,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   onPressed: () => context.push('/sos'),
                 );
               }),
-              // Check-in, beside it. It was three taps inside Settings → Tools,
-              // under a page named for radio measurements — a safety action a
-              // reader in the field will not find. Same rule as SOS: the control
-              // opens the screen, and the commitment still takes a deliberate
-              // action there.
-              // A check-in is one message with a deadline, so the glyph is a
-              // check — not `where_to_vote`, which Material draws as a map pin
-              // with a tick in it. Beside a red SOS, a pin reads "somewhere on
-              // the map", which is the one thing this button does not do.
-              IconButton(
-                key: const ValueKey<String>('checkin-entry'),
-                tooltip: l.checkinTitle,
-                icon: const Icon(Icons.check_circle_outline),
-                onPressed: () => context.push('/checkin'),
-              ),
+              // Check-in is not in the app bar. Two icon-only safety buttons
+              // beside a link chip made the bar three unrelated glyphs, and the
+              // owner's verdict was that a reader cannot tell what the tick
+              // means. It lives in Settings under Safety, one labelled row,
+              // where the sentence about what it does can sit under the name.
               const DemoChip(),
               const RadioLinkIndicator(),
             ],
@@ -654,6 +644,17 @@ List<({String label, List<(IconData, String, String)> rows})> _settingsGroups(
       // Where the device says it is. The screen existed four taps deep inside
       // App settings → Auto-publish location, and geofences and the coverage
       // survey live under it, so the app's whole location story had no front door.
+      // Safety, because SOS and a check-in are actions a reader takes, not
+      // settings they tune. Check-in was an icon-only button in the app bar and
+      // the owner could not tell what it meant; a labelled row with a sentence
+      // under it is what the action needs.
+      (
+        label: l.settingsGroupSafety,
+        rows: <(IconData, String, String)>[
+          (Icons.sos, l.sosTitle, '/sos'),
+          (Icons.check_circle_outline, l.checkinTitle, '/checkin'),
+        ],
+      ),
       (
         label: l.settingsGroupLocation,
         rows: <(IconData, String, String)>[

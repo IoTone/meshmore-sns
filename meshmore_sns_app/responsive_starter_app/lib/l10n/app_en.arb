@@ -712,6 +712,7 @@
   "settingsGroupRadio": "LORA RADIO",
   "settingsGroupApp": "APP",
   "settingsGroupConnect": "CONNECTION",
+  "settingsGroupSafety": "SAFETY",
   "settingsGroupLocation": "LOCATION",
   "settingsHubLocation": "Location & sharing",
   "settingsGroupAbout": "ABOUT",

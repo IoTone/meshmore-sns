@@ -660,6 +660,7 @@
   "settingsGroupRadio": "LORA 無線機",
   "settingsGroupApp": "アプリ",
   "settingsGroupConnect": "接続",
+  "settingsGroupSafety": "安全",
   "settingsGroupLocation": "位置情報",
   "settingsHubLocation": "位置情報と共有",
   "settingsGroupAbout": "このアプリについて",

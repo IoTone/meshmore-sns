@@ -88,7 +88,7 @@ void main() {
       'lib/screens/chat_screen.dart': 7,
       'lib/screens/dashboards/drpop_dashboard.dart': 3,
       'lib/screens/fabric_survey_view.dart': 4,
-      'lib/screens/sns_cells_view.dart': 5,
+      'lib/screens/sns_cells_view.dart': 4,
       'lib/screens/street_map_view.dart': 2,
       'lib/ui/mm_scaffold.dart': 1,
     };

@@ -147,14 +147,23 @@ class ForestDashboard extends StatelessWidget {
                   Text(l.dashboardNoActivity,
                       style: TextStyle(color: muted))
                 else
-                  for (final ({String time, String text}) e in m.events)
-                    Padding(
-                      padding: EdgeInsets.only(bottom: skin.space.labelToControl),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          SizedBox(
-                            width: skin.space.step(9) * 2,
+                  // A table, not a fixed-width column: the time is a different
+                  // width in every skin and at every text size, and a guessed
+                  // 64 dp left the stamp touching the event it describes
+                  // ("16:36:44battery 4.07V" on the handset). An intrinsic
+                  // column plus the row gap keeps the two apart in every theme.
+                  Table(
+                    columnWidths: const <int, TableColumnWidth>{
+                      0: IntrinsicColumnWidth(),
+                      1: FlexColumnWidth(),
+                    },
+                    children: <TableRow>[
+                      for (final ({String time, String text}) e in m.events)
+                        TableRow(children: <Widget>[
+                          Padding(
+                            padding: EdgeInsets.only(
+                                right: skin.space.rowGap,
+                                bottom: skin.space.labelToControl),
                             child: Text(
                               e.time,
                               style: TextStyle(
@@ -164,7 +173,9 @@ class ForestDashboard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Expanded(
+                          Padding(
+                            padding:
+                                EdgeInsets.only(bottom: skin.space.labelToControl),
                             child: Text(
                               e.text,
                               style: TextStyle(
@@ -172,9 +183,9 @@ class ForestDashboard extends StatelessWidget {
                                   fontSize: skin.type.sizeBody),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
+                        ]),
+                    ],
+                  ),
               ],
             ),
           ),
