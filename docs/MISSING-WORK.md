@@ -323,6 +323,19 @@ All seven are fixed, each with the test that holds it:
 | `PlaceCreateSheet.initialChannelIdx` was dead, and the fallback was not validated against the radio's slots | The message-suggestion line passes it, the caller's slot wins over the remembered one, and every candidate is checked against `mc.channels` |
 | The two scan helpers do not handle raw or triple-quoted strings, or `//` inside a row's arguments | Documented as known limits in both files: the failure direction is over-counting, which fails loudly |
 
+### The invisible-state sweep, 2026-11-15
+
+A scan for public getters that nothing in `lib/` or `test/` reads found eleven.
+Six were leftovers and are deleted (`airtimeRemaining`, a duplicate of
+`airtimeLeft`; `rightControlsBottom`, which existed for the edge bands that were
+removed; `persistQueued`, `pendingCount`, `maxBlobBytes`, `addressedTiles`).
+Three were state the app kept and no screen showed, which is the same defect as
+a received picture nothing claimed, and they are now facts on the Diagnostics
+page: commands that timed out, reactions that named a message the window no
+longer holds, and the frames the telemetry poller sent. The fourth of that kind
+was `MediaFetchService.foreignPictures`, the count of pictures that arrived in
+AEIC, and it is now a line in the received-pictures sheet.
+
 ### Still open after this pass
 
 | Item | What closes it |
