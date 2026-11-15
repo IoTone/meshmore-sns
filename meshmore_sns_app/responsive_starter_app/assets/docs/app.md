@@ -45,6 +45,11 @@ so with no paired radio the app can show only what it already stored.
   taking a while always has something to press.
 - **A lost notification during the handshake** does not cost the link: the
   app asks again once before it treats the handshake as failed.
+- **More than one paired radio** is a list, not a hidden last-used. The
+  connect screen lists every radio this phone has paired and switches to the
+  one you pick. A switch is refused while a message is still waiting for an
+  answer, because that answer belongs to the radio it was sent on, and the
+  app says so rather than losing the reply.
 - **The radio's own limits** are read from it rather than assumed. How many
   contacts it can hold, how many channel slots it has, which bands it will
   repeat on, its firmware version and build date, its battery, and whether
@@ -140,10 +145,12 @@ key in a way a channel line can never be.
   sending it, because a forward that sends itself cannot be recalled on a
   shared mesh.
 - **Blocking a key** stops this device showing, searching, announcing or
-  speaking that key's messages. It does not stop the radio receiving or
-  relaying the packet, and it does not remove the contact. A channel line
-  carries a name and no key, so a channel sender is filtered only when the
-  name is unique in your contact list.
+  speaking that key's messages, and it stops this device sending to that key:
+  the composer refuses and names the block, and a retry of a message addressed
+  to a key blocked since is refused too. An alarm is never refused. It does not
+  stop the radio receiving or relaying the packet, and it does not remove the
+  contact. A channel line carries a name and no key, so a channel sender is
+  filtered only when the name is unique in your contact list.
 
 ## Nodes, the tree and routes
 
@@ -203,6 +210,14 @@ with no app at all.
 - **Report a place** from the map: long-press, or the labelled control on
   the map's bottom chrome. Nine types, a label, and a lifetime chosen from
   the ten stops the format allows.
+- **A report has a destination.** The create sheet names the channel the
+  report will go to, defaulting to the one you last chose and then to the
+  channel you are reading, and the place's own sheet says which channel it
+  went to. A report never goes silently to whatever happens to be active.
+- **Import a shared place.** A place shared out of the app is a link and a
+  line of text. Pasting either into Import reads it back, checks the
+  coordinate range and the id, and opens the create sheet prefilled. Text it
+  cannot read is refused with the reason rather than imported as nonsense.
 - **Six reports an hour**, shared with confirmations, so a place report is
   not a way to flood a channel.
 - **Confirm and refute.** A reply on the channel is recorded as *claimed*,
@@ -228,6 +243,14 @@ position against it and tells you when you cross.
   inside and outside. A crossing counts once per stay.
 - **Enter and leave sound different**, in every theme, so the pair is
   learned once. A crossing vibrates, and it never sounds like the alarm.
+- **A drawn fence can be reshaped.** Edit a polygon and choose Reshape on the
+  map: its corners load into the same drawing flow you drew them with, and
+  saving replaces the shape while keeping the fence's name and its crossing
+  log. A circle is resized from its own sheet.
+- **A crossing is a notification as well as a cue**, on its own OS channel, so
+  fences can be silenced without silencing messages. It names the fence and
+  says which direction you crossed. It is posted when a position fix arrives,
+  which is the only moment a crossing can be noticed.
 - **The inside state is remembered**, so launching the app already inside a
   fence does not announce an entry that did not happen.
 - **A fence needs a position to fire.** Positions arrive when the radio
@@ -278,6 +301,13 @@ failure is a sentence rather than the word "failed".
 The tools that send text refuse the Public slot structurally, because a
 tool's traffic is not for everyone on the mesh.
 
+**Every finished run is kept.** Tools → History lists the runs newest first,
+each with a one-line summary and the table it produced, which can be copied
+out. The history holds the newest 40 runs and at most 96 KB of tables, and it
+says so on screen. A run whose table was dropped to stay inside that budget
+keeps its summary and says the table went. A run that never started leaves no
+row, and clearing the history deletes the runs and nothing else.
+
 ## Safety: check-in and the alarm
 
 **Check-in** sends one short message that says you are fine, to the channel
@@ -304,6 +334,7 @@ can be silenced separately:
 - **Channel message**
 - **Direct message**
 - **Emergency alert**
+- **Fence crossings**
 
 A notification is posted once per message, names the channel or the peer,
 and never carries the text of an alarm, because a lock screen is not where
@@ -313,9 +344,13 @@ announced.
 
 **The background link** is a foreground service that keeps the process
 alive so the app keeps draining the radio. App settings states which of the
-three states it is in: off, failed, or running. Where a phone's own battery
-management stops the service anyway, the app can only report what it sees,
-and that is the one thing to check first if messages stop arriving.
+three states it is in: off, failed, or running.
+
+**Battery optimisation** is the other half of that, and the app can now see
+it. When Android is still allowed to optimise this app, App settings says so
+and offers the one-tap request to exempt it. A phone that stops a background
+app after a while is the commonest reason messages stop arriving with the
+screen off, and this row is how you tell that apart from a link that failed.
 
 ## Sound, haptics and speech
 
