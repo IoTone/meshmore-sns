@@ -715,7 +715,8 @@ class _ChatScreenState extends State<ChatScreen>
         await copyMessageToClipboard(context, m);
         break;
       case ChatAction.react:
-        final String? emoji = await pickReaction(context);
+        final String? emoji = await pickReaction(context,
+            alreadySent: m.ownReactions);
         if (emoji != null && mounted) await mc.reactTo(m, emoji);
         break;
       case ChatAction.forward:

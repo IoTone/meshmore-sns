@@ -21,6 +21,7 @@ import '../screens/delivery_status_icon.dart';
 // forward is the same question a tool asks: which conversation?
 import '../screens/tools/tool_pickers.dart';
 import '../ui/mm_confirm.dart';
+import '../ui/mm_shape.dart';
 import '../util/clock_model.dart';
 import '../util/mm_format.dart';
 import 'draft_store.dart';
@@ -357,7 +358,10 @@ Future<bool> confirmDeleteMessage(BuildContext context, ChatMessage m) {
 /// gesture, the whole line has a byte budget, and eight is what fits a sheet on
 /// a 320 dp phone without a scroll. The same eight in both threads, so a reader
 /// learns them once.
-Future<String?> pickReaction(BuildContext context) async {
+Future<String?> pickReaction(
+  BuildContext context, {
+  Set<String> alreadySent = const <String>{},
+}) async {
   final AppLocalizations l = AppLocalizations.of(context);
   final MmSkin skin = context.skin;
   return showModalBottomSheet<String>(
@@ -388,11 +392,27 @@ Future<String?> pickReaction(BuildContext context) async {
                   InkWell(
                     key: ValueKey<String>('react-$emoji'),
                     onTap: () => Navigator.pop(ctx, emoji),
-                    child: SizedBox(
+                    borderRadius: mmRadius(context, 8),
+                    // An emoji this message already carries from this app is
+                    // marked, so the sheet says what a second tap would do
+                    // instead of offering it as though it were new. The tap is
+                    // not a no-op that does nothing visible: it is the same
+                    // reaction, and sending it again would count the reactor
+                    // twice on every other client.
+                    child: Container(
                       // The tap floor, not a smaller target: a reaction is a
                       // one-thumb gesture.
                       width: kMinInteractiveDimension,
                       height: kMinInteractiveDimension,
+                      // Decorated only when this app has already sent it, so an
+                      // unused emoji is a bare glyph rather than a boxed one.
+                      decoration: alreadySent.contains(emoji)
+                          ? ShapeDecoration(
+                              color: skin.color.surfaceAlt,
+                              shape: mmShapeBorder(skin.shape,
+                                  side: BorderSide(color: skin.color.line)),
+                            )
+                          : null,
                       child: Center(
                         child: Text(emoji,
                             style: TextStyle(fontSize: skin.type.size(24))),

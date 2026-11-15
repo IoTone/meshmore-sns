@@ -137,4 +137,66 @@ void main() {
     });
     expect(plain.hidden, isFalse);
   });
+
+  test('the same emoji on the same message sends once', () async {
+    // A reaction is a gesture, not a message: tapping the same emoji twice is
+    // the same act. It went out twice regardless, so every other client counted
+    // the reactor once per tap, and a chip showed a count nobody had voted for.
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    addTearDown(mc.dispose);
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    fake.emit(channelMsgFrame(text: 'Sam: good morning'));
+    await Future<void>.delayed(Duration.zero);
+    final ChatMessage target = mc.messagesFor(0).single;
+
+    int reactionLines() => mc.allMessages
+        .where((ChatMessage m) =>
+            m.hidden && Reactions.parse(m.text.trim()) != null)
+        .length;
+
+    expect(await mc.reactTo(target, '👍'), isTrue);
+    await Future<void>.delayed(Duration.zero);
+    expect(reactionLines(), 1);
+    expect(target.ownReactions, <String>{'👍'});
+
+    // The same emoji again: nothing goes out.
+    expect(await mc.reactTo(target, '👍'), isTrue);
+    await Future<void>.delayed(Duration.zero);
+    expect(reactionLines(), 1,
+        reason: 'the second tap on the same emoji is the same reaction');
+    expect(target.reactions['👍'], hasLength(1),
+        reason: 'and it did not count the reactor twice');
+
+    // A different emoji is a different act, and does send.
+    expect(await mc.reactTo(target, '🔥'), isTrue);
+    await Future<void>.delayed(Duration.zero);
+    expect(reactionLines(), 2);
+    expect(target.ownReactions, <String>{'👍', '🔥'});
+  });
+
+  test('what this app reacted with is remembered across a restart', () async {
+    // Idempotency that lives only in memory would let a restart send the same
+    // reaction again, which is exactly the duplicate this replaces.
+    final ChatMessage m = ChatMessage(
+      channelIdx: 0,
+      text: 'hello',
+      outgoing: false,
+      ownReactions: <String>{'✅'},
+    );
+    final ChatMessage back = ChatMessage.fromJson(m.toJson());
+    expect(back.ownReactions, <String>{'✅'});
+    // A row written by a build without the field reads as no reactions, not as
+    // every reaction.
+    expect(
+        ChatMessage.fromJson(<String, Object?>{'i': 'x', 'c': 0, 't': 'hi'})
+            .ownReactions,
+        isEmpty);
+  });
 }

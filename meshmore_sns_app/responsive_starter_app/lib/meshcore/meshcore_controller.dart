@@ -3676,6 +3676,12 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// back from the mesh.
   Future<bool> reactTo(ChatMessage target, String emoji) async {
     if (!isReady) return false;
+    // A reaction is a gesture on a message, not a message of its own, so the
+    // same emoji on the same message is the same act however many times the row
+    // is tapped. Without this every tap put another line on the air, and the
+    // other clients counted the reactor once per tap. A different emoji is a
+    // different act and still sends.
+    if (target.ownReactions.contains(emoji)) return true;
     final bool dm = target.peerPubKeyHex != null;
     final String hash = Reactions.hashFor(
       timestampSeconds: target.at.millisecondsSinceEpoch ~/ 1000,
@@ -3705,6 +3711,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         : await sendChannelTextTo(target.channelIdx, line, hidden: true) !=
             null;
     if (!sent) return false;
+    target.ownReactions.add(emoji);
     final List<String?> who = target.reactions.putIfAbsent(emoji, () => <String?>[]);
     if (!who.contains(own)) who.add(own);
     _persistChat();

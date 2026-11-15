@@ -50,8 +50,10 @@ class ChatMessage {
     this.mp1,
     this.hidden = false,
     Map<String, List<String?>>? reactions,
+    Set<String>? ownReactions,
   })  : id = id ?? _genId(),
         reactions = reactions ?? <String, List<String?>>{},
+        ownReactions = ownReactions ?? <String>{},
         at = at ?? DateTime.now();
 
   /// Monotonic-ish per-process id so per-message actions (R20:
@@ -107,6 +109,16 @@ class ChatMessage {
   /// is null for a channel reaction that named nobody and for MeshCore Open's
   /// shorthand, which does not carry one.
   final Map<String, List<String?>> reactions;
+
+  /// The emoji this app has sent on this message.
+  ///
+  /// [reactions] cannot answer that question: a channel reaction carries no key,
+  /// so the folded list holds a name or nothing, and a DM reaction carries no
+  /// sender at all. Reacting is a gesture rather than a message, so a second tap
+  /// on the same emoji must not put a second line on the air — and that has to
+  /// survive a restart, which a name match against [reactions] cannot promise
+  /// when our own name is absent from it.
+  final Set<String> ownReactions;
 
   /// For **DMs (1:1 P2P)**: the peer's pubkey hex (64 chars) when we
   /// can resolve it from the fabric, or the 12-hex pubkey prefix
@@ -184,6 +196,9 @@ class ChatMessage {
             for (final MapEntry<String, List<String?>> e in reactions.entries)
               e.key: e.value,
           },
+        // `or`: what this app reacted with, kept apart from `e` because the
+        // folded map cannot say who is who.
+        if (ownReactions.isNotEmpty) 'or': ownReactions.toList(),
       };
 
   static Uint8List? _tryBase64(String value) {
@@ -255,6 +270,13 @@ class ChatMessage {
       // left in the thread as `@[name]🙂\n<hash>`.
       hidden: j['h'] == true ||
           Reactions.parse((j['t'] as String? ?? '').trim()) != null,
+      ownReactions: switch (j['or']) {
+        final List<Object?> l => <String>{
+            for (final Object? e in l)
+              if (e is String) e,
+          },
+        _ => null,
+      },
       reactions: switch (j['e']) {
         final Map<Object?, Object?> m => <String, List<String?>>{
             for (final MapEntry<Object?, Object?> e in m.entries)
