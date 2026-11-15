@@ -11547,6 +11547,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No MeshCore radio: a reply or quote waits in the box until one is connected.'**
   String get chatActionsNoRadio;
+
+  /// No description provided for @toolHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool history'**
+  String get toolHistoryTitle;
+
+  /// No description provided for @toolHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No tool has finished a run yet. A run is kept when it ends, with the table it produced.'**
+  String get toolHistoryEmpty;
+
+  /// States both bounds of the stored history, so a reader knows what is kept and what is dropped.
+  ///
+  /// In en, this message translates to:
+  /// **'The newest {runs} runs, and at most {size} of tables across them.'**
+  String toolHistoryBounds(int runs, String size);
+
+  /// No description provided for @toolHistoryTableDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'Table dropped to stay inside the size limit. The summary is kept.'**
+  String get toolHistoryTableDropped;
+
+  /// No description provided for @toolHistoryUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'The stored history cannot be opened on this device, so it reads as empty. New runs are still kept.'**
+  String get toolHistoryUnreadable;
+
+  /// No description provided for @toolHistoryClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear history'**
+  String get toolHistoryClear;
+
+  /// No description provided for @toolHistoryClearBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every stored tool run goes, with its table. The tools themselves are unchanged.'**
+  String get toolHistoryClearBody;
 }
 
 class _AppLocalizationsDelegate

@@ -3007,5 +3007,22 @@
   "actionQuote": "このメッセージを引用",
   "actionReact": "リアクション",
   "actionReplyNoName": "返信",
-  "chatActionsNoRadio": "MeshCore 無線が未接続です。返信や引用は入力欄に保持され、接続後に使えます。"
+  "chatActionsNoRadio": "MeshCore 無線が未接続です。返信や引用は入力欄に保持され、接続後に使えます。",
+  "toolHistoryTitle": "ツール履歴",
+  "toolHistoryEmpty": "まだ終了した実行はありません。実行が終わると、その表とともに保存されます。",
+  "toolHistoryBounds": "新しい {runs} 件まで、表は合計 {size} まで。",
+  "@toolHistoryBounds": {
+    "placeholders": {
+      "runs": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "toolHistoryTableDropped": "サイズ上限のため表は破棄されました。要約は残っています。",
+  "toolHistoryUnreadable": "保存された履歴をこの端末では開けません。空として表示しています。新しい実行は保存されます。",
+  "toolHistoryClear": "履歴を消去",
+  "toolHistoryClearBody": "保存されたツール実行とその表をすべて消去します。ツール自体は変わりません。"
 }

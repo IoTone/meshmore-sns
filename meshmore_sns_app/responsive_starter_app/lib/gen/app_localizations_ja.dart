@@ -6657,4 +6657,28 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatActionsNoRadio => 'MeshCore 無線が未接続です。返信や引用は入力欄に保持され、接続後に使えます。';
+
+  @override
+  String get toolHistoryTitle => 'ツール履歴';
+
+  @override
+  String get toolHistoryEmpty => 'まだ終了した実行はありません。実行が終わると、その表とともに保存されます。';
+
+  @override
+  String toolHistoryBounds(int runs, String size) {
+    return '新しい $runs 件まで、表は合計 $size まで。';
+  }
+
+  @override
+  String get toolHistoryTableDropped => 'サイズ上限のため表は破棄されました。要約は残っています。';
+
+  @override
+  String get toolHistoryUnreadable =>
+      '保存された履歴をこの端末では開けません。空として表示しています。新しい実行は保存されます。';
+
+  @override
+  String get toolHistoryClear => '履歴を消去';
+
+  @override
+  String get toolHistoryClearBody => '保存されたツール実行とその表をすべて消去します。ツール自体は変わりません。';
 }

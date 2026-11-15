@@ -6929,4 +6929,31 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chatActionsNoRadio =>
       'No MeshCore radio: a reply or quote waits in the box until one is connected.';
+
+  @override
+  String get toolHistoryTitle => 'Tool history';
+
+  @override
+  String get toolHistoryEmpty =>
+      'No tool has finished a run yet. A run is kept when it ends, with the table it produced.';
+
+  @override
+  String toolHistoryBounds(int runs, String size) {
+    return 'The newest $runs runs, and at most $size of tables across them.';
+  }
+
+  @override
+  String get toolHistoryTableDropped =>
+      'Table dropped to stay inside the size limit. The summary is kept.';
+
+  @override
+  String get toolHistoryUnreadable =>
+      'The stored history cannot be opened on this device, so it reads as empty. New runs are still kept.';
+
+  @override
+  String get toolHistoryClear => 'Clear history';
+
+  @override
+  String get toolHistoryClearBody =>
+      'Every stored tool run goes, with its table. The tools themselves are unchanged.';
 }

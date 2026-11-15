@@ -4701,5 +4701,23 @@
   "actionQuote": "Quote this message",
   "actionReact": "React",
   "actionReplyNoName": "Reply",
-  "chatActionsNoRadio": "No MeshCore radio: a reply or quote waits in the box until one is connected."
+  "chatActionsNoRadio": "No MeshCore radio: a reply or quote waits in the box until one is connected.",
+  "toolHistoryTitle": "Tool history",
+  "toolHistoryEmpty": "No tool has finished a run yet. A run is kept when it ends, with the table it produced.",
+  "toolHistoryBounds": "The newest {runs} runs, and at most {size} of tables across them.",
+  "@toolHistoryBounds": {
+    "description": "States both bounds of the stored history, so a reader knows what is kept and what is dropped.",
+    "placeholders": {
+      "runs": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "toolHistoryTableDropped": "Table dropped to stay inside the size limit. The summary is kept.",
+  "toolHistoryUnreadable": "The stored history cannot be opened on this device, so it reads as empty. New runs are still kept.",
+  "toolHistoryClear": "Clear history",
+  "toolHistoryClearBody": "Every stored tool run goes, with its table. The tools themselves are unchanged."
 }

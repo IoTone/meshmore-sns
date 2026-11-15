@@ -43,8 +43,6 @@ void main() {
           MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
     );
     await ctrl.connect();
-    fake.emit(selfInfoFrame());
-    await Future<void>.delayed(Duration.zero);
     final GoRouter router = GoRouter(
       initialLocation: '/connect',
       routes: <RouteBase>[
@@ -55,6 +53,7 @@ void main() {
             builder: (_, __) => const Scaffold(body: Text('console'))),
       ],
     );
+    fake.emit(selfInfoFrame());
     await t.pumpWidget(
       ChangeNotifierProvider<MeshcoreController>.value(
         value: ctrl,
@@ -71,7 +70,11 @@ void main() {
         ),
       ),
     );
-    await t.pumpAndSettle();
+    // No `pumpAndSettle`: the controller keeps polling timers alive for the
+    // whole session, so a settle would wait for the battery poll. Two pumps let
+    // the ready edge hydrate the pairing and its history.
+    await t.pump();
+    await t.pump();
     return (ctrl, fake);
   }
 
@@ -115,6 +118,7 @@ void main() {
 
     await t.tap(find.byKey(const ValueKey<String>('radio-switch-DD:EE:FF')));
     await t.pump();
+    await t.pump(const Duration(milliseconds: 20));
     expect(find.text('Switching to HELTEC.'), findsOneWidget);
     expect(ctrl.pairedRemoteId, 'DD:EE:FF');
     ctrl.dispose();
