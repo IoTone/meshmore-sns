@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
 import 'package:meshcore/meshcore.dart'
-    show CapabilityState, FirmwareOta, OtaStartRefusal;
+    show CapabilityState, FirmwareOta;
 import 'package:provider/provider.dart';
 
 import '../app_state_model.dart';
@@ -30,16 +30,6 @@ class FirmwareScreen extends StatelessWidget {
         CapabilityState.supported => l.firmwareOtaSupported,
         CapabilityState.absent => l.firmwareOtaAbsent,
         CapabilityState.unknown => l.firmwareOtaUnknown,
-      };
-
-  /// The gate's answer as one sentence, read from the gate rather than
-  /// restated, so the page cannot describe a decision that has moved.
-  String _refusalLine(AppLocalizations l, OtaStartRefusal? refusal) =>
-      switch (refusal) {
-        null => l.firmwareNoInstallWhy,
-        OtaStartRefusal.queueDrainUnhandled => l.firmwareNoInstallWhy,
-        OtaStartRefusal.unsupportedByFirmware => l.firmwareOtaAbsent,
-        OtaStartRefusal.capabilityUnknown => l.firmwareOtaUnknown,
       };
 
   @override
@@ -79,9 +69,6 @@ class FirmwareScreen extends StatelessWidget {
           ),
         );
 
-    final OtaStartRefusal? refusal =
-        const FirmwareOta().startRefusalFor(mc.capabilities);
-
     return Scaffold(
       appBar: AppBar(title: Text(l.firmwareTitle)),
       body: MmScaffold(
@@ -98,18 +85,10 @@ class FirmwareScreen extends StatelessWidget {
             SizedBox(height: skin.space.sectionGap),
             Text(l.firmwareNoInstallWhy,
                 style: TextStyle(color: cs.onSurfaceVariant, height: 1.5)),
-            // The gate's own answer, and only when it says something the
-            // paragraph above has not already said. Its default answer *is*
-            // that paragraph, so the page used to print the same words twice,
-            // one of them italic, which reads as two facts rather than one.
-            if (_refusalLine(l, refusal) != l.firmwareNoInstallWhy) ...<Widget>[
-              SizedBox(height: skin.space.rowGap),
-              Text(_refusalLine(l, refusal),
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant,
-                      fontSize: skin.type.sizeSm,
-                      height: 1.5)),
-            ],
+            // The refusal is not printed a second time: the "Over-the-air
+            // update" row already carries the state, and the paragraph above
+            // carries the cost. Printing the same sentence again said one thing
+            // twice, which reads as two facts.
           ],
         ),
       ),

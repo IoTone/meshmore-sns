@@ -1193,7 +1193,7 @@ abstract class AppLocalizations {
   /// No description provided for @aboutReportProblemSub.
   ///
   /// In en, this message translates to:
-  /// **'Opens the issue tracker with the app and MeshCore radio details filled in. Nothing is sent unless you send it there.'**
+  /// **'Opens the issue tracker with this app\'s details filled in.'**
   String get aboutReportProblemSub;
 
   /// No description provided for @creditsTitle.
@@ -2183,7 +2183,7 @@ abstract class AppLocalizations {
   /// No description provided for @locBeaconSub.
   ///
   /// In en, this message translates to:
-  /// **'Every 60 s, announce your position to every node in range. Uses airtime and battery.'**
+  /// **'Every 60 s. Uses airtime and battery.'**
   String get locBeaconSub;
 
   /// No description provided for @locBatteryHint.
@@ -3545,7 +3545,7 @@ abstract class AppLocalizations {
   /// No description provided for @docsDevicesSub.
   ///
   /// In en, this message translates to:
-  /// **'Field notes and quirks for the radios we run. T1000-E, Wio Tracker L1 Pro, Heltec V3.'**
+  /// **'T1000-E, Wio Tracker L1 Pro, Heltec V3.'**
   String get docsDevicesSub;
 
   /// No description provided for @docsRefresh.
@@ -4139,7 +4139,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsInferPlacesSub.
   ///
   /// In en, this message translates to:
-  /// **'Scan this channel\'s messages for place names and offer them under the message, so you can report one.'**
+  /// **'Offer a place named in a message.'**
   String get channelsInferPlacesSub;
 
   /// OS notification title for a channel message.
@@ -4187,7 +4187,7 @@ abstract class AppLocalizations {
   /// Explains the consequence and the action beside it.
   ///
   /// In en, this message translates to:
-  /// **'Some phones stop background apps that are optimised. Allow this app to run without optimisation and messages keep arriving.'**
+  /// **'Some phones stop optimised apps in the background.'**
   String get settingsBatteryOptimisedSub;
 
   /// The action that opens the OS request to stop optimising this app.
@@ -10945,13 +10945,13 @@ abstract class AppLocalizations {
   /// No description provided for @firmwareIntro.
   ///
   /// In en, this message translates to:
-  /// **'What this MeshCore radio is running, and what this app will do about it. Nothing on this page installs anything.'**
+  /// **'What the MeshCore radio is running.'**
   String get firmwareIntro;
 
   /// No description provided for @firmwareRadioLabel.
   ///
   /// In en, this message translates to:
-  /// **'MeshCore radio firmware'**
+  /// **'MeshCore firmware'**
   String get firmwareRadioLabel;
 
   /// No description provided for @firmwareAppLabel.
@@ -10963,25 +10963,25 @@ abstract class AppLocalizations {
   /// No description provided for @firmwareOtaSupported.
   ///
   /// In en, this message translates to:
-  /// **'built with over-the-air update support'**
+  /// **'supported'**
   String get firmwareOtaSupported;
 
   /// No description provided for @firmwareOtaAbsent.
   ///
   /// In en, this message translates to:
-  /// **'this build has no over-the-air update'**
+  /// **'not in this build'**
   String get firmwareOtaAbsent;
 
   /// No description provided for @firmwareOtaUnknown.
   ///
   /// In en, this message translates to:
-  /// **'not known yet: the MeshCore radio answers on first contact'**
+  /// **'unknown until it answers'**
   String get firmwareOtaUnknown;
 
   /// No description provided for @firmwareNoInstallWhy.
   ///
   /// In en, this message translates to:
-  /// **'Installing is not offered from the app: an install consumes the MeshCore radio\'s queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.'**
+  /// **'Installs are not offered here: one would drop the messages the MeshCore radio has queued.'**
   String get firmwareNoInstallWhy;
 
   /// No description provided for @firmwareOtaLabel.

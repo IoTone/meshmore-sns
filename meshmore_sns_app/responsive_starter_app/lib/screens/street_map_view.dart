@@ -1011,19 +1011,29 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// caught.
   /// The box the field covers: the viewport, unless no node is in it.
   ///
-  /// A map whose fix has drifted can show a viewport with nothing in it, and then
-  /// the honest field is the one around the nodes the layer is a reading of —
-  /// otherwise the switch turns on and appears to do nothing at all. The check is
-  /// a plain containment test, so it costs one comparison per node.
+  /// The box the lattice is built over: the viewport, and a third of a screen
+  /// more on every side.
+  ///
+  /// Two things were wrong with building it exactly to the viewport and only
+  /// when a node was inside it. A pan to ground with no node on it — which is
+  /// most of a walk around the edge of a mesh — rebuilt the field around the
+  /// nodes instead, off screen, so the map looked like it had to load a new
+  /// lattice before it could draw one. And a field built to the viewport's own
+  /// edges leaves the ground a zoom-out exposes bare until the next build. The
+  /// margin means a pan or a zoom step lands inside cells that already exist, and
+  /// the field is replaced when the one it was built for no longer covers what
+  /// the reader is looking at.
   GeoBox _fieldBox(List<DensityPoint> points) {
     final GeoBox? visible = _visibleBox();
     if (visible == null) return _nodeBox(points);
-    final bool any = points.any((DensityPoint p) =>
-        p.lat >= visible.south &&
-        p.lat <= visible.north &&
-        p.lon >= visible.west &&
-        p.lon <= visible.east);
-    return any ? visible : _nodeBox(points);
+    final double dLat = (visible.north - visible.south) * kHexFieldPad;
+    final double dLon = (visible.east - visible.west) * kHexFieldPad;
+    return GeoBox(
+      south: visible.south - dLat,
+      north: visible.north + dLat,
+      west: visible.west - dLon,
+      east: visible.east + dLon,
+    );
   }
 
   /// A cheap fingerprint of the points the field is built from.
@@ -1797,7 +1807,11 @@ class _StreetMapViewState extends State<StreetMapView> {
     }
     // One size for the hexagons and for the chip that names them: a constant
     // size on the glass, so the ground area is the only thing a zoom changes.
-    _hexRadiusMetres = hexRadiusForZoom(metresPerPixel: metresPerPixel);
+    // Quantised: a continuous radius changed the memo key on every frame of a
+    // pinch, so the lattice was rebuilt and re-anchored under the finger instead
+    // of scaling with the ground it was drawn on.
+    _hexRadiusMetres = quantiseHexRadius(
+        hexRadiusForZoom(metresPerPixel: metresPerPixel));
     _densityCellMetresShown = math.sqrt(3) * _hexRadiusMetres;
     final List<DensityPoint> densityPoints = _showDensity
         ? <DensityPoint>[
@@ -1837,9 +1851,14 @@ class _StreetMapViewState extends State<StreetMapView> {
               // for a phone and short on a tablet: `includeEmpty` emits the
               // lattice in row order, so the cells a constant drops are the last
               // rows, and the bottom of a large map simply had no field.
+              // Sized to the box, not to the screen: the field is built
+              // `kHexFieldPad` past the viewport on every side, and a cap sized
+              // to the screen drops its last rows.
               maxCells: hexCellsForViewport(
-                width: MediaQuery.sizeOf(context).width,
-                height: MediaQuery.sizeOf(context).height,
+                width:
+                    MediaQuery.sizeOf(context).width * (1 + 2 * kHexFieldPad),
+                height:
+                    MediaQuery.sizeOf(context).height * (1 + 2 * kHexFieldPad),
               ),
             );
       _hexPolygons = <Polygon<HexCell>>[

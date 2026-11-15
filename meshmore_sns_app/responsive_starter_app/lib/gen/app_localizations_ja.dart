@@ -610,8 +610,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aboutReportProblem => '問題を報告';
 
   @override
-  String get aboutReportProblemSub =>
-      'アプリとMeshCore 無線機の情報を入れた状態で課題トラッカーを開きます。そこで送信するまで何も送られません。';
+  String get aboutReportProblemSub => 'このアプリの情報を入れた状態で課題トラッカーを開きます。';
 
   @override
   String get creditsTitle => 'クレジット';
@@ -1155,7 +1154,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get locBeacon => '定期位置ビーコン';
 
   @override
-  String get locBeaconSub => '60秒ごとに現在地を範囲内のすべてのノードに知らせます。通信時間と電池を使います。';
+  String get locBeaconSub => '60 秒ごと。通信時間と電池を使います。';
 
   @override
   String get locBatteryHint => 'GPS を流し続けると反応は速くなりますが、電池を多く使います。';
@@ -1977,8 +1976,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get docsDevicesTitle => 'デバイス';
 
   @override
-  String get docsDevicesSub =>
-      '運用中の無線機（T1000-E、Wio Tracker L1 Pro、Heltec V3）の実地メモと注意点。';
+  String get docsDevicesSub => 'T1000-E、Wio Tracker L1 Pro、Heltec V3。';
 
   @override
   String get docsRefresh => 'GitHub から更新';
@@ -2360,8 +2358,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsInferPlaces => 'メッセージから地名を探す';
 
   @override
-  String get channelsInferPlacesSub =>
-      'このチャンネルのメッセージから地名を探し、メッセージの下に候補として表示します。そこから報告できます。';
+  String get channelsInferPlacesSub => 'メッセージに出てきた場所を提案します。';
 
   @override
   String notifTitleChannel(String name) {
@@ -2390,8 +2387,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'バッテリー最適化によりバックグラウンドで切断されることがあります';
 
   @override
-  String get settingsBatteryOptimisedSub =>
-      '一部の端末はバックグラウンドアプリを停止します。このアプリを最適化の対象外にすると、メッセージが届き続けます。';
+  String get settingsBatteryOptimisedSub => '一部の端末は最適化されたアプリを停止します。';
 
   @override
   String get settingsBatteryAllow => '許可する';
@@ -6278,27 +6274,26 @@ class AppLocalizationsJa extends AppLocalizations {
   String get firmwareTitle => 'ファームウェア';
 
   @override
-  String get firmwareIntro =>
-      'この無線機が動かしているものと、アプリがそれに対して行うこと。この画面から何かをインストールすることはありません。';
+  String get firmwareIntro => 'MeshCore 無線機が動作させているもの。';
 
   @override
-  String get firmwareRadioLabel => 'MeshCore 無線機のファームウェア';
+  String get firmwareRadioLabel => '無線機ファームウェア';
 
   @override
   String get firmwareAppLabel => 'このアプリ';
 
   @override
-  String get firmwareOtaSupported => '無線更新に対応してビルドされています';
+  String get firmwareOtaSupported => '対応';
 
   @override
-  String get firmwareOtaAbsent => 'このビルドには無線更新がありません';
+  String get firmwareOtaAbsent => 'このビルドにはなし';
 
   @override
-  String get firmwareOtaUnknown => '未確認: 無線機が最初の接続時に応答します';
+  String get firmwareOtaUnknown => '応答があるまで不明';
 
   @override
   String get firmwareNoInstallWhy =>
-      'アプリからのインストールは提供していません。インストールは無線機の送信待ちメッセージを数フレームまで消費し、捨てられるメッセージを再同期する手段がアプリにありません。Diagnostics からの再起動が唯一の操作で、これはインストールではありません。';
+      'ここからは書き込みできません。実行すると MeshCore 無線機に溜まっているメッセージが失われます。';
 
   @override
   String get firmwareOtaLabel => '無線更新';

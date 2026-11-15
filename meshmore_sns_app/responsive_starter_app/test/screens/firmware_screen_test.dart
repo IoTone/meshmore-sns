@@ -58,9 +58,10 @@ void main() {
     final AppLocalizations l =
         AppLocalizations.of(t.element(find.byType(FirmwareScreen)));
     expect(find.text(l.firmwareTitle), findsOneWidget);
-      // It appears twice: as the capability row and as the gate's answer.
-      expect(find.text(l.firmwareOtaUnknown), findsWidgets,
-          reason: 'with no radio the capability is unknown, not absent');
+    // Once. The page used to print this sentence a second time at the bottom,
+    // as the gate's answer, so one fact read as two.
+    expect(find.text(l.firmwareOtaUnknown), findsOneWidget,
+        reason: 'with no radio the capability is unknown, not absent');
     // The app's own version is always here; the radio's is a dash.
     expect(find.text(AppState().getAppVersion()), findsOneWidget);
   });

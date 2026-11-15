@@ -328,7 +328,7 @@
   "aboutMadeWith": "Made with ♥ in Fukuoka, Japan",
   "aboutVersion": "v{version}",
   "aboutReportProblem": "Report a problem",
-  "aboutReportProblemSub": "Opens the issue tracker with the app and MeshCore radio details filled in. Nothing is sent unless you send it there.",
+  "aboutReportProblemSub": "Opens the issue tracker with this app's details filled in.",
   "creditsTitle": "Credits",
   "creditsIntro": "Everything this app is built out of, in one list. Each row names the component, its licence and where it comes from.",
   "aboutLicensesButton": "Open-source licenses & attributions",
@@ -637,7 +637,7 @@
   "locPublishNowSub": "Send your position once, now.",
   "locLastPublishedLabel": "Last published",
   "locBeacon": "Periodic position beacon",
-  "locBeaconSub": "Every 60 s, announce your position to every node in range. Uses airtime and battery.",
+  "locBeaconSub": "Every 60 s. Uses airtime and battery.",
   "locBatteryHint": "Streaming GPS reacts faster and uses more battery.",
   "@globeFooter": {
     "placeholders": {
@@ -1248,7 +1248,7 @@
   "docsAppTitle": "App",
   "docsAppSub": "How Meshmore SNS works, and how it uses the mesh.",
   "docsDevicesTitle": "Devices",
-  "docsDevicesSub": "Field notes and quirks for the radios we run. T1000-E, Wio Tracker L1 Pro, Heltec V3.",
+  "docsDevicesSub": "T1000-E, Wio Tracker L1 Pro, Heltec V3.",
   "docsRefresh": "Refresh from GitHub",
   "docsUpdated": "Updated to the latest version",
   "docsUpToDate": "Already up to date",
@@ -1554,7 +1554,7 @@
   },
   "channelsName": "Channel name",
   "channelsInferPlaces": "Find place names in messages",
-  "channelsInferPlacesSub": "Scan this channel's messages for place names and offer them under the message, so you can report one.",
+  "channelsInferPlacesSub": "Offer a place named in a message.",
   "notifTitleChannel": "Message on {name}",
   "@notifTitleChannel": {
     "description": "OS notification title for a channel message.",
@@ -1590,7 +1590,7 @@
   "@settingsBatteryOptimisedTitle": {
     "description": "App settings row shown when this app is still on the battery-optimisation list, which lets an OEM stop the foreground service."
   },
-  "settingsBatteryOptimisedSub": "Some phones stop background apps that are optimised. Allow this app to run without optimisation and messages keep arriving.",
+  "settingsBatteryOptimisedSub": "Some phones stop optimised apps in the background.",
   "@settingsBatteryOptimisedSub": {
     "description": "Explains the consequence and the action beside it."
   },
@@ -4374,13 +4374,13 @@
   },
   "settingsHubFirmware": "Firmware",
   "firmwareTitle": "Firmware",
-  "firmwareIntro": "What this MeshCore radio is running, and what this app will do about it. Nothing on this page installs anything.",
-  "firmwareRadioLabel": "MeshCore radio firmware",
+  "firmwareIntro": "What the MeshCore radio is running.",
+  "firmwareRadioLabel": "MeshCore firmware",
   "firmwareAppLabel": "This app",
-  "firmwareOtaSupported": "built with over-the-air update support",
-  "firmwareOtaAbsent": "this build has no over-the-air update",
-  "firmwareOtaUnknown": "not known yet: the MeshCore radio answers on first contact",
-  "firmwareNoInstallWhy": "Installing is not offered from the app: an install consumes the MeshCore radio's queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.",
+  "firmwareOtaSupported": "supported",
+  "firmwareOtaAbsent": "not in this build",
+  "firmwareOtaUnknown": "unknown until it answers",
+  "firmwareNoInstallWhy": "Installs are not offered here: one would drop the messages the MeshCore radio has queued.",
   "firmwareOtaLabel": "Over-the-air update",
   "deviceRadio2Seen": "second profile: heard {when}",
   "@deviceRadio2Seen": {

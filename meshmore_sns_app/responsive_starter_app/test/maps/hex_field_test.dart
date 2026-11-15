@@ -310,4 +310,26 @@ void main() {
           reason: 'a doubling should cross the ladder once or twice');
     });
   });
+
+  group('the field covers the ground the reader is looking at', () {
+    test('the margin is stated once and is big enough for a zoom step', () {
+      // A field built exactly to the viewport has no cells in the ground a
+      // zoom-out exposes, which is why the edge looked bare until the next
+      // build.
+      expect(kHexFieldPad, greaterThan(0.2));
+      expect(kHexFieldPad, lessThan(0.5),
+          reason: 'more than half a screen of margin is a field nobody reads');
+    });
+
+    test('a padded box still fits the cap it is given', () {
+      // The cap is computed from the box, not from the screen: a cap sized to
+      // the screen truncates the last rows of a field built past it.
+      const double w = 1080, h = 2400;
+      final int screenCells = hexCellsForViewport(width: w, height: h);
+      final int boxCells = hexCellsForViewport(
+          width: w * (1 + 2 * kHexFieldPad),
+          height: h * (1 + 2 * kHexFieldPad));
+      expect(boxCells, greaterThan(screenCells));
+    });
+  });
 }

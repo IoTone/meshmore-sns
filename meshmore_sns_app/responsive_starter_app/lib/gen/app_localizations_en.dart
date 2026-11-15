@@ -641,7 +641,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutReportProblemSub =>
-      'Opens the issue tracker with the app and MeshCore radio details filled in. Nothing is sent unless you send it there.';
+      'Opens the issue tracker with this app\'s details filled in.';
 
   @override
   String get creditsTitle => 'Credits';
@@ -1207,8 +1207,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locBeacon => 'Periodic position beacon';
 
   @override
-  String get locBeaconSub =>
-      'Every 60 s, announce your position to every node in range. Uses airtime and battery.';
+  String get locBeaconSub => 'Every 60 s. Uses airtime and battery.';
 
   @override
   String get locBatteryHint =>
@@ -2060,8 +2059,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get docsDevicesTitle => 'Devices';
 
   @override
-  String get docsDevicesSub =>
-      'Field notes and quirks for the radios we run. T1000-E, Wio Tracker L1 Pro, Heltec V3.';
+  String get docsDevicesSub => 'T1000-E, Wio Tracker L1 Pro, Heltec V3.';
 
   @override
   String get docsRefresh => 'Refresh from GitHub';
@@ -2456,8 +2454,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsInferPlaces => 'Find place names in messages';
 
   @override
-  String get channelsInferPlacesSub =>
-      'Scan this channel\'s messages for place names and offer them under the message, so you can report one.';
+  String get channelsInferPlacesSub => 'Offer a place named in a message.';
 
   @override
   String notifTitleChannel(String name) {
@@ -2490,7 +2487,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsBatteryOptimisedSub =>
-      'Some phones stop background apps that are optimised. Allow this app to run without optimisation and messages keep arriving.';
+      'Some phones stop optimised apps in the background.';
 
   @override
   String get settingsBatteryAllow => 'Allow';
@@ -6542,28 +6539,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get firmwareTitle => 'Firmware';
 
   @override
-  String get firmwareIntro =>
-      'What this MeshCore radio is running, and what this app will do about it. Nothing on this page installs anything.';
+  String get firmwareIntro => 'What the MeshCore radio is running.';
 
   @override
-  String get firmwareRadioLabel => 'MeshCore radio firmware';
+  String get firmwareRadioLabel => 'MeshCore firmware';
 
   @override
   String get firmwareAppLabel => 'This app';
 
   @override
-  String get firmwareOtaSupported => 'built with over-the-air update support';
+  String get firmwareOtaSupported => 'supported';
 
   @override
-  String get firmwareOtaAbsent => 'this build has no over-the-air update';
+  String get firmwareOtaAbsent => 'not in this build';
 
   @override
-  String get firmwareOtaUnknown =>
-      'not known yet: the MeshCore radio answers on first contact';
+  String get firmwareOtaUnknown => 'unknown until it answers';
 
   @override
   String get firmwareNoInstallWhy =>
-      'Installing is not offered from the app: an install consumes the MeshCore radio\'s queued messages down to a handful of frames, and nothing here can re-sync what the radio discards. A restart from Diagnostics is the only radio action offered, and it is not an install.';
+      'Installs are not offered here: one would drop the messages the MeshCore radio has queued.';
 
   @override
   String get firmwareOtaLabel => 'Over-the-air update';
