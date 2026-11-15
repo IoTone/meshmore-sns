@@ -1294,7 +1294,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventAdvert(String name) {
-    return 'アドバート · $name';
+    return '$name が存在を知らせました';
   }
 
   @override
@@ -1309,7 +1309,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventContact(String name) {
-    return 'コンタクト · $name';
+    return '$name が連絡先に入りました';
   }
 
   @override
@@ -1319,15 +1319,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventDeviceError(String code) {
-    return 'デバイスエラー (コード $code)';
+    return 'MeshCore 無線機がエラーを返しました（$code）';
   }
 
   @override
-  String get eventDeviceClockSynced => 'デバイス時計 同期';
+  String get eventDeviceClockSynced => 'MeshCore 無線機の時計は一致しています';
 
   @override
   String eventDeviceClockSkew(String seconds) {
-    return 'デバイス時計 読取 (オフセット ${seconds}s)';
+    return 'MeshCore 無線機の時計は $seconds 秒ずれています';
   }
 
   @override
@@ -1335,20 +1335,20 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventDeviceInfo(String version) {
-    return 'デバイス $version';
+    return 'MeshCore 無線機のファームウェアは $version';
   }
 
   @override
   String eventSelfInfo(String name) {
-    return 'セルフ情報 · $name';
+    return 'MeshCore 無線機が応答しました · $name';
   }
 
   @override
-  String get eventQueuedWaiting => 'キュー待機中';
+  String get eventQueuedWaiting => 'MeshCore 無線機に未配信のメッセージがあります';
 
   @override
   String eventQueuedWaitingN(String count) {
-    return 'キュー待機中 ($count)';
+    return 'MeshCore 無線機に $count 件の未配信メッセージがあります';
   }
 
   @override

@@ -1351,7 +1351,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventAdvert(String name) {
-    return 'advert · $name';
+    return '$name announced itself';
   }
 
   @override
@@ -1366,7 +1366,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventContact(String name) {
-    return 'contact · $name';
+    return '$name is in the contact table';
   }
 
   @override
@@ -1376,15 +1376,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventDeviceError(String code) {
-    return 'device error (code $code)';
+    return 'the MeshCore radio reported an error ($code)';
   }
 
   @override
-  String get eventDeviceClockSynced => 'device clock in sync';
+  String get eventDeviceClockSynced => 'the MeshCore radio\'s clock is in sync';
 
   @override
   String eventDeviceClockSkew(String seconds) {
-    return 'device clock read (offset ${seconds}s)';
+    return 'the MeshCore radio\'s clock is ${seconds}s off';
   }
 
   @override
@@ -1392,20 +1392,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventDeviceInfo(String version) {
-    return 'device $version';
+    return 'the MeshCore radio is running $version';
   }
 
   @override
   String eventSelfInfo(String name) {
-    return 'self-info · $name';
+    return 'the MeshCore radio checked in · $name';
   }
 
   @override
-  String get eventQueuedWaiting => 'queued items waiting';
+  String get eventQueuedWaiting => 'messages are queued on the MeshCore radio';
 
   @override
   String eventQueuedWaitingN(String count) {
-    return 'queued items waiting ($count)';
+    return '$count messages are queued on the MeshCore radio';
   }
 
   @override

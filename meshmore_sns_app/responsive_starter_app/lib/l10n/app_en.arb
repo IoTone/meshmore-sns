@@ -728,7 +728,7 @@
   "bootOffline": "OFFLINE. Open Connect a MeshCore radio",
   "bootSkip": "SKIP",
   "bootSubtitle": "WAIT / 進行中",
-  "eventAdvert": "advert · {name}",
+  "eventAdvert": "{name} announced itself",
   "@eventAdvert": {
     "placeholders": {
       "name": {
@@ -755,7 +755,7 @@
       }
     }
   },
-  "eventContact": "contact · {name}",
+  "eventContact": "{name} is in the contact table",
   "@eventContact": {
     "placeholders": {
       "name": {
@@ -771,7 +771,7 @@
       }
     }
   },
-  "eventDeviceError": "device error (code {code})",
+  "eventDeviceError": "the MeshCore radio reported an error ({code})",
   "@eventDeviceError": {
     "placeholders": {
       "code": {
@@ -779,8 +779,8 @@
       }
     }
   },
-  "eventDeviceClockSynced": "device clock in sync",
-  "eventDeviceClockSkew": "device clock read (offset {seconds}s)",
+  "eventDeviceClockSynced": "the MeshCore radio's clock is in sync",
+  "eventDeviceClockSkew": "the MeshCore radio's clock is {seconds}s off",
   "@eventDeviceClockSkew": {
     "placeholders": {
       "seconds": {
@@ -789,7 +789,7 @@
     }
   },
   "eventMsgSent": "sent · the MeshCore radio acknowledged it",
-  "eventDeviceInfo": "device {version}",
+  "eventDeviceInfo": "the MeshCore radio is running {version}",
   "@eventDeviceInfo": {
     "placeholders": {
       "version": {
@@ -797,7 +797,7 @@
       }
     }
   },
-  "eventSelfInfo": "self-info · {name}",
+  "eventSelfInfo": "the MeshCore radio checked in · {name}",
   "@eventSelfInfo": {
     "placeholders": {
       "name": {
@@ -805,8 +805,8 @@
       }
     }
   },
-  "eventQueuedWaiting": "queued items waiting",
-  "eventQueuedWaitingN": "queued items waiting ({count})",
+  "eventQueuedWaiting": "messages are queued on the MeshCore radio",
+  "eventQueuedWaitingN": "{count} messages are queued on the MeshCore radio",
   "@eventQueuedWaitingN": {
     "placeholders": {
       "count": {

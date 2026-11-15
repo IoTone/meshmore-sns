@@ -2423,7 +2423,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventAdvert.
   ///
   /// In en, this message translates to:
-  /// **'advert · {name}'**
+  /// **'{name} announced itself'**
   String eventAdvert(String name);
 
   /// No description provided for @eventChannelMsg.
@@ -2441,7 +2441,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventContact.
   ///
   /// In en, this message translates to:
-  /// **'contact · {name}'**
+  /// **'{name} is in the contact table'**
   String eventContact(String name);
 
   /// No description provided for @eventBattery.
@@ -2453,19 +2453,19 @@ abstract class AppLocalizations {
   /// No description provided for @eventDeviceError.
   ///
   /// In en, this message translates to:
-  /// **'device error (code {code})'**
+  /// **'the MeshCore radio reported an error ({code})'**
   String eventDeviceError(String code);
 
   /// No description provided for @eventDeviceClockSynced.
   ///
   /// In en, this message translates to:
-  /// **'device clock in sync'**
+  /// **'the MeshCore radio\'s clock is in sync'**
   String get eventDeviceClockSynced;
 
   /// No description provided for @eventDeviceClockSkew.
   ///
   /// In en, this message translates to:
-  /// **'device clock read (offset {seconds}s)'**
+  /// **'the MeshCore radio\'s clock is {seconds}s off'**
   String eventDeviceClockSkew(String seconds);
 
   /// No description provided for @eventMsgSent.
@@ -2477,25 +2477,25 @@ abstract class AppLocalizations {
   /// No description provided for @eventDeviceInfo.
   ///
   /// In en, this message translates to:
-  /// **'device {version}'**
+  /// **'the MeshCore radio is running {version}'**
   String eventDeviceInfo(String version);
 
   /// No description provided for @eventSelfInfo.
   ///
   /// In en, this message translates to:
-  /// **'self-info · {name}'**
+  /// **'the MeshCore radio checked in · {name}'**
   String eventSelfInfo(String name);
 
   /// No description provided for @eventQueuedWaiting.
   ///
   /// In en, this message translates to:
-  /// **'queued items waiting'**
+  /// **'messages are queued on the MeshCore radio'**
   String get eventQueuedWaiting;
 
   /// No description provided for @eventQueuedWaitingN.
   ///
   /// In en, this message translates to:
-  /// **'queued items waiting ({count})'**
+  /// **'{count} messages are queued on the MeshCore radio'**
   String eventQueuedWaitingN(String count);
 
   /// No description provided for @chatManageChannels.
