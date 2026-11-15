@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
@@ -275,6 +276,40 @@ void main() {
       expect(find.textContaining('2 packets'), findsOneWidget,
           reason: 'skin ${preset.name}');
     }
+  });
+
+  // The mode is a preference the composer has to READ, not only display. It was
+  // read nowhere, so every send took the on-request path whatever the reader
+  // chose, and the line under the picture named a mode they had not picked.
+  testWidgets('the chosen photo mode is the one the composer sends',
+      (WidgetTester t) async {
+    SharedPreferences.setMockInitialValues(
+        <String, Object>{'mm.media.photoMode': 'preview'});
+    final MediaOfferStore offers = MediaOfferStore();
+    final List<Uint8List> sent = <Uint8List>[];
+    await t.pumpWidget(_host(MediaComposer(
+      service: _service(),
+      source: _Source(photo: _photo(320, 240)),
+      channelPsk: List<int>.filled(16, 0x38),
+      byteBudget: 2000,
+      sendBlob: (Uint8List blob) async {
+        sent.add(blob);
+        return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
+      },
+      offers: offers,
+    )));
+    await t.pumpAndSettle();
+    await _pickIn(t);
+
+    expect(find.textContaining('Preview only'), findsOneWidget,
+        reason: 'the line must name the mode the reader chose');
+
+    await t.tap(find.text('Send'));
+    await t.pumpAndSettle();
+
+    expect(sent.length, 1);
+    expect(offers.offers, isEmpty,
+        reason: 'preview-only holds no pixels for a later request');
   });
 }
 

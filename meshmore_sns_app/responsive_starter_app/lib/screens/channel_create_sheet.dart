@@ -329,6 +329,8 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
                     hint: l.channelCreateSlotHint,
                     onTap: () async {
                       final int? picked = await _pickSlot(context, l);
+                      // The sheet can be dismissed while the picker is up.
+                      if (!mounted) return;
                       if (picked != null) {
                         setState(() => _slotOverride = picked);
                       }

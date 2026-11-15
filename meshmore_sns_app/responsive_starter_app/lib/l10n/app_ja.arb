@@ -92,6 +92,7 @@
   "dashForestCanopy": "樹冠",
   "dashForestNoRoutes": "まだ経路が学習されていません。MeshCore 無線機は誰への経路も知りません。",
   "dashForestContacts": "連絡先",
+  "dashForestDepthSemantics": "メッシュの深さ、{levels} 段階",
   "dashNervLink": "リンク",
   "dashNervNode": "ノード",
   "dashNervRegion": "地域",

@@ -209,6 +209,17 @@ class _MediaComposerState extends State<MediaComposer> {
   MediaMode? _modeRead;
   MediaMode get _mode => _modeRead ?? MediaMode.onRequest;
 
+  @override
+  void initState() {
+    super.initState();
+    // The read that makes the setting real. Without it `_modeRead` stayed null
+    // for the life of the sheet, so every send took the on-request path and the
+    // line under the picture named a mode the reader had not chosen.
+    MediaModePrefs.photoMode().then((MediaMode m) {
+      if (mounted) setState(() => _modeRead = m);
+    });
+  }
+
   /// The upload in flight, so closing the sheet stops it.
   ///
   /// A photo is twenty datagrams with a 350 ms pacing, and a radio that answers
@@ -245,6 +256,9 @@ class _MediaComposerState extends State<MediaComposer> {
   }
 
   Future<void> _prepare(MediaPhoto photo) async {
+    // `_pick` awaits the platform picker before calling this, and the sheet can
+    // be dismissed while the picker is up.
+    if (!mounted) return;
     setState(() {
       _stage = _Stage.encoding;
       _photo = photo;
@@ -281,7 +295,8 @@ class _MediaComposerState extends State<MediaComposer> {
     final MediaTransferPlan? plan = _plan;
     final MediaPhoto? photo = _photo;
     if (plan == null || photo == null) return;
-    // What the reader chose in App settings decides how far the pixels go.
+    // What the reader chose in Settings → Chat & photos decides how far the
+    // pixels go.
     // Preview-only means the preview *is* the picture: the payload is not held,
     // so no request can pull the full one later. The neural mode goes its own way
     // below, because it does not use this framing at all.
@@ -519,7 +534,7 @@ class _MediaComposerState extends State<MediaComposer> {
 
   /// What the reader's photo mode means for this send, and the way to change it.
   ///
-  /// The mode lives in App settings → Photos, which is one screen away, and a
+  /// The mode lives in Settings → Chat & photos, which is one screen away, and a
   /// reader who has just taken a picture should not have to leave the composer to
   /// find out that the pixels are not going anywhere.
   /// Encode with the neural codec and put the stream on the channel.
@@ -566,6 +581,7 @@ class _MediaComposerState extends State<MediaComposer> {
         final ChannelDataSendResult result =
             await send(kAeicImageDataType, blob);
         if (!result.accepted) {
+          if (!mounted) return;
           setState(() {
             _stalled = MediaSendResult.refused;
             _stage = _Stage.failed;

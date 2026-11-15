@@ -230,7 +230,8 @@ class _DepthBar extends StatelessWidget {
     final Color leaf = skin.color.ok;
     final Color far = skin.color.line;
     return Semantics(
-      label: 'Mesh depth, ${byDepth.length} levels',
+      label: AppLocalizations.of(context)
+          .dashForestDepthSemantics(byDepth.length),
       child: SizedBox(
         key: const ValueKey<String>('forest-depth-bar'),
         height: skin.space.step(4),

@@ -15,7 +15,8 @@ import 'photo_settings_screen.dart';
 /// row and the system group, which is where a preference goes when nobody has
 /// decided where it belongs. History retention had no home at all. Both are the
 /// same question from the reader's side — how much of what I have goes out — so
-/// they are one page, and App settings points here rather than repeating it.
+/// they are one page, and the Settings hub points here rather than App settings
+/// repeating it.
 ///
 /// Sections are Messages and Photos. Nothing on this page links to a second
 /// settings page for the same thing, which is what makes one path possible to
@@ -35,18 +36,29 @@ class ChatMediaSettingsScreen extends StatelessWidget {
       appBar: AppBar(title: Text(l.chatMediaTitle)),
       body: MmScaffold(
         child: ListView(
-          padding: EdgeInsets.only(bottom: skin.space.sectionGap * 2),
+          // The page's own edge, the same one App settings uses. The rows below
+          // carry `contentPadding: EdgeInsets.zero` because they were written to
+          // sit inside a padded list, so the padding has to be here: without it
+          // every icon and title sat on the physical screen edge while the note
+          // at the bottom was indented, which is the ragged left margin this
+          // page shipped with.
+          padding: skin.space.padScreen,
           children: <Widget>[
             MmSectionHeader(l.chatMediaMessages),
             const _RetentionRow(),
             SizedBox(height: skin.space.sectionGap),
             MmSectionHeader(l.photoSettingsTitle),
             const PhotoModeTile(),
-            const PhotoColorSwitch(),
+            // The icon is not decoration: every other row on this page has one,
+            // and a switch without it put its title in the icon column, 16 dp
+            // left of every title above and below it.
+            const PhotoColorSwitch(secondary: Icon(Icons.palette_outlined)),
             const AeicCodecRow(),
             Padding(
-              padding: EdgeInsets.fromLTRB(skin.space.screenEdge, 0,
-                  skin.space.screenEdge, skin.space.rowGap),
+              // No horizontal padding: the list already supplies the page edge,
+              // and a second one indented this paragraph past every row above it.
+              padding: EdgeInsets.only(
+                  top: skin.space.rowGap, bottom: skin.space.rowGap),
               child: Text(
                 l.mediaOffOnPublic,
                 key: const ValueKey<String>('photo-public-note'),
@@ -77,6 +89,9 @@ class _RetentionRow extends StatelessWidget {
     return ListTile(
       key: const ValueKey<String>('chat-media-retention'),
       dense: true,
+      // The photo rows below are zero-padded so they line up with the list's
+      // edge; a default 16 dp here put this row's icon 16 dp right of theirs.
+      contentPadding: EdgeInsets.zero,
       leading: const Icon(Icons.history),
       title: Text(l.chatMediaRetentionTitle),
       subtitle: Text(l.chatMediaRetentionBody(ChatStore.cap),

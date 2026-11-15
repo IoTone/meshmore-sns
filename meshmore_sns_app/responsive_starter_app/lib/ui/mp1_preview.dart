@@ -24,7 +24,8 @@ class Mp1PreviewImage extends StatelessWidget {
 
   /// Colour, or the palette in Rec. 601 luma.
   ///
-  /// Photos are grey unless the reader asked for colour (App settings), and a
+  /// Photos are grey unless the reader asked for colour (Settings → Chat &
+  /// photos), and a
   /// preview is a photo: the choice is about what a picture costs on the mesh,
   /// and it applies to every picture the app shows. The luma weights are
   /// [MediaPhoto.inGrayscale]'s, so a preview and a fetched picture of the same

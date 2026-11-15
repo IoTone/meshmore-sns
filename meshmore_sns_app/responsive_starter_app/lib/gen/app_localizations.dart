@@ -344,6 +344,12 @@ abstract class AppLocalizations {
   /// **'Contacts'**
   String get dashForestContacts;
 
+  /// No description provided for @dashForestDepthSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Mesh depth, {levels} levels'**
+  String dashForestDepthSemantics(int levels);
+
   /// No description provided for @dashNervLink.
   ///
   /// In en, this message translates to:
@@ -965,7 +971,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLanguage.
   ///
   /// In en, this message translates to:
-  /// **'LANGUAGE'**
+  /// **'Language'**
   String get settingsLanguage;
 
   /// No description provided for @settingsLanguageSystem.
@@ -989,7 +995,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsSpeech.
   ///
   /// In en, this message translates to:
-  /// **'SPEECH'**
+  /// **'Speech'**
   String get settingsSpeech;
 
   /// No description provided for @settingsSpeechOn.

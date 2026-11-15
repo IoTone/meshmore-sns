@@ -144,8 +144,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
       appBar: AppBar(title: Text(l.voiceSettingsTitle)),
       body: MmScaffold(
         child: ListView(
-            // The same rows the Chat and media page embeds. One body, so the two
-            // surfaces cannot drift.
+            // The page body is one list, built by `voiceSettingsRows` below.
             children: voiceSettingsRows(
                 context: context,
                 l: l,
@@ -165,16 +164,17 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
   }
 }
 
-/// The voice-name formatter, at library level so the chat page can use the same
-/// one the voice page uses.
+/// The voice-name formatter, at library level so the row builder can take it as
+/// a parameter and a test can reach it without a widget.
 String prettyVoiceName(String raw, String locale) =>
     _VoiceSettingsScreenState.prettyVoiceName(raw, locale);
 
 /// The voice settings rows, without a Scaffold.
 ///
-/// Extracted so Settings → Chat & media can show them inline: a reader who
-/// opened chat settings to fix "it reads too fast" should not have to find a
-/// second page, and two copies of this list would drift.
+/// They were extracted when Settings → Chat & photos embedded them inline. That
+/// page no longer does — spoken voice is a reading preference and lives in App
+/// settings — so this is the only caller, and the split is kept because the list
+/// is long enough to read on its own.
 List<Widget> voiceSettingsRows({
   required BuildContext context,
   required AppLocalizations l,

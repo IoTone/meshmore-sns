@@ -165,6 +165,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashForestContacts => 'Contacts';
 
   @override
+  String dashForestDepthSemantics(int levels) {
+    return 'Mesh depth, $levels levels';
+  }
+
+  @override
   String get dashNervLink => 'Link';
 
   @override
@@ -505,7 +510,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Nothing is asked automatically. Open a node to ask it once.';
 
   @override
-  String get settingsLanguage => 'LANGUAGE';
+  String get settingsLanguage => 'Language';
 
   @override
   String get settingsLanguageSystem => 'System default';
@@ -517,7 +522,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguageJapanese => '日本語';
 
   @override
-  String get settingsSpeech => 'SPEECH';
+  String get settingsSpeech => 'Speech';
 
   @override
   String get settingsSpeechOn =>

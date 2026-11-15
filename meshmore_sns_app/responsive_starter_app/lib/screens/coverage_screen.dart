@@ -13,7 +13,7 @@ import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 
-/// Settings → Tools → Coverage, or the field screen.
+/// Settings → Location → Coverage, or the field screen.
 ///
 /// The screen says exactly what the record is: pings this device sent, and
 /// whether anything answered them. It is not a map of the mesh, and the copy

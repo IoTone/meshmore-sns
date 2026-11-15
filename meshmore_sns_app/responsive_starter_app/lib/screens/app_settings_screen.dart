@@ -12,13 +12,13 @@ import '../gen/app_localizations.dart';
 import '../l10n/locale_controller.dart';
 import '../meshcore/airtime.dart';
 import '../meshcore/block_store.dart';
-import '../media/media_prefs.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../notifications/notifier.dart';
 import '../perms/battery_exemption.dart';
 import '../perms/permissions_service.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
+import '../ui/radio_connection_facts.dart';
 import '../ui/mm_collapsible.dart';
 import '../ui/mm_confirm.dart';
 import '../ui/mm_collapse_controller.dart';
@@ -300,7 +300,8 @@ class AppSettingsScreen extends StatelessWidget {
               trailing: Text(
                 switch (mc.airtimeLeft) {
                   final Duration left => l.airtimeLeftValue(
-                      _mmShort(left), _mmShort(mc.airtimeBudget!)),
+                      mmShortDuration(left),
+                      mmShortDuration(mc.airtimeBudget!)),
                   null => l.airtimePolicyOwned,
                 },
                 style: TextStyle(
@@ -421,13 +422,10 @@ class AppSettingsScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/settings/channels'),
             ),
-            // Voice lives on Settings → Chat & media, with everything else a
-            // message is. This row was a second door to the same page.
+            // Voice lives in Reading and sound above, with the other reading
+            // preferences. This row was a second door to the same page.
             SizedBox(height: context.skin.space.sectionGap),
             MmSectionHeader(l.settingsAppGroupData),
-            // Colour or grey. A mesh photo has one budget and grey is a third
-            // of the data, so grey is the default and this is the way back.
-            _PhotoColorSwitch(cs: cs, l: l),
             // R36 — Auto-publish location. Lives here so users find
             // it under "App settings" rather than buried in Device
             // config; the device-side advert policy is separate.
@@ -523,12 +521,6 @@ class AppSettingsScreen extends StatelessWidget {
   /// The two policies, with what each one claims. A list rather than a switch
   /// because "no limit" is a statement about the frequency, not a preference
   /// about speed, and it needs a sentence to be safe.
-  /// Seconds or minutes, whichever reads shorter.
-  static String _mmShort(Duration d) {
-    final int s = d.inSeconds;
-    return s < 60 ? '${s}s' : '${(s / 60).toStringAsFixed(1)} min';
-  }
-
   Future<void> _pickAirtimePolicy(
       BuildContext ctx, MeshcoreController mc, AppLocalizations l) async {
     final AirtimePolicy? chosen = await showMmPicker<AirtimePolicy>(
@@ -836,59 +828,6 @@ class _RadioPinBlockState extends State<_RadioPinBlock> {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// The colour-photo switch, on its own so the page stays stateless.
-///
-/// It reads the preference once on mount and writes on every change. A
-/// `FutureBuilder` would rebuild the row on each notify and lose the thumb,
-/// and converting the whole settings page to a stateful widget for one switch
-/// would be a bigger change than the switch.
-class _PhotoColorSwitch extends StatefulWidget {
-  const _PhotoColorSwitch({required this.cs, required this.l});
-
-  final ColorScheme cs;
-  final AppLocalizations l;
-
-  @override
-  State<_PhotoColorSwitch> createState() => _PhotoColorSwitchState();
-}
-
-class _PhotoColorSwitchState extends State<_PhotoColorSwitch> {
-  bool _color = false;
-  bool _loaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    MediaPrefs.colorPhotos().then((bool v) {
-      if (!mounted) return;
-      setState(() {
-        _color = v;
-        _loaded = true;
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SwitchListTile(
-              dense: true,
-      key: const ValueKey<String>('settings-photo-color'),
-      title: Text(widget.l.settingsPhotoColorTitle),
-      subtitle: Text(widget.l.settingsPhotoColorSub,
-          style: TextStyle(color: widget.cs.onSurfaceVariant)),
-      value: _color,
-      // Off until the preference has been read: a thumb that jumps after the
-      // first frame is worse than a moment of "off".
-      onChanged: !_loaded
-          ? null
-          : (bool v) async {
-              setState(() => _color = v);
-              await MediaPrefs.setColorPhotos(v);
-            },
     );
   }
 }

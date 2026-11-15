@@ -35,16 +35,18 @@ class RadioConnectionScreen extends StatelessWidget {
             // section header above it said "radio health" twice in the same
             // breath — the duplicated label rule the dashboard obeys.
             Padding(
-              padding: EdgeInsets.fromLTRB(context.skin.space.step(4),
-                  context.skin.space.step(3), context.skin.space.step(4), 0),
+              padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge,
+                  context.skin.space.step(3), context.skin.space.screenEdge, 0),
               child: const RadioHealthBlock(),
             ),
             // The door to the other half, at the bottom and named for what is
             // behind it. A developer console is not a continuation of a
             // connection screen; it is a different place, and it says so.
             Padding(
+              // No horizontal padding: the ListTile already carries the page
+              // edge, and a 2 dp wrapper put this row 2 dp right of every other
+              // row on the screen.
               padding: EdgeInsets.symmetric(
-                  horizontal: context.skin.space.step(1),
                   vertical: context.skin.space.step(3)),
               // A navigating row, like every other row that leaves a settings
               // screen: [MmPickerTile] is for a row whose trailing slot states a

@@ -46,7 +46,7 @@ class RadioConnectionFacts extends StatelessWidget {
     // state, radio, battery, link, last datagram, paired.
     Widget fact(String text) => Padding(
           padding: EdgeInsets.fromLTRB(
-              skin.space.step(4), skin.space.step(1), skin.space.step(4),
+              skin.space.screenEdge, skin.space.step(1), skin.space.screenEdge,
               skin.space.step(1)),
           child: Text(text,
               style: TextStyle(
@@ -59,7 +59,7 @@ class RadioConnectionFacts extends StatelessWidget {
     // only line a reader can act on.
     Widget fault(String text) => Padding(
           padding: EdgeInsets.fromLTRB(
-              skin.space.step(4), skin.space.step(2), skin.space.step(4),
+              skin.space.screenEdge, skin.space.step(2), skin.space.screenEdge,
               skin.space.step(1)),
           child: Text(text,
               style: TextStyle(
@@ -156,7 +156,7 @@ class RadioConnectionFacts extends StatelessWidget {
         if (showActions) ...<Widget>[
           SizedBox(height: skin.space.step(2)),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: skin.space.step(4)),
+            padding: EdgeInsets.symmetric(horizontal: skin.space.screenEdge),
             // Three peer actions, one control. They used to be a filled button,
             // an outlined button with an icon and an outlined button without
             // one, side by side: three weights for three peers, which reads as a
@@ -204,8 +204,8 @@ class RadioConnectionFacts extends StatelessWidget {
         // this is.
         if (mc.radioChanged)
           Padding(
-            padding: EdgeInsets.fromLTRB(skin.space.step(4), skin.space.step(2),
-                skin.space.step(4), skin.space.step(1)),
+            padding: EdgeInsets.fromLTRB(skin.space.screenEdge, skin.space.step(2),
+                skin.space.screenEdge, skin.space.step(1)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[

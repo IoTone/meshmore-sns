@@ -93,6 +93,14 @@
   "dashForestCanopy": "Canopy",
   "dashForestNoRoutes": "No learned routes yet. The MeshCore radio has not been told how to reach anyone.",
   "dashForestContacts": "Contacts",
+  "dashForestDepthSemantics": "Mesh depth, {levels} levels",
+  "@dashForestDepthSemantics": {
+    "placeholders": {
+      "levels": {
+        "type": "int"
+      }
+    }
+  },
   "dashNervLink": "Link",
   "dashNervNode": "Node",
   "dashNervRegion": "Region",
@@ -269,11 +277,11 @@
   "settingsTelemetryPoll": "Fetch node temperature and altitude",
   "settingsTelemetryPollOn": "Costs a little airtime",
   "settingsTelemetryPollOff": "Nothing is asked automatically. Open a node to ask it once.",
-  "settingsLanguage": "LANGUAGE",
+  "settingsLanguage": "Language",
   "settingsLanguageSystem": "System default",
   "settingsLanguageEnglish": "English",
   "settingsLanguageJapanese": "日本語",
-  "settingsSpeech": "SPEECH",
+  "settingsSpeech": "Speech",
   "settingsSpeechOn": "Text-to-speech ON · per-channel toggle in Chat",
   "settingsSpeechOff": "Text-to-speech OFF (default) · reads channel messages",
   "settingsSpeechMuted": "Speech is on but muted with the alert sounds.",

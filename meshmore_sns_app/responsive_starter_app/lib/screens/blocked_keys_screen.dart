@@ -34,14 +34,15 @@ class BlockedKeysScreen extends StatelessWidget {
       appBar: AppBar(title: Text(l.blockedKeysTitle)),
       body: MmScaffold(
         child: ListView(
-          padding: EdgeInsets.zero,
+          // The page edge lives here, once. The rows below are zero-padded so
+          // they share it, and the paragraphs add nothing of their own: the
+          // page used to draw its text at 8 dp and its rows at 16.
+          padding: skin.space.padScreen,
           children: <Widget>[
             Padding(
-              padding: EdgeInsets.fromLTRB(
-                skin.space.step(4),
-                skin.space.step(3),
-                skin.space.step(4),
-                skin.space.step(2),
+              padding: EdgeInsets.only(
+                top: skin.space.step(3),
+                bottom: skin.space.step(2),
               ),
               child: Text(
                 l.blockedKeysSubtitle(keys.length),
@@ -52,30 +53,24 @@ class BlockedKeysScreen extends StatelessWidget {
               ),
             ),
             if (store.unreadable)
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: skin.space.step(4)),
-                child: Text(
-                  l.blockedKeysUnreadable,
-                  style: TextStyle(
-                    color: cs.error,
-                    fontSize: skin.type.sizeSm,
-                  ),
+              Text(
+                l.blockedKeysUnreadable,
+                style: TextStyle(
+                  color: cs.error,
+                  fontSize: skin.type.sizeSm,
                 ),
               )
             else if (!store.persisted)
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: skin.space.step(4)),
-                child: Text(
-                  l.blockedKeysNotPersisted,
-                  style: TextStyle(
-                    color: cs.error,
-                    fontSize: skin.type.sizeSm,
-                  ),
+              Text(
+                l.blockedKeysNotPersisted,
+                style: TextStyle(
+                  color: cs.error,
+                  fontSize: skin.type.sizeSm,
                 ),
               ),
             if (keys.isEmpty)
               Padding(
-                padding: EdgeInsets.all(skin.space.step(4)),
+                padding: EdgeInsets.symmetric(vertical: skin.space.step(4)),
                 child: Text(
                   l.blockedKeysEmpty,
                   style: TextStyle(
@@ -88,6 +83,7 @@ class BlockedKeysScreen extends StatelessWidget {
               for (final BlockedKey k in keys)
                 ListTile(
                   key: ValueKey<String>('blocked-${k.pubKeyHex}'),
+                  contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.block, color: cs.error),
                   title: Text(k.name ?? l.blockedKeysUnknownName),
                   subtitle: Text(
@@ -119,7 +115,7 @@ class BlockedKeysScreen extends StatelessWidget {
                 ),
             if (store.atCapacity)
               Padding(
-                padding: EdgeInsets.all(skin.space.step(4)),
+                padding: EdgeInsets.symmetric(vertical: skin.space.step(2)),
                 child: Text(
                   l.blockedKeysCapacity(BlockStore.capacity),
                   style: TextStyle(
@@ -130,7 +126,7 @@ class BlockedKeysScreen extends StatelessWidget {
               ),
             const Divider(height: 1),
             Padding(
-              padding: EdgeInsets.all(skin.space.step(4)),
+              padding: EdgeInsets.symmetric(vertical: skin.space.step(4)),
               child: Text(
                 l.blockedKeysCannotStop,
                 style: TextStyle(

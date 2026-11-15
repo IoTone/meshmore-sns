@@ -1361,22 +1361,37 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
   }
 
   Future<void> _applyTelemetryMode() async {
-    await widget.mc.setTelemetryMode(_telPacked);
-    _snack();
+    final AppLocalizations l = AppLocalizations.of(context);
+    try {
+      await widget.mc.setTelemetryMode(_telPacked);
+      _snack();
+    } catch (e) {
+      // The write can fail on the link, and `send` rethrows. Without this the
+      // failure was an unhandled async exception: no toast, and the row looked
+      // applied because the switch had already moved.
+      _snack(l.deviceToastSendFailed('$e'));
+    }
   }
 
   Future<void> _applyMultiAcks(int v) async {
+    final AppLocalizations l = AppLocalizations.of(context);
     setState(() => _multiAcks = v);
-    await widget.mc.setMultiAcks(v);
-    _snack();
+    try {
+      await widget.mc.setMultiAcks(v);
+      _snack();
+    } catch (e) {
+      _snack(l.deviceToastSendFailed('$e'));
+    }
   }
 
-  void _snack() {
+  /// The one confirmation this block shows. A failure passes its own sentence,
+  /// because "OTHER PARAMS sent" over a write that did not land is a lie.
+  void _snack([String? message]) {
     if (!mounted) return;
     final AppLocalizations l = AppLocalizations.of(context);
     ScaffoldMessenger.maybeOf(context)
       ?..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text(l.otherSentSnack)));
+      ..showSnackBar(SnackBar(content: Text(message ?? l.otherSentSnack)));
   }
 
   @override
@@ -1401,8 +1416,13 @@ class _OtherParamsEditorState extends State<_OtherParamsEditor> {
           value: widget.si.manualAddContacts,
           onChanged: widget.enabled
               ? (bool v) async {
-                  await widget.mc.setManualAddContacts(v);
-                  _snack();
+                  final AppLocalizations l = AppLocalizations.of(context);
+                  try {
+                    await widget.mc.setManualAddContacts(v);
+                    _snack();
+                  } catch (e) {
+                    _snack(l.deviceToastSendFailed('$e'));
+                  }
                 }
               : null,
         ),

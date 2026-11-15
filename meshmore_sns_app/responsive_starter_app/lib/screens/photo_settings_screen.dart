@@ -9,11 +9,12 @@ import '../media/media_mode.dart';
 import '../media/media_prefs.dart';
 import '../ui/mm_components.dart';
 
-/// The photo rows, drawn by Settings → Chat & media.
+/// The photo rows, drawn by Settings → Chat & photos.
 ///
 /// A file rather than a page: the page was three rows of App settings promoted to
-/// their own screen, and then folded into Chat & media with voice and history,
-/// which is where a reader looks for them.
+/// their own screen, and then folded into Chat & photos with history, which is
+/// where a reader looks for them. Spoken voice is not here: it is a reading
+/// preference and lives in App settings.
 
 /// Photo mode: preview, preview plus the full picture on request, or neural.
 ///
@@ -178,7 +179,23 @@ class AeicCodecRow extends StatelessWidget {
 /// Colour or grey. A mesh photo has one budget and grey is a third of the data,
 /// so grey is the default and this is the way back.
 class PhotoColorSwitch extends StatefulWidget {
-  const PhotoColorSwitch({super.key});
+  const PhotoColorSwitch({
+    super.key,
+    this.secondary,
+    this.contentPadding = EdgeInsets.zero,
+    this.tileKey = const ValueKey<String>('settings-photo-color'),
+  });
+
+  /// The leading icon. Both surfaces pass one, because a row without it puts
+  /// its title in the icon column, 16 dp left of every title around it.
+  final Widget? secondary;
+
+  /// The row's own padding. Zero by default, because both surfaces that draw
+  /// this row put it inside a list that already supplies the page edge.
+  final EdgeInsetsGeometry? contentPadding;
+
+  /// The key on the row itself, so a second surface can name its own row.
+  final Key tileKey;
 
   @override
   State<PhotoColorSwitch> createState() => PhotoColorSwitchState();
@@ -204,9 +221,10 @@ class PhotoColorSwitchState extends State<PhotoColorSwitch> {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     return SwitchListTile(
-      key: const ValueKey<String>('settings-photo-color'),
+      key: widget.tileKey,
       dense: true,
-      contentPadding: EdgeInsets.zero,
+      contentPadding: widget.contentPadding,
+      secondary: widget.secondary,
       title: Text(l.settingsPhotoColorTitle),
       subtitle: Text(l.settingsPhotoColorSub,
           style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),

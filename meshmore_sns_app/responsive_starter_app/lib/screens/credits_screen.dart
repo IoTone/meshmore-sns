@@ -203,7 +203,8 @@ const List<Credit> kNativeCredits = <Credit>[
         'The AEIC-SE neural image codec models (three ONNX graphs and the rANS '
         'CDF table) are published at huggingface.co/zjs81/aeic-se-onnx under the '
         'MIT licence. They are downloaded from that address only when the reader '
-        'installs the codec from App settings, and deleted when they remove it.',
+        'installs the codec from Settings → Chat & photos, and deleted when they\n'
+        'remove it.',
   ),
   Credit(
     name: 'libavif',

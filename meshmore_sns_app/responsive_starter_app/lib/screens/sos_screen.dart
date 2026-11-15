@@ -161,7 +161,7 @@ class _SosScreenState extends State<SosScreen> {
     return Scaffold(
       // One control on this screen raises an alarm, and the app bar carries
       // nothing beside the title: a clock-shaped action here read as a second
-      // way to send (owner, 2026-11-05). Check-in is in Settings -> Tools, so
+      // way to send (owner, 2026-11-05). Check-in is in Settings -> Safety, so
       // it is still reachable without being met while raising an alarm.
       appBar: AppBar(title: Text(l.sosTitle)),
       body: MmScaffold(

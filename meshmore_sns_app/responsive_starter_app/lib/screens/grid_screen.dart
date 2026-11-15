@@ -173,22 +173,21 @@ class GridScreen extends StatefulWidget {
   /// **Region** stop is special: its scale is computed at runtime to
   /// frame the farthest known node (see `_effectiveScaleKm`); the km
   /// here is only a fallback when no located nodes are visible.
-  static const List<({String label, double km})> rangeStops =
-      <({String label, double km})>[
-    (label: 'Room', km: 0.025),
-    (label: 'Home', km: 0.10),
-    (label: 'Block', km: 0.5),
-    (label: 'Neighborhood', km: 1.0),
-    (label: 'Area', km: 2.0),
-    (label: 'Wide', km: 5.0),
-    (label: 'City', km: 25.0),
-    (label: 'Region', km: 300.0),
+  static const List<({double km})> rangeStops = <({double km})>[
+    (km: 0.025),
+    (km: 0.10),
+    (km: 0.5),
+    (km: 1.0),
+    (km: 2.0),
+    (km: 5.0),
+    (km: 25.0),
+    (km: 300.0),
     // Auto frames whatever is actually in hand instead of a fixed window:
     // the bulk of the located nodes sit just inside the rim and the outliers
     // clamp to it. Appended rather than inserted, because `scaleIndex` is
     // persisted and an index that changes meaning would silently re-scale
     // every stored preference.
-    (label: 'Auto', km: 0),
+    (km: 0),
   ];
 
   /// The index of the [rangeStops] entry that frames the mesh automatically.

@@ -151,6 +151,8 @@ class _PairRadioScreenState extends State<PairRadioScreen> {
     // after it is the async-gap lint, and the reviewer is right.
     final CueService? cue = mounted ? context.cue : null;
     await _scanSub?.cancel();
+    // The cancel is an await, and the screen can be popped while it runs.
+    if (!mounted) return;
     // The scanning drone the packs have always carried: a held low tone that
     // loops for the whole window, which is what tells a reader the phone is
     // still looking when the list is empty. Silent until now because nothing

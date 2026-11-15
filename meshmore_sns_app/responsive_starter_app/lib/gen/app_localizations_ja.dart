@@ -145,6 +145,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashForestContacts => '連絡先';
 
   @override
+  String dashForestDepthSemantics(int levels) {
+    return 'メッシュの深さ、$levels 段階';
+  }
+
+  @override
   String get dashNervLink => 'リンク';
 
   @override

@@ -120,10 +120,13 @@ class _ChatSearchScreenState extends State<ChatSearchScreen> {
         child: Column(
           children: <Widget>[
             Padding(
+              // The page edge, not a smaller one: the results below are ListTiles
+              // at 16 dp, and a field 8 dp left of the list it filters reads as a
+              // different column.
               padding: EdgeInsets.fromLTRB(
-                skin.space.step(4),
+                skin.space.screenEdge,
                 skin.space.step(3),
-                skin.space.step(4),
+                skin.space.screenEdge,
                 skin.space.step(2),
               ),
               child: TextField(

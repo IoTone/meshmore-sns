@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 
 import '../app/demo_mode.dart';
 import '../gen/app_localizations.dart';
-import '../media/media_prefs.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../perms/first_run_controller.dart';
 import '../perms/permissions_service.dart';
@@ -15,6 +14,7 @@ import '../theme/mm_tokens.dart';
 import '../theme/theme_controller.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_shape.dart';
+import 'photo_settings_screen.dart';
 import '../util/mm_format.dart';
 
 /// The first run, as three decisions rather than one wall of prose.
@@ -614,56 +614,11 @@ class _PrefsPage extends StatelessWidget {
             value: fmt.clock24,
             onChanged: fmt.setClock24,
           ),
-          _PhotoColourSwitch(l: l),
+          const PhotoColorSwitch(
+            tileKey: ValueKey<String>('first-run-photo-colour'),
+            secondary: Icon(Icons.photo_camera_outlined),
+          ),
       ],
-    );
-  }
-}
-
-/// Colour or grey, on its own so the page stays stateless.
-class _PhotoColourSwitch extends StatefulWidget {
-  const _PhotoColourSwitch({required this.l});
-
-  final AppLocalizations l;
-
-  @override
-  State<_PhotoColourSwitch> createState() => _PhotoColourSwitchState();
-}
-
-class _PhotoColourSwitchState extends State<_PhotoColourSwitch> {
-  bool _color = false;
-  bool _loaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    MediaPrefs.colorPhotos().then((bool v) {
-      if (!mounted) return;
-      setState(() {
-        _color = v;
-        _loaded = true;
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    return SwitchListTile(
-      key: const ValueKey<String>('first-run-photo-colour'),
-      contentPadding: EdgeInsets.zero,
-      secondary: const Icon(Icons.photo_camera_outlined),
-      title: Text(widget.l.settingsPhotoColorTitle),
-      subtitle: Text(widget.l.settingsPhotoColorSub,
-          style: TextStyle(color: cs.onSurfaceVariant)),
-      // Off until the preference has been read, so the thumb does not jump.
-      value: _color,
-      onChanged: !_loaded
-          ? null
-          : (bool v) async {
-              setState(() => _color = v);
-              await MediaPrefs.setColorPhotos(v);
-            },
     );
   }
 }
