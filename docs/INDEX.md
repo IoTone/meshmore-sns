@@ -86,6 +86,8 @@ Role vocabulary: SPEC OF RECORD, PLAN, AUDIT, STATUS, SUPERSEDED, HISTORICAL, OT
 | `notes/media-audit.md` | AUDIT | Photo and voice, both directions | current |
 | `notes/instrument-modes-audit.md` | AUDIT | The grid's instrument views: tree, weather, cells, elevation | current |
 | `notes/bottom-edge-audit.md` | AUDIT | The bottom inset, measured on the handset | current |
+| `docs/SPEC-SCOPE-AUDIT.md` | AUDIT | Every spec row that asks for something nothing needs, judged keep / cut / covered, plus the 19 statements that are false against the code, 2026-11-15 | current |
+| `docs/APP-HELP-SHOT-LIST.md` | PLAN | The screenshots the in-app reference still needs, with the screen, the state and the caption for each | current |
 
 ### Withdrawn architecture
 
