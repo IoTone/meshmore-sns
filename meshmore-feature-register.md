@@ -482,6 +482,30 @@ and the ~1 GB bundle. The upstream gate `kImageCodecBitstreamPathAvailable` is
 claims false, so the path is live there. This remains a separate piece of work
 with a stated size rather than an unknown.
 
+**Measured 2026-11-15, so the size is a number rather than an estimate.** The
+bundle at `huggingface.co/zjs81/aeic-se-onnx` is **1007 MB**: the decoder graph
+3.07 MB plus its external weights **872.90 MB**, the send-side entropy graph
+60.51 MB, the decode-side entropy graph 67.26 MB, and the CDF table 0.81 MB. The
+upstream code is **5095 lines** across ten files (`image_codec_service.dart`
+1624, `image_codec_backend.dart` 885, `image_codec_entropy.dart` 678,
+`image_codec_session_io.dart` 628, `rans_coder.dart` 498, `entropy_tables.dart`
+287, `image_codec_file_store_io.dart` 262, plus three small stubs and a settings
+store), MIT licensed, and it depends on `flutter_onnxruntime` (1.9.0, published
+2026-10-06, Android among its six platforms) and `http`.
+
+The port order that keeps each step verifiable without the model:
+1. `rans_coder.dart` and `entropy_tables.dart` are pure Dart with no ONNX in
+   them, so they port first and are proved against synthetic CDFs and the
+   container format's own round trip.
+2. `image_codec_entropy.dart` needs the 813 KB CDF table and the two entropy
+   graphs, so it comes second and is proved bit-exact against the upstream
+   vectors.
+3. The decoder graph and the worker isolate come last, because they are the
+   2.16 GiB peak and the part that has to be evicted on memory pressure.
+
+What this app does in the meantime is unchanged: it recognises `0xAE1C` and
+counts it as a picture in a codec this build does not carry.
+
 ### First run (2026-11-15)
 
 | Row | State |
