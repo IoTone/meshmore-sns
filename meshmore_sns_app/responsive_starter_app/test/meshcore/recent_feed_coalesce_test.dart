@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
+import 'package:meshmore_sns_app/meshcore/mesh_event.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 
 import 'fake_transport.dart';
@@ -64,5 +65,24 @@ void main() {
       expect(ctrl.recentEvents.length, first + 1,
           reason: 'a battery that dropped is a fact worth a new row');
     });
+    test('a contact sync is one line, not one per contact', () async {
+      // The radio streams its whole table on connect, one frame per contact, so
+      // a 350-entry table wrote 350 rows in the same second and buried every
+      // message the feed exists to show.
+      final int before = ctrl.recentEvents.length;
+      for (int i = 0; i < 6; i++) {
+        fake.emit(contactFrame(name: 'Node $i'));
+        await Future<void>.delayed(Duration.zero);
+      }
+      final int added = ctrl.recentEvents.length - before;
+      expect(added, lessThanOrEqualTo(1),
+          reason: 'six contacts in a row is one line about the table');
+      final List<MeshEvent> feed = ctrl.recentEvents;
+      if (added == 1) {
+        expect(feed.first.kind, MeshEventKind.contactBatch);
+        expect(feed.first.args['count'], '6');
+      }
+    });
   });
 }
+

@@ -7004,4 +7004,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapsEtaUnknown => 'estimating the time left';
+
+  @override
+  String eventContactBatch(int count) {
+    return 'the MeshCore radio\'s contact table loaded · $count contacts';
+  }
 }

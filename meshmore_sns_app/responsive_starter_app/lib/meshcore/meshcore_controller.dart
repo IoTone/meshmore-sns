@@ -2197,6 +2197,23 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// Messages and faults always append: two identical messages are two
   /// messages, and a repeated fault is a repeated fault.
   void _pushEvent(MeshEvent ev) {
+    // A contact sync is one event, not one per frame: the radio streams its
+    // table on connect, and a row for each entry buried every message the feed
+    // exists to show.
+    if (ev.kind == MeshEventKind.contact) {
+      final MeshEvent? last = _events.isEmpty ? null : _events.last;
+      if (last != null &&
+          (last.kind == MeshEventKind.contact ||
+              last.kind == MeshEventKind.contactBatch)) {
+        final int n = int.tryParse(last.args['count'] ?? '') ?? 1;
+        _events[_events.length - 1] = MeshEvent(
+          kind: MeshEventKind.contactBatch,
+          args: <String, String>{'count': '${n + 1}'},
+          at: ev.at,
+        );
+        return;
+      }
+    }
     if (_stateKinds.contains(ev.kind)) {
       // The last row of this KIND, not the last row overall. The radio polls
       // battery and self-info on the same timer, so they alternate and two

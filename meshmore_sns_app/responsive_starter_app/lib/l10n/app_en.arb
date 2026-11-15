@@ -4794,5 +4794,14 @@
       }
     }
   },
-  "mapsEtaUnknown": "estimating the time left"
+  "mapsEtaUnknown": "estimating the time left",
+  "eventContactBatch": "the MeshCore radio's contact table loaded · {count} contacts",
+  "@eventContactBatch": {
+    "description": "The feed's one line for a contact sync, which arrives as one frame per contact.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

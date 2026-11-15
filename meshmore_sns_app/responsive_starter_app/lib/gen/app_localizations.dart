@@ -11655,6 +11655,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'estimating the time left'**
   String get mapsEtaUnknown;
+
+  /// The feed's one line for a contact sync, which arrives as one frame per contact.
+  ///
+  /// In en, this message translates to:
+  /// **'the MeshCore radio\'s contact table loaded · {count} contacts'**
+  String eventContactBatch(int count);
 }
 
 class _AppLocalizationsDelegate

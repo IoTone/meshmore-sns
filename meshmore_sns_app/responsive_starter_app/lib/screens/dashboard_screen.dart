@@ -506,6 +506,8 @@ String _eventLine(AppLocalizations l, MeshEvent e) {
       l.eventChannelMsg(a['channel'] ?? '?', a['text'] ?? ''),
     MeshEventKind.dm => l.eventDm(a['text'] ?? ''),
     MeshEventKind.contact => l.eventContact(a['name'] ?? '?'),
+    MeshEventKind.contactBatch =>
+      l.eventContactBatch(int.tryParse(a['count'] ?? '') ?? 0),
     MeshEventKind.battery => l.eventBattery(a['volts'] ?? '?'),
     MeshEventKind.deviceError =>
       l.eventDeviceError(a['reason'] ?? a['code'] ?? '?'),

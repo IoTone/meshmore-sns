@@ -3093,5 +3093,13 @@
       }
     }
   },
-  "mapsEtaUnknown": "残り時間を計算中"
+  "mapsEtaUnknown": "残り時間を計算中",
+  "eventContactBatch": "MeshCore 無線機の連絡先が読み込まれました · {count} 件",
+  "@eventContactBatch": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

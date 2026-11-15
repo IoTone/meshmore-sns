@@ -6726,4 +6726,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mapsEtaUnknown => '残り時間を計算中';
+
+  @override
+  String eventContactBatch(int count) {
+    return 'MeshCore 無線機の連絡先が読み込まれました · $count 件';
+  }
 }
