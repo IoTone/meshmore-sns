@@ -3142,6 +3142,12 @@
       }
     }
   },
+  "airtimeCutoffTitle": "Stop at the limit",
+  "airtimeCutoffSubtitle": "Refuse a send that would pass the hourly limit instead of only warning. One message in a quiet hour is worth more than twenty in a busy one.",
+  "airtimeLeftInHour": "Time left this hour",
+  "airtimeLeftValue": "$left of $budget",
+  "@airtimeLeftValue": {"placeholders": {"left": {"type": "String"}, "budget": {"type": "String"}}},
+  "airtimeCutoffOff": "The meter still counts. Nothing is refused.",
   "settingsAirtimeTitle": "Transmit time limit",
   "settingsAirtimeHelp": "Every frame this app sends is counted. At the limit it stops until the hour rolls on. The radio keeps its own legal limit either way.",
   "airtimePolicyOnePercent": "1 % duty cycle",

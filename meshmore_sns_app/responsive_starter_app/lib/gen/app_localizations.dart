@@ -8044,6 +8044,36 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 send refused by the limit} other{{count} sends refused by the limit}}'**
   String airtimeRefusedCount(int count);
 
+  /// No description provided for @airtimeCutoffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop at the limit'**
+  String get airtimeCutoffTitle;
+
+  /// No description provided for @airtimeCutoffSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Refuse a send that would pass the hourly limit instead of only warning. One message in a quiet hour is worth more than twenty in a busy one.'**
+  String get airtimeCutoffSubtitle;
+
+  /// No description provided for @airtimeLeftInHour.
+  ///
+  /// In en, this message translates to:
+  /// **'Time left this hour'**
+  String get airtimeLeftInHour;
+
+  /// No description provided for @airtimeLeftValue.
+  ///
+  /// In en, this message translates to:
+  /// **'\$left of \$budget'**
+  String airtimeLeftValue(String left, String budget);
+
+  /// No description provided for @airtimeCutoffOff.
+  ///
+  /// In en, this message translates to:
+  /// **'The meter still counts. Nothing is refused.'**
+  String get airtimeCutoffOff;
+
   /// No description provided for @settingsAirtimeTitle.
   ///
   /// In en, this message translates to:

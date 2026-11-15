@@ -258,6 +258,39 @@ class AppSettingsScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => _pickAirtimePolicy(context, mc, l),
             ),
+            // The cutoff the owner asked for: the policy above says what the
+            // channel's budget is, this says whether this app enforces it, and
+            // the line under it is the only place the time left in the hour is
+            // stated.
+            SwitchListTile(
+              key: const ValueKey<String>('settings-airtime-cutoff'),
+              secondary: const Icon(Icons.hourglass_bottom),
+              title: Text(l.airtimeCutoffTitle),
+              subtitle: Text(
+                mc.airtimeCutoff
+                    ? l.airtimeCutoffSubtitle
+                    : l.airtimeCutoffOff,
+                style: TextStyle(color: cs.onSurfaceVariant),
+              ),
+              value: mc.airtimeCutoff,
+              onChanged: (bool v) => mc.setAirtimeCutoff(v),
+            ),
+            ListTile(
+              key: const ValueKey<String>('settings-airtime-left'),
+              title: Text(l.airtimeLeftInHour),
+              trailing: Text(
+                switch (mc.airtimeLeft) {
+                  final Duration left => l.airtimeLeftValue(
+                      _mmShort(left), _mmShort(mc.airtimeBudget!)),
+                  null => l.airtimePolicyOwned,
+                },
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontFeatures: const <FontFeature>[
+                      FontFeature.tabularFigures()
+                    ]),
+              ),
+            ),
             SizedBox(height: context.skin.space.sectionGap),
             MmSectionHeader(l.settingsAppGroupReading),
             // Units and clock. The app had no such setting at all: distances were
@@ -456,6 +489,12 @@ class AppSettingsScreen extends StatelessWidget {
   /// The two policies, with what each one claims. A list rather than a switch
   /// because "no limit" is a statement about the frequency, not a preference
   /// about speed, and it needs a sentence to be safe.
+  /// Seconds or minutes, whichever reads shorter.
+  static String _mmShort(Duration d) {
+    final int s = d.inSeconds;
+    return s < 60 ? '${s}s' : '${(s / 60).toStringAsFixed(1)} min';
+  }
+
   Future<void> _pickAirtimePolicy(
       BuildContext ctx, MeshcoreController mc, AppLocalizations l) async {
     final AirtimePolicy? chosen = await showMmPicker<AirtimePolicy>(

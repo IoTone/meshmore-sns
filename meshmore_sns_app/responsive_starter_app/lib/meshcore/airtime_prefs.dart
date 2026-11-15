@@ -27,6 +27,14 @@ abstract final class AirtimePolicyPrefs {
   /// rolling hour, not a wall-clock one.
   static const String _kSpend = 'mm.airtime.spend';
 
+  /// Whether the meter refuses a send past the budget, or only counts it.
+  ///
+  /// The owner asked for a cutoff a reader can switch on, with the time left in
+  /// the hour stated under it (2026-11-06). It is separate from the policy on
+  /// purpose: the policy says what the channel's budget is, and the cutoff says
+  /// whether this app enforces it.
+  static const String _kCutoff = 'mm.airtime.cutoff';
+
   static const AirtimePolicy fallback = AirtimePolicy.onePercentDutyCycle;
 
   /// The user's policy, or the band's own rule when they never chose.
@@ -57,6 +65,18 @@ abstract final class AirtimePolicyPrefs {
   static Future<void> setSpend(String snapshot) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
     await Prefs.setString(p, _kSpend, snapshot);
+  }
+
+  /// Default on, because a meter that only counts leaves the reader to do the
+  /// arithmetic an hour later.
+  static Future<bool> cutoff() async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    return p.getBool(_kCutoff) ?? true;
+  }
+
+  static Future<void> setCutoff(bool value) async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    await p.setBool(_kCutoff, value);
   }
 
   static Future<void> setPolicy(AirtimePolicy value) async {

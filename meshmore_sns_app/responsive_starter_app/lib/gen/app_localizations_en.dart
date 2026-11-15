@@ -4738,6 +4738,24 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get airtimeCutoffTitle => 'Stop at the limit';
+
+  @override
+  String get airtimeCutoffSubtitle =>
+      'Refuse a send that would pass the hourly limit instead of only warning. One message in a quiet hour is worth more than twenty in a busy one.';
+
+  @override
+  String get airtimeLeftInHour => 'Time left this hour';
+
+  @override
+  String airtimeLeftValue(String left, String budget) {
+    return '\$left of \$budget';
+  }
+
+  @override
+  String get airtimeCutoffOff => 'The meter still counts. Nothing is refused.';
+
+  @override
   String get settingsAirtimeTitle => 'Transmit time limit';
 
   @override

@@ -130,6 +130,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         _airtime = airtimeMeter ?? AirtimeMeter() {
     unawaited(_loadAirtimePolicy());
     unawaited(_loadAirtimeSpend());
+    unawaited(_loadAirtimeCutoff());
     _statesSub = _connection.states.listen((MeshcoreConnectionState s) {
       _state = s;
       notifyListeners();
@@ -1325,6 +1326,26 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
 
   AirtimePolicy get airtimePolicy => _airtime.policy;
 
+  /// Whether the meter refuses a send past the budget or only counts it.
+  bool get airtimeCutoff => _airtimeCutoff;
+  bool _airtimeCutoff = true;
+
+  /// Time left in the rolling hour, or null when the policy has no cap.
+  Duration? get airtimeLeft {
+    final Duration? budget = _airtime.budget;
+    if (budget == null) return null;
+    final Duration left = budget - _airtime.spent;
+    return left.isNegative ? Duration.zero : left;
+  }
+
+  Future<void> setAirtimeCutoff(bool value) async {
+    _cutoffChosen = true;
+    if (_airtimeCutoff == value) return;
+    _airtimeCutoff = value;
+    notifyListeners();
+    await AirtimePolicyPrefs.setCutoff(value);
+  }
+
   /// Frames the meter refused since launch. A refusal is not a radio error:
   /// the frame never left the phone.
   int get airtimeRefusals => _airtimeRefusals;
@@ -1335,7 +1356,20 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
 
   /// Changes the policy and persists it. The meter keeps its history: what has
   /// already been spent is a fact about the hour, not about the policy.
+  /// True once the reader has set the switch, so the load that races the
+  /// constructor cannot undo their choice.
+  bool _cutoffChosen = false;
+
+  Future<void> _loadAirtimeCutoff() async {
+    final bool stored = await AirtimePolicyPrefs.cutoff();
+    if (_cutoffChosen) return;
+    if (_airtimeCutoff == stored) return;
+    _airtimeCutoff = stored;
+    notifyListeners();
+  }
+
   Future<void> setAirtimePolicy(AirtimePolicy value) async {
+    _policyChosen = true;
     if (_airtime.policy == value) return;
     _airtime.policy = value;
     notifyListeners();
@@ -1362,10 +1396,14 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return airtimeEstimatorFor(null);
   }
 
+  bool _policyChosen = false;
+
   Future<void> _loadAirtimePolicy() async {
     try {
-      _airtime.policy =
+      final AirtimePolicy stored =
           await AirtimePolicyPrefs.policy(frequencyMhz: selfInfo?.frequencyMhz);
+      if (_policyChosen || _airtime.policy == stored) return;
+      _airtime.policy = stored;
       notifyListeners();
     } catch (_) {
       // No preferences backend (a test, a host without the plugin): the
@@ -1495,7 +1533,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   Future<void> send(Uint8List frame, {bool gated = false}) async {
     final bool ota = frame.isNotEmpty && isOverTheAir(frame[0]);
     final Duration cost = ota ? airtimeEstimator.forBytes(frame.length) : Duration.zero;
-    if (gated && !_airtime.quote(cost).allowed) {
+    if (gated && _airtimeCutoff && !_airtime.quote(cost).allowed) {
       _airtimeRefusals++;
       notifyListeners();
       throw AirtimeRefused(needed: cost, budget: _airtime.budget);

@@ -4565,6 +4565,24 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get airtimeCutoffTitle => '上限で停止';
+
+  @override
+  String get airtimeCutoffSubtitle =>
+      '時間あたりの上限を超える送信を止めます。警告だけでは止まりません。静かな時間の1通は、混んだ時間の20通より価値があります。';
+
+  @override
+  String get airtimeLeftInHour => 'この1時間の残り';
+
+  @override
+  String airtimeLeftValue(String left, String budget) {
+    return '\$left / \$budget';
+  }
+
+  @override
+  String get airtimeCutoffOff => '計測は続きます。送信は止めません。';
+
+  @override
   String get settingsAirtimeTitle => '送信時間の上限';
 
   @override
