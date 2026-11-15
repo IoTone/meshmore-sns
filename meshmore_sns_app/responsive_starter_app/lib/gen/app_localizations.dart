@@ -11607,6 +11607,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That fence is gone, so the new shape was not saved.'**
   String get geofenceReshapeGone;
+
+  /// Names pictures that arrived in AEIC, MeshCore Open's neural codec, which this build does not ship. Without this line an arriving picture looks like nobody sending one.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} more arrived in a codec this build does not carry, so they cannot be shown here.'**
+  String mediaReceivedForeign(int n);
 }
 
 class _AppLocalizationsDelegate

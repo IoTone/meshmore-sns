@@ -3040,5 +3040,13 @@
       }
     }
   },
-  "geofenceReshapeGone": "そのフェンスは削除済みのため、新しい形は保存されませんでした。"
+  "geofenceReshapeGone": "そのフェンスは削除済みのため、新しい形は保存されませんでした。",
+  "mediaReceivedForeign": "このビルドが対応していないコーデックで {n} 件届いたため、ここには表示できません。",
+  "@mediaReceivedForeign": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }

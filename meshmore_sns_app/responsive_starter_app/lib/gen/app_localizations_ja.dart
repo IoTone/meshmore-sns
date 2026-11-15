@@ -6690,4 +6690,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get geofenceReshapeGone => 'そのフェンスは削除済みのため、新しい形は保存されませんでした。';
+
+  @override
+  String mediaReceivedForeign(int n) {
+    return 'このビルドが対応していないコーデックで $n 件届いたため、ここには表示できません。';
+  }
 }

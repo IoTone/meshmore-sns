@@ -91,6 +91,33 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
+  testWidgets('a picture in a codec this build lacks is named, not dropped',
+      (WidgetTester t) async {
+    // AEIC is MeshCore Open's neural codec and this build does not carry it.
+    // The fetch service counted those datagrams and no screen read the count,
+    // so an arriving AEIC picture looked exactly like nobody sending one.
+    await t.pumpWidget(_host(ReceivedPhotosSheet(
+      photos: <ReceivedPhoto>[_photo(1)],
+      codec: _FakeCodec(),
+      foreign: 2,
+    )));
+    await _settle(t);
+    expect(find.byKey(const ValueKey<String>('received-photos-foreign')),
+        findsOneWidget);
+    expect(find.textContaining('2 more arrived'), findsOneWidget);
+  });
+
+  testWidgets('no foreign line when nothing arrived in another codec',
+      (WidgetTester t) async {
+    await t.pumpWidget(_host(ReceivedPhotosSheet(
+      photos: <ReceivedPhoto>[_photo(1)],
+      codec: _FakeCodec(),
+    )));
+    await _settle(t);
+    expect(find.byKey(const ValueKey<String>('received-photos-foreign')),
+        findsNothing);
+  });
+
   testWidgets('the sheet says how long the pictures are kept',
       (WidgetTester t) async {
     // A picture is as durable as the process, and the sheet has to say so

@@ -6968,4 +6968,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get geofenceReshapeGone =>
       'That fence is gone, so the new shape was not saved.';
+
+  @override
+  String mediaReceivedForeign(int n) {
+    return '$n more arrived in a codec this build does not carry, so they cannot be shown here.';
+  }
 }

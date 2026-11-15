@@ -521,6 +521,10 @@ class _ChatScreenState extends State<ChatScreen>
       context,
       photos: inbox.photosFor(mc.activeChannel),
       codec: _media.codec,
+      // Pictures that arrived in a codec this build does not carry. The count
+      // is the fetch service's, and it is the only place a reader can learn
+      // that something did arrive.
+      foreign: context.read<MediaFetchService?>()?.foreignPictures ?? 0,
     );
   }
 

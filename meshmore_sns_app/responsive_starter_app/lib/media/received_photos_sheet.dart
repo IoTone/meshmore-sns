@@ -26,21 +26,30 @@ class ReceivedPhotosSheet extends StatefulWidget {
     super.key,
     required this.photos,
     required this.codec,
+    this.foreign = 0,
   });
 
   /// The pictures for the channel this sheet was opened from, newest first.
   final List<ReceivedPhoto> photos;
   final MediaCodec codec;
 
+  /// Pictures that arrived in a codec this build does not carry (AEIC, MeshCore
+  /// Open's neural codec). Counted rather than dropped silently: a reader who
+  /// sees nothing at all cannot tell "nobody sent a picture" from "this build
+  /// cannot open the one that arrived".
+  final int foreign;
+
   static Future<void> show(
     BuildContext context, {
     required List<ReceivedPhoto> photos,
     required MediaCodec codec,
+    int foreign = 0,
   }) =>
       showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
-        builder: (_) => ReceivedPhotosSheet(photos: photos, codec: codec),
+        builder: (_) => ReceivedPhotosSheet(
+            photos: photos, codec: codec, foreign: foreign),
       );
 
   @override
@@ -96,6 +105,18 @@ class _ReceivedPhotosSheetState extends State<ReceivedPhotosSheet> {
               style: TextStyle(
                   color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
             ),
+            // A picture in a codec this build does not carry is named here
+            // rather than dropped: the count existed and no screen read it, so
+            // an AEIC picture arriving looked exactly like nobody sending one.
+            if (widget.foreign > 0) ...<Widget>[
+              SizedBox(height: skin.space.step(2)),
+              Text(
+                l.mediaReceivedForeign(widget.foreign),
+                key: const ValueKey<String>('received-photos-foreign'),
+                style: TextStyle(
+                    color: skin.color.fgMuted, fontSize: skin.type.sizeSm),
+              ),
+            ],
             SizedBox(height: skin.space.step(4)),
             for (final ReceivedPhoto photo in widget.photos)
               Padding(
