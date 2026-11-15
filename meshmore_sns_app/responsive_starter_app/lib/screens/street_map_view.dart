@@ -1458,6 +1458,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                         style: TextStyle(
                             color: skin.color.fg,
                             fontSize: skin.type.sizeBody)),
+                    trailing: const Icon(Icons.chevron_right),
                     subtitle: src.attribution.isEmpty
                         ? null
                         : Text(src.attribution,
@@ -1525,6 +1526,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                   title: Text(l.mapKeyTitle,
                       style: TextStyle(
                           color: skin.color.fg, fontSize: skin.type.sizeBody)),
+                  trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showKey(context, l),
                 ),
                 ListTile(

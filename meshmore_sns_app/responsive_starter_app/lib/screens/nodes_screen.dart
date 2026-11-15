@@ -380,6 +380,8 @@ class _NodesScreenState extends State<NodesScreen> {
                                       const Icon(Icons.travel_explore),
                                   title: Text(l.nodesFloodAdvert),
                                   subtitle: Text(l.nodesFloodAdvertBody),
+                                  trailing:
+                                      const Icon(Icons.chevron_right),
                                   onTap: () =>
                                       Navigator.pop(context, true),
                                 ),
@@ -387,6 +389,8 @@ class _NodesScreenState extends State<NodesScreen> {
                                   leading: const Icon(Icons.podcasts),
                                   title: Text(l.nodesZeroHopAdvert),
                                   subtitle: Text(l.nodesZeroHopAdvertBody),
+                                  trailing:
+                                      const Icon(Icons.chevron_right),
                                   onTap: () =>
                                       Navigator.pop(context, false),
                                 ),

@@ -119,6 +119,7 @@ class _NetworkDetailScreenState extends State<NetworkDetailScreen> {
                 title: Text(c.name.isEmpty
                     ? _hex(c.publicKey).substring(0, 8)
                     : c.name),
+                trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.pop(s, c),
               ),
           ],

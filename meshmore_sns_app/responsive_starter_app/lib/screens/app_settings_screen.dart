@@ -315,6 +315,7 @@ class AppSettingsScreen extends StatelessWidget {
                       ? l.settingsUnitsImperial
                       : l.settingsUnitsMetric,
                   style: TextStyle(color: cs.onSurfaceVariant)),
+              trailing: const Icon(Icons.chevron_right),
               onTap: () => _pickUnits(context, fmt, l),
             ),
             SwitchListTile(

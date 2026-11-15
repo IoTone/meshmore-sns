@@ -453,6 +453,9 @@ class _ReadingTile extends StatelessWidget {
             .join('  ·  '),
         style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
       ),
+      trailing: r.pubKeyHex == null
+          ? null
+          : const Icon(Icons.chevron_right),
       onTap: r.pubKeyHex == null
           ? null
           : () {

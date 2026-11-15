@@ -115,12 +115,14 @@ class LocationSettingsScreen extends StatelessWidget {
               leading: const Icon(Icons.cell_tower),
               title: Text(l.coverageTitle),
               subtitle: Text(l.coverageExplainerShort),
+              trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/settings/coverage'),
             ),
             ListTile(
               leading: const Icon(Icons.fence_outlined),
               title: Text(l.geofenceTitle),
               subtitle: Text(l.geofenceExplainerShort),
+              trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push('/settings/geofences'),
             ),
             MmCollapsibleSection(
@@ -186,15 +188,25 @@ class LocationSettingsScreen extends StatelessWidget {
               id: MmGroupIds.locManual,
               title: l.locGroupManual,
               children: <Widget>[
-                // "Publish now" — manual trigger so the user can verify.
-                ListTile(
-                  leading: const Icon(Icons.upload),
-                  title: Text(l.locPublishNow),
-                  subtitle: Text(l.locPublishNowSub),
-                  enabled: ap.enabled && mc.isReady,
-                  onTap: !(ap.enabled && mc.isReady)
+                // "Publish now" — manual trigger so the user can verify. It is
+                // an action, not a row that opens something, so it is the
+                // action family rather than a list row with no affordance.
+                MmAction(
+                  key: const ValueKey<String>('loc-publish-now'),
+                  icon: Icons.upload,
+                  label: l.locPublishNow,
+                  onPressed: !(ap.enabled && mc.isReady)
                       ? null
                       : () => _publishNow(context, ap, l),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: context.skin.space.insideText),
+                  child: Text(
+                    l.locPublishNowSub,
+                    style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: context.skin.type.sizeSm),
+                  ),
                 ),
                 // Last-published readout.
                 if (ap.lastPublishedAt != null)

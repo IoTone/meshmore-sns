@@ -21,6 +21,35 @@ import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 ///
 /// The baselines are counts of the defect, so a conversion lowers them and a
 /// new one fails the test. When a file reaches zero its entry is deleted.
+
+/// The index of the `)` that closes the `(` at [open], or -1.
+int _closeParen(String src, int open) {
+  int depth = 0;
+  String? quote;
+  for (int i = open; i < src.length; i++) {
+    final String c = src[i];
+    if (quote != null) {
+      if (c == r'\\') {
+        i++;
+      } else if (c == quote) {
+        quote = null;
+      }
+      continue;
+    }
+    if (c == "'" || c == '"') {
+      quote = c;
+      continue;
+    }
+    if (c == '(') {
+      depth++;
+    } else if (c == ')') {
+      depth--;
+      if (depth == 0) return i;
+    }
+  }
+  return -1;
+}
+
 void main() {
   /// `TextButton`s that read as labels today. Seeded 2026-11-05 (R114).
   const Map<String, int> textButtons = <String, int>{
@@ -88,14 +117,15 @@ void main() {
   };
 
   /// Rows that open a choice or a page with nothing in the trailing slot.
-  const Map<String, int> pickerRows = <String, int>{
-    'lib/chat/chat_actions.dart': 0,
-    'lib/screens/location_settings_screen.dart': 2,
-    'lib/screens/network_detail_screen.dart': 1,
-    'lib/screens/node_detail_sheet.dart': 2,
-    'lib/screens/nodes_screen.dart': 2,
-    'lib/screens/tools/tool_pickers.dart': 3,
-  };
+  ///
+  /// Empty as of this pass. The scan used to end a row at the next
+  /// `\n        )`, which ran past a short row and swallowed the widget after
+  /// it, so it both missed real bare rows and counted a `SwitchListTile` as one.
+  /// With the row's own parentheses matched, the eleven rows it had been
+  /// missing were fixed: a chevron where the row opens something, the radio
+  /// moved to the trailing slot where the row is a choice, and the one action
+  /// row converted to `MmAction`.
+  const Map<String, int> pickerRows = <String, int>{};
 
   List<File> dartFiles(String root) {
     final Directory dir = Directory(root);
@@ -117,7 +147,12 @@ void main() {
       if (buttons > 0) liveButtons[f.path] = buttons;
       int rows = 0;
       for (final RegExpMatch m in RegExp(r'ListTile\(').allMatches(src)) {
-        final int end = src.indexOf('\n        )', m.start);
+        // The row's own argument list, found by matching its parentheses.
+        // It used to be "up to the next `\n        )`", which ran past the end
+        // of a short row and swallowed the widget after it: a `SwitchListTile`
+        // followed by an action row was counted as one bare picker row, and the
+        // count could not be lowered by fixing either of them.
+        final int end = _closeParen(src, m.end - 1);
         if (end < 0) continue;
         final String args = src.substring(m.start, end);
         final bool tappable = args.contains('onTap:');

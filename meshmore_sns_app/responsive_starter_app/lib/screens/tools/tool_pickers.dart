@@ -148,6 +148,9 @@ class _ConversationSheetState extends State<_ConversationSheet> {
               title: Text(label),
               subtitle:
                   why == null ? null : Text(toolFailureText(widget.l, why)),
+              // A row that opens a choice says so with the same chevron every
+              // other picker in the app uses.
+              trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pop(ctx, (scope, label)),
             );
           }),
@@ -158,6 +161,7 @@ class _ConversationSheetState extends State<_ConversationSheet> {
               leading: const Icon(Icons.person_outline),
               title: Text(n.name),
               subtitle: Text(hopsLabel(widget.l, n)),
+              trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pop(
                   ctx, (DmScope(n.pubKeyHex), widget.l.soakDm(n.name))),
             );
@@ -264,6 +268,7 @@ class _ContactPickerSheetState extends State<ContactPickerSheet> {
                 subtitle: Text(ok || widget.reason == null
                     ? '${n.pubKeyHex.substring(0, 6)} · ${hopsLabel(l, n)}'
                     : widget.reason!),
+                trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.pop(ctx, n),
               );
             }),

@@ -259,6 +259,7 @@ class _HitRow extends StatelessWidget {
     final MessageDelivery? delivery = message.delivery;
     return ListTile(
       onTap: onTap,
+      trailing: const Icon(Icons.chevron_right),
       title: Text(
         body,
         maxLines: 2,

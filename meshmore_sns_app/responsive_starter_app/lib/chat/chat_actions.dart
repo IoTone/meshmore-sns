@@ -203,6 +203,7 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
               key: const ValueKey<String>('chat-action-block'),
               leading: Icon(Icons.block, color: Theme.of(ctx).colorScheme.error),
               title: Text(l.actionBlock),
+              trailing: const Icon(Icons.chevron_right, size: 18),
               onTap: () => Navigator.pop(ctx, ChatAction.block),
             ),
           // A report is not a block and not moderation: it is a bundle the

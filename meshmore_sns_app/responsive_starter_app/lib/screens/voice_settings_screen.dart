@@ -251,7 +251,8 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
             ListTile(
               dense: true,
               onTap: () => tc.setVoice(null),
-              leading: Icon(
+              title: Text(l.voicePickerSystem),
+              trailing: Icon(
                 tc.voice == null
                     ? Icons.radio_button_checked
                     : Icons.radio_button_unchecked,
@@ -259,13 +260,12 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
                     ? cs.primary
                     : cs.onSurfaceVariant,
               ),
-              title: Text(l.voicePickerSystem),
             ),
             for (final TtsVoice v in voices)
               ListTile(
                 dense: true,
                 onTap: () => tc.setVoice(v),
-                leading: Icon(
+                trailing: Icon(
                   tc.voice?.id == v.id
                       ? Icons.radio_button_checked
                       : Icons.radio_button_unchecked,

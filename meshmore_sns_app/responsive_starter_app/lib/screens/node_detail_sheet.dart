@@ -1690,6 +1690,7 @@ class _LinkPickerState extends State<_LinkPicker> {
                     '…${manualKey.substring(0, manualKey.length < 16 ? manualKey.length : 16)}',
                     style: TextStyle(
                         fontFamily: context.skin.type.monoFamily, fontSize: context.skin.type.sizeSm)),
+                trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.pop(
                     context, _LinkTarget(pubKeyHex: manualKey)),
               ),
@@ -1726,6 +1727,7 @@ class _LinkPickerState extends State<_LinkPicker> {
                           '…${c.shortId.substring(0, 6)} · ${widget.ago(c.lastHeardUnix, l)}',
                           style: TextStyle(
                               fontFamily: context.skin.type.monoFamily, fontSize: context.skin.type.sizeSm)),
+                      trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.pop(context,
                           _LinkTarget(pubKeyHex: c.pubKeyHex, displayName: c.name)),
                     );
