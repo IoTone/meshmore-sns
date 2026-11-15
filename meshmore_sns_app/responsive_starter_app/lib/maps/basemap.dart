@@ -8,11 +8,16 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
+
 import '../theme/mm_skin.dart';
 import 'event_layer.dart';
 import 'map_source.dart';
 import 'maps_controller.dart';
 import 'tile_ancestor.dart';
+
+/// A place's map dot, in pixels. Geometry: it is drawn as a mark of its own
+/// size, not laid out on the rhythm.
+const double _dotSize = 10;
 
 /// The edge of one slippy tile in pixels. flutter_map's `TileLayer` default,
 /// and the size a cropped ancestor is emitted at so it lands in the cell
@@ -298,8 +303,8 @@ class _OneEventLayerState extends State<_OneEventLayer> {
                   height: 24,
                   child: Center(
                       child: SizedBox(
-                          width: 10,
-                          height: 10,
+                          width: _dotSize,
+                          height: _dotSize,
                           child: _dot(context, c, p.label))),
                 ),
             ]),

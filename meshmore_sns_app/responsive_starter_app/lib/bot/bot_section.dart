@@ -11,6 +11,10 @@ import 'bot_scope.dart';
 import 'bot_scope_config.dart';
 import 'responder.dart';
 
+/// A numeric field's width, in pixels. Wide enough for the largest value the
+/// guard accepts and no wider, so the field does not read as a text box.
+const double _numberFieldWidth = 180;
+
 /// The bot section for one scope (R59).
 ///
 /// Shared between the per-channel dialog and the per-peer sheet, so
@@ -153,7 +157,7 @@ class _SeedFieldState extends State<_SeedField> {
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
     return SizedBox(
-      width: 180,
+      width: _numberFieldWidth,
       child: TextField(
         controller: _c,
         keyboardType: TextInputType.number,

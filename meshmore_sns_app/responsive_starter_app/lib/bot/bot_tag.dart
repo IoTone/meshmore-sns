@@ -23,7 +23,9 @@ class BotTag extends StatelessWidget {
     final Color c = color ?? cs.tertiary;
     return Container(
       margin: const EdgeInsets.only(right: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      padding: EdgeInsets.symmetric(
+          horizontal: context.skin.space.step(3),
+          vertical: context.skin.space.insideText - 1),
       decoration: BoxDecoration(
         border: Border.all(color: c, width: 1),
         borderRadius: BorderRadius.circular(kRadiusMd),

@@ -33,6 +33,12 @@ import '../ui/mm_scaffold.dart';
 import 'node_detail_sheet.dart';
 import 'package:meshcore/meshcore.dart';
 
+
+/// The time column's width at 1x text, in pixels, before the text scale is
+/// applied. It holds a five-character stamp, so it is geometry rather than a
+/// rhythm value.
+const double _timeGutter = 56;
+
 /// 1:1 direct-message thread with a peer (P2P). The MeshCore
 /// companion protocol carries DMs over `CMD_SEND_TXT_MSG` (0x02)
 /// addressed by the first 6 bytes of the peer's pubkey, and
@@ -639,7 +645,8 @@ class _DmRow extends StatelessWidget {
             // 1.3x a 56 dp box wrapped a five-character time one character
             // per line.
             SizedBox(
-              width: 56 * MediaQuery.textScalerOf(context).scale(1),
+              width: _timeGutter *
+                  MediaQuery.textScalerOf(context).scale(1),
               child: Text('$time $tag',
                   maxLines: 1,
                   softWrap: false,

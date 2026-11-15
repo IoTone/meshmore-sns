@@ -18,6 +18,12 @@ import '../util/force_layout.dart';
 import 'node_detail_sheet.dart';
 import '../ui/mm_shape.dart';
 
+/// How far the tree can be panned past its own bounds, in pixels.
+///
+/// A boundary margin is not a gap: it is the slack that makes a hand-pan feel
+/// unconstrained on a tree that is taller than the screen.
+const double _panMargin = 2000;
+
 /// R50 — directed mesh topology tree, force-directed layout. The
 /// data comes straight from `Contact.outPath` (the route the device
 /// uses to reach each peer); the layout uses spring physics so
@@ -403,7 +409,7 @@ class _MeshTreeViewState extends State<MeshTreeView> {
                 transformationController: _transform,
                 minScale: 0.1,
                 maxScale: 4.0,
-                boundaryMargin: const EdgeInsets.all(2000),
+                boundaryMargin: EdgeInsets.all(_panMargin),
                 // Manual pinch/pan turns off auto-fit so we stop
                 // fighting the user; the recenter button turns it
                 // back on.

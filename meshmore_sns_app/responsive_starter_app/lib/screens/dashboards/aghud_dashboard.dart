@@ -18,6 +18,9 @@ import 'dashboard_model.dart';
 import 'my_pubkey_line.dart';
 import '../../ui/mm_shape.dart';
 
+/// The radial gauge's box, in pixels. The painter draws to it.
+const double _gaugeBox = 240;
+
 /// Concept B — **AG Systems HUD** dashboard: a Wipeout anti-grav cockpit.
 /// One hero **radial gauge** (signal quality) with a rotating HUD sweep,
 /// then a pair of livery stat tiles (peers / channel activity) with linear
@@ -82,7 +85,7 @@ class _AgHudDashboardState extends State<AgHudDashboard>
           SizedBox(height: skin.space.rowInset),
           Center(
             child: SizedBox(
-              width: 240,
+              width: _gaugeBox,
               child: AnimatedBuilder(
                 animation: _sweep,
                 builder: (BuildContext _, Widget? __) => _RadialGauge(

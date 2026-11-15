@@ -30,10 +30,15 @@ import '../theme/mm_skin.dart';
 import '../theme/theme_controller.dart';
 import '../util/geo.dart' as geo;
 import '../ui/mm_components.dart';
+
+
 import '../ui/mm_shape.dart';
 import '../ui/mm_confirm.dart';
 import '../util/relative_time.dart';
 import '../peer/hop_names.dart';
+
+/// The history row's time column, in pixels: a five-character stamp.
+const double _timeGutter = 56;
 
 /// R18 polish — modal bottom sheet shown when the user taps a node
 /// on the /grid view. Shows summary stats (signal, last heard,
@@ -510,7 +515,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       SizedBox(
-                        width: 56,
+                        width: _timeGutter,
                         child: Text(
                           '${m.at.hour.toString().padLeft(2, '0')}:'
                           '${m.at.minute.toString().padLeft(2, '0')} '
@@ -1399,10 +1404,12 @@ class _TelemetrySection extends StatelessWidget {
       } else if (querying) {
         children.add(Row(
           children: <Widget>[
-            const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(strokeWidth: 2)),
+            SizedBox(
+                width: context.skin.space.step(5) +
+                    context.skin.space.insideText,
+                height: context.skin.space.step(5) +
+                    context.skin.space.insideText,
+                child: const CircularProgressIndicator(strokeWidth: 2)),
             const SizedBox(width: 8),
             Text(l.nodeDetailTelemetryQuerying,
                 style: TextStyle(

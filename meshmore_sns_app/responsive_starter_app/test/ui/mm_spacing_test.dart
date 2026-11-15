@@ -100,26 +100,13 @@ void main() {
   test('off-ladder spacing per file: no file grows past its baseline', () {
     // Seeded from the census in the rhythm audit, lowered by every screen this
     // wave migrated. A file leaves the map when it reaches zero.
-    const Map<String, int> baseline = <String, int>{
-      'lib/bot/bot_scope_config.dart': 1,
-      'lib/bot/bot_section.dart': 1,
-      'lib/bot/bot_tag.dart': 1,
-      'lib/chat/studio_message_row.dart': 0,
-      'lib/maps/basemap.dart': 1,
-      'lib/screens/chat_screen.dart': 2,
-      'lib/screens/dashboard_screen.dart': 1,
-      'lib/screens/dashboards/aghud_dashboard.dart': 1,
-      'lib/screens/dashboards/studio_dashboard.dart': 1,
-      'lib/screens/dm_screen.dart': 1,
-      'lib/screens/elevation_profile_view.dart': 2,
-      'lib/screens/fabric_survey_view.dart': 1,
-      'lib/screens/mesh_tree_view.dart': 1,
-      'lib/screens/node_detail_sheet.dart': 2,
-      'lib/screens/sns_cells_view.dart': 2,
-      // It is `MmBootSurface` and a lookup now: every number it used to carry
-      // moved into the shared launch surface.
-      'lib/splash/branded_splash_screen.dart': 0,
-    };
+    // Empty as of this pass: every file that carried an off-ladder number has
+    // been migrated onto `MmSpace`, and the ones that remain are the numbers
+    // that are geometry rather than rhythm (a chart's drawing box, a sprite, a
+    // pan margin), which are now named constants next to what they size. The
+    // map stays so a new literal still fails here, in the file that added it,
+    // rather than in a reviewer's eyes.
+    const Map<String, int> baseline = <String, int>{};
 
     // Exact equality, in both directions: a migration lowers its entry in the
     // same commit, and a new literal raises the count past it.

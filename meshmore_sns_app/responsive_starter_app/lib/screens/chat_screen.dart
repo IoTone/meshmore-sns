@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+
 import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
@@ -72,6 +73,9 @@ import '../ui/mm_scaffold.dart';
 import '../util/share.dart';
 import '../ui/mm_shape.dart';
 import 'package:meshcore/meshcore.dart';
+
+/// The DR Pop invader's sprite box, in pixels. The painter draws to it.
+const double _invaderBox = 36;
 
 /// R6 — the channel chat. A channel-selector chip strip on top
 /// (collapsible to reclaim vertical space), a scrollable message list
@@ -899,7 +903,7 @@ class _ChatScreenState extends State<ChatScreen>
           // already said "Public", and the collapse chevron existed only to
           // hide the strip under it. Header + strip was 108 dp for that.
           SizedBox(
-            height: 48,
+            height: context.skin.space.step(9) + context.skin.space.screenEdge,
             child: Row(
               children: <Widget>[
                 // Only the channels scroll. The three controls at the end are
@@ -1990,8 +1994,8 @@ class _NameTag extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           SizedBox(
-            width: 36,
-            height: 36,
+            width: _invaderBox,
+            height: _invaderBox,
             child: CustomPaint(
               painter: _InvaderPainter(
                   seed: _fnv1a(seedKey), color: color, bg: base),

@@ -357,8 +357,8 @@ Widget _statusSlab(
       children: <Widget>[
         if (st.busy)
           SizedBox(
-            width: 14,
-            height: 14,
+            width: context.skin.space.step(5) + context.skin.space.step(1),
+            height: context.skin.space.step(5) + context.skin.space.step(1),
             child:
                 CircularProgressIndicator(strokeWidth: 2, color: statusColor),
           )

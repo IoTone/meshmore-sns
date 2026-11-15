@@ -18,6 +18,10 @@ import '../theme/mm_skin.dart';
 import '../theme/viz_palette.dart';
 import '../ui/mm_shape.dart';
 
+/// How far the field can be panned past its own bounds, in pixels. The same
+/// slack the tree uses, and for the same reason.
+const double _panMargin = 800;
+
 /// R51 — sns-cells: a social-activity heat map. Built on the same
 /// geographic-cell idea as the hyperlocal grid, but instead of
 /// plotting *presence* it plots *chatter*: each observed message
@@ -240,7 +244,7 @@ class _SnsCellsViewState extends State<SnsCellsView>
             scaleEnabled: widget.interactive,
             minScale: 0.4,
             maxScale: 6.0,
-            boundaryMargin: const EdgeInsets.all(800),
+            boundaryMargin: EdgeInsets.all(_panMargin),
             child: CustomPaint(
               painter: _SnsCellsPainter(
                 type: context.skin.type,
@@ -314,8 +318,9 @@ class _SnsCellsViewState extends State<SnsCellsView>
           left: 12,
           bottom: 12,
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(
+                horizontal: context.skin.space.rowGap,
+                vertical: context.skin.space.step(3)),
             decoration: BoxDecoration(
               // Solid: the status chip sits on the cells canvas, where a 85 %
               // wash let the cell fills read through its own digits.

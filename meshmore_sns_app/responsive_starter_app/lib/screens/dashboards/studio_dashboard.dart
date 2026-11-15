@@ -310,8 +310,8 @@ class _StatusRow extends StatelessWidget {
         m.alert ? skin.color.alert : (linked ? skin.color.link : skin.color.accent);
     final Widget dot = m.busy
         ? SizedBox(
-            width: 14,
-            height: 14,
+            width: skin.space.step(5) + skin.space.insideText,
+            height: skin.space.step(5) + skin.space.insideText,
             child: CircularProgressIndicator(strokeWidth: 2, color: dotColor),
           )
         : Container(

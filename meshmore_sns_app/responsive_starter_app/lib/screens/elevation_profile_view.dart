@@ -269,8 +269,9 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
                     onTap: _refreshSelfTelemetry,
                     borderRadius: mmRadius(context, 6),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: context.skin.space.rowGap,
+                          vertical: context.skin.space.step(3)),
                       decoration: BoxDecoration(
                         // Solid and the control-border tier: this chip sits on
                         // the chart's own grid and profile line, and at 85 %
@@ -297,8 +298,8 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
                                 const SizedBox(width: 4),
                                 if (_polling)
                                   SizedBox(
-                                    width: 11,
-                                    height: 11,
+                                    width: context.skin.space.step(5),
+                                    height: context.skin.space.step(5),
                                     child: CircularProgressIndicator(
                                         strokeWidth: 1.5, color: cs.primary),
                                   )

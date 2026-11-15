@@ -8,6 +8,11 @@ import '../theme/mm_skin.dart';
 import 'bot_controller.dart';
 import 'bot_scope.dart';
 
+/// The rule editor's content width, in pixels. A dialog width is a reading
+/// measure: how much of a rule can sit on one line before the eye loses the
+/// start of it. It is not a rhythm value.
+const double _dialogWidth = 520;
+
 /// Edit one scope's rulepack (R59).
 ///
 /// A plain text editor rather than a rule builder, on purpose: the
@@ -46,7 +51,7 @@ class _RulepackEditorState extends State<RulepackEditor> {
     return AlertDialog(
       title: Text(l.botRulesTitle),
       content: SizedBox(
-        width: 520,
+        width: _dialogWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
