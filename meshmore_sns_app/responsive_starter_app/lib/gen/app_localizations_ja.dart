@@ -2654,7 +2654,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deviceRegionDisclaimer =>
-      'プリセットは利用者どうしで共有されている値で、規制当局の確認を受けたものではありません。利用地で合法なものを選び、どのMeshCore 無線機でも同じ設定にしてください。日本では無線機自体が技適を取得している必要があり、輸入したボードの多くは未取得です。設定にかかわらず、未取得機の使用は電波法違反になります。日本（ARIB STD-T108）のプリセットはコミュニティ提案で、広く検証されたものではありません。';
+      'いる場所で合法なプリセットを選び、すべての MeshCore 無線機で同じ設定を使ってください。日本では無線機自体に技適が必要で、輸入品の多くは取得していません。';
 
   @override
   String get presetUsCanada => '米国 / カナダ';
@@ -2742,7 +2742,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get devicePathHashSizeHelp =>
-      'この無線機が送信するパケットに付けるハッシュ長です。中継は各パケット自身の長さに従うため、ノード間で揃える必要はありません。長いほど中継を区別しやすい一方、ペイロード容量が減ります。';
+      'MeshCore 無線機がパケットに付けるハッシュ長です。中継機はパケットごとに従うため、ノード間で揃える必要はありません。';
 
   @override
   String get devicePathHashUnread => '無線機はまだハッシュ長を伝えていません。';
@@ -3169,37 +3169,37 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toolStatsName => 'MeshCore 無線機の統計';
 
   @override
-  String get toolStatsSub => 'ノイズフロア・エアタイム・パケット数';
+  String get toolStatsSub => '無線機のカウンタ';
 
   @override
   String get toolPingName => 'Ping';
 
   @override
-  String get toolPingSub => 'コンタクトへの往復: 損失と RTT';
+  String get toolPingSub => '損失と往復時間';
 
   @override
   String get toolTraceName => 'パストレース';
 
   @override
-  String get toolTraceSub => 'リピーター経路のホップごとの SNR';
+  String get toolTraceSub => 'ホップごとの信号';
 
   @override
   String get toolDiscoverName => '近隣探索';
 
   @override
-  String get toolDiscoverSub => 'こちらが聞こえるリピーターと双方向の SNR';
+  String get toolDiscoverSub => '応答する中継機';
 
   @override
   String get toolSoakName => 'ソークテスト';
 
   @override
-  String get toolSoakSub => '連番メッセージを計数 、 ボットと組み合わせ';
+  String get toolSoakSub => 'メッセージの順序';
 
   @override
   String get toolRangeName => 'レンジテスト';
 
   @override
-  String get toolRangeSub => 'ビーコン送信または受信記録 (SNR・距離付き)';
+  String get toolRangeSub => '距離と信号';
 
   @override
   String get toolFailNotConnected => '無線機に接続されていません。';
@@ -4647,7 +4647,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsAirtimeHelp =>
-      'このアプリが送信したフレームはすべて記録されます。上限に達すると、1時間が経過するまで送信を止めます。MeshCore 無線側の法的な上限は別に働きます。';
+      'このアプリが送るすべてのフレームを数えます。上限に達すると 1 時間が経つまで停止します。';
 
   @override
   String get airtimePolicyOnePercent => '1 % デューティ比';
@@ -6308,7 +6308,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get deviceRadio2Note =>
-      '第2プロファイルはMeshCore 無線機の送信時間の96〜99%を使うため、切り替えは無線機側で行い、このアプリでは変更しません。両方のフレームは受信しますが、第2プロファイル自体のパラメータは表示しません。';
+      '第 2 プロファイルは送信時間の 96〜99 % を使うため、無線機側で設定します。どちらも受信します。';
 
   @override
   String get deviceReadoutQuerying => '無線機に問い合わせ中…';

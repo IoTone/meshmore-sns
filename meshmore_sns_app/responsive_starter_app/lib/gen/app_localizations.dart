@@ -4679,7 +4679,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRegionDisclaimer.
   ///
   /// In en, this message translates to:
-  /// **'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every MeshCore radio. In Japan the radio itself must carry 技適 (giteki) certification. Most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.'**
+  /// **'Pick a preset that is legal where you are, and use the same settings on every MeshCore radio. In Japan the radio itself must carry 技適 certification, which most imported boards do not.'**
   String get deviceRegionDisclaimer;
 
   /// No description provided for @presetUsCanada.
@@ -4853,7 +4853,7 @@ abstract class AppLocalizations {
   /// No description provided for @devicePathHashSizeHelp.
   ///
   /// In en, this message translates to:
-  /// **'The hash length this LoRa radio stamps on its packets. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the payload budget.'**
+  /// **'The hash length the MeshCore radio stamps on its packets. Repeaters follow each packet, so nodes need not agree.'**
   String get devicePathHashSizeHelp;
 
   /// No description provided for @devicePathHashUnread.
@@ -5609,7 +5609,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolStatsSub.
   ///
   /// In en, this message translates to:
-  /// **'Noise floor, airtime, packet counters'**
+  /// **'MeshCore counters'**
   String get toolStatsSub;
 
   /// No description provided for @toolPingName.
@@ -5621,7 +5621,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolPingSub.
   ///
   /// In en, this message translates to:
-  /// **'Round-trip to a contact: loss and RTT'**
+  /// **'Loss and round trip'**
   String get toolPingSub;
 
   /// No description provided for @toolTraceName.
@@ -5633,7 +5633,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolTraceSub.
   ///
   /// In en, this message translates to:
-  /// **'Per-hop SNR along a repeater chain'**
+  /// **'Per-hop signal'**
   String get toolTraceSub;
 
   /// No description provided for @toolDiscoverName.
@@ -5645,7 +5645,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolDiscoverSub.
   ///
   /// In en, this message translates to:
-  /// **'Repeaters that hear us, SNR both ways'**
+  /// **'Repeaters that answer'**
   String get toolDiscoverSub;
 
   /// No description provided for @toolSoakName.
@@ -5657,7 +5657,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolSoakSub.
   ///
   /// In en, this message translates to:
-  /// **'Sequenced messages, counted. Pairs with the bot'**
+  /// **'Message sequencing'**
   String get toolSoakSub;
 
   /// No description provided for @toolRangeName.
@@ -5669,7 +5669,7 @@ abstract class AppLocalizations {
   /// No description provided for @toolRangeSub.
   ///
   /// In en, this message translates to:
-  /// **'Beacon or log, with SNR and distance'**
+  /// **'Signal over distance'**
   String get toolRangeSub;
 
   /// No description provided for @toolFailNotConnected.
@@ -8185,7 +8185,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAirtimeHelp.
   ///
   /// In en, this message translates to:
-  /// **'Every frame this app sends is counted. At the limit it stops until the hour rolls on. The MeshCore radio keeps its own legal limit either way.'**
+  /// **'Every frame this app sends counts. At the limit it stops until the hour turns over.'**
   String get settingsAirtimeHelp;
 
   /// No description provided for @airtimePolicyOnePercent.
@@ -11005,7 +11005,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceRadio2Note.
   ///
   /// In en, this message translates to:
-  /// **'A second profile takes 96-99 % of the MeshCore radio transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read. The second profile\'s own parameters are not shown.'**
+  /// **'A second profile takes 96 to 99 % of the MeshCore radio transmit time, so it is set on the radio and not here. Both are read.'**
   String get deviceRadio2Note;
 
   /// No description provided for @deviceReadoutQuerying.

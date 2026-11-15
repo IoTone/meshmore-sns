@@ -2764,7 +2764,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRegionDisclaimer =>
-      'These presets are shared by users, not checked by a regulator. Pick one that is legal where you are and use the same settings on every MeshCore radio. In Japan the radio itself must carry 技適 (giteki) certification. Most imported boards do not, and using one is an offence under the Radio Act whatever the settings. The Japan (ARIB STD-T108) preset is a community proposal that has not been widely tested.';
+      'Pick a preset that is legal where you are, and use the same settings on every MeshCore radio. In Japan the radio itself must carry 技適 certification, which most imported boards do not.';
 
   @override
   String get presetUsCanada => 'USA / Canada';
@@ -2852,7 +2852,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get devicePathHashSizeHelp =>
-      'The hash length this LoRa radio stamps on its packets. Repeaters follow each packet\'s own length, so nodes need not agree. Longer hashes tell repeaters apart better but shrink the payload budget.';
+      'The hash length the MeshCore radio stamps on its packets. Repeaters follow each packet, so nodes need not agree.';
 
   @override
   String get devicePathHashUnread =>
@@ -3296,37 +3296,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toolStatsName => 'MeshCore radio stats';
 
   @override
-  String get toolStatsSub => 'Noise floor, airtime, packet counters';
+  String get toolStatsSub => 'MeshCore counters';
 
   @override
   String get toolPingName => 'Ping';
 
   @override
-  String get toolPingSub => 'Round-trip to a contact: loss and RTT';
+  String get toolPingSub => 'Loss and round trip';
 
   @override
   String get toolTraceName => 'Trace path';
 
   @override
-  String get toolTraceSub => 'Per-hop SNR along a repeater chain';
+  String get toolTraceSub => 'Per-hop signal';
 
   @override
   String get toolDiscoverName => 'Discover nearby';
 
   @override
-  String get toolDiscoverSub => 'Repeaters that hear us, SNR both ways';
+  String get toolDiscoverSub => 'Repeaters that answer';
 
   @override
   String get toolSoakName => 'Soak test';
 
   @override
-  String get toolSoakSub => 'Sequenced messages, counted. Pairs with the bot';
+  String get toolSoakSub => 'Message sequencing';
 
   @override
   String get toolRangeName => 'Range test';
 
   @override
-  String get toolRangeSub => 'Beacon or log, with SNR and distance';
+  String get toolRangeSub => 'Signal over distance';
 
   @override
   String get toolFailNotConnected => 'Not connected to a MeshCore radio.';
@@ -4822,7 +4822,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAirtimeHelp =>
-      'Every frame this app sends is counted. At the limit it stops until the hour rolls on. The MeshCore radio keeps its own legal limit either way.';
+      'Every frame this app sends counts. At the limit it stops until the hour turns over.';
 
   @override
   String get airtimePolicyOnePercent => '1 % duty cycle';
@@ -6573,7 +6573,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceRadio2Note =>
-      'A second profile takes 96-99 % of the MeshCore radio transmit time, which is why it is switched on the radio and not here. Frames from both profiles are read. The second profile\'s own parameters are not shown.';
+      'A second profile takes 96 to 99 % of the MeshCore radio transmit time, so it is set on the radio and not here. Both are read.';
 
   @override
   String get deviceReadoutQuerying => 'querying device…';
