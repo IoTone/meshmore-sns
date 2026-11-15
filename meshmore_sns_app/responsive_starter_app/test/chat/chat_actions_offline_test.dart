@@ -18,10 +18,18 @@ import '../meshcore/fake_transport.dart';
 
 /// Two answers, and the state that changes what they can do.
 void main() {
-  ChatMessage message() => ChatMessage(
+  ChatMessage message({
+    double? snrDb,
+    int? hopCount,
+    List<String> pathHashes = const <String>[],
+  }) =>
+      ChatMessage(
         channelIdx: 0,
         text: 'MikeP: hey there',
         outgoing: false,
+        snrDb: snrDb,
+        hopCount: hopCount,
+        pathHashes: pathHashes,
       );
 
   /// Dispose the controller and let its timers finish before the test ends.
@@ -75,6 +83,65 @@ void main() {
     await t.pumpAndSettle();
     return mc;
   }
+
+  testWidgets('a measured row offers a friendly ack, and an unmeasured one does not',
+      (WidgetTester t) async {
+    // The line states numbers this radio measured, so the action appears only
+    // when there are numbers to state.
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    Future<void> show(ChatMessage m) async {
+      await t.pumpWidget(MultiProvider(
+        providers: <ChangeNotifierProvider<ChangeNotifier>>[
+          ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+          ChangeNotifierProvider<ThemeController>(
+              create: (_) => ThemeController()),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          supportedLocales: LocaleController.supported,
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: Builder(
+            builder: (BuildContext c) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => showChatActions(c, m),
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+    }
+
+    const ValueKey<String> ackKey =
+        ValueKey<String>('chat-action-friendly-ack');
+    await show(message(snrDb: 12.5, hopCount: 3,
+        pathHashes: <String>['4490', 'DF7C']));
+    expect(find.byKey(ackKey), findsOneWidget);
+    expect(find.text('Friendly ack'), findsOneWidget);
+    // A row with nothing measured says so by not offering it at all.
+    await t.tapAt(const Offset(4, 4));
+    await t.pumpAndSettle();
+    await show(message());
+    expect(find.byKey(ackKey), findsNothing);
+    await drain(t, mc);
+  });
 
   testWidgets('the sheet offers a reply to the sender and a plain quote',
       (WidgetTester t) async {

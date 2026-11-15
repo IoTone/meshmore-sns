@@ -23,6 +23,7 @@ class OtaPacket {
     required this.hopCount,
     required this.hashSize,
     required this.payload,
+    this.path = const <int>[],
   });
 
   final int routeType;
@@ -30,6 +31,35 @@ class OtaPacket {
   final int version;
   final int hopCount;
   final int hashSize;
+
+  /// The path field: `hopCount` hash prefixes, `hashSize` bytes each, in the
+  /// order the packet collected them.
+  ///
+  /// This is the route a packet actually took, and it is the only place a client
+  /// can read it: the companion protocol's channel-message push carries the hop
+  /// *count* and the SNR but no path, so a report of how a message arrived is
+  /// reconstructed from this capture.
+  final List<int> path;
+
+  /// [path] as hex per hop (`4490`, `DF7C`, …), one entry per repeater.
+  ///
+  /// Uppercased, which is how the rest of the ecosystem writes a path hash. A
+  /// truncated path yields the hops it actually holds rather than a short hash
+  /// padded to the length the header claimed.
+  List<String> get pathHashes {
+    final List<String> out = <String>[];
+    for (int i = 0; i < hopCount; i++) {
+      final int start = i * hashSize;
+      if (start >= path.length) break;
+      final int end = (start + hashSize).clamp(0, path.length);
+      out.add(path
+          .sublist(start, end)
+          .map((int v) => v.toRadixString(16).padLeft(2, '0'))
+          .join()
+          .toUpperCase());
+    }
+    return out;
+  }
 
   /// Raw payload bytes (type-specific; see [grpTxt]).
   final Uint8List payload;
@@ -76,7 +106,7 @@ class OtaPacket {
       final int code = (pl >> kPathHashSizeShift) & 0x03;
       if (code == 3) return null; // reserved
       final int hashSize = code + 1; // 0→1,1→2,2→3
-      c.bytes(hop * hashSize, 'pkt.path');
+      final Uint8List pathBytes = c.bytes(hop * hashSize, 'pkt.path');
       final Uint8List payload =
           c.atEnd ? Uint8List(0) : c.bytes(c.remaining, 'pkt.payload');
       return OtaPacket(
@@ -86,6 +116,7 @@ class OtaPacket {
         hopCount: hop,
         hashSize: hashSize,
         payload: payload,
+        path: pathBytes,
       );
     } on FrameTruncated {
       return null;

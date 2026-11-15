@@ -6922,6 +6922,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionReact => 'React';
 
   @override
+  String get actionFriendlyAck => 'Friendly ack';
+
+  @override
   String get actionReplyNoName => 'Reply';
 
   @override

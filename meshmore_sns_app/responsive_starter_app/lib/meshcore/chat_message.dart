@@ -49,9 +49,13 @@ class ChatMessage {
     this.failCause,
     this.mp1,
     this.hidden = false,
+    this.rssiDbm,
+    this.hopCount,
+    List<String>? pathHashes,
     Map<String, List<String?>>? reactions,
     Set<String>? ownReactions,
-  })  : id = id ?? _genId(),
+  })  : pathHashes = pathHashes ?? const <String>[],
+        id = id ?? _genId(),
         reactions = reactions ?? <String, List<String?>>{},
         ownReactions = ownReactions ?? <String>{},
         at = at ?? DateTime.now();
@@ -80,6 +84,22 @@ class ChatMessage {
   /// sent, and because the reaction itself is folded into the message it names.
   /// It is simply not a line a reader should see.
   final bool hidden;
+
+  /// What this radio measured when it received the packet that carried this row.
+  ///
+  /// The channel-message frame carries the SNR but neither the RSSI nor the
+  /// route, so these three come from the RF-log capture of the same packet,
+  /// matched on the SNR it reports and the second it arrived. They are this
+  /// receiver's numbers — the last hop in — and they are the only figures a
+  /// friendly acknowledgement has anything honest to say.
+  final int? rssiDbm;
+
+  /// Hops the packet travelled, or null when it arrived by flood and no capture
+  /// was matched.
+  final int? hopCount;
+
+  /// The path hashes the packet collected, one per repeater (`4490`, `DF7C`, …).
+  final List<String> pathHashes;
 
   /// The MP1 preview this row carries, as the channel datagram it arrived in.
   ///
@@ -191,6 +211,9 @@ class ChatMessage {
         // written on every message, and 163 numbers is five times the payload.
         if (mp1 != null) 'm': base64Encode(mp1!),
         if (hidden) 'h': true,
+        if (rssiDbm != null) 'R': rssiDbm,
+        if (hopCount != null) 'n': hopCount,
+        if (pathHashes.isNotEmpty) 'w': pathHashes,
         if (reactions.isNotEmpty)
           'e': <String, List<String?>>{
             for (final MapEntry<String, List<String?>> e in reactions.entries)
@@ -260,6 +283,15 @@ class ChatMessage {
       // A preview saved by a build that wrote it, read by one that can draw it.
       // A body that will not decode is dropped rather than throwing: one bad row
       // must not cost the history it lives in.
+      rssiDbm: (j['R'] as num?)?.toInt(),
+      hopCount: (j['n'] as num?)?.toInt(),
+      pathHashes: switch (j['w']) {
+        final List<Object?> l => <String>[
+            for (final Object? e in l)
+              if (e is String) e,
+          ],
+        _ => null,
+      },
       mp1: switch (j['m']) {
         final String b64 => _tryBase64(b64),
         _ => null,

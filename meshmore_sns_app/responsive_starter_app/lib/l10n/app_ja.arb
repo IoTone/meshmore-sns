@@ -3007,6 +3007,7 @@
   "actionReplyMention": "{name} に返信",
   "actionQuote": "このメッセージを引用",
   "actionReact": "リアクション",
+  "actionFriendlyAck": "フレンドリー ACK",
   "actionReplyNoName": "返信",
   "chatActionsNoRadio": "MeshCore 無線が未接続です。返信や引用は入力欄に保持され、接続後に使えます。",
   "toolHistoryTitle": "ツール履歴",

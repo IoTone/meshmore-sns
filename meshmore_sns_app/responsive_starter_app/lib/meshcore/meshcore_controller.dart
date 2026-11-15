@@ -3,6 +3,8 @@
 import 'radio_lease.dart';
 import 'dart:async';
 
+import '../chat/composer_budget.dart';
+import '../chat/friendly_ack.dart';
 import '../chat/reactions.dart';
 import '../util/mesh_log.dart';
 import '../util/prefs.dart';
@@ -3736,11 +3738,79 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return true;
   }
 
+  /// Answers a received row with a friendly acknowledgement.
+  ///
+  /// A plain text line in the format the other clients read as a signal report
+  /// (`ack: SNR 12.5 dB, RSSI -38 dBm, 3 hops via 4490, DF7C, 7F47`), carrying
+  /// what THIS radio measured when the row's packet arrived. It is a courtesy
+  /// rather than a protocol acknowledgement: MeshCore's ACK is a four-byte
+  /// checksum, channels have no acknowledgement at all, and a channel line's
+  /// sender name is unverified text.
+  ///
+  /// The route hangs off the RF-log capture of the same packet, so a row that
+  /// arrived without one reports the SNR and hop count it does have rather than
+  /// inventing a path.
+  Future<bool> sendFriendlyAck(ChatMessage target) async {
+    if (!isReady) return false;
+    final bool dm = target.peerPubKeyHex != null;
+    // A direct message already says who sent it, so it carries no mention; a
+    // channel line names the reader or it is not addressed to anyone.
+    final String? sender =
+        dm ? null : parseChannelSenderName(target.text);
+    final String line = friendlyAckLine(
+      sender: sender,
+      snrDb: target.snrDb,
+      rssiDbm: target.rssiDbm,
+      hopCount: target.hopCount,
+      pathHashes: target.pathHashes,
+      isFlood: target.isFlood,
+      // The radio writes `<name>: ` into the same budget, so the text budget is
+      // what is left after our own name.
+      maxBytes: ComposerBudget.forSender(selfInfo?.name).maxTextBytes,
+    );
+    final ChatMessage? sent = dm
+        ? await sendDirectText(target.peerPubKeyHex!, line)
+        : await sendChannelTextTo(target.channelIdx, line);
+    return sent != null;
+  }
+
   /// The body of a channel message: after the `Name: ` prefix, when there is
   /// one. A reaction line arrives wrapped in that prefix like any other line.
   static String _reactionBodyOf(String text) {
     final int i = text.indexOf(': ');
     return i > 0 && i < 40 ? text.substring(i + 2) : text;
+  }
+
+  /// A received packet as the radio's own RF log reported it.
+  ///
+  /// The channel-message push carries the SNR and the hop count but neither the
+  /// RSSI nor the path, so the only way a client can say how a message arrived is
+  /// to pair the message with the raw capture of the same packet. That is what
+  /// this ring is for, and it is bounded because a capture is worthless once the
+  /// moment has passed.
+  static const int _rxCaptureCap = 12;
+  static const Duration _rxCaptureWindow = Duration(seconds: 3);
+  final List<_RxCapture> _rxCaptures = <_RxCapture>[];
+
+  /// The capture for [snrDb], or the newest one when the SNRs cannot be matched.
+  ///
+  /// An exact SNR match is what makes the pairing unambiguous when two messages
+  /// land inside the window: the RF log and the message frame report the same
+  /// measurement of the same packet. A matched capture is consumed, because each
+  /// packet is logged once and two messages must not both claim it.
+  _RxCapture? _takeRxCapture(double? snrDb) {
+    final DateTime now = DateTime.now();
+    _rxCaptures.removeWhere(
+        (_RxCapture c) => now.difference(c.at) > _rxCaptureWindow);
+    if (_rxCaptures.isEmpty) return null;
+    for (int i = _rxCaptures.length - 1; i >= 0; i--) {
+      final _RxCapture c = _rxCaptures[i];
+      if (snrDb != null && (c.snrDb - snrDb).abs() < 0.001) {
+        _rxCaptures.removeAt(i);
+        return c;
+      }
+    }
+    return snrDb == null ? null : _rxCaptures.removeLast();
   }
 
   /// Reactions heard for a message this window no longer holds.
@@ -3836,6 +3906,10 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         notifyListeners();
         return;
       }
+      // The packet this row arrived in, when the radio's RF log caught it: the
+      // SNR and the hop count come with the message, the RSSI and the route only
+      // with the capture.
+      final _RxCapture? cap = _takeRxCapture(cm.snrDb);
       final ChatMessage m = ChatMessage(
         channelIdx: cm.channelIdx,
         text: cm.text,
@@ -3843,6 +3917,11 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         at: _inboundAt(cm.timestamp),
         snrDb: cm.snrDb,
         isFlood: cm.isFlood,
+        rssiDbm: cap?.rssiDbm,
+        // A flood's hop count is only in the capture: the message frame reports
+        // `0xFF` for "flood", not how far it travelled.
+        hopCount: cap?.hopCount ?? (cm.isFlood ? null : cm.pathLen),
+        pathHashes: cap?.pathHashes,
       );
       _addMessage(m);
       // A channel message carries no key, so the only handle on the sender is
@@ -5734,9 +5813,24 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     } else if (f is RfLogFrame) {
       // RF-log captures carry the raw OTA packet *with* SNR/RSSI —
       // the signal needed to judge "what's in my area".
-      final Advert? a = f.log.packet?.advert;
+      final OtaPacket? p = f.log.packet;
+      final Advert? a = p?.advert;
       if (a != null) {
         _upsertAdvert(a, snr: f.log.snrDb, rssi: f.log.rssi);
+      }
+      // A channel packet is kept for the message push that follows it, which is
+      // where the RSSI and the path come from.
+      if (p != null && p.isGrpTxt) {
+        _rxCaptures.add(_RxCapture(
+          snrDb: f.log.snrDb,
+          rssiDbm: f.log.rssi,
+          hopCount: p.hopCount,
+          pathHashes: p.pathHashes,
+          at: DateTime.now(),
+        ));
+        while (_rxCaptures.length > _rxCaptureCap) {
+          _rxCaptures.removeAt(0);
+        }
       }
     }
   }
@@ -7291,4 +7385,25 @@ final class RadioCliUnavailable extends RadioCliResult {
 
   @override
   String toString() => 'RadioCliUnavailable("$detail")';
+}
+
+/// One raw packet as the radio's RF log reported it.
+///
+/// Decoded `PUSH_CODE_LOG_RX_DATA` (`0x88`): the measurements and the path of a
+/// packet this radio heard, kept only long enough to be paired with the
+/// channel-message push for the same packet.
+class _RxCapture {
+  const _RxCapture({
+    required this.snrDb,
+    required this.rssiDbm,
+    required this.hopCount,
+    required this.pathHashes,
+    required this.at,
+  });
+
+  final double snrDb;
+  final int rssiDbm;
+  final int hopCount;
+  final List<String> pathHashes;
+  final DateTime at;
 }

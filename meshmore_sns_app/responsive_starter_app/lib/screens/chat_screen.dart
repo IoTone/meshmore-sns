@@ -711,6 +711,12 @@ class _ChatScreenState extends State<ChatScreen>
         _input.text = quote + _input.text;
         _input.selection = TextSelection.collapsed(offset: _input.text.length);
         break;
+      case ChatAction.friendlyAck:
+        // Sent, not drafted: the measurements belong to this reception, and a
+        // reader who edits them is quoting numbers about a packet that is no
+        // longer the one on the screen.
+        await mc.sendFriendlyAck(m);
+        break;
       case ChatAction.copy:
         await copyMessageToClipboard(context, m);
         break;

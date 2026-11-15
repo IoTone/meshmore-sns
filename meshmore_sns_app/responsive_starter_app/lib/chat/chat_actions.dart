@@ -15,6 +15,7 @@ import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/message_heat.dart' show parseChannelSenderName;
 import '../theme/mm_skin.dart';
+import 'friendly_ack.dart';
 import 'reactions.dart';
 import '../screens/delivery_status_icon.dart';
 // The conversation picker is a widget library rather than a screen, and a
@@ -48,6 +49,10 @@ enum ChatAction {
   /// React with an emoji. The sheet closes with [ChatAction.react] and the
   /// caller opens the palette, because a picker inside a menu is two scrolls.
   react,
+  /// Answer with this radio's own measurements of how the row arrived: the
+  /// de-facto `ack: SNR …` line. Not the protocol's ACK, which is a checksum on
+  /// the wire and has no chat form.
+  friendlyAck,
   replyMention,
   quote,
   copy,
@@ -156,6 +161,25 @@ Future<ChatAction?> showChatActions(BuildContext context, ChatMessage m) async {
                 : null,
             trailing: const Icon(Icons.chevron_right, size: 18),
           ),
+          // A friendly ack answers the other question a signal report answers:
+          // not "who are you talking to" but "how did that arrive". Offered only
+          // for a received row this radio actually measured, because the line
+          // states numbers and a number it does not have would be invented.
+          if (canFriendlyAck(
+              outgoing: m.outgoing,
+              snrDb: m.snrDb,
+              hopCount: m.hopCount,
+              pathHashes: m.pathHashes))
+            ListTile(
+              key: const ValueKey<String>('chat-action-friendly-ack'),
+              leading: const Icon(Icons.wifi_tethering),
+              title: Text(l.actionFriendlyAck),
+              enabled: canCompose,
+              onTap: canCompose
+                  ? () => Navigator.pop(ctx, ChatAction.friendlyAck)
+                  : null,
+              trailing: const Icon(Icons.chevron_right, size: 18),
+            ),
           // Two answers, because they are different questions: address the
           // person (the MeshCore reply) or put their words in the box.
           ListTile(

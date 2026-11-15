@@ -6649,6 +6649,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get actionReact => 'リアクション';
 
   @override
+  String get actionFriendlyAck => 'フレンドリー ACK';
+
+  @override
   String get actionReplyNoName => '返信';
 
   @override

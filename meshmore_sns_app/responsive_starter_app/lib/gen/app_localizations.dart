@@ -11542,6 +11542,12 @@ abstract class AppLocalizations {
   /// **'React'**
   String get actionReact;
 
+  /// No description provided for @actionFriendlyAck.
+  ///
+  /// In en, this message translates to:
+  /// **'Friendly ack'**
+  String get actionFriendlyAck;
+
   /// No description provided for @actionReplyNoName.
   ///
   /// In en, this message translates to:
