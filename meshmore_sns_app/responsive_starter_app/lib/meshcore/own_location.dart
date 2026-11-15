@@ -26,6 +26,7 @@ class OwnLocation {
     required this.longitude,
     required this.source,
     this.altitudeMeters,
+    this.fixAt,
   });
 
   final double latitude;
@@ -38,6 +39,14 @@ class OwnLocation {
   /// **not** carry an altitude field in `SelfInfo`, so device-
   /// reported locations always have this null.
   final double? altitudeMeters;
+
+  /// When the platform measured this fix, for a phone fix; null for a
+  /// device-reported position, whose age the protocol does not carry.
+  ///
+  /// It is what lets a surface say "your last position was 14 hours ago"
+  /// instead of drawing a two-day-old point as if it were where the reader
+  /// stands.
+  final DateTime? fixAt;
 
   /// A short human-readable source label for status chips/tiles.
   String get sourceLabel => switch (source) {

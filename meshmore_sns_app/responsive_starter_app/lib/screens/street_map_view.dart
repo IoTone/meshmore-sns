@@ -1028,11 +1028,14 @@ class _StreetMapViewState extends State<StreetMapView> {
     if (visible == null) return _nodeBox(points);
     final double dLat = (visible.north - visible.south) * kHexFieldPad;
     final double dLon = (visible.east - visible.west) * kHexFieldPad;
+    // Clamped to the projection's own limits. A world view is already ±85, and
+    // a third of the world on top of it put the box at 285 degrees north, which
+    // `LatLngBounds` asserts on — the field's polygons could not be built at all.
     return GeoBox(
-      south: visible.south - dLat,
-      north: visible.north + dLat,
-      west: visible.west - dLon,
-      east: visible.east + dLon,
+      south: math.max(-85.0, visible.south - dLat),
+      north: math.min(85.0, visible.north + dLat),
+      west: math.max(-180.0, visible.west - dLon),
+      east: math.min(180.0, visible.east + dLon),
     );
   }
 
@@ -1812,6 +1815,11 @@ class _StreetMapViewState extends State<StreetMapView> {
     // of scaling with the ground it was drawn on.
     _hexRadiusMetres = quantiseHexRadius(
         hexRadiusForZoom(metresPerPixel: metresPerPixel));
+    // The drawn radius in logical pixels, which is what the cap must be sized
+    // from: it is not `kHexRadiusPx` once quantisation has moved it.
+    final double drawnRadiusPx = metresPerPixel > 0
+        ? _hexRadiusMetres / metresPerPixel
+        : kHexRadiusPx;
     _densityCellMetresShown = math.sqrt(3) * _hexRadiusMetres;
     final List<DensityPoint> densityPoints = _showDensity
         ? <DensityPoint>[
@@ -1851,14 +1859,27 @@ class _StreetMapViewState extends State<StreetMapView> {
               // for a phone and short on a tablet: `includeEmpty` emits the
               // lattice in row order, so the cells a constant drops are the last
               // rows, and the bottom of a large map simply had no field.
-              // Sized to the box, not to the screen: the field is built
-              // `kHexFieldPad` past the viewport on every side, and a cap sized
-              // to the screen drops its last rows.
-              maxCells: hexCellsForViewport(
-                width:
-                    MediaQuery.sizeOf(context).width * (1 + 2 * kHexFieldPad),
-                height:
-                    MediaQuery.sizeOf(context).height * (1 + 2 * kHexFieldPad),
+              // Sized to the box AND to the radius the cells are actually drawn
+              // at. The cap used to be computed from `kHexRadiusPx`, and the
+              // drawn radius is that quantised, which can be ~19 % smaller: the
+              // lattice then held up to 40 % more cells than the cap allowed,
+              // `includeEmpty` emits in row order, and the rows it dropped were
+              // the outer ones — a bare band at the edge of the screen that only
+              // filled in when something else rebuilt the field. A tenth of a
+              // margin covers the half-cell offsets at the edges.
+              maxCells: math.max(
+                hexCellsForViewport(
+                  width: MediaQuery.sizeOf(context).width *
+                      (1 + 2 * kHexFieldPad),
+                  height: MediaQuery.sizeOf(context).height *
+                      (1 + 2 * kHexFieldPad),
+                  radiusPx: drawnRadiusPx,
+                ) +
+                    ((MediaQuery.sizeOf(context).width +
+                                MediaQuery.sizeOf(context).height) /
+                            8)
+                        .ceil(),
+                400,
               ),
             );
       _hexPolygons = <Polygon<HexCell>>[
@@ -1867,7 +1888,15 @@ class _StreetMapViewState extends State<StreetMapView> {
             // The cell's own corners, drawn with the longitude scale the
             // lattice laid it out with. Recomputing them per latitude made a
             // wide view separate its columns by up to forty percent.
-            points: c.corners,
+            //
+            // Clamped to the projection's limit: at a wide zoom a cell is
+            // hundreds of kilometres across, so one whose centre is near the
+            // pole reaches past 90 degrees and `LatLngBounds` asserts, which
+            // took the whole layer down.
+            points: <LatLng>[
+              for (final LatLng p in c.corners)
+                LatLng(p.latitude.clamp(-85.0, 85.0), p.longitude),
+            ],
             hitValue: c,
             // The fill carries the count and the ink; the *edge* is what makes
             // it a field. An accent-coloured lattice over a satellite photograph
@@ -2378,10 +2407,17 @@ class _StreetMapViewState extends State<StreetMapView> {
                         ),
                       ),
                     ),
-                  // Self marker last so it sits on top.
+                  // Self marker last so it sits on top. Drawn at the fix, not at
+                  // the camera: `start.centre` is the ladder's answer for where
+                  // to look, which is a remembered view or the last place the
+                  // reader panned to. Putting the marker there said "you are
+                  // here" about the centre of the screen, wherever the reader had
+                  // scrolled, while every distance, the trail and the fences were
+                  // computed from the real fix.
                   if (hasFix)
                     Marker(
-                      point: start.centre,
+                      key: const ValueKey<String>('map-self-marker'),
+                      point: LatLng(selfLat!, selfLon!),
                       width: 56,
                       height: 56,
                       alignment: Alignment.center,

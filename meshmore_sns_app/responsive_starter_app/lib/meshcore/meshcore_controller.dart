@@ -886,6 +886,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       longitude: fix.longitude,
       altitudeMeters: fix.altitudeMeters,
       source: OwnLocationSource.phoneFix,
+      fixAt: fix.fixAt,
     );
     // R25+1 — record into the trail. Phone fixes are a primary
     // source of ownLocation when the device GPS is off or stale.

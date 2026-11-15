@@ -16,9 +16,18 @@ class PhoneFix {
     required this.latitude,
     required this.longitude,
     this.altitudeMeters,
+    this.fixAt,
   });
   final double latitude;
   final double longitude;
+
+  /// When the platform says it measured this, or null when it does not say.
+  ///
+  /// `Geolocator` answers with its cached position when the chip has not had a
+  /// new fix, and without this the app could not tell "you are here" from "this
+  /// is where you were when the phone last knew": a reader saw a position from
+  /// two days ago presented as their current one.
+  final DateTime? fixAt;
 
   /// Altitude above the WGS-84 reference ellipsoid, in meters.
   /// Null when the platform didn't report a usable altitude (no
@@ -153,6 +162,7 @@ class GeolocatorLocationService implements LocationService {
         latitude: p.latitude,
         longitude: p.longitude,
         altitudeMeters: alt,
+        fixAt: p.timestamp.isUtc ? p.timestamp : p.timestamp.toUtc(),
       ));
     } on TimeoutException {
       // Geolocator throws TimeoutException when `timeLimit` elapses.

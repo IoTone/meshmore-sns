@@ -231,4 +231,32 @@ void main() {
     await t.pumpWidget(const SizedBox());
     await t.pump(const Duration(seconds: 30));
   });
+
+  testWidgets('the self marker sits at the fix, not at the camera',
+      (WidgetTester t) async {
+    // The marker was drawn at `start.centre` — the ladder's answer for where to
+    // look, which is a remembered view or wherever the reader panned. So the
+    // screen said "you are here" about the middle of the screen while every
+    // distance, the trail and the fences were computed from the real fix.
+    final NoopLocationService loc = NoopLocationService(
+        next: PhoneFix(latitude: 38.9, longitude: -104.7, altitudeMeters: 2000));
+    final MeshcoreController c = await _pump(t, const MapScreen(), location: loc);
+    await c.connect();
+    await c.requestPhoneLocationFix();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 300));
+
+    final Marker? self = t
+        .widgetList<MarkerLayer>(find.byType(MarkerLayer))
+        .expand((MarkerLayer l) => l.markers)
+        .where((Marker m) => m.key == const ValueKey<String>('map-self-marker'))
+        .firstOrNull;
+    expect(self, isNotNull, reason: 'with a fix there is a self marker');
+    expect(self!.point.latitude, closeTo(38.9, 1e-6));
+    expect(self.point.longitude, closeTo(-104.7, 1e-6));
+
+    c.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
 }
