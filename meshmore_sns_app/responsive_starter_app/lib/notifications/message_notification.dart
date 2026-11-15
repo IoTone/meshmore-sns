@@ -15,7 +15,37 @@ enum NotificationClass {
 
   /// An SOS or its ACK — the one class allowed to be loud by default.
   sos,
+
+  /// A fence crossing: the reader walked into or out of an area they drew.
+  ///
+  /// Its own class rather than a message, because it is the app watching the
+  /// reader's own position rather than something that arrived over the mesh:
+  /// it must be silenceable without touching the chat channels, and it must
+  /// stay out of the message group and its "N messages" count, which would
+  /// otherwise state a number that is not about messages at all.
+  geofence,
 }
+
+/// The OS channel id for [cls].
+///
+/// Constant per class, so the user's per-channel silence setting keeps working
+/// across releases. One function rather than a getter on each carrier, because
+/// there are two carriers and the two must not drift.
+String channelIdFor(NotificationClass cls) => switch (cls) {
+      NotificationClass.channel => 'mm_messages_channel',
+      NotificationClass.direct => 'mm_messages_direct',
+      NotificationClass.sos => 'mm_messages_sos',
+      NotificationClass.geofence => 'mm_geofence',
+    };
+
+/// Whether [cls] belongs to the message group whose summary counts messages.
+///
+/// The summary exists to say how many messages are waiting. A fence crossing is
+/// not a message, so counting one into that number, or letting it replace the
+/// payload a tap on the summary opens, would make the line state something
+/// untrue.
+bool joinsMessageGroup(NotificationClass cls) =>
+    cls != NotificationClass.geofence;
 
 /// A message notification, already resolved to the text the OS will show.
 ///
@@ -44,11 +74,7 @@ class MessageNotification {
 
   /// The OS channel id. Constant per class, so the user's per-channel
   /// silence setting keeps working across releases.
-  String get channelId => switch (cls) {
-        NotificationClass.channel => 'mm_messages_channel',
-        NotificationClass.direct => 'mm_messages_direct',
-        NotificationClass.sos => 'mm_messages_sos',
-      };
+  String get channelId => channelIdFor(cls);
 }
 
 /// One line standing in for a batch of messages the app deliberately did not
@@ -77,9 +103,8 @@ class MessageDigest {
   final String body;
   final String payload;
 
-  String get channelId => switch (cls) {
-        NotificationClass.channel => 'mm_messages_channel',
-        NotificationClass.direct => 'mm_messages_direct',
-        NotificationClass.sos => 'mm_messages_sos',
-      };
+  /// Never [NotificationClass.geofence]: a digest stands for a queue of
+  /// messages, and the arm exists only because the switch is over the whole
+  /// enum.
+  String get channelId => channelIdFor(cls);
 }

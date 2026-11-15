@@ -67,6 +67,17 @@ abstract interface class NotificationStrings {
   /// Deliberately not the message text: this line is about the alarm, and it
   /// stays on screen until the alarm ends.
   String alarmRunningBody();
+
+  /// The line a fence crossing shows. [entry] is true walking in and false
+  /// walking out, so the pair cannot be confused on a lock screen.
+  String fenceCrossed(String label, {required bool entry});
+
+  /// The honest second line under a fence crossing.
+  ///
+  /// A fence is evaluated against the position fixes the app already has, so a
+  /// crossing is only seen when one arrives. The notification says so rather
+  /// than implying the app is watching continuously.
+  String fenceCrossedBody();
 }
 
 /// [NotificationStrings] over the generated ARB bundle.
@@ -82,8 +93,20 @@ class LocalizedNotificationStrings implements NotificationStrings {
       NotificationClass.channel => l10n.notifTitleChannel(who),
       NotificationClass.direct => l10n.notifTitleDirect(who),
       NotificationClass.sos => l10n.notifTitleSos,
+      // A fence crossing has two titles and the direction decides which, so it
+      // never comes through here: see [fenceCrossed]. Reaching this arm is a
+      // programming error, and it says so rather than inventing a title.
+      NotificationClass.geofence =>
+        throw StateError('a fence crossing is titled by fenceCrossed'),
     };
   }
+
+  @override
+  String fenceCrossed(String label, {required bool entry}) =>
+      entry ? l10n.geofenceEntered(label) : l10n.geofenceLeft(label);
+
+  @override
+  String fenceCrossedBody() => l10n.notifBodyFence;
 
   @override
   String sosBody() => l10n.notifBodySos;
@@ -391,6 +414,30 @@ class NotificationService {
   }
 
   bool _alarmRunning = false;
+
+  /// A fence crossing, posted through the same notifier as a message.
+  ///
+  /// One OS id per fence, so walking in and out of the same fence replaces the
+  /// previous entry instead of stacking a second one, and a re-entry after a
+  /// restart lands on the entry that is already there. The id is derived the
+  /// same way a message's is, because `String.hashCode` is not stable between
+  /// processes and `cancelFor` targets ids an earlier process posted.
+  ///
+  /// The cue is not played here: a crossing has two cues and the direction
+  /// decides which, so `GeofenceController.onRaised` plays it beside this call.
+  void onGeofence({
+    required String fenceId,
+    required String label,
+    required bool entry,
+  }) {
+    notifier.show(MessageNotification(
+      id: idFor('fence:$fenceId'),
+      cls: NotificationClass.geofence,
+      title: strings().fenceCrossed(label, entry: entry),
+      body: strings().fenceCrossedBody(),
+      payload: 'fence:$fenceId',
+    ));
+  }
 
   /// The alarm's own notification id: far from any message's digest range in
   /// practice, and fixed so replacing it never stacks.

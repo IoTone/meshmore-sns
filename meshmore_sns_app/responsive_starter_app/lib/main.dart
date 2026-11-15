@@ -63,6 +63,7 @@ import 'package:meshmore_sns_app/notifications/notification_focus.dart';
 import 'package:meshmore_sns_app/shell/shell_view_request.dart';
 import 'package:meshmore_sns_app/notifications/notification_service.dart';
 import 'package:meshmore_sns_app/notifications/notifier.dart';
+import 'package:meshmore_sns_app/perms/battery_exemption.dart';
 import 'package:meshmore_sns_app/perms/first_run_controller.dart';
 import 'package:meshmore_sns_app/perms/location_service.dart';
 import 'package:meshmore_sns_app/perms/permissions_service.dart';
@@ -257,6 +258,11 @@ Future<void> startApp() async {
       // tap asks it rather than going to the root route and stopping there.
       appRouter.go('/');
       shellViewRequest.openChat(slot);
+    } else if (payload.startsWith('fence:')) {
+      // A crossing opens the fence list, where the log line for it is. The
+      // screen has no per-fence route, and inventing one for a tap would be a
+      // second way into the same list.
+      appRouter.push('/settings/geofences');
     }
   };
   runApp(
@@ -382,6 +388,16 @@ Future<void> startApp() async {
                       cues.play(a.isEntry
                           ? CueKind.geofenceEnter
                           : CueKind.geofenceExit);
+                      // The cue is only heard by a phone that is awake and in
+                      // a pocket. The OS entry is what a reader sees when they
+                      // pick the phone up after the crossing, which is the
+                      // half of this the spec asked for and the app did not
+                      // have.
+                      notifications.onGeofence(
+                        fenceId: a.fence.id,
+                        label: a.fence.label,
+                        entry: a.isEntry,
+                      );
                     }
                   })
                 ..load()
@@ -484,6 +500,11 @@ Future<void> startApp() async {
           create: (_) => PlaceReportBudget(clock: DateTime.now),
         ),
         Provider<Notifier?>.value(value: notifier),
+        // Whether Android will let the keep-alive keep running. Read by the
+        // row under the background switch, which is the only place the app
+        // can say why a backgrounded link stops.
+        Provider<BatteryExemptionService>.value(
+            value: const PlatformBatteryExemption()),
         ChangeNotifierProvider<NotificationPrefs?>.value(
             value: notificationPrefs),
         Provider<NotificationService?>.value(value: notifications),
@@ -548,12 +569,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         // The bundle's cue, vibration and speech are the app's, not the OS's,
         // so they are attached here, where the providers that own them exist.
         service.effects = AppNotificationEffects(
-          onCue: (NotificationClass cls) =>
-              context.read<CueService>().play(switch (cls) {
-                    NotificationClass.channel => CueKind.messageIn,
-                    NotificationClass.direct => CueKind.dmIn,
-                    NotificationClass.sos => CueKind.alert,
-                  }),
+          onCue: (NotificationClass cls) {
+            final CueKind? cue = switch (cls) {
+              NotificationClass.channel => CueKind.messageIn,
+              NotificationClass.direct => CueKind.dmIn,
+              NotificationClass.sos => CueKind.alert,
+              // A crossing has two cues and the direction decides which, so it
+              // plays its own in `GeofenceController.onRaised` and never
+              // arrives here.
+              NotificationClass.geofence => null,
+            };
+            if (cue != null) context.read<CueService>().play(cue);
+          },
           onVibrate: HapticFeedback.mediumImpact,
           onSpeakChannel: (int slot, String text) =>
               context.read<TtsController>().speakForChannel(slot, text),

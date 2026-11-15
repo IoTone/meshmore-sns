@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +15,7 @@ import '../meshcore/block_store.dart';
 import '../media/media_prefs.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../notifications/notifier.dart';
+import '../perms/battery_exemption.dart';
 import '../perms/permissions_service.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
@@ -225,6 +228,11 @@ class AppSettingsScreen extends StatelessWidget {
               value: mc.backgroundKeepaliveEnabled,
               onChanged: (bool v) => _onBgToggle(context, mc, v),
             ),
+            // The switch above is a preference. This is the fact that decides
+            // whether the OS honours it: an OEM can stop a foreground service
+            // that is still on the battery-optimisation list, and until this
+            // row existed the app had no way to say so.
+            _BatteryExemptionRow(enabled: mc.backgroundKeepaliveEnabled),
             // Background peer-telemetry polling — politely cycles
             // contacts so temperature / altitude populate across the
             // fabric. Costs a little OTA airtime; off = no telemetry
@@ -583,6 +591,101 @@ class _NotificationHealthRow extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Whether Android will let the keep-alive keep running.
+///
+/// The background switch above is a preference; this is the fact that decides
+/// whether the OS honours it. An OEM's battery management can stop a
+/// foreground service that is still on the optimisation list, and the app could
+/// not see that state, so "I get no notifications" had no answer anywhere in
+/// the UI (`docs/MISSING-WORK.md` §9).
+///
+/// Only the problem state is drawn. Exempt is the promise holding, and
+/// unavailable is a platform that cannot answer: a row for either would be a
+/// line the reader can do nothing with, and the second would be a warning that
+/// may be false.
+class _BatteryExemptionRow extends StatefulWidget {
+  const _BatteryExemptionRow({required this.enabled});
+
+  /// Whether the reader has asked for the background link at all. With the
+  /// switch off there is no promise to keep, so there is nothing to warn about.
+  final bool enabled;
+
+  @override
+  State<_BatteryExemptionRow> createState() => _BatteryExemptionRowState();
+}
+
+class _BatteryExemptionRowState extends State<_BatteryExemptionRow>
+    with WidgetsBindingObserver {
+  /// Null until the first answer, so the row does not flash on a slow read.
+  BatteryExemption? _state;
+  bool _asking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_read());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The request leaves the app for the OS page, so the answer can only have
+    // changed once the reader comes back.
+    if (state == AppLifecycleState.resumed) unawaited(_read());
+  }
+
+  Future<void> _read() async {
+    final BatteryExemptionService? service =
+        context.read<BatteryExemptionService?>();
+    if (service == null) return;
+    final BatteryExemption read = await service.read();
+    if (!mounted) return;
+    setState(() => _state = read);
+  }
+
+  Future<void> _ask() async {
+    final BatteryExemptionService? service =
+        context.read<BatteryExemptionService?>();
+    if (service == null || _asking) return;
+    setState(() => _asking = true);
+    await service.request();
+    if (!mounted) return;
+    setState(() => _asking = false);
+    // The request resolves when the OS page closes, not when the user agrees,
+    // so the state is read again rather than assumed.
+    await _read();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    if (!widget.enabled || _state != BatteryExemption.optimised) {
+      return const SizedBox.shrink();
+    }
+    return ListTile(
+      key: const ValueKey<String>('settings-battery-exemption'),
+      leading: const Icon(Icons.battery_alert_outlined),
+      title: Text(l.settingsBatteryOptimisedTitle),
+      subtitle: Text(
+        l.settingsBatteryOptimisedSub,
+        style: TextStyle(color: cs.onSurfaceVariant),
+      ),
+      trailing: MmAction(
+        dense: true,
+        label: l.settingsBatteryAllow,
+        onPressed: _asking ? null : _ask,
+      ),
     );
   }
 }

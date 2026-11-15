@@ -16,6 +16,9 @@ void main() {
     'mm_messages_channel',
     'mm_messages_direct',
     'mm_messages_sos',
+    // The fence channel is one of ours too: a reader who silenced it has
+    // changed what the app can deliver, and the health row has to say so.
+    'mm_geofence',
   ];
 
   AndroidNotificationChannel channel(String id, Importance importance) =>
@@ -72,6 +75,15 @@ void main() {
     expect(
       healthFrom(enabled: null, channels: null, ourIds: ours),
       NotifierHealth.ok,
+    );
+  });
+
+  test('a silenced fence channel is quiet, like any other', () {
+    final List<AndroidNotificationChannel> mixed = allAt(Importance.high)
+      ..[3] = channel('mm_geofence', Importance.min);
+    expect(
+      healthFrom(enabled: true, channels: mixed, ourIds: ours),
+      NotifierHealth.quiet,
     );
   });
 }

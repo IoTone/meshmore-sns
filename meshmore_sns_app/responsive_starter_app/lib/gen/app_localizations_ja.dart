@@ -2378,6 +2378,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifAlarmRunningBody => '警報を繰り返し送信中です。アプリを開いて停止してください。';
 
   @override
+  String get notifBodyFence => '最新の位置情報による判定です。位置情報が届いたときにだけ通過を検知します。';
+
+  @override
+  String get settingsBatteryOptimisedTitle =>
+      'バッテリー最適化によりバックグラウンドで切断されることがあります';
+
+  @override
+  String get settingsBatteryOptimisedSub =>
+      '一部の端末はバックグラウンドアプリを停止します。このアプリを最適化の対象外にすると、メッセージが届き続けます。';
+
+  @override
+  String get settingsBatteryAllow => '許可する';
+
+  @override
   String get notifSectionTitle => '通知';
 
   @override

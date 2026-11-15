@@ -12,7 +12,7 @@ import '../gen/app_localizations_ja.dart';
 import 'message_notification.dart';
 import 'notifier.dart';
 
-/// The platform notifier: three OS channels, one per [NotificationClass].
+/// The platform notifier: one OS channel per [NotificationClass].
 ///
 /// D8.20 fixes the shape: high importance so a message shows on the lock
 /// screen, a dedicated SOS channel that can be loud while the others are
@@ -155,6 +155,12 @@ class LocalNotifier implements Notifier {
       name: 'Emergency alerts',
       description: 'SOS and its acknowledgements.',
     ),
+    // Its own channel, so a reader can silence the fences they drew without
+    // silencing the messages they are waiting for, and the other way round.
+    'mm_geofence': (
+      name: 'Fence crossings',
+      description: 'When you walk into or out of a fence you drew.',
+    ),
   };
 
   @override
@@ -214,20 +220,30 @@ class LocalNotifier implements Notifier {
   @override
   Future<void> show(MessageNotification n) async {
     final ({String name, String description}) ch = _channels[n.channelId]!;
+    // A fence crossing is not a message: it stays out of the message group, so
+    // the group's "N messages" summary never counts one and a tap on that
+    // summary never opens a fence.
+    final bool grouped = joinsMessageGroup(n.cls);
     final AndroidNotificationDetails android = AndroidNotificationDetails(
       n.channelId,
       ch.name,
       channelDescription: ch.description,
       importance: Importance.high,
       priority: Priority.high,
-      category: n.cls == NotificationClass.sos
-          ? AndroidNotificationCategory.alarm
-          : AndroidNotificationCategory.message,
+      category: switch (n.cls) {
+        NotificationClass.sos => AndroidNotificationCategory.alarm,
+        // A fence is a reminder the reader set for themselves, not a call and
+        // not a message.
+        NotificationClass.geofence => AndroidNotificationCategory.reminder,
+        NotificationClass.channel ||
+        NotificationClass.direct =>
+          AndroidNotificationCategory.message,
+      },
       onlyAlertOnce: false,
       autoCancel: true,
       // A message is not a call: never a full-screen intent.
       fullScreenIntent: false,
-      groupKey: _groupKey,
+      groupKey: grouped ? _groupKey : null,
     );
     (_live[n.payload] ??= <int>{}).add(n.id);
     await _plugin.show(
@@ -240,6 +256,7 @@ class LocalNotifier implements Notifier {
       ),
       payload: n.payload,
     );
+    if (!grouped) return;
     _rememberPayload(n.payload);
     await _postSummary(n);
   }
