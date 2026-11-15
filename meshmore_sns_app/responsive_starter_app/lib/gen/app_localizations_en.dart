@@ -6973,4 +6973,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String mediaReceivedForeign(int n) {
     return '$n more arrived in a codec this build does not carry, so they cannot be shown here.';
   }
+
+  @override
+  String diagnosticsUnansweredLine(int n) {
+    return '$n commands were never answered';
+  }
+
+  @override
+  String diagnosticsReactionsOrphanedLine(int n) {
+    return '$n reactions named a message this window no longer holds';
+  }
+
+  @override
+  String diagnosticsTelemetryAskedLine(int n) {
+    return '$n telemetry requests sent this session';
+  }
 }

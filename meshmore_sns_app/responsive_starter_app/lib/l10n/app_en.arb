@@ -4745,5 +4745,32 @@
         "type": "int"
       }
     }
+  },
+  "diagnosticsUnansweredLine": "{n} commands were never answered",
+  "@diagnosticsUnansweredLine": {
+    "description": "Diagnostics fact: commands that reached the ledger's timeout with no answer from the radio.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosticsReactionsOrphanedLine": "{n} reactions named a message this window no longer holds",
+  "@diagnosticsReactionsOrphanedLine": {
+    "description": "Diagnostics fact: reaction lines that could not be attached to a message, so they were kept as ordinary lines.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosticsTelemetryAskedLine": "{n} telemetry requests sent this session",
+  "@diagnosticsTelemetryAskedLine": {
+    "description": "Diagnostics fact: how many frames the app sent asking peers for readings, which is the airtime cost of the telemetry poller.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   }
 }

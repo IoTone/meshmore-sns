@@ -11613,6 +11613,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} more arrived in a codec this build does not carry, so they cannot be shown here.'**
   String mediaReceivedForeign(int n);
+
+  /// Diagnostics fact: commands that reached the ledger's timeout with no answer from the radio.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} commands were never answered'**
+  String diagnosticsUnansweredLine(int n);
+
+  /// Diagnostics fact: reaction lines that could not be attached to a message, so they were kept as ordinary lines.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} reactions named a message this window no longer holds'**
+  String diagnosticsReactionsOrphanedLine(int n);
+
+  /// Diagnostics fact: how many frames the app sent asking peers for readings, which is the airtime cost of the telemetry poller.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} telemetry requests sent this session'**
+  String diagnosticsTelemetryAskedLine(int n);
 }
 
 class _AppLocalizationsDelegate

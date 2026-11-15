@@ -6695,4 +6695,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String mediaReceivedForeign(int n) {
     return 'このビルドが対応していないコーデックで $n 件届いたため、ここには表示できません。';
   }
+
+  @override
+  String diagnosticsUnansweredLine(int n) {
+    return '$n 件のコマンドが応答なしで終わりました';
+  }
+
+  @override
+  String diagnosticsReactionsOrphanedLine(int n) {
+    return '$n 件のリアクションは、このウィンドウに残っていないメッセージを指していました';
+  }
+
+  @override
+  String diagnosticsTelemetryAskedLine(int n) {
+    return 'このセッションで送ったテレメトリ要求 $n 件';
+  }
 }

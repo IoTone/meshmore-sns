@@ -207,6 +207,30 @@ void main() {
     ctrl.dispose();
   });
 
+  testWidgets('counters that had no screen are facts on this one',
+      (WidgetTester t) async {
+    // Three counters were kept and read by nothing: commands that timed out,
+    // reactions that named a message the window no longer holds, and the frames
+    // the telemetry poller sent. Each is a thing that happened and left no
+    // trace, which is the same defect as a received picture nothing claimed.
+    final (MeshcoreController ctrl, FakeMeshcoreTransport fake) =
+        await pump(t);
+    await t.tap(find.text('Connect'));
+    await t.pumpAndSettle();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    // A reaction line for a message this window does not hold: it is kept as an
+    // ordinary line, and the counter is the only trace that it was a reaction.
+    // The channel form MeshCore One writes: `@[name]emoji` then the hash on
+    // its own line, after the `Name: ` prefix a channel line carries.
+    fake.emit(channelMsgFrame(text: 'Ana: @[Ana]👍\n0a1b2c3d'));
+    await t.pumpAndSettle();
+
+    expect(find.textContaining('reactions named a message'), findsOneWidget);
+    ctrl.dispose();
+  });
+
   testWidgets('forgetting a radio asks first and names the consequence',
       (WidgetTester t) async {
     SharedPreferences.setMockInitialValues(<String, Object>{

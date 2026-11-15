@@ -140,6 +140,19 @@ class RadioConnectionFacts extends StatelessWidget {
                 mmShortDuration(mc.airtimeBudget!))),
         if (mc.airtimeRefusals > 0)
           fault(l.airtimeRefusedCount(mc.airtimeRefusals)),
+        // Three counters that were kept and read by nothing. Each one is a
+        // thing that happened and left no trace on any screen, which is the
+        // same defect as a received picture that nothing claimed: the app knew,
+        // and the reader did not.
+        if (mc.unansweredCommands > 0)
+          fact(l.diagnosticsUnansweredLine(mc.unansweredCommands)),
+        if (mc.reactionsWithoutTarget > 0)
+          fact(l.diagnosticsReactionsOrphanedLine(mc.reactionsWithoutTarget)),
+        // The cost of asking peers for readings. It is a fact rather than a
+        // fault: every one of these was a frame this app chose to send, and the
+        // number is how a reader sees what the telemetry poller costs.
+        if (mc.telemetrySendCount > 0)
+          fact(l.diagnosticsTelemetryAskedLine(mc.telemetrySendCount)),
         if (showActions) ...<Widget>[
           SizedBox(height: skin.space.step(2)),
           Padding(

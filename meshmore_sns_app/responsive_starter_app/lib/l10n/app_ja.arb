@@ -3048,5 +3048,29 @@
         "type": "int"
       }
     }
+  },
+  "diagnosticsUnansweredLine": "{n} 件のコマンドが応答なしで終わりました",
+  "@diagnosticsUnansweredLine": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosticsReactionsOrphanedLine": "{n} 件のリアクションは、このウィンドウに残っていないメッセージを指していました",
+  "@diagnosticsReactionsOrphanedLine": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "diagnosticsTelemetryAskedLine": "このセッションで送ったテレメトリ要求 {n} 件",
+  "@diagnosticsTelemetryAskedLine": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   }
 }

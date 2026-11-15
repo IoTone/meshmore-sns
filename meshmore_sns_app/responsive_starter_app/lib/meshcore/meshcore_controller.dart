@@ -4944,9 +4944,12 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         0;
   }
 
-  /// Total telemetry requests sent this session (incremented once
-  /// per actual outbound frame, not per call). Useful for the
-  /// observability chip in the elevation view.
+  /// Total telemetry requests sent this session (incremented once per actual
+  /// outbound frame, not per call).
+  ///
+  /// Read by the diagnostics facts block, which is where a reader can see what
+  /// the telemetry poller costs. It used to say it was for "the observability
+  /// chip in the elevation view", and no chip ever read it.
   int get telemetrySendCount =>
       _telemetryAttempts.values.fold(0, (int a, int b) => a + b);
 
