@@ -23,6 +23,10 @@ import 'package:meshmore_sns_app/theme/mm_tokens.dart';
 /// new one fails the test. When a file reaches zero its entry is deleted.
 
 /// The index of the `)` that closes the `(` at [open], or -1.
+///
+/// Known limit: a `//` inside a row's arguments is not skipped, so a comment
+/// containing a `)` would end the row early. The failure direction is a row
+/// that looks shorter than it is, which over-counts and fails loudly.
 int _closeParen(String src, int open) {
   int depth = 0;
   String? quote;

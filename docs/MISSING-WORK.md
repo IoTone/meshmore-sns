@@ -296,6 +296,21 @@ that now holds it, so "built" is checkable rather than asserted.
 | **A-02, icon-only controls inside screens** | Closed by measurement: every `IconButton` in `lib/` carries a tooltip and every icon-only `InkWell`/`GestureDetector` in `lib/screens/` carries a label or a `Semantics` node. | measured 2026-11-15 over the whole tree, zero hits |
 | **R-01, the CLI surface covers two commands** | Closed as decided, not built: the typed whitelist is final (D11.11) and the twelve refused commands stay refused. The row was stale against that decision. | `packages/meshcore/lib/src/codec/cli_command.dart`; register D11.11 |
 
+### The review pass, 2026-11-15
+
+An independent review of the wave's 29 commits found six defects and one nit.
+All seven are fixed, each with the test that holds it:
+
+| Finding | Fix |
+|---|---|
+| The reshape sheet asked for a name and threw it away: it opened as a new fence with an empty field, and `updatePolygon` never read the label | The sheet opens with `editing: true` and the fence's own name, and `updatePolygon` takes an optional label. An untouched field keeps the old name (`test/geofence/geofence_controller_test.dart`) |
+| A reshape of a fence deleted while its corners were open reported success and played the success cue | `updatePolygon` returns false when the fence is gone, the cue is played only on true, and the map says the fence is gone (`geofenceReshapeGone`) |
+| One `_nodes` write skipped the revision bump, so the prefix cache could keep a partial map after the persisted table loaded | `_nodesChanged()` is called there, as the invariant at `meshcore_controller.dart:1934` says it must be |
+| `ToolHistoryStore.record` had no in-flight-load guard, so two records before the load finished could each assign `_runs` and drop one | One shared load future (`_loading`), so a record awaits the same read |
+| The tree's memo was a static keyed on `identityHashCode` and never cleared, so a dead controller's graph was retained | `MeshGraph.clearCache()` is called from `MeshcoreController.dispose` |
+| `PlaceCreateSheet.initialChannelIdx` was dead, and the fallback was not validated against the radio's slots | The message-suggestion line passes it, the caller's slot wins over the remembered one, and every candidate is checked against `mc.channels` |
+| The two scan helpers do not handle raw or triple-quoted strings, or `//` inside a row's arguments | Documented as known limits in both files: the failure direction is over-counting, which fails loudly |
+
 ### Still open after this pass
 
 | Item | What closes it |
