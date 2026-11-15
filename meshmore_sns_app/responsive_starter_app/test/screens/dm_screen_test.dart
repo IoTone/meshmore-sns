@@ -86,7 +86,7 @@ void main() {
     // disabled field.
     // The empty thread is one line, and it names the state rather than
     // instructing a tap.
-    expect(find.textContaining('no messages yet'), findsOneWidget);
+    expect(find.textContaining('No messages yet'), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('composer-connect')),
         findsOneWidget);
 

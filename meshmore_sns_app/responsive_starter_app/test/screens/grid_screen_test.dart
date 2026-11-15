@@ -268,11 +268,12 @@ void main() {
 
   testWidgets('W2 the text sizes come from the skin ladder, not literals',
       (WidgetTester t) async {
-    // The migration replaced four literals on this screen: the picker's
-    // long label (13), the status line (12), the legend's section title (11)
-    // and the legend row text (12). Every preset's typeScale is 1.0, so the
-    // resolved sizes must still be the numbers the literals were — a
-    // migration that moves a pixel fails here instead of passing review.
+    // The migration replaced the literals on this screen: the picker's long
+    // label (13), the status line (12) and the legend's own row text (12). The
+    // legend's "LEGEND" title is gone, because a heading saying legend above a
+    // legend is a label for a label. Every preset's typeScale is 1.0, so the
+    // resolved sizes must still be the numbers the literals were: a migration
+    // that moves a pixel fails here instead of passing review.
     // The legend strip is tall; the default 800x600 test surface clips it,
     // which is the pre-existing layout (the real screen is 900+ dp tall).
     t.view.physicalSize = const Size(900, 1600);
@@ -305,9 +306,13 @@ void main() {
 
     await t.tap(find.byTooltip('Show legend'));
     await t.pump();
-    expect(t.widget<Text>(find.text('LEGEND')).style?.fontSize, type.sizeSm);
-    expect(find.text('LEGEND'), findsOneWidget);
-    expect(t.widget<Text>(find.text('LEGEND')).style?.fontSize, 11);
+    // The panel starts at its first real line, not at a title above it.
+    expect(find.text('LEGEND'), findsNothing);
+    expect(
+        t.widget<Text>(find.textContaining('Rings are distance bands'))
+            .style
+            ?.fontSize,
+        type.sizeBody);
 
     await t.pumpWidget(const SizedBox());
     mc.dispose();
