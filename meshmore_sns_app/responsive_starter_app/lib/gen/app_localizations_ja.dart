@@ -1417,10 +1417,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatSendNotSent => '送信できません。MeshCore 無線機の準備ができていないか、受け付けませんでした。';
 
   @override
-  String get dmSendNotSent => '送信できません。MeshCore 無線機の準備ができていないか、前のメッセージの応答待ちです。';
+  String get dmSendNotSent => '送信していません。MeshCore 無線機が接続されていません。';
 
   @override
-  String get dmWaitingForAck => 'この相手への前のメッセージの応答待ちです。確認できてからもう一度送ってください。';
+  String get dmWaitingForAck =>
+      '送信していません。この相手への前回のメッセージがまだ応答待ちで、無線機は同時に 1 件しか保持できません。';
 
   @override
   String get chatSend => '送信';

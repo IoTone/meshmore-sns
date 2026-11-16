@@ -888,9 +888,9 @@
   },
   "chatSendNotSent": "Not sent. The MeshCore radio is not ready, or it refused the message.",
 
-  "dmSendNotSent": "Not sent. The MeshCore radio is not ready, or it is still waiting on an earlier message.",
+  "dmSendNotSent": "Not sent. The MeshCore radio is not connected.",
 
-  "dmWaitingForAck": "Still waiting for the last message to this contact. Send again once it is acknowledged.",
+  "dmWaitingForAck": "Not sent. The last message to this contact is still waiting for its answer, and the radio can only hold one at a time.",
   "@dmWaitingForAck": {
     "description": "Shown when the keyboard send action is used while an earlier direct message to the same contact is unsettled."
   },  "@dmSendNotSent": {

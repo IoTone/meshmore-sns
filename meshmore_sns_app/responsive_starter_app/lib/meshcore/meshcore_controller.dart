@@ -3501,13 +3501,27 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   int get unsettledOutgoingCount {
     int n = 0;
     for (final ChatMessage m in _messages) {
-      if (!m.outgoing) continue;
-      if (m.delivery == MessageDelivery.sending ||
-          m.delivery == MessageDelivery.sent) {
-        n++;
-      }
+      if (!m.outgoing || m.hidden) continue;
+      if (_inFlight(m)) n++;
     }
     return n;
+  }
+
+  /// How long a send can still be in the radio's acknowledgement table.
+  ///
+  /// The firmware's own window is a few seconds (`RESP_CODE_SENT` reports it,
+  /// measured at 4 s on the handset). A row that has said `sent` for longer than
+  /// this is not in flight any more: the answer is not coming, and treating it
+  /// as pending blocked every later message to that contact for the rest of the
+  /// session.
+  static const Duration kAckWindow = Duration(minutes: 2);
+
+  bool _inFlight(ChatMessage m) {
+    if (m.delivery != MessageDelivery.sending &&
+        m.delivery != MessageDelivery.sent) {
+      return false;
+    }
+    return DateTime.now().difference(m.at) < kAckWindow;
   }
 
   /// Every DM conversation, newest first, as the chat strip lists it.
@@ -3561,12 +3575,12 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   bool hasUnsettledDmTo(String peerPubKeyHex) {
     final String peer = peerPubKeyHex.toLowerCase();
     for (final ChatMessage m in _messages) {
-      if (!m.outgoing || m.peerPubKeyHex?.toLowerCase() != peer) continue;
+      // A hidden row is a reaction's wire line, not something the reader is
+      // waiting on, and it must not hold the thread hostage.
+      if (!m.outgoing || m.hidden) continue;
+      if (m.peerPubKeyHex?.toLowerCase() != peer) continue;
       // In flight on this link, not `unknown`: see [unsettledOutgoingCount].
-      if (m.delivery == MessageDelivery.sending ||
-          m.delivery == MessageDelivery.sent) {
-        return true;
-      }
+      if (_inFlight(m)) return true;
     }
     return false;
   }
@@ -3808,6 +3822,31 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     final ContactMessage cm = f.message;
     final String prefixHex = _hex(cm.pubKeyPrefix);
     if (_seenInbound('d|$prefixHex|${cm.timestamp}|${cm.text}')) return;
+    // A reaction is a gesture on a message, not a message of its own, and a
+    // direct one is the same line without the author: the envelope already says
+    // who sent it. The channel path folded these in and this one did not, so a
+    // reaction that arrived in a direct message was stored as chat text and the
+    // reader saw an emoji and a code instead of a chip.
+    final ({String hash, String emoji, String? author, bool isOpen})? rx =
+        Reactions.parse(cm.text.trim());
+    if (rx != null) {
+      String? peerForReaction;
+      for (final DiscoveredNode n in _nodes.values) {
+        if (!n.pubKeyHex.startsWith(prefixHex)) continue;
+        if (peerForReaction != null) {
+          peerForReaction = null;
+          break;
+        }
+        peerForReaction = n.pubKeyHex;
+      }
+      if (_applyReaction(-1, peerForReaction ?? prefixHex, rx)) {
+        notifyListeners();
+        return;
+      }
+      _reactionsWithoutTarget++;
+      notifyListeners();
+      return;
+    }
     // A six-byte prefix that matches two nodes is not evidence for either: the
     // first match used to win, so one peer's message was filed under another's
     // key, and the thread, its read mark and any block decision followed the

@@ -2579,13 +2579,13 @@ abstract class AppLocalizations {
   /// Shown when a direct message produced no row: the radio is not ready, or the in-flight ceiling is reached.
   ///
   /// In en, this message translates to:
-  /// **'Not sent. The MeshCore radio is not ready, or it is still waiting on an earlier message.'**
+  /// **'Not sent. The MeshCore radio is not connected.'**
   String get dmSendNotSent;
 
   /// Shown when the keyboard send action is used while an earlier direct message to the same contact is unsettled.
   ///
   /// In en, this message translates to:
-  /// **'Still waiting for the last message to this contact. Send again once it is acknowledged.'**
+  /// **'Not sent. The last message to this contact is still waiting for its answer, and the radio can only hold one at a time.'**
   String get dmWaitingForAck;
 
   /// No description provided for @chatSend.

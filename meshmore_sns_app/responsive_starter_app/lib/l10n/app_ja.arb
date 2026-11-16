@@ -799,9 +799,9 @@
     }
   },
   "chatSendNotSent": "送信できません。MeshCore 無線機の準備ができていないか、受け付けませんでした。",
-  "dmSendNotSent": "送信できません。MeshCore 無線機の準備ができていないか、前のメッセージの応答待ちです。",
+  "dmSendNotSent": "送信していません。MeshCore 無線機が接続されていません。",
 
-  "dmWaitingForAck": "この相手への前のメッセージの応答待ちです。確認できてからもう一度送ってください。",  "chatSend": "送信",
+  "dmWaitingForAck": "送信していません。この相手への前回のメッセージがまだ応答待ちで、無線機は同時に 1 件しか保持できません。",  "chatSend": "送信",
   "chatBudgetNear": "上限が近いです:無線機は自分の名前もこのバイト数に含めます",
   "chatBudgetTooLong": "{over} バイト超過しています。無線機は残りを通知せずに切り捨てます。",
   "chatMessageActions": "メッセージ操作",

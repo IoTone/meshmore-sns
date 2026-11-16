@@ -1497,12 +1497,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not sent. The MeshCore radio is not ready, or it refused the message.';
 
   @override
-  String get dmSendNotSent =>
-      'Not sent. The MeshCore radio is not ready, or it is still waiting on an earlier message.';
+  String get dmSendNotSent => 'Not sent. The MeshCore radio is not connected.';
 
   @override
   String get dmWaitingForAck =>
-      'Still waiting for the last message to this contact. Send again once it is acknowledged.';
+      'Not sent. The last message to this contact is still waiting for its answer, and the radio can only hold one at a time.';
 
   @override
   String get chatSend => 'Send';
