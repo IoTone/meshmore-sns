@@ -79,6 +79,13 @@ void main() {
       expect(e.text, isNotEmpty);
     }
     expect(m.events.length, lessThanOrEqualTo(8));
+    // Newest first, by the stamp each row prints. A queued message is logged
+    // when it is drained, so arrival order is not time order.
+    final List<String> times =
+        m.events.map((({String time, String text}) e) => e.time).toList();
+    final List<String> sorted = List<String>.of(times)..sort();
+    expect(times, sorted.reversed.toList(),
+        reason: 'the log read as a clock that goes backwards');
     mc.dispose();
   });
 

@@ -164,8 +164,14 @@ class DashboardModel {
           : (mc.maxContacts == null
               ? '${mc.deviceContactCount}'
               : '${mc.deviceContactCount}/${mc.maxContacts}'),
+      // Sorted by the stamp each row prints, not by arrival. A queued message
+      // is logged when it is drained, so its event can arrive after a newer
+      // one: the list read 17:32:43, 17:32:38, 17:32:23, 17:32:40, which is a
+      // clock that goes backwards on the one screen that is a log.
       events: <({String time, String text})>[
-        for (final MeshEvent e in mc.recentEvents.take(8))
+        for (final MeshEvent e in (mc.recentEvents.toList()
+          ..sort((MeshEvent a, MeshEvent b) => b.at.compareTo(a.at)))
+            .take(8))
           (
             time: '${e.at.hour.toString().padLeft(2, '0')}:'
                 '${e.at.minute.toString().padLeft(2, '0')}:'

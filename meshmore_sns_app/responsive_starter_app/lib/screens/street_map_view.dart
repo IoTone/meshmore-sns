@@ -312,7 +312,6 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// as a large node pin, which is what the owner reported being confused by.
   /// The band between the two thresholds is hysteresis, so a pinch that sits on
   /// the boundary does not make the overlay flicker.
-  bool _densityCellsDrawn = true;
 
   /// The squares last drawn, so a tap on the map can name the one it landed in.
   /// Rebuilt with the layer, because the set depends on where the nodes are.
@@ -1924,19 +1923,12 @@ class _StreetMapViewState extends State<StreetMapView> {
     // that does nothing on the tab whose whole point is that it always draws.
     // The cell size follows the zoom, so a reading is legible at every scale
     // rather than only at the one zoom 250 m happened to suit.
-    // The field is a reading about the mesh, so it appears only once a cell
-    // covers ground worth counting: at street zoom a cell is a few tens of
-    // metres across and the lattice is a mosaic over the streets it describes.
-    // Hysteresis, so a pinch on the boundary does not make the overlay blink.
+    // The field is drawn at every zoom. It used to be hidden once a cell was
+    // smaller than 60 m of ground, on the theory that a lattice of tiny cells
+    // is a mosaic rather than a reading; the owner's rule is the opposite — if
+    // the overlay is on, it is on at every zoom, and the cell size the chip
+    // states is what tells the reader how much ground a cell covers.
     _hexRadiusMetres = hexRadiusForZoomLevel(_zoom);
-    final bool wantCells = _densityCellsDrawn
-        ? _hexRadiusMetres >= kDensityFieldMinMetres * 0.85
-        : _hexRadiusMetres >= kDensityFieldMinMetres;
-    if (wantCells != _densityCellsDrawn) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _densityCellsDrawn = wantCells);
-      });
-    }
     // One size for the hexagons and for the chip that names them: a constant
     // size on the glass, so the ground area is the only thing a zoom changes.
     //
@@ -2282,7 +2274,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               // way the radar cannot. Under the pins and the reach circles,
               // over the quilt, because a cell is about where nodes are and a
               // ring is about how far they reach.
-              if (hexes.isNotEmpty && _densityCellsDrawn)
+              if (hexes.isNotEmpty)
                 // A continuous field rather than a scatter of boxes: every
                 // hexagon is the same size on the glass at every zoom, its
                 // ground area is what the chip states, and its shade is its
@@ -2637,7 +2629,7 @@ class _StreetMapViewState extends State<StreetMapView> {
               // pin's own box covers its cell's centre, which is where a badge
               // there would sit — and a tap meant for the square opened the
               // node instead.
-              if (hexes.isNotEmpty && _densityCellsDrawn)
+              if (hexes.isNotEmpty)
                 MarkerLayer(
                   markers: <Marker>[
                     // Only cells that hold something get a number. The field
@@ -2851,7 +2843,7 @@ class _StreetMapViewState extends State<StreetMapView> {
         // something next to the distance it is a count per. It goes with the
         // field: a chip naming a cell size over a map with no cells on it is a
         // label for something that is not there.
-        if (hexes.isNotEmpty && _densityCellsDrawn)
+        if (hexes.isNotEmpty)
           Positioned(
             left: StreetMapView.controlsInset,
             // 92 dp above the navigation area, not above the glass: the chip
