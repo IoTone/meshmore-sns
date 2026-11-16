@@ -8,7 +8,6 @@ import '../meshcore/chat_message.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../meshcore/own_location.dart';
 import '../places/place.dart';
-import '../sns/place_inference.dart';
 import '../places/place_create_sheet.dart';
 import '../places/place_wiring.dart';
 import '../theme/mm_skin.dart';
@@ -30,20 +29,12 @@ class PlaceSuggestionLine extends StatelessWidget {
     super.key,
     required this.message,
     required this.name,
-    this.place,
   });
 
   final ChatMessage message;
 
   /// The place name the message mentions, as the gazetteer spells it.
   final String name;
-
-  /// The position the message carries outright, when it carries one.
-  ///
-  /// A coordinate is not a guess, so the offer uses it rather than the reader's
-  /// own position: a direct message from a stranger saying where they are is a
-  /// place, and asking the reader to stand on it first would be nonsense.
-  final InferredPlace? place;
 
   Future<void> _report(BuildContext context) async {
     final AppLocalizations l = AppLocalizations.of(context);
@@ -59,8 +50,8 @@ class PlaceSuggestionLine extends StatelessWidget {
     }
     final Place? place = await PlaceCreateSheet.show(
       context,
-      latitude: this.place?.latitude ?? own.latitude,
-      longitude: this.place?.longitude ?? own.longitude,
+      latitude: own.latitude,
+      longitude: own.longitude,
       composer: placeComposerOf(context, channelIdx: message.channelIdx),
       initialLabel: name,
       // The sheet's picker opens on the channel the message arrived on, so the
@@ -104,9 +95,7 @@ class PlaceSuggestionLine extends StatelessWidget {
               SizedBox(width: skin.space.step(1)),
               Flexible(
                 child: Text(
-                  place == null
-                      ? l.placeSuggestLooksLike(name)
-                      : l.placeSuggestHasPosition(place!.displayName),
+                  l.placeSuggestLooksLike(name),
                   key: ValueKey<String>('place-suggestion-${message.id}'),
                   softWrap: true,
                   style: TextStyle(

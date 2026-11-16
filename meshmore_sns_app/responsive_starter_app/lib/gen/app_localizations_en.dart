@@ -6202,11 +6202,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String placeSuggestHasPosition(String name) {
-    return 'This message carries a position: $name';
-  }
-
-  @override
   String placeSuggestLooksLike(String name) {
     return 'Looks like a place: $name';
   }

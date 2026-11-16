@@ -15,14 +15,12 @@ import '../chat/composer_field.dart';
 import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
 import '../chat/linkified_text.dart';
-import '../chat/place_suggestion_line.dart';
 import '../chat/studio_message_row.dart';
 import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
 import '../bot/bot_guards.dart';
 import '../bot/bot_tag.dart';
 import '../meshcore/chat_message.dart';
-import '../sns/place_inference.dart';
 import 'delivery_status_icon.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -657,12 +655,6 @@ class _DmRow extends StatelessWidget {
     final MmSkin skin = context.skin;
     final AppLocalizations l = AppLocalizations.of(context);
     final String mono = skin.type.monoFamily;
-    // A direct message that carries a position is the one place a stranger can
-    // tell us where they are, and the row offered nothing: the coordinate sat
-    // in the text and the map never learned it. The offer is the same one a
-    // channel row makes, with the message's own position rather than ours.
-    final InferredPlace? carried = context.select<MeshcoreController, InferredPlace?>(
-        (MeshcoreController mc) => mc.coordinateSuggestionFor(m));
     // The same stamp as a channel row: `clockStamp` names a sender whose clock
     // disagrees instead of printing their time as fact (APP-N3). A DM that
     // formatted its own `HH:MM` here was the one list where a fast sender's
@@ -672,17 +664,7 @@ class _DmRow extends StatelessWidget {
     // Route and signal are facts about the transmission, not the message:
     // they are said in the row's actions sheet, not on every row here.
     if (skin.type.sansLabels) {
-      final Widget row =
-          StudioMessageRow(message: m, body: m.text, onAction: onAction);
-      if (carried == null) return row;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          row,
-          PlaceSuggestionLine(
-              message: m, name: carried.displayName, place: carried),
-        ],
-      );
+      return StudioMessageRow(message: m, body: m.text, onAction: onAction);
     }
     return InkWell(
       onLongPress: onAction,

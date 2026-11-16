@@ -26,7 +26,6 @@ import '../chat/studio_message_row.dart';
 import '../chat/history_unreadable_notice.dart';
 import '../chat/linkified_text.dart';
 import '../meshcore/dm_thread.dart';
-import '../sns/place_inference.dart';
 import '../chat/export_passphrase_dialog.dart';
 import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
@@ -1657,14 +1656,8 @@ class _MessageRowState extends State<_MessageRow> {
     // `select` rather than `watch`: the answer changes only when this row's
     // own text stops being a suggestion, so a notify for some other message
     // does not rebuild the list.
-    // A position the message carries outright wins over a name it mentions:
-    // the coordinate is the fact, and the name is a guess about it.
-    final InferredPlace? carried = context.select<MeshcoreController, InferredPlace?>(
-        (MeshcoreController mc) => mc.coordinateSuggestionFor(m));
-    final String? suggested = carried != null
-        ? carried.displayName
-        : context.select<MeshcoreController, String?>(
-            (MeshcoreController mc) => mc.placeSuggestionFor(m));
+    final String? suggested = context.select<MeshcoreController, String?>(
+        (MeshcoreController mc) => mc.placeSuggestionFor(m));
     final Widget? chips = m.reactions.isEmpty ? null : _ReactionChips(m.reactions);
     if (suggested == null && chips == null) return row;
     return Column(
@@ -1672,8 +1665,7 @@ class _MessageRowState extends State<_MessageRow> {
       children: <Widget>[
         row,
         if (chips != null) chips,
-        if (suggested != null)
-          PlaceSuggestionLine(message: m, name: suggested, place: carried),
+        if (suggested != null) PlaceSuggestionLine(message: m, name: suggested),
       ],
     );
   }

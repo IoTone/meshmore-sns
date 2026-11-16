@@ -4,6 +4,8 @@ import 'dart:async';
 
 import '../meshcore/chat_message.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../sns/city_gazetteer.dart';
+import '../sns/place_inference.dart';
 import 'place.dart';
 import 'place_store.dart';
 
@@ -36,6 +38,7 @@ final class PlaceBridge {
     if (m.outgoing) return;
     final Place? place = _store.ingestMessage(m);
     if (place != null) return;
+    if (_ingestBarePosition(m, senderName: _senderName(m.text))) return;
     _store.ingestReply(m.text, senderName: _senderName(m.text));
   }
 
@@ -44,9 +47,42 @@ final class PlaceBridge {
     final String? key = m.peerPubKeyHex;
     final Place? place = _store.ingestMessage(m);
     if (place != null) return;
+    if (_ingestBarePosition(m, reporterKeyHex: key)) return;
     _store.ingestReply(m.text,
         senderName: _senderName(m.text), reporterKeyHex: key);
   }
+
+  /// A message that carries a coordinate pair and nothing else is a position.
+  ///
+  /// The tagged form is the protocol and stays the protocol. This is the other
+  /// thing people actually send: a bare `38.91993,-104.77313` from a radio whose
+  /// owner has no client that speaks the tag. It is not a guess, so it goes on
+  /// the map without asking, and the pin's own sheet is where a reader takes it
+  /// off again.
+  bool _ingestBarePosition(
+    ChatMessage m, {
+    String senderName = '',
+    String? reporterKeyHex,
+  }) {
+    final List<InferredPlace> hits = _engine.coordinatesIn(m.text);
+    if (hits.isEmpty) return false;
+    final InferredPlace hit = hits.first;
+    // A grid locator is a position too, but it is a coarser claim and the
+    // tagged form is the way to make one deliberately.
+    if (hit.cue != PlaceCueKind.coordinate) return false;
+    final Place? place = _store.ingestBarePosition(
+      latitude: hit.latitude,
+      longitude: hit.longitude,
+      receivedAt: m.at,
+      reporterName: senderName,
+      reporterKeyHex: reporterKeyHex,
+      channelIdx: m.channelIdx,
+    );
+    return place != null;
+  }
+
+  final PlaceInferenceEngine _engine =
+      PlaceInferenceEngine(gazetteer: const CityGazetteer());
 
   static String _senderName(String text) {
     final int i = text.indexOf(': ');

@@ -5950,11 +5950,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String placeSuggestHasPosition(String name) {
-    return 'このメッセージは位置を含みます: $name';
-  }
-
-  @override
   String placeSuggestLooksLike(String name) {
     return '場所の候補: $name';
   }

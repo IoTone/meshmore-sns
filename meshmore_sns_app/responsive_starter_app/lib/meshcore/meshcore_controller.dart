@@ -4303,29 +4303,6 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     return name;
   }
 
-  /// The position a message carries, when it carries one outright.
-  ///
-  /// A coordinate is not a guess, so this needs no origin and no gazetteer: a
-  /// direct message from a stranger saying where they are can be put on the map
-  /// as it stands. Memoised per text, like [placeSuggestionFor], because the
-  /// chat rebuilds rows constantly.
-  InferredPlace? coordinateSuggestionFor(ChatMessage m) {
-    if (m.outgoing) return null;
-    if (!placeInferenceEnabled(m.channelIdx)) return null;
-    if (_dismissedSuggestions
-        .contains(PlaceSuggestionDismissals.keyFor(m.channelIdx, m.text))) {
-      return null;
-    }
-    if (_placeCoordMemo.containsKey(m.text)) return _placeCoordMemo[m.text];
-    final List<InferredPlace> hits = _placeEngine.coordinatesIn(m.text);
-    final InferredPlace? best = hits.isEmpty ? null : hits.first;
-    if (_placeCoordMemo.length >= 500) _placeCoordMemo.clear();
-    _placeCoordMemo[m.text] = best;
-    return best;
-  }
-
-  final Map<String, InferredPlace?> _placeCoordMemo = <String, InferredPlace?>{};
-
   /// Remember that these words are not a place, so the row stops offering it.
   Future<void> dismissPlaceSuggestion(ChatMessage m) async {
     _dismissedSuggestions = <String>{

@@ -2721,7 +2721,6 @@
   "rawRecordRefused": "無線が拒否しました: {reason}（コード {code}）。",
   "rawRecordNoAnswer": "{seconds} 秒以内に応答がありません。送信された可能性があります。",
   "rawRecordNoRoute": "{name} への直接経路がなくなりました。生データはフラッド送信できません。",
-  "placeSuggestHasPosition": "このメッセージは位置を含みます: {name}",
   "placeSuggestLooksLike": "場所の候補: {name}",
   "placeSuggestReport": "場所をタグ付け",
   "placeSuggestDismiss": "閉じる",

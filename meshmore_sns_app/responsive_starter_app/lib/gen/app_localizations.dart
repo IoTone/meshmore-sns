@@ -10390,12 +10390,6 @@ abstract class AppLocalizations {
   /// **'{name} has no direct route now, and a raw record cannot be flooded.'**
   String rawRecordNoRoute(String name);
 
-  /// Offer to put a position a message carries outright onto the map. The name is the coordinate pair as the message wrote it.
-  ///
-  /// In en, this message translates to:
-  /// **'This message carries a position: {name}'**
-  String placeSuggestHasPosition(String name);
-
   /// No description provided for @placeSuggestLooksLike.
   ///
   /// In en, this message translates to:

@@ -248,6 +248,62 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
         : PlaceUpsert.added;
   }
 
+  /// Store a position a message carried as a bare coordinate pair.
+  ///
+  /// The tagged form is the protocol. This is the other thing people send, and
+  /// it is a fact rather than a guess, so it goes on the map without asking.
+  /// The label is the coordinate itself, which is what the sender wrote, and the
+  /// type is [PlaceType.other] because a bare pair says nothing about what is
+  /// there. The id is derived the same way a report's is, so the same sender
+  /// repeating the same position renews one pin instead of stacking them.
+  Place? ingestBarePosition({
+    required double latitude,
+    required double longitude,
+    required DateTime receivedAt,
+    String reporterName = '',
+    String? reporterKeyHex,
+    int? channelIdx,
+  }) {
+    if (latitude.abs() > 90 || longitude.abs() > 180) return null;
+    if ((reporterKeyHex == null || reporterKeyHex.isEmpty) &&
+        reporterName.isEmpty) {
+      return null;
+    }
+    final int latE6 = (latitude * 1e6).round();
+    final int lonE6 = (longitude * 1e6).round();
+    final List<int>? key = reporterKeyHex == null
+        ? null
+        : _bytesOf(reporterKeyHex);
+    final String label =
+        '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
+    final PlaceTtl ttl = PlaceType.other.defaultTtl;
+    final Place place = Place(
+      id: placeIdFor(
+        reporterKey: key,
+        reporterName: reporterName,
+        latE6: latE6,
+        lonE6: lonE6,
+        typeToken: PlaceType.other.token,
+      ),
+      type: PlaceType.other,
+      typeToken: PlaceType.other.token,
+      label: label,
+      latE6: latE6,
+      lonE6: lonE6,
+      decimals: 5,
+      reporterName: reporterName,
+      reporterKey: key == null ? null : Uint8List.fromList(key),
+      provenance: PlaceProvenance.received,
+      ttl: ttl,
+      sentAt: receivedAt,
+      expiresAt: receivedAt.add(ttl.life),
+      lastSeen: receivedAt,
+      channelIdx: channelIdx,
+    );
+    upsert(place);
+    return place;
+  }
+
   /// Reads a received message as a place report and stores it when it is one.
   ///
   /// [reporterKey] is passed for a direct message (the packet authenticates the
