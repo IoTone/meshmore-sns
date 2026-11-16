@@ -15,6 +15,7 @@ import '../chat/composer_field.dart';
 import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
 import '../chat/linkified_text.dart';
+import '../chat/reaction_chips.dart';
 import '../chat/studio_message_row.dart';
 import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
@@ -663,8 +664,15 @@ class _DmRow extends StatelessWidget {
     final String tag = m.outgoing ? '»' : '«';
     // Route and signal are facts about the transmission, not the message:
     // they are said in the row's actions sheet, not on every row here.
+    final Widget? chips = m.reactions.isEmpty ? null : ReactionChips(m.reactions);
     if (skin.type.sansLabels) {
-      return StudioMessageRow(message: m, body: m.text, onAction: onAction);
+      final Widget row =
+          StudioMessageRow(message: m, body: m.text, onAction: onAction);
+      if (chips == null) return row;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[row, chips],
+      );
     }
     return InkWell(
       onLongPress: onAction,
