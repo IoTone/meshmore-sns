@@ -55,7 +55,12 @@ class MapScreen extends StatelessWidget {
                 // a reader with twelve saved places had no way to know they
                 // existed. The badge is the count.
                 Builder(builder: (BuildContext ctx) {
-                  final int count = ctx.watch<PlaceStore?>()?.all.length ?? 0;
+                  // The count is what the map draws, not everything the device
+                  // has ever kept. The list defaults to live places, so counting
+                  // every stored row made the badge promise a third pin while the
+                  // list showed two: the missing one was a report whose hour had
+                  // run out, which the map had already stopped drawing.
+                  final int count = ctx.watch<PlaceStore?>()?.live().length ?? 0;
                   final Widget button = IconButton(
                     key: const ValueKey<String>('map-places-button'),
                     tooltip: l.placeHistoryTitle,

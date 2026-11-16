@@ -32,7 +32,7 @@ enum NotificationClass {
 /// across releases. One function rather than a getter on each carrier, because
 /// there are two carriers and the two must not drift.
 String channelIdFor(NotificationClass cls) => switch (cls) {
-      NotificationClass.channel => 'mm_messages_channel',
+      NotificationClass.channel => 'mm_messages_channel2',
       NotificationClass.direct => 'mm_messages_direct',
       NotificationClass.sos => 'mm_messages_sos',
       NotificationClass.geofence => 'mm_geofence',

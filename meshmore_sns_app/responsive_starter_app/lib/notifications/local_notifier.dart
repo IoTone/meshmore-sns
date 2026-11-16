@@ -141,25 +141,44 @@ class LocalNotifier implements Notifier {
   /// opened can clear exactly its own notifications and leave the rest.
   final Map<String, Set<int>> _live = <String, Set<int>>{};
 
-  static const Map<String, ({String name, String description})> _channels =
-      <String, ({String name, String description})>{
-    'mm_messages_channel': (
+  /// What a channel is allowed to do to the phone.
+  ///
+  /// Every one of these used to be created at high importance with a sound, so a
+  /// public channel with a dozen people talking beeped a dozen times: the owner
+  /// reported the phone beeping while the app was not even open. A channel is
+  /// chatter and it waits in the tray; a direct message and an emergency are
+  /// addressed to this reader and are worth a sound.
+  static const Map<String, ({String name, String description, Importance importance, bool sound})>
+      _channels =
+      <String, ({String name, String description, Importance importance, bool sound})>{
+    // The identifier changed with the rule. Android keeps the settings a channel
+    // was created with, so lowering the importance of the existing one would
+    // never reach a phone that already has it.
+    'mm_messages_channel2': (
       name: 'Channel messages',
       description: 'Messages received on a channel from anyone on the mesh.',
+      importance: Importance.defaultImportance,
+      sound: false,
     ),
     'mm_messages_direct': (
       name: 'Direct messages',
       description: 'Messages addressed to you by one peer.',
+      importance: Importance.high,
+      sound: true,
     ),
     'mm_messages_sos': (
       name: 'Emergency alerts',
       description: 'SOS and its acknowledgements.',
+      importance: Importance.high,
+      sound: true,
     ),
     // Its own channel, so a reader can silence the fences they drew without
     // silencing the messages they are waiting for, and the other way round.
     'mm_geofence': (
       name: 'Fence crossings',
       description: 'When you walk into or out of a fence you drew.',
+      importance: Importance.high,
+      sound: true,
     ),
   };
 
@@ -198,15 +217,15 @@ class LocalNotifier implements Notifier {
         _plugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     if (android == null) return;
-    for (final MapEntry<String, ({String name, String description})> e
-        in _channels.entries) {
+    for (final MapEntry<String, ({String name, String description, Importance importance, bool sound})>
+        e in _channels.entries) {
       await android.createNotificationChannel(
         AndroidNotificationChannel(
           e.key,
           e.value.name,
           description: e.value.description,
-          importance: Importance.high,
-          playSound: true,
+          importance: e.value.importance,
+          playSound: e.value.sound,
         ),
       );
     }
@@ -219,7 +238,8 @@ class LocalNotifier implements Notifier {
 
   @override
   Future<void> show(MessageNotification n) async {
-    final ({String name, String description}) ch = _channels[n.channelId]!;
+    final ({String name, String description, Importance importance, bool sound})
+        ch = _channels[n.channelId]!;
     // A fence crossing is not a message: it stays out of the message group, so
     // the group's "N messages" summary never counts one and a tap on that
     // summary never opens a fence.
@@ -273,7 +293,8 @@ class LocalNotifier implements Notifier {
   /// number twice.
   @override
   Future<void> showDigest(MessageDigest d) async {
-    final ({String name, String description}) ch = _channels[d.channelId]!;
+    final ({String name, String description, Importance importance, bool sound})
+        ch = _channels[d.channelId]!;
     await _plugin.show(
       id: digestId,
       title: d.title,
@@ -334,7 +355,8 @@ class LocalNotifier implements Notifier {
   /// Silent because the child that just arrived already alerted: a summary that
   /// also sounded would double every cue.
   Future<void> _postSummary(MessageNotification newest) async {
-    final ({String name, String description}) ch = _channels[newest.channelId]!;
+    final ({String name, String description, Importance importance, bool sound})
+        ch = _channels[newest.channelId]!;
     final ({int count, String payload, String body}) summary =
         groupSummaryFor(
       recentPayloads: _recentPayloads,
@@ -398,14 +420,14 @@ class LocalNotifier implements Notifier {
       if (read == NotifierHealth.missingChannel) {
         // Recreate what was deleted: the ids are ours, and a missing channel
         // fails a notification instead of showing it quietly.
-        for (final MapEntry<String, ({String name, String description})> e
-            in _channels.entries) {
+        for (final MapEntry<String, ({String name, String description, Importance importance, bool sound})>
+            e in _channels.entries) {
           await android.createNotificationChannel(AndroidNotificationChannel(
             e.key,
             e.value.name,
             description: e.value.description,
-            importance: Importance.high,
-            playSound: true,
+            importance: e.value.importance,
+            playSound: e.value.sound,
           ));
         }
       }

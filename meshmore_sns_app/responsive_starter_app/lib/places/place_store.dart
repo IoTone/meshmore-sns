@@ -1,5 +1,6 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -125,6 +126,63 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
   bool _loaded = false;
   bool _dirty = false;
 
+  /// Fires at the moment the next live place stops being live.
+  ///
+  /// A place leaves the map on its own clock, and nothing was watching that
+  /// clock: the layer, the badge and the list all read "live" against `now`,
+  /// and a reader who left the screen open kept seeing a pin whose life had
+  /// ended until some unrelated write happened to notify. One timer, armed for
+  /// the soonest expiry and re-armed after it fires, is enough — and it is only
+  /// armed while something is live.
+  Timer? _expiry;
+
+  void _armExpiry() {
+    _expiry?.cancel();
+    _expiry = null;
+    // Only while something is watching. A store with no listeners is a store
+    // whose owner is gone, and a timer kept alive for it would outlive the
+    // screen it was meant to repaint.
+    if (!hasListeners) return;
+    final DateTime at = now;
+    DateTime? soonest;
+    for (final Place p in _rows) {
+      if (!p.isLiveAt(at)) continue;
+      if (soonest == null || p.expiresAt.isBefore(soonest)) {
+        soonest = p.expiresAt;
+      }
+    }
+    if (soonest == null) return;
+    final Duration wait = soonest.difference(at);
+    _expiry = Timer(wait.isNegative ? Duration.zero : wait, () {
+      _armExpiry();
+      notifyListeners();
+    });
+  }
+
+  /// Releases the expiry timer. A store that outlives its screen would
+  /// otherwise hold a timer open for as long as the process lives.
+  @override
+  void addListener(VoidCallback listener) {
+    super.addListener(listener);
+    _armExpiry();
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    super.removeListener(listener);
+    if (!hasListeners) {
+      _expiry?.cancel();
+      _expiry = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _expiry?.cancel();
+    _expiry = null;
+    super.dispose();
+  }
+
   bool get loaded => _loaded;
 
   /// Every row, newest report first — live and expired.
@@ -237,11 +295,13 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
         kept: row.kept || incoming.kept,
       );
       _pruneAndSave();
+      _armExpiry();
       notifyListeners();
       return PlaceUpsert.renewed;
     }
     _rows.insert(0, incoming);
     _pruneAndSave();
+    _armExpiry();
     notifyListeners();
     return _rows.where((Place p) => p.id == incoming.id).length > 1
         ? PlaceUpsert.collided
@@ -547,10 +607,13 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
     _rebuildTally();
     _pruneAndSave();
     _loaded = true;
+    _armExpiry();
     notifyListeners();
   }
 
   Future<void> clear() async {
+    _expiry?.cancel();
+    _expiry = null;
     _rows.clear();
     _seen.clear();
     _votes.clear();

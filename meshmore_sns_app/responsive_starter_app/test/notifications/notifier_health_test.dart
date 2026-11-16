@@ -13,7 +13,7 @@ import 'package:meshmore_sns_app/notifications/notifier.dart';
 /// without a platform channel.
 void main() {
   const List<String> ours = <String>[
-    'mm_messages_channel',
+    'mm_messages_channel2',
     'mm_messages_direct',
     'mm_messages_sos',
     // The fence channel is one of ours too: a reader who silenced it has
@@ -64,7 +64,7 @@ void main() {
     final List<AndroidNotificationChannel> oneGone = allAt(Importance.high)
         .where((AndroidNotificationChannel c) => c.id != 'mm_messages_sos')
         .toList()
-      ..[0] = channel('mm_messages_channel', Importance.low);
+      ..[0] = channel('mm_messages_channel2', Importance.low);
     expect(
       healthFrom(enabled: true, channels: oneGone, ourIds: ours),
       NotifierHealth.missingChannel,
