@@ -1037,6 +1037,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get elevationProfileTitle => 'MESHMORE :: ALTITUDE';
 
   @override
+  String elevationProfileSemantics(int low, int high, int count) {
+    return 'Altitudes from $low to $high metres across $count peers.';
+  }
+
+  @override
   String get elevationProfileAltLabel => 'Altitude';
 
   @override

@@ -49,8 +49,10 @@ class ComposerCounter extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.only(top: 2, right: skin.space.step(1)),
         child: Semantics(
+          // No `label`: `Semantics` merges its child's, so a label here made
+          // the node carry the text twice and a screen reader read the budget
+          // warning twice. The `Text` supplies it.
           liveRegion: true,
-          label: shown,
           child: Text(
             shown,
             textAlign: TextAlign.end,

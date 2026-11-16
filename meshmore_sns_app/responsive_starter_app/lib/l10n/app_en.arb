@@ -515,7 +515,16 @@
   "fujiLegendTitle": "ALTITUDE",
   "fujiLegendAutoQuery": "Altitudes arrive slowly. Tap the box to ask again.",
   "elevationProfileTitle": "MESHMORE :: ALTITUDE",
-  "elevationProfileAltLabel": "Altitude",
+
+  "elevationProfileSemantics": "Altitudes from {low} to {high} metres across {count} peers.",
+  "@elevationProfileSemantics": {
+    "description": "Screen-reader description of the elevation chart, which is a painted picture with no text of its own.",
+    "placeholders": {
+      "low": {"type": "int"},
+      "high": {"type": "int"},
+      "count": {"type": "int"}
+    }
+  },  "elevationProfileAltLabel": "Altitude",
   "elevationProfileMeLabel": "Me",
   "elevationProfileUnknownLabel": "altitude unknown",
   "elevationProfilePeers": "{n} nodes tracked",

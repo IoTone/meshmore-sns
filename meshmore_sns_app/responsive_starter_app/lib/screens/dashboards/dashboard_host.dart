@@ -2,12 +2,17 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/widgets.dart';
 
+import 'package:provider/provider.dart';
+
+import '../../gen/app_localizations.dart';
+import '../../meshcore/meshcore_controller.dart';
 import '../../theme/mm_skin.dart';
 import '../../theme/mm_tokens.dart';
 import '../dashboard_screen.dart';
 import 'aghud_dashboard.dart';
 import 'air_dashboard.dart';
 import 'dashboard_degraded_banner.dart';
+import 'dashboard_model.dart';
 import 'daybreak_dashboard.dart';
 import 'drpop_dashboard.dart';
 import 'forest_dashboard.dart';
@@ -57,6 +62,18 @@ class DashboardHost extends StatelessWidget {
               horizontal: context.skin.space.padScreen.left,
             ),
             child: const DashboardDegradedBanner(),
+          ),
+          // The link's state is plain text in every layout, so a screen-reader
+          // user was never told the radio dropped. One live region here
+          // announces the change once, whichever skin is on screen, and says
+          // nothing while the state is unchanged.
+          Semantics(
+            liveRegion: true,
+            label: DashboardModel.statusFor(
+              context.watch<MeshcoreController>(),
+              AppLocalizations.of(context),
+            ),
+            child: const SizedBox.shrink(),
           ),
           Expanded(child: _layout(context)),
         ],

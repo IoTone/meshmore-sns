@@ -479,7 +479,8 @@
   "fujiLegendTitle": "高度",
   "fujiLegendAutoQuery": "高度はゆっくり届きます。枠をタップすると再び問い合わせます。",
   "elevationProfileTitle": "MESHMORE :: 高度",
-  "elevationProfileAltLabel": "高度",
+
+  "elevationProfileSemantics": "{count} 台のピアで、高度は {low} メートルから {high} メートルです。",  "elevationProfileAltLabel": "高度",
   "elevationProfileMeLabel": "現在地",
   "elevationProfileUnknownLabel": "高度不明",
   "elevationProfilePeers": "{n} 個のノードを追跡中",
@@ -1067,7 +1068,7 @@
   "nodeDetailInRange": "範囲内",
   "nodeDetailKnown": "既知",
   "nodeDetailContactBadge": "お気に入り",
-  "nodeDetailShortIdKv": "shortId",
+  "nodeDetailShortIdKv": "短縮ID",
   "nodeDetailPubkeyKv": "公開鍵",
   "nodeDetailSignalKv": "信号",
   "nodeDetailLastHeardKv": "最終受信",

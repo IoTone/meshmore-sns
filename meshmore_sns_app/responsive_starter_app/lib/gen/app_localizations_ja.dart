@@ -991,6 +991,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get elevationProfileTitle => 'MESHMORE :: 高度';
 
   @override
+  String elevationProfileSemantics(int low, int high, int count) {
+    return '$count 台のピアで、高度は $low メートルから $high メートルです。';
+  }
+
+  @override
   String get elevationProfileAltLabel => '高度';
 
   @override
@@ -1806,7 +1811,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get nodeDetailContactBadge => 'お気に入り';
 
   @override
-  String get nodeDetailShortIdKv => 'shortId';
+  String get nodeDetailShortIdKv => '短縮ID';
 
   @override
   String get nodeDetailPubkeyKv => '公開鍵';

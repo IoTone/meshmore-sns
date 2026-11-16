@@ -83,8 +83,17 @@ class DashboardModel {
 
   final List<({String time, String text})> events;
 
-  static DashboardModel gather(MeshcoreController mc, AppLocalizations l) {
-    final ({String label, bool alert, bool busy}) st = switch (mc.state) {
+  /// The link's own words, without gathering the rest of the model.
+  ///
+  /// The dashboard host announces this as a live region, so a screen-reader
+  /// user is told the radio dropped; every layout draws it as plain text, and
+  /// nothing announced it before.
+  static String statusFor(MeshcoreController mc, AppLocalizations l) =>
+      _status(mc, l).label;
+
+  static ({String label, bool alert, bool busy}) _status(
+      MeshcoreController mc, AppLocalizations l) {
+    return switch (mc.state) {
       MeshcoreConnectionState.ready =>
         (label: l.statusLinked, alert: false, busy: false),
       MeshcoreConnectionState.handshaking =>
@@ -99,6 +108,10 @@ class DashboardModel {
           busy: mc.isConnecting,
         ),
     };
+  }
+
+  static DashboardModel gather(MeshcoreController mc, AppLocalizations l) {
+    final ({String label, bool alert, bool busy}) st = _status(mc, l);
 
     final int inRange = mc.nodes.where((DiscoveredNode n) {
       final NodeProximity p = mc.proximityFor(n);

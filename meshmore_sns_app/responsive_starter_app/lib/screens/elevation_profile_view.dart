@@ -220,7 +220,19 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
                   // leaving only the parent Scaffold's banner visible.
                   // SizedBox.expand gives it the body's full constraints
                   // so the painter has somewhere to draw.
-                  return SizedBox.expand(
+                  // The chart is a painted picture with no text of its own,
+                  // and it is the only place the per-peer altitude spread is
+                  // drawn. One sentence states the range and the count.
+                  final List<double> alts = <double>[
+                    for (final DiscoveredNode n in peers)
+                      if (peerAlt[n.pubKeyHex] case final double a) a,
+                  ]..sort();
+                  return Semantics(
+                    label: alts.isEmpty
+                        ? l.elevationProfileTitle
+                        : l.elevationProfileSemantics(
+                            alts.first.round(), alts.last.round(), alts.length),
+                    child: SizedBox.expand(
                     child: CustomPaint(
                       painter: _ElevationProfilePainter(
                         type: context.skin.type,
@@ -253,6 +265,7 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
                         format: context.formatPrefs,
                       ),
                     ),
+                  ),
                   );
                 },
               ),

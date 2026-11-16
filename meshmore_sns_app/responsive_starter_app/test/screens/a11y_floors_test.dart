@@ -60,7 +60,8 @@ class _SilentSpeaker implements TtsSpeaker {
   Future<bool> isLanguageAvailable(String locale) async => true;
 }
 
-List<SingleChildWidget> _providers() => <SingleChildWidget>[
+List<SingleChildWidget> _providers({Locale locale = const Locale('en')}) =>
+    <SingleChildWidget>[
       ChangeNotifierProvider<AppState>(create: (_) => AppState()),
       ChangeNotifierProvider<ThemeController>(create: (_) => ThemeController()),
       ChangeNotifierProvider<TtsController>(
@@ -79,7 +80,7 @@ List<SingleChildWidget> _providers() => <SingleChildWidget>[
       ChangeNotifierProvider<FirstRunController>(
           create: (_) => FirstRunController.preloaded(done: true)),
       ChangeNotifierProvider<LocaleController>(
-          create: (_) => LocaleController(initial: const Locale('en'))..load()),
+          create: (_) => LocaleController(initial: locale)..load()),
       ChangeNotifierProvider<TermsController>(
           create: (_) => TermsController.accepted()),
       ChangeNotifierProvider<DemoMode>(
@@ -137,12 +138,12 @@ Future<void> _drain(WidgetTester t) async {
   await t.pump(const Duration(seconds: 4));
 }
 
-Future<void> _pumpShell(WidgetTester t) async {
+Future<void> _pumpShell(WidgetTester t, {Locale locale = const Locale('en')}) async {
   t.view.physicalSize = const Size(320, 780);
   t.view.devicePixelRatio = 1.0;
   addTearDown(t.view.reset);
   await t.pumpWidget(MultiProvider(
-    providers: _providers(),
+    providers: _providers(locale: locale),
     // The app multiplies the OS scale by the user scale; 2.0 here is the
     // floor the product promises, not a decorative setting.
     child: const MediaQuery(
@@ -377,6 +378,25 @@ void main() {
       }
       expect(t.takeException(), isNull,
           reason: '$route overflowed at the accessibility floor');
+      await _drain(t);
+    });
+  }
+
+  // The same floor in Japanese. CJK glyphs are full-width and the Japanese
+  // strings run up to a third longer than their English counterparts, so a
+  // label that fits in English can overflow here. The English sweep cannot see
+  // that, and it was the only sweep there was.
+  for (final String route in routes) {
+    testWidgets('$route survives 320 dp at 200 % text in Japanese',
+        (WidgetTester t) async {
+      addTearDown(() => appRouter.go('/'));
+      await _pumpShell(t, locale: const Locale('ja'));
+      appRouter.go(route);
+      for (int i = 0; i < 12; i++) {
+        await t.pump(const Duration(milliseconds: 100));
+      }
+      expect(t.takeException(), isNull,
+          reason: '$route overflowed at the accessibility floor in Japanese');
       await _drain(t);
     });
   }

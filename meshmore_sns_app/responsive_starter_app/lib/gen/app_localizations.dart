@@ -1904,6 +1904,12 @@ abstract class AppLocalizations {
   /// **'MESHMORE :: ALTITUDE'**
   String get elevationProfileTitle;
 
+  /// Screen-reader description of the elevation chart, which is a painted picture with no text of its own.
+  ///
+  /// In en, this message translates to:
+  /// **'Altitudes from {low} to {high} metres across {count} peers.'**
+  String elevationProfileSemantics(int low, int high, int count);
+
   /// No description provided for @elevationProfileAltLabel.
   ///
   /// In en, this message translates to:
