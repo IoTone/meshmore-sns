@@ -109,8 +109,23 @@ class ConnectScreen extends StatelessWidget {
             Text(
               failureText(l, f),
               key: const ValueKey<String>('connect-error'),
-              style: TextStyle(color: skin.color.alert, fontSize: skin.type.sizeBody),
+              style: TextStyle(
+                  color: skin.color.alertInk, fontSize: skin.type.sizeBody),
             ),
+            // A bond the radio cannot use is the one failure the reader cannot
+            // fix by trying again: the OS still holds the pairing, so every
+            // attempt meets the same dead key. Forgetting it is the action that
+            // makes the next scan a fresh pairing, and it is offered here
+            // rather than left to Android's settings.
+            if (f.cause == FailureCause.pairingNotKept) ...<Widget>[
+              const SizedBox(height: 8),
+              MmAction(
+                key: const ValueKey<String>('connect-forget-radio'),
+                icon: Icons.link_off,
+                label: l.connectForgetRadio,
+                onPressed: mc.isConnecting ? null : mc.forgetDevice,
+              ),
+            ],
           ],
           const SizedBox(height: 20),
           MmAction(

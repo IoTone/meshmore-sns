@@ -55,6 +55,22 @@ class ReportBundle {
     DateTime Function()? clock,
   }) async {
     final Directory dir = directory ?? await getTemporaryDirectory();
+    // A bundle carries message text and a sender key in the clear, and the
+    // share sheet reads the file after it returns, so it cannot be deleted the
+    // moment the share starts. The previous one is removed instead: one bundle
+    // on disk at a time, and the newest is the one the reader just made.
+    try {
+      await for (final FileSystemEntity e in dir.list()) {
+        final String name = e.path.split('/').last;
+        if (e is File &&
+            name.startsWith('meshmore-report-') &&
+            name.endsWith('.json')) {
+          await e.delete();
+        }
+      }
+    } catch (_) {
+      // A directory that cannot be listed is not a reason to fail the report.
+    }
     final int stamp = (clock ?? DateTime.now)().millisecondsSinceEpoch;
     final File file = File('${dir.path}/meshmore-report-$stamp.json');
     await file.writeAsString(

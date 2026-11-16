@@ -78,39 +78,56 @@ class MapTileImage extends ImageProvider<MapTileImage> {
   Future<ui.Codec> _codecFromAncestor(
       TileAncestor ancestor, ImageDecoderCallback decode) async {
     final TileAncestorCoord a = ancestor.coord;
+    // Every `ui` object this method creates is disposed before it returns.
+    //
+    // The ancestor codec, the raw buffer and the descriptor used to be left to
+    // the collector, and the buffer is 256 x 256 x 4 = 256 KB of native memory
+    // per tile: a pan into an area whose native tiles are not loaded serves
+    // every tile from an ancestor, which is the ~25 MB per pan the process grew
+    // by.
+    //
+    // The slice is handed back as PNG rather than as a raw descriptor because a
+    // codec built from a descriptor keeps reading that descriptor after this
+    // method returns, so the descriptor and its buffer cannot be released here.
+    // `decode` copies its bytes, so the codec it returns owns everything it
+    // needs. The re-encode is one 256 px PNG, and only on the fallback path.
     final ui.Codec codec =
         await decode(await ui.ImmutableBuffer.fromUint8List(ancestor.bytes));
-    final ui.FrameInfo frame = await codec.getNextFrame();
-    final ui.Image whole = frame.image;
     try {
-      final ({double left, double top, double width, double height}) slice =
-          cropRectInAncestor(x, y, a.levelsUp, whole.width.toDouble());
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final Canvas canvas = Canvas(recorder);
-      final double side = kTilePixelSize.toDouble();
-      canvas.drawImageRect(
-        whole,
-        Rect.fromLTWH(slice.left, slice.top, slice.width, slice.height),
-        Rect.fromLTWH(0, 0, side, side),
-        Paint()..filterQuality = FilterQuality.medium,
-      );
-      final ui.Image cropped =
-          await recorder.endRecording().toImage(kTilePixelSize, kTilePixelSize);
-      final ByteData? raw =
-          await cropped.toByteData(format: ui.ImageByteFormat.rawRgba);
-      cropped.dispose();
-      if (raw == null) {
-        throw StateError('tile ${source.id}/$z/$x/$y unreadable');
+      final ui.FrameInfo frame = await codec.getNextFrame();
+      final ui.Image whole = frame.image;
+      try {
+        final ({double left, double top, double width, double height}) slice =
+            cropRectInAncestor(x, y, a.levelsUp, whole.width.toDouble());
+        final ui.PictureRecorder recorder = ui.PictureRecorder();
+        final Canvas canvas = Canvas(recorder);
+        final double side = kTilePixelSize.toDouble();
+        canvas.drawImageRect(
+          whole,
+          Rect.fromLTWH(slice.left, slice.top, slice.width, slice.height),
+          Rect.fromLTWH(0, 0, side, side),
+          Paint()..filterQuality = FilterQuality.medium,
+        );
+        final ui.Image cropped = await recorder
+            .endRecording()
+            .toImage(kTilePixelSize, kTilePixelSize);
+        final ByteData? png;
+        try {
+          png = await cropped.toByteData(format: ui.ImageByteFormat.png);
+        } finally {
+          cropped.dispose();
+        }
+        if (png == null) {
+          throw StateError('tile ${source.id}/$z/$x/$y unreadable');
+        }
+        final ui.Codec out = await decode(
+            await ui.ImmutableBuffer.fromUint8List(png.buffer.asUint8List()));
+        return out;
+      } finally {
+        whole.dispose();
       }
-      final ui.ImageDescriptor desc = ui.ImageDescriptor.raw(
-        await ui.ImmutableBuffer.fromUint8List(raw.buffer.asUint8List()),
-        width: kTilePixelSize,
-        height: kTilePixelSize,
-        pixelFormat: ui.PixelFormat.rgba8888,
-      );
-      return await desc.instantiateCodec();
     } finally {
-      whole.dispose();
+      codec.dispose();
     }
   }
 

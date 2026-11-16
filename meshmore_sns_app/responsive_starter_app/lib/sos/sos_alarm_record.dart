@@ -112,18 +112,6 @@ SosState? _stateByName(Object? name) {
   return null;
 }
 
-/// The 32-byte key behind [hex], or null when it is not a full key.
-List<int>? keyBytesOf(String hex) {
-  if (hex.length != 64) return null;
-  final List<int> out = <int>[];
-  for (int i = 0; i + 1 < hex.length; i += 2) {
-    final int? b = int.tryParse(hex.substring(i, i + 2), radix: 16);
-    if (b == null) return null;
-    out.add(b);
-  }
-  return out;
-}
-
 /// The lowercase hex of [bytes], the form the controller compares with.
 String hexOfKey(List<int> bytes) =>
     <String>[for (final int b in bytes) b.toRadixString(16).padLeft(2, '0')]

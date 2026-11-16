@@ -536,7 +536,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get termsLeavesBody =>
-      'この端末から出るのは2つだけです。送信したもの（メッセージ・位置・リアクション）は接続中のMeshCore 無線から送られます。そして地図はタイルサーバーに地図の区画を要求するため、おおよそどこを見ているかがそのサーバーに伝わります。地図には取得元を表示します。オフライン地図パックは既定でオフで、有効にしたときだけ取得します。それ以外は出ません。書き出したファイルの保管先はあなたが決めます。';
+      '送信したものは、接続している MeshCore 無線機から出ていきます: メッセージ、位置、リアクション。地図はタイルサーバーに地図の区画を要求するため、そのサーバーにはおおよそどこを見ているかが伝わります。使用中の提供元は地図に表示されます。オフライン地図パックは既定で無効で、有効にしたときだけ取得します。ほかに三つ、あなたが求めたときだけ出ていくものがあります: 「経路案内」は場所を端末の地図アプリに渡し、ニューラル画像コーデックは huggingface.co から、内蔵ドキュメントは raw.githubusercontent.com から読み込みます。それ以外は出ていきません。書き出したファイルの扱いはあなた次第です。';
 
   @override
   String get termsSectionPermissions => '権限とその理由';
@@ -2273,6 +2273,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelCreateTitle => '新しいチャンネル';
 
   @override
+  String get channelRemoveSection => 'チャンネルを削除';
+
+  @override
+  String get channelRemoveBody =>
+      'チャンネルを削除するとスロットが空き、無線機はそのチャンネルを聞かなくなります。この端末に残っているメッセージは消えません。';
+
+  @override
+  String get channelRemoveAction => '削除';
+
+  @override
   String get channelCreateIntro => '名前を決めて、誰が読めるかを選びます。';
 
   @override
@@ -2511,7 +2521,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelsHexCopy => 'コピー';
 
   @override
-  String get channelsHexCopied => '鍵をコピーしました';
+  String get channelsHexCopied => 'チャンネル鍵をコピーしました。クリップボード上にあり、他のアプリから読めます。';
 
   @override
   String get channelsTagWeakShort => '短いタグは推測されやすい。12 文字以上または独自の表現を使用してください。';
@@ -4094,7 +4104,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnosticsExportFixture => 'フィクスチャを書き出す';
 
   @override
-  String get diagnosticsCopyFixture => 'フィクスチャ JSON をコピー';
+  String get diagnosticsCopyFixture => 'フィクスチャ JSON をコピー（自分のメッセージ本文を含みます）';
 
   @override
   String get diagnosticsFixtureCopied => 'コピーしました。';
@@ -4362,6 +4372,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeSent => 'タグ付けしました。期限が来ると自動で消えます。';
 
   @override
+  String get placeSendFailed => 'MeshCore 無線機が受け付けませんでした。何も送信していません。';
+
+  @override
   String placeBudgetRefused(int n, String time) {
     return '直近1時間に $n 件送信しました。次は $time に送れます。';
   }
@@ -4576,6 +4589,9 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get failurePairingNotKept =>
       '無線機はペアリングできましたが、次の接続で暗号化できず、ペアリングが保存されていません。電源を入れ直して再ペアリングしてください。繰り返す場合は無線機側の問題です。';
+
+  @override
+  String get connectForgetRadio => 'この無線機を忘れてやり直す';
 
   @override
   String get failureServiceMissing =>
@@ -6222,7 +6238,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get shareLinkSheetTitle => '連絡先リンク';
 
   @override
-  String get shareLinkCopied => 'コピーしました。';
+  String get shareLinkCopied => 'コピーしました。このリンクには無線機の公開鍵と、最後に通知した位置が含まれます。';
 
   @override
   String get deviceContactsImport => 'リンクを取り込む';

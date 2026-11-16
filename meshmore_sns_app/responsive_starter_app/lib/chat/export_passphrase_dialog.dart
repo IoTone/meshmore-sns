@@ -46,6 +46,10 @@ class _ExportPassphraseDialogState extends State<ExportPassphraseDialog> {
         key: const ValueKey<String>('chat-export-passphrase'),
         controller: _input,
         obscureText: true,
+        // `obscureText` does not turn these off, and a keyboard's learning
+        // dictionary can capture a passphrase.
+        autocorrect: false,
+        enableSuggestions: false,
         autofocus: true,
         decoration: InputDecoration(
             labelText: widget.fieldLabel ?? widget.l.chatExportPassphrase),

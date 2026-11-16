@@ -1,7 +1,9 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,9 +46,18 @@ void main() {
     await store.load();
 
     expect(store.all, isEmpty);
+    // Kept inside the sealed store, not in preferences. The preferences copy
+    // was the *decrypted* document — every saved place with its coordinates, in
+    // a file the terms text says is encrypted — and nothing ever read it or
+    // removed it.
     final SharedPreferences p = await SharedPreferences.getInstance();
-    expect(p.getString(badKey), raw,
+    expect(p.getString(badKey), isNull,
+        reason: 'a plaintext copy of every place must not be written');
+    final Uint8List? kept =
+        await PlaceStore.sealedStoreForTest().read('places.bad');
+    expect(kept, isNotNull,
         reason: 'the unparsable bytes are the only copy a person could recover');
+    expect(utf8.decode(kept!), raw);
   });
 
   test('a clock that jumps back does not un-expire a place', () async {

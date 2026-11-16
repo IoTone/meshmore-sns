@@ -555,7 +555,15 @@ class MapsController extends ChangeNotifier with SafeNotifier {
   int get tilesReadyRevision => _tilesReadyRevision;
 
   void _noteReady(MapSource src, int z, int x, int y) {
-    if (_tilesDrawn.length >= _tilesDrawnCap) _tilesDrawn.clear();
+    if (_tilesDrawn.length >= _tilesDrawnCap) {
+      // Evict the oldest half, not everything. Clearing the set made every tile
+      // read as not-ready at once, so the density field vanished until the tiles
+      // were noted again — a long session on the map hit this.
+      final int drop = _tilesDrawn.length ~/ 2;
+      final List<String> oldest = _tilesDrawn.take(drop).toList(growable: false);
+      _tilesDrawn.removeAll(oldest);
+      _tilesReadyRevision++;
+    }
     if (_tilesDrawn.add(TileStore.keyOf(src.id, z, x, y))) {
       _tilesReadyRevision++;
     }

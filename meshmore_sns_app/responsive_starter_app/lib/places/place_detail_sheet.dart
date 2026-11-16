@@ -166,7 +166,7 @@ class PlaceDetailSheet extends StatelessWidget {
                   l.placeUnkeyedIdentity,
                   key: const ValueKey<String>('place-unkeyed-note'),
                   style: TextStyle(
-                      color: skin.color.alert, fontSize: skin.type.sizeSm),
+                      color: skin.color.alertInk, fontSize: skin.type.sizeSm),
                 ),
               ),
             if (!PlaceType.isKnownToken(place.typeToken))
@@ -197,7 +197,7 @@ class PlaceDetailSheet extends StatelessWidget {
                 padding: EdgeInsets.only(top: skin.space.step(1)),
                 child: Text(l.placeHiddenByRefutation,
                     style: TextStyle(
-                        color: skin.color.alert, fontSize: skin.type.sizeSm)),
+                        color: skin.color.alertInk, fontSize: skin.type.sizeSm)),
               ),
             SizedBox(height: skin.space.step(3)),
             Wrap(
@@ -276,7 +276,9 @@ class PlaceDetailSheet extends StatelessWidget {
     if (!context.mounted) return;
     final String text = result.sent
         ? l.placeSent
-        : l.placeBudgetRefused(
+        : result.failed
+            ? l.placeSendFailed
+            : l.placeBudgetRefused(
             6,
             MaterialLocalizations.of(context).formatTimeOfDay(
               TimeOfDay.fromDateTime(result.allowedAt ?? DateTime.now()),
@@ -305,7 +307,9 @@ class PlaceDetailSheet extends StatelessWidget {
         ? l.placeNoSenderKey
         : result.sent
             ? l.placeSentDirect
-            : l.placeBudgetRefused(
+            : result.failed
+                ? l.placeSendFailed
+                : l.placeBudgetRefused(
                 6,
                 MaterialLocalizations.of(context).formatTimeOfDay(
                   TimeOfDay.fromDateTime(result.allowedAt ?? DateTime.now()),

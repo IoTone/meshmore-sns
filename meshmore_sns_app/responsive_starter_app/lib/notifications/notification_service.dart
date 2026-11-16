@@ -326,9 +326,13 @@ class NotificationService {
     final String key = m.peerPubKeyHex ?? '';
     if (focus.isPeerOpen(key)) return;
     final String? name = peerDisplayName(key);
+    // The app's own name for an unnamed peer is the twelve-character short id.
+    // The full 64-character key was passed through, and the OS truncated it
+    // mid-key on the lock screen.
+    final String who = name ?? (key.length <= 12 ? key : key.substring(0, 12));
     final bool sos = isSosLine(m.text);
     if (_catchingUp && !sos) {
-      _absorb(NotificationClass.direct, name ?? key, 'dm:$key');
+      _absorb(NotificationClass.direct, who, 'dm:$key');
       return;
     }
     _effects.cue(NotificationClass.direct);
@@ -337,7 +341,7 @@ class NotificationService {
       id: idFor(m.id),
       cls: sos ? NotificationClass.sos : NotificationClass.direct,
       title: strings().title(
-          sos ? NotificationClass.sos : NotificationClass.direct, name ?? key),
+          sos ? NotificationClass.sos : NotificationClass.direct, who),
       body: _bodyFor(m.text, name),
       payload: 'dm:$key',
     ));

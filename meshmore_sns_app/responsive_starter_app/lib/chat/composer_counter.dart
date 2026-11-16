@@ -35,7 +35,7 @@ class ComposerCounter extends StatelessWidget {
     if (state == ComposerState.ok) return const SizedBox.shrink();
     final MmSkin skin = context.skin;
     final Color colour =
-        state == ComposerState.near ? skin.color.accent : skin.color.alert;
+        state == ComposerState.near ? skin.color.accent : skin.color.alertInk;
     final int remaining = budget.remainingFor(text);
     final String shown = switch (state) {
       ComposerState.over => label.chatBudgetTooLong(budget.overBy(text)),

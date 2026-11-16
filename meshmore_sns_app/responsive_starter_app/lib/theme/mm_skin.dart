@@ -569,17 +569,10 @@ extension MmCueContext on BuildContext {
 /// controller field, so "Remove animations" in Android settings and the app's own
 /// toggle cannot disagree. Falls back to false above no provider (isolated
 /// tests), where motion is fine.
-bool reduceMotionNow(BuildContext context) {
-  try {
-    return context.watch<ThemeController>().reduceMotion;
-  } on ProviderNotFoundException {
-    return false;
-  } on StateError {
-    return false;
-  }
-}
-
-/// The same question without subscribing, for a `build` that already listens.
+///
+/// Without subscribing, for a `build` that already listens. A subscribing
+/// variant existed and had no caller: a view that animates on its own timer is
+/// not rebuilding on a theme change, so it wants the read.
 bool reduceMotionRead(BuildContext context) {
   try {
     return context.read<ThemeController>().reduceMotion;

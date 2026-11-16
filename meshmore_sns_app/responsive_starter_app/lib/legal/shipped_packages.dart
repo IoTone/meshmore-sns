@@ -61,6 +61,7 @@ const List<String> kShippedPackages = <String>[
   'flutter_localizations',
   'flutter_map',
   'flutter_native_splash',
+  'flutter_onnxruntime',
   'flutter_plugin_android_lifecycle',
   'flutter_tts',
   'flutter_web_plugins',

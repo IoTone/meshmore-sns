@@ -183,6 +183,10 @@ class _SnsCellsViewState extends State<SnsCellsView>
   void dispose() {
     _ticker.dispose();
     _transform.dispose();
+    // The recorded backdrop is native memory. It is static so a rebuild reuses
+    // it, which also means leaving the tab used to keep a picture of the whole
+    // field for the life of the process.
+    _SnsCellsPainter.releaseField();
     super.dispose();
   }
 
@@ -492,6 +496,14 @@ class _SnsCellsPainter extends CustomPainter {
   /// drawn as one picture, and only the wave's own band is built per frame.
   static ui.Picture? _fieldPicture;
   static String _fieldKey = '';
+
+  /// Release the recorded backdrop. Called when the view is disposed: the
+  /// picture is native memory, and a static field outlives the widget.
+  static void releaseField() {
+    _fieldPicture?.dispose();
+    _fieldPicture = null;
+    _fieldKey = '';
+  }
 
   /// What the recorded picture depends on, as one string.
   ///

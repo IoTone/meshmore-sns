@@ -1061,7 +1061,7 @@ abstract class AppLocalizations {
   /// No description provided for @termsLeavesBody.
   ///
   /// In en, this message translates to:
-  /// **'Two things leave this device. What you send goes out over the MeshCore radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.'**
+  /// **'What you send goes out over the MeshCore radio you are connected to: messages, positions and reactions. The map asks a tile server for map squares, which tells that server roughly where you are looking, and it names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Three other things leave, each only when you ask for it: Directions hands the place to your phone\'s map app, the neural image codec is downloaded from huggingface.co, and the built-in docs are read from raw.githubusercontent.com. Nothing else leaves. Files you export are yours to place.'**
   String get termsLeavesBody;
 
   /// No description provided for @termsSectionPermissions.
@@ -4010,6 +4010,24 @@ abstract class AppLocalizations {
   /// **'New channel'**
   String get channelCreateTitle;
 
+  /// Section in the add-a-channel sheet that lists the channels already configured, so removing one is in the same menu as adding one.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove a channel'**
+  String get channelRemoveSection;
+
+  /// Explains what removing a channel does and does not do.
+  ///
+  /// In en, this message translates to:
+  /// **'Removing a channel frees its slot and the MeshCore radio stops hearing it. The messages already on this phone stay.'**
+  String get channelRemoveBody;
+
+  /// The action on a configured channel row in the remove section.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get channelRemoveAction;
+
   /// No description provided for @channelCreateIntro.
   ///
   /// In en, this message translates to:
@@ -4433,7 +4451,7 @@ abstract class AppLocalizations {
   /// No description provided for @channelsHexCopied.
   ///
   /// In en, this message translates to:
-  /// **'Key copied'**
+  /// **'Channel key copied. It is on the clipboard now, where other apps can read it.'**
   String get channelsHexCopied;
 
   /// No description provided for @channelsTagWeakShort.
@@ -7254,7 +7272,7 @@ abstract class AppLocalizations {
   /// No description provided for @diagnosticsCopyFixture.
   ///
   /// In en, this message translates to:
-  /// **'Copy fixture JSON'**
+  /// **'Copy fixture JSON (includes your own message text)'**
   String get diagnosticsCopyFixture;
 
   /// No description provided for @diagnosticsFixtureCopied.
@@ -7732,6 +7750,12 @@ abstract class AppLocalizations {
   /// **'Place tagged. It expires on its own.'**
   String get placeSent;
 
+  /// Shown when a place confirmation or refutation was attempted and the radio refused it or the link was down.
+  ///
+  /// In en, this message translates to:
+  /// **'The MeshCore radio did not take it. Nothing was sent.'**
+  String get placeSendFailed;
+
   /// No description provided for @placeBudgetRefused.
   ///
   /// In en, this message translates to:
@@ -8103,6 +8127,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The MeshCore radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.'**
   String get failurePairingNotKept;
+
+  /// Recovery action shown when the radio cannot keep a Bluetooth bond: forgets the OS pairing so the next scan pairs from scratch.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget this MeshCore radio and start again'**
+  String get connectForgetRadio;
 
   /// No description provided for @failureServiceMissing.
   ///
@@ -10867,7 +10897,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareLinkCopied.
   ///
   /// In en, this message translates to:
-  /// **'Copied.'**
+  /// **'Copied. The link carries this MeshCore radio\'s public key and the position it last announced.'**
   String get shareLinkCopied;
 
   /// No description provided for @deviceContactsImport.

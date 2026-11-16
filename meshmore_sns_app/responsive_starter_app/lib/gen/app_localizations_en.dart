@@ -562,7 +562,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get termsLeavesBody =>
-      'Two things leave this device. What you send goes out over the MeshCore radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.';
+      'What you send goes out over the MeshCore radio you are connected to: messages, positions and reactions. The map asks a tile server for map squares, which tells that server roughly where you are looking, and it names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Three other things leave, each only when you ask for it: Directions hands the place to your phone\'s map app, the neural image codec is downloaded from huggingface.co, and the built-in docs are read from raw.githubusercontent.com. Nothing else leaves. Files you export are yours to place.';
 
   @override
   String get termsSectionPermissions => 'PERMISSIONS AND WHY';
@@ -2356,6 +2356,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelCreateTitle => 'New channel';
 
   @override
+  String get channelRemoveSection => 'Remove a channel';
+
+  @override
+  String get channelRemoveBody =>
+      'Removing a channel frees its slot and the MeshCore radio stops hearing it. The messages already on this phone stay.';
+
+  @override
+  String get channelRemoveAction => 'Remove';
+
+  @override
   String get channelCreateIntro =>
       'Name it, then say who should be able to read it.';
 
@@ -2603,7 +2613,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelsHexCopy => 'Copy';
 
   @override
-  String get channelsHexCopied => 'Key copied';
+  String get channelsHexCopied =>
+      'Channel key copied. It is on the clipboard now, where other apps can read it.';
 
   @override
   String get channelsTagWeakShort =>
@@ -4239,7 +4250,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsExportFixture => 'Export fixture';
 
   @override
-  String get diagnosticsCopyFixture => 'Copy fixture JSON';
+  String get diagnosticsCopyFixture =>
+      'Copy fixture JSON (includes your own message text)';
 
   @override
   String get diagnosticsFixtureCopied => 'Copied.';
@@ -4512,6 +4524,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeSent => 'Place tagged. It expires on its own.';
 
   @override
+  String get placeSendFailed =>
+      'The MeshCore radio did not take it. Nothing was sent.';
+
+  @override
   String placeBudgetRefused(int n, String time) {
     return 'You have sent $n in the last hour. The next one can go at $time.';
   }
@@ -4731,6 +4747,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get failurePairingNotKept =>
       'The MeshCore radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.';
+
+  @override
+  String get connectForgetRadio => 'Forget this MeshCore radio and start again';
 
   @override
   String get failureServiceMissing =>
@@ -6462,7 +6481,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareLinkSheetTitle => 'Contact link';
 
   @override
-  String get shareLinkCopied => 'Copied.';
+  String get shareLinkCopied =>
+      'Copied. The link carries this MeshCore radio\'s public key and the position it last announced.';
 
   @override
   String get deviceContactsImport => 'Import a link';

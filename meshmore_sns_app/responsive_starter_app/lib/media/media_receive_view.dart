@@ -138,16 +138,22 @@ class _MediaPhotoViewState extends State<MediaPhotoView> {
 
   Future<void> _decode() async {
     final MediaPhoto premultiplied = widget.photo.premultiplied();
+    // Every `ui` object is disposed, as `photo_decoder.dart` does. The buffer
+    // is a megabyte for a 512-square picture, and leaving it to the collector
+    // held that much native memory for the life of the process per photo
+    // opened.
+    ui.ImmutableBuffer? buffer;
+    ui.ImageDescriptor? descriptor;
+    ui.Codec? codec;
     try {
-      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(
-          premultiplied.rgba);
-      final ui.ImageDescriptor descriptor = ui.ImageDescriptor.raw(
+      buffer = await ui.ImmutableBuffer.fromUint8List(premultiplied.rgba);
+      descriptor = ui.ImageDescriptor.raw(
         buffer,
         width: premultiplied.width,
         height: premultiplied.height,
         pixelFormat: ui.PixelFormat.rgba8888,
       );
-      final ui.Codec codec = await descriptor.instantiateCodec();
+      codec = await descriptor.instantiateCodec();
       final ui.FrameInfo frame = await codec.getNextFrame();
       if (!mounted) {
         frame.image.dispose();
@@ -156,6 +162,10 @@ class _MediaPhotoViewState extends State<MediaPhotoView> {
       setState(() => _image = frame.image);
     } catch (_) {
       if (mounted) setState(() => _failed = true);
+    } finally {
+      codec?.dispose();
+      descriptor?.dispose();
+      buffer?.dispose();
     }
   }
 

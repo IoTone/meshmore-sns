@@ -338,10 +338,17 @@ class _GridScreenState extends State<GridScreen>
   /// full-screen dial sixty times a second to paint a frame the user could not
   /// see — the one accessibility setting in this app that cost more battery than
   /// the animation it replaces.
+  /// Whether this tab is the one on screen.
+  ///
+  /// The shell builds the neighbouring pages, so a hidden grid kept its sweep
+  /// running at sixty frames a second and kept polling the radio every interval
+  /// — airtime spent on a dial nobody was looking at.
+  bool get _visible => widget.isCurrent ?? true;
+
   void _syncTickToMotion(bool still) {
-    // Two reasons to stand still: reduce-motion removes the animation, and a
-    // paused dial is not polling. Both used to leave the sweep running.
-    final bool standStill = still || !_live;
+    // Three reasons to stand still: reduce-motion removes the animation, a
+    // paused dial is not polling, and a hidden tab is neither.
+    final bool standStill = still || !_live || !_visible;
     if (standStill && _tick.isAnimating) {
       _tick.stop();
     } else if (!standStill && !_tick.isAnimating) {
@@ -359,7 +366,6 @@ class _GridScreenState extends State<GridScreen>
     final CompassHeading? shared = context.sharedCompass;
     _ownsCompass = shared == null;
     _compass = shared ?? CompassHeading();
-    _compass.addListener(_onHeading);
     _compass.start();
     final MeshcoreController mc = context.read<MeshcoreController>();
     _snapshot = List<DiscoveredNode>.of(mc.nodes); // initial paused frame
@@ -453,6 +459,22 @@ class _GridScreenState extends State<GridScreen>
   }
 
   @override
+  void didUpdateWidget(GridScreen old) {
+    super.didUpdateWidget(old);
+    if (old.isCurrent == widget.isCurrent) return;
+    if (_visible) {
+      if (_live) {
+        _refreshSnapshot();
+        _startRefresh();
+      }
+      _syncTickToMotion(false);
+    } else {
+      _refreshTimer?.cancel();
+      _syncTickToMotion(true);
+    }
+  }
+
+  @override
   void dispose() {
     // The shell must page again as soon as this tab is gone, even if it was
     // left in pan mode.
@@ -460,15 +482,9 @@ class _GridScreenState extends State<GridScreen>
     _refreshTimer?.cancel();
     _msgSub?.cancel();
     _tick.dispose();
-    _compass.removeListener(_onHeading);
     if (_ownsCompass) _compass.dispose();
     super.dispose();
   }
-
-  /// The compass listener exists for the redraw; the quarter-turn click lives in
-  /// `CompassHeading`, which is the one instance every dial shares, so a phone
-  /// turned on the dashboard or the map clicks there too.
-  void _onHeading() {}
 
   void _refreshSnapshot() {
     if (!mounted) return;
@@ -678,6 +694,7 @@ class _GridScreenState extends State<GridScreen>
   /// three callers start it (init, the pause button, the interval picker).
   void _startRefresh() {
     _refreshTimer?.cancel();
+    if (!_visible) return;
     _refreshTimer = Timer.periodic(_interval, (_) => _refreshSnapshot());
   }
 

@@ -230,7 +230,10 @@ class _MeshTreeViewState extends State<MeshTreeView> {
   Future<void> _learnRoutes(MeshcoreController mc) async {
     setState(() => _learning = true);
     try {
-      final int before = mc.nodes.length;
+      // The revision, not `nodes.length` (a full sort) and not a graph build:
+      // this loop runs thirty times in three seconds, and both of those are the
+      // most expensive operations in the file.
+      final int before = mc.nodesRevision;
       final int routesBefore = MeshGraph.fromController(mc).routed;
       await mc.requestContacts();
       // Wait for the table to actually change rather than for a fixed 600 ms:
@@ -240,7 +243,7 @@ class _MeshTreeViewState extends State<MeshTreeView> {
       // answer is "nothing came back", which is itself worth showing.
       final Stopwatch waited = Stopwatch()..start();
       while (mounted && waited.elapsed < const Duration(seconds: 3)) {
-        if (mc.nodes.length != before ||
+        if (mc.nodesRevision != before ||
             MeshGraph.fromController(mc).routed != routesBefore) {
           break;
         }

@@ -13,6 +13,7 @@ import '../meshcore/battery_model.dart';
 import '../meshcore/device_power_specs.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../ui/mm_shape.dart';
+import '../util/mm_format.dart';
 
 /// Battery-life analysis for the connected device.
 ///
@@ -466,14 +467,8 @@ String _methodLabel(BatteryMethod m, AppLocalizations l) => switch (m) {
       BatteryMethod.none => l.batteryMethodNone,
     };
 
-String _fmtDuration(Duration d, AppLocalizations l) {
-  final int days = d.inDays;
-  final int hours = d.inHours % 24;
-  final int mins = d.inMinutes % 60;
-  if (days > 0) return l.batteryDurDH(days, hours);
-  if (d.inHours > 0) return l.batteryDurHM(d.inHours, mins);
-  return l.batteryDurM(d.inMinutes);
-}
+String _fmtDuration(Duration d, AppLocalizations l) =>
+    MmFormat.batteryDuration(d, l);
 
 class _GaugePainter extends CustomPainter {
   _GaugePainter(

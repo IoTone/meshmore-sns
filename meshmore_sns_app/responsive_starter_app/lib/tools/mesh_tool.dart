@@ -162,7 +162,11 @@ abstract class MeshTool extends ChangeNotifier with SafeNotifier {
   void stop() {
     if (!_running) return;
     _stopRequested = true;
-    _wake?.complete();
+    // `pause` completes the same completer from a timer and only clears `_wake`
+    // in a `whenComplete` microtask, so a stop that lands in that window would
+    // complete it twice and throw StateError.
+    final Completer<void>? wake = _wake;
+    if (wake != null && !wake.isCompleted) wake.complete();
     _wake = null;
     notifyListeners();
   }

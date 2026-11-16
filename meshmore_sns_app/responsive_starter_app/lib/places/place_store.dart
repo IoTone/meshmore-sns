@@ -74,6 +74,11 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
   @visibleForTesting
   static Directory? directoryOverride;
 
+  /// The sealed store, for a test that has to read a record the store keeps
+  /// aside rather than through the store's own API.
+  @visibleForTesting
+  static EncryptedStore sealedStoreForTest() => _sealedStore();
+
   static EncryptedStore _sealedStore() {
     final Directory? dir = directoryOverride;
     return EncryptedStore(
@@ -446,7 +451,20 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
         // the bytes are kept aside first: a parse failure is evidence, and
         // overwriting it with an empty document destroys the only copy that
         // could have been recovered by hand.
-        await Prefs.setString(p, '$_kKey.bad', raw);
+        //
+        // Kept inside the sealed store, not in preferences. `raw` is the
+        // decrypted document, so the preferences copy was a plaintext list of
+        // every saved place with its coordinates, in a file the terms text says
+        // is encrypted, and nothing ever read it or removed it.
+        try {
+          await _sealedStore().write(
+              '$recordName.bad', Uint8List.fromList(utf8.encode(raw)));
+        } on EncryptedStoreUnavailable {
+          // No key: there is nowhere sealed to put it, and a plaintext copy is
+          // the thing this is avoiding.
+        } on EncryptedStoreKeyLost {
+          // Same: the store cannot be opened, so the evidence cannot be kept.
+        }
         _rows.clear();
         _seen.clear();
         _votes.clear();
@@ -466,8 +484,12 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
     notifyListeners();
     final SharedPreferences p = await SharedPreferences.getInstance();
     await p.remove(_kKey);
+    // The pre-2026-11-05 plaintext copy and the quarantine copy an older build
+    // wrote beside it. Neither is read any more, and both are location data.
+    await p.remove('$_kKey.bad');
     try {
       await _sealedStore().write(recordName, Uint8List(0));
+      await _sealedStore().remove('$recordName.bad');
     } on EncryptedStoreUnavailable {
       // No key: nothing was sealed, so there is nothing to clear.
     }

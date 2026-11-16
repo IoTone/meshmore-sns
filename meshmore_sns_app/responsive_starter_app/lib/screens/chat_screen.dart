@@ -1838,7 +1838,7 @@ class _MessageRowState extends State<_MessageRow> {
       Flexible(
         child: ConstrainedBox(
           constraints:
-              BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.6),
+              BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.6),
           child: field,
         ),
       ),
@@ -1882,7 +1882,7 @@ class _MessageRowState extends State<_MessageRow> {
       alignment: m.outgoing ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints:
-            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+            BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.78),
         child: InkWell(
           onLongPress: _revealThenAct,
           child: Container(
@@ -2342,7 +2342,8 @@ class _MessagePicture extends StatefulWidget {
 }
 
 class _MessagePictureState extends State<_MessagePicture> {
-  /// Grey until App settings says otherwise, which is also the default.
+  /// Grey until Settings → Chat & photos says otherwise, which is also the
+  /// default.
   bool _color = false;
 
   @override

@@ -284,9 +284,13 @@ void main() {
     expect(n.title, 'from Bea');
   });
 
-  test('an unknown peer falls back to the key in the title', () async {
-    await dm('hello', key: 'c0ffee');
-    expect(notifier.shown.single.title, 'from c0ffee');
+  test('an unknown peer falls back to the short id, not the whole key',
+      () async {
+    // A real key is 64 hex characters, and the OS truncates a title mid-key.
+    const String full =
+        '26f6071f4650b4739a1c2d3e4f5061728394a5b6c7d8e9f0a1b2c3d4e5f60718';
+    await dm('hello', key: full);
+    expect(notifier.shown.single.title, 'from 26f6071f4650');
   });
 
   test('a DM on the open thread is not announced', () async {

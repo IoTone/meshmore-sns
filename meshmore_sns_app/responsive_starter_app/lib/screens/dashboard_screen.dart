@@ -19,6 +19,7 @@ import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import 'device_manager_sheet.dart';
 import '../ui/mm_shape.dart';
+import '../util/mm_format.dart';
 
 /// R8 home — "SEELE Monolith" dashboard: one dominant numeral
 /// (peers in range), a full-width status slab that colour-inverts on
@@ -567,8 +568,7 @@ class _LocationTile extends StatelessWidget {
           // its decimal point is a number the reader has to reassemble.
           MmValueFields(
             fields: <String>[
-              '${loc.latitude.toStringAsFixed(5)}, '
-                  '${loc.longitude.toStringAsFixed(5)}',
+              MmFormat.coordinate(loc.latitude, loc.longitude),
               // Zero altitude is the firmware's "not set": a radio that has
               // never been given one reports 0, and printing "alt 0 m" in
               // Denver states a fact nobody measured. The phone's own fix
@@ -654,8 +654,5 @@ String _batteryLine(MeshcoreController mc, AppLocalizations l) {
   return b.toString();
 }
 
-String _fmtBatteryDur(Duration d, AppLocalizations l) {
-  if (d.inDays > 0) return l.batteryDurDH(d.inDays, d.inHours % 24);
-  if (d.inHours > 0) return l.batteryDurHM(d.inHours, d.inMinutes % 60);
-  return l.batteryDurM(d.inMinutes);
-}
+String _fmtBatteryDur(Duration d, AppLocalizations l) =>
+    MmFormat.batteryDuration(d, l);

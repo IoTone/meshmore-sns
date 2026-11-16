@@ -292,7 +292,7 @@
   "termsSectionLocal": "WHAT STAYS ON THIS DEVICE",
   "termsLocalBody": "Messages, contacts, channels and settings are stored on this device. Message history, places, the movement trail and geofences are encrypted with a key this phone holds and cannot export. Coverage cells and the last day of channel activity are kept too, so the map and the activity report survive a restart: they are not encrypted, and Delete everything removes them with the rest. Cloud backup and device transfer are off for everything, so a new phone does not silently inherit it. Deleting the app deletes that data.",
   "termsSectionLeaves": "WHAT LEAVES THE DEVICE",
-  "termsLeavesBody": "Two things leave this device. What you send goes out over the MeshCore radio you are connected to: messages, positions and reactions. And the map asks a tile server for map squares, which tells that server roughly where you are looking. The map names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Nothing else leaves. Files you export are yours to place.",
+  "termsLeavesBody": "What you send goes out over the MeshCore radio you are connected to: messages, positions and reactions. The map asks a tile server for map squares, which tells that server roughly where you are looking, and it names the source it is using. Offline map packs are off by default and are fetched only after you turn them on. Three other things leave, each only when you ask for it: Directions hands the place to your phone's map app, the neural image codec is downloaded from huggingface.co, and the built-in docs are read from raw.githubusercontent.com. Nothing else leaves. Files you export are yours to place.",
   "termsSectionPermissions": "PERMISSIONS AND WHY",
   "termsPermissionsBody": "Bluetooth connects to the MeshCore radio. Location is used for your own position and, on older Android, to allow a Bluetooth scan. Notifications are used for messages that arrive while the app is in the background. Refusing any of them leaves the app usable without a radio.",
   "termsSectionRetention": "HOW MUCH IS KEPT",
@@ -1505,7 +1505,19 @@
   "channelsOfflineHint": "Connect a MeshCore radio (Diagnostics) to edit channels.",
   "channelCreateCreated": "Channel created.",
   "channelCreateTitle": "New channel",
-  "channelCreateIntro": "Name it, then say who should be able to read it.",
+
+  "channelRemoveSection": "Remove a channel",
+  "@channelRemoveSection": {
+    "description": "Section in the add-a-channel sheet that lists the channels already configured, so removing one is in the same menu as adding one."
+  },
+  "channelRemoveBody": "Removing a channel frees its slot and the MeshCore radio stops hearing it. The messages already on this phone stay.",
+  "@channelRemoveBody": {
+    "description": "Explains what removing a channel does and does not do."
+  },
+  "channelRemoveAction": "Remove",
+  "@channelRemoveAction": {
+    "description": "The action on a configured channel row in the remove section."
+  },  "channelCreateIntro": "Name it, then say who should be able to read it.",
   "channelCreateNameHint": "e.g. Basecamp",
   "channelCreateNameKeyedTitle": "Anyone who knows the name",
   "channelCreateNameKeyedBody": "The key comes from the name, so every MeshCore radio that types the same name joins. Nothing else can read it.",
@@ -1714,7 +1726,7 @@
   "channelsHelpEncryption": "Channel 0's key is public. Other channels use the key you set.",
   "channelsHexGenerate": "Generate a random key",
   "channelsHexCopy": "Copy",
-  "channelsHexCopied": "Key copied",
+  "channelsHexCopied": "Channel key copied. It is on the clipboard now, where other apps can read it.",
   "channelsTagWeakShort": "Short tags are guessable. Use 12+ chars or unusual phrasing.",
   "channelsTagWeakCommon": "Common words are guessable. An attacker can grind tags. Use unusual phrasing.",
   "channelsSlot0WarnTitle": "Overwriting the Public channel?",
@@ -2836,7 +2848,7 @@
   "diagnosticsSectionM6": "Channel-tail evidence",
   "diagnosticsResolveTail": "Resolve channel-tail",
   "diagnosticsExportFixture": "Export fixture",
-  "diagnosticsCopyFixture": "Copy fixture JSON",
+  "diagnosticsCopyFixture": "Copy fixture JSON (includes your own message text)",
   "diagnosticsFixtureCopied": "Copied.",
   "diagnosticsNoRfLog": "No RF-log frame captured yet",
   "diagnosticsNotRfLog": "The last RF-log frame did not decode",
@@ -3014,7 +3026,11 @@
   "placeImportOutOfRange": "Those coordinates are not on the earth.",
   "placeImportLabelCut": "The name was longer than a report can carry, so it was shortened.",
   "placeSent": "Place tagged. It expires on its own.",
-  "placeBudgetRefused": "You have sent {n} in the last hour. The next one can go at {time}.",
+
+  "placeSendFailed": "The MeshCore radio did not take it. Nothing was sent.",
+  "@placeSendFailed": {
+    "description": "Shown when a place confirmation or refutation was attempted and the radio refused it or the link was down."
+  },  "placeBudgetRefused": "You have sent {n} in the last hour. The next one can go at {time}.",
   "@placeBudgetRefused": {
     "placeholders": {
       "n": {
@@ -3156,7 +3172,11 @@
   "failureStalePairing": "The MeshCore radio no longer holds this pairing. Forget it in Android Bluetooth settings, power-cycle the radio, then pair again.",
   "@failureStalePairing": {},
   "failurePairingNotKept": "The MeshCore radio paired but could not encrypt on the next connection, so the pairing is not kept. Power-cycle it and pair again. If it repeats, the fault is in the radio.",
-  "@failurePairingNotKept": {},
+
+  "connectForgetRadio": "Forget this MeshCore radio and start again",
+  "@connectForgetRadio": {
+    "description": "Recovery action shown when the radio cannot keep a Bluetooth bond: forgets the OS pairing so the next scan pairs from scratch."
+  },  "@failurePairingNotKept": {},
   "failureServiceMissing": "This device does not expose the MeshCore service, so it is probably not a MeshCore radio.",
   "@failureServiceMissing": {},
   "failureCharacteristicMissing": "The MeshCore radio's link is missing a characteristic the app needs. Its firmware may be older than this app expects.",
@@ -4406,7 +4426,7 @@
   "nodeShareContactHint": "Copies a link.",
   "nodeShareContactFailed": "The MeshCore radio did not hand over the contact.",
   "shareLinkSheetTitle": "Contact link",
-  "shareLinkCopied": "Copied.",
+  "shareLinkCopied": "Copied. The link carries this MeshCore radio's public key and the position it last announced.",
   "deviceContactsImport": "Import a link",
   "deviceContactsImportHint": "Paste a meshcore:// link",
   "deviceContactsImportBad": "That is not a contact link.",

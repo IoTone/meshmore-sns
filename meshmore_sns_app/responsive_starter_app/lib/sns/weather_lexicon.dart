@@ -123,7 +123,12 @@ List<double> parseTemperaturesC(String text) {
       if (g == null) continue;
       final double? v = double.tryParse(g);
       if (v == null) continue;
-      out.add(isF ? (v - 32) * 5 / 9 : v);
+      // Convert first, then judge, as `parseWxMeasurements` does: 95F is 35C
+      // and is an ordinary report. The range also drops a non-finite value,
+      // which `double.tryParse('Infinity')` happily returns.
+      final double c = isF ? (v - 32) * 5 / 9 : v;
+      if (!c.isFinite || c < -90 || c > 60) continue;
+      out.add(c);
     }
   }
   return out;

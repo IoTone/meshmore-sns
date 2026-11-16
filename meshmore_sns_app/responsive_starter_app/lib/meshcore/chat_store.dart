@@ -71,9 +71,15 @@ abstract final class ChatStore {
   }
 
   /// The key a dropped row is counted under: a channel slot, or a DM peer.
-  static String threadKeyOf(ChatMessage m) => m.channelIdx >= 0
-      ? 'ch:${m.channelIdx}'
-      : 'dm:${m.peerPubKeyHex?.substring(0, 12) ?? ''}';
+  ///
+  /// The peer key is shortened to twelve hex characters, and a key shorter than
+  /// that is used whole. `substring(0, 12)` on a short key threw a `RangeError`
+  /// out of the drop counter, which is called from a save path.
+  static String threadKeyOf(ChatMessage m) {
+    if (m.channelIdx >= 0) return 'ch:${m.channelIdx}';
+    final String key = m.peerPubKeyHex ?? '';
+    return 'dm:${key.length <= 12 ? key : key.substring(0, 12)}';
+  }
 
   /// How many older rows the cap has already dropped, per thread. A store
   /// that drops rows without saying so makes "where did it go" unanswerable,
@@ -155,10 +161,26 @@ abstract final class ChatStore {
     return _decode(p.getString(_kLegacyKey) ?? '');
   }
 
+  /// The newest [cap] rows of each thread, in their original order.
+  ///
+  /// The cap used to be applied to the whole list, so three channels shared 250
+  /// rows while the settings page promised 250 per channel: a reader with three
+  /// channels kept about eighty each, and the loss was silent.
+  @visibleForTesting
+  static List<ChatMessage> capPerThread(List<ChatMessage> messages) {
+    final Map<String, int> seen = <String, int>{};
+    final List<ChatMessage> kept = <ChatMessage>[];
+    for (final ChatMessage m in messages.reversed) {
+      final String key = threadKeyOf(m);
+      final int n = (seen[key] ?? 0) + 1;
+      seen[key] = n;
+      if (n <= cap) kept.add(m);
+    }
+    return kept.reversed.toList(growable: false);
+  }
+
   static Future<void> save(List<ChatMessage> messages) async {
-    final List<ChatMessage> tail = messages.length > cap
-        ? messages.sublist(messages.length - cap)
-        : messages;
+    final List<ChatMessage> tail = capPerThread(messages);
     final SharedPreferences p = await SharedPreferences.getInstance();
     final bool sealed = await _ensureSealed();
     if (sealed) {
@@ -203,7 +225,13 @@ abstract final class ChatStore {
 
   static Future<void> clear() async {
     try {
-      await _store().clear();
+      // This store's own two records, not the file. `mm_store.bin` holds ten
+      // records — drafts, contacts, blocks, the trail, places, fences, the
+      // fence log and the tool runs — and deleting the file took all of them
+      // with the chat history. The block list is a setting, and the dialog that
+      // reaches this says settings stay.
+      await _store().remove(recordName);
+      await _store().remove(droppedRecordName);
       unreadable.value = false;
       lastWriteFailure.value = null;
     } on EncryptedStoreUnavailable {

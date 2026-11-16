@@ -34,9 +34,8 @@ double radarRingStepMeters(double maxMeters) {
 ///
 /// Whole numbers only, because the step is round by construction; a label with a
 /// decimal means [radarRingStepMeters] was bypassed.
-String radarDistanceLabel(double meters, {FormatPrefs? prefs}) {
-  if (prefs != null) return MmFormat.step(meters, prefs: prefs);
-  if (meters < 1000) return '${meters.round()} m';
-  final double km = meters / 1000;
-  return '${km.round()} km';
-}
+String radarDistanceLabel(double meters, {FormatPrefs? prefs}) =>
+    // One rule for the whole app. The fallback used to round the kilometres
+    // while `MmFormat.step` truncates them, so the dial and the density chip
+    // could label the same ground distance two ways in one session.
+    MmFormat.step(meters, prefs: prefs);

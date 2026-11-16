@@ -142,6 +142,9 @@ String densityCellLabel(double metres, {FormatPrefs? prefs}) {
   // A reader in miles reads the cell's width in feet or miles too: the chip and
   // the hexagons it labels must not disagree about the unit.
   if (prefs != null) return MmFormat.step(metres, prefs: prefs);
+  // A cell size is a measurement, not a ring label: 2.5 km is a cell and 2 km
+  // is a different one, so the kilometre keeps a decimal here. The radar dial
+  // rounds because its steps are round by construction; this one is not.
   if (metres >= 1000) {
     final double km = metres / 1000;
     return km == km.roundToDouble()

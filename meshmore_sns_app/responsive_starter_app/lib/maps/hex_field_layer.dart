@@ -4,7 +4,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart' hide Path;
 
 import 'hex_field.dart';
 
@@ -132,28 +131,4 @@ class _HexFieldPainter extends CustomPainter {
       old.radiusPx != radiusPx ||
       old.accent != accent ||
       old.edge != edge;
-}
-
-/// The cell a point falls in, for a tap on the field.
-///
-/// The painter draws the lattice, so the hit test has to agree with it: the
-/// nearest cell centre within one circumradius is the cell under the finger.
-/// Returns null when the point is outside every cell.
-HexCell? hexCellAt(List<HexCell> cells, LatLng point, double radiusPx,
-    MapCamera camera) {
-  if (cells.isEmpty || radiusPx <= 0) return null;
-  final Offset tap = camera.getOffsetFromOrigin(point);
-  HexCell? best;
-  double bestDistance = radiusPx * radiusPx;
-  for (final HexCell c in cells) {
-    final Offset o = camera.getOffsetFromOrigin(c.centre);
-    final double dx = o.dx - tap.dx;
-    final double dy = o.dy - tap.dy;
-    final double d = dx * dx + dy * dy;
-    if (d <= bestDistance) {
-      bestDistance = d;
-      best = c;
-    }
-  }
-  return best;
 }

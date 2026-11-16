@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -77,8 +79,12 @@ class _NewPackScreenState extends State<NewPackScreen> {
     final (double, double)? centre =
         mine ? (myLat, myLon) : _parseLatLon(_latLon.text);
 
-    final int maxZ =
-        source == null ? _maxZ : _maxZ.clamp(_minZ, source.maxNativeZoom);
+    // `clamp` throws when its bounds invert, and a custom source's `maxZoom`
+    // is read from a preference document with no floor: `15.clamp(10, 8)` is
+    // an ArgumentError thrown during build.
+    final int maxZ = source == null
+        ? _maxZ
+        : _maxZ.clamp(_minZ, math.max(_minZ, source.maxNativeZoom));
     final GeoBox? box =
         centre == null ? null : GeoBox.around(centre.$1, centre.$2, _radiusKm);
     final PackRefusal? check = source == null || box == null

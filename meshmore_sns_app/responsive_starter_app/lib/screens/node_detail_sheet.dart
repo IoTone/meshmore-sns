@@ -444,8 +444,7 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
               ),
             if (n.hasLocation)
               kv(l.nodeDetailLatLonKv,
-                  '${n.latitude!.toStringAsFixed(5)}, '
-                      '${n.longitude!.toStringAsFixed(5)}'),
+                  MmFormat.coordinate(n.latitude!, n.longitude!)),
             // R49+1 — hop value, matching the official app's
             // categories: Direct (0 hops) / N via repeaters / Flood
             // (reachable, no fixed path) / unknown (advert-only, not
@@ -1144,6 +1143,10 @@ class _RepeaterSessionBlockState extends State<_RepeaterSessionBlock> {
                     controller: _password,
                     enabled: ready,
                     obscureText: true,
+                    // `obscureText` does not turn these off, and a keyboard's
+                    // learning dictionary can capture a repeater password.
+                    autocorrect: false,
+                    enableSuggestions: false,
                     maxLength: kLoginPasswordMax,
                     decoration: InputDecoration(
                       isDense: true,

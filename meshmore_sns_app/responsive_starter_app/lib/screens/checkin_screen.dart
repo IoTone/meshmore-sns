@@ -65,7 +65,7 @@ class _CheckinScreenState extends State<CheckinScreen> {
               Text(l.checkinNeedsRadio,
                   key: const ValueKey<String>('checkin-needs-radio'),
                   style: TextStyle(
-                      color: skin.color.alert, fontSize: skin.type.sizeBody)),
+                      color: skin.color.alertInk, fontSize: skin.type.sizeBody)),
             if (watch == null) ...<Widget>[
               SizedBox(height: skin.space.step(3)),
               // The header names the setting; the chips are the choices. It

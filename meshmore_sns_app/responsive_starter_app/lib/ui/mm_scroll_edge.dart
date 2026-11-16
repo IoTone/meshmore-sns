@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../theme/mm_skin.dart';
 
@@ -115,11 +116,26 @@ class _MmScrollEdgeState extends State<MmScrollEdge> {
     final double fraction =
         scrolls ? (pixels / maxScrollExtent).clamp(0.0, 1.0) : 0.0;
     if (_sawScrollable && _scrolls == scrolls && _fraction == fraction) return;
-    setState(() {
-      _sawScrollable = true;
-      _scrolls = scrolls;
-      _fraction = fraction;
-    });
+    void apply() {
+      if (!mounted) return;
+      setState(() {
+        _sawScrollable = true;
+        _scrolls = scrolls;
+        _fraction = fraction;
+      });
+    }
+
+    // A `ScrollMetricsNotification` is dispatched during layout, and a
+    // `setState` there schedules a build inside the frame that is already
+    // building: "Build scheduled during frame". It fires the first time a page's
+    // content grows past the fold, which is why a longer paragraph could break
+    // a screen that had been fine.
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => apply());
+    } else {
+      apply();
+    }
   }
 
   @override

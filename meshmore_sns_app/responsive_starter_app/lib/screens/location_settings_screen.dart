@@ -15,6 +15,7 @@ import '../perms/location_service.dart';
 import '../perms/permissions_service.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_shape.dart';
+import '../../util/mm_format.dart';
 
 /// R36 — App settings → Auto-publish location.
 ///
@@ -248,8 +249,7 @@ class LocationSettingsScreen extends StatelessWidget {
                           const SizedBox(height: 2),
                           MmValueFields(
                             fields: <String>[
-                              '${ap.lastLat!.toStringAsFixed(5)}, '
-                                  '${ap.lastLon!.toStringAsFixed(5)}',
+                              MmFormat.coordinate(ap.lastLat!, ap.lastLon!),
                               _hms(ap.lastPublishedAt!),
                               _triggerLabel(l, ap.lastTrigger),
                             ],

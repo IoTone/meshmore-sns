@@ -9,6 +9,7 @@ import '../../tools/radio_stats_tool.dart';
 import '../../tools/tools_controller.dart';
 import '../../ui/mm_components.dart';
 import 'tool_widgets.dart';
+import '../../ui/radio_connection_facts.dart';
 
 /// R60 T1 — what the radio itself has seen.
 class RadioStatsScreen extends StatefulWidget {
@@ -35,12 +36,7 @@ class _RadioStatsScreenState extends State<RadioStatsScreen> {
     super.dispose();
   }
 
-  static String _uptime(int s) {
-    final Duration d = Duration(seconds: s);
-    if (d.inDays > 0) return '${d.inDays}d ${d.inHours % 24}h';
-    if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes % 60}m';
-    return '${d.inMinutes}m ${d.inSeconds % 60}s';
-  }
+  static String _uptime(int s) => mmUptime(s);
 
   static String _delta(int now, int? before) {
     if (before == null || now == before) return '$now';

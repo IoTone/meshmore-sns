@@ -199,20 +199,21 @@ class MmReadout extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
+    final TextStyle valueStyle = TextStyle(
+      fontFamily: skin.type.monoFamily,
+      color: valueColor ?? skin.color.fg,
+      fontSize: emphasize ? skin.type.size(18) : skin.type.sizeBodyLg,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.5,
+      fontFeatures: skin.type.slashedZero
+          ? const <FontFeature>[FontFeature.slashedZero()]
+          : null,
+    );
     final Widget valueText = Text(
       value,
       textAlign: TextAlign.right,
       overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        fontFamily: skin.type.monoFamily,
-        color: valueColor ?? skin.color.fg,
-        fontSize: emphasize ? skin.type.size(18) : skin.type.sizeBodyLg,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.5,
-        fontFeatures: skin.type.slashedZero
-            ? const <FontFeature>[FontFeature.slashedZero()]
-            : null,
-      ),
+      style: valueStyle,
     );
     // The columns belong to the panel, not to the text.
     //
@@ -244,9 +245,21 @@ class MmReadout extends StatelessWidget {
             ],
           );
         }
+        // Stacked, the value sits under its label and reads from the same
+        // edge. Right-aligned it floated to the far side of the cell, away from
+        // the label it belongs to, which is what the owner saw on the Umber
+        // cluster: four numbers pinned to the right of four left-hand labels.
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[labelText, valueText],
+          children: <Widget>[
+            labelText,
+            Text(
+              value,
+              textAlign: TextAlign.left,
+              overflow: TextOverflow.ellipsis,
+              style: valueStyle,
+            ),
+          ],
         );
       },
     );
@@ -665,7 +678,9 @@ class MmStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MmSkin skin = context.skin;
-    final Color fg = alert ? skin.color.alert : skin.color.accent;
+    // `alertInk`, not `alert`: this is a label, and the fill role is a
+    // graphic colour with a 3:1 floor. SEELE's alert is 3.57:1 on base.
+    final Color fg = alert ? skin.color.alertInk : skin.color.accent;
     return Container(
       padding: EdgeInsets.symmetric(
           horizontal: skin.space.rowGap, vertical: skin.space.step(1) + 1),

@@ -240,8 +240,10 @@ final class PlaceComposer {
     if (!decision.allowed) {
       return PlaceReplySendResult.refused(decision.allowedAt);
     }
-    await _sender.sendPlaceText(text);
-    return const PlaceReplySendResult.sent();
+    final bool ok = await _sender.sendPlaceText(text);
+    return ok
+        ? const PlaceReplySendResult.sent()
+        : const PlaceReplySendResult.failed();
   }
 
   /// A confirmation or refutation **addressed to the reporter's own key**.
@@ -274,8 +276,11 @@ final class PlaceComposer {
       attribution: PlaceReplyAttribution.keyBound,
     ));
     final bool ok = await sendDirect(key, text);
-    if (!ok) return null;
-    return const PlaceReplySendResult.sent();
+    // Null means "there is nobody to address". A send that did not land is a
+    // different answer, and the sheet said "no sender key" for both.
+    return ok
+        ? const PlaceReplySendResult.sent()
+        : const PlaceReplySendResult.failed();
   }
 
   static int _toE6(double degrees) => (degrees * 1e6).truncate();
@@ -285,11 +290,27 @@ final class PlaceComposer {
 final class PlaceReplySendResult {
   const PlaceReplySendResult.sent()
       : allowedAt = null,
-        sent = true;
+        sent = true,
+        failed = false;
 
-  const PlaceReplySendResult.refused(this.allowedAt) : sent = false;
+  const PlaceReplySendResult.refused(this.allowedAt)
+      : sent = false,
+        failed = false;
+
+  /// The budget allowed it and the radio did not take it.
+  ///
+  /// A third answer, because "refused" is about the rate limit and this is
+  /// about the link: the sheet said "Sent" for both, and a confirmation that
+  /// never left the phone is the one thing a confirmation must not do.
+  const PlaceReplySendResult.failed()
+      : sent = false,
+        failed = true,
+        allowedAt = null;
 
   final bool sent;
+
+  /// True when the send was attempted and did not land.
+  final bool failed;
 
   /// The moment the budget allows the next place-family message.
   final DateTime? allowedAt;

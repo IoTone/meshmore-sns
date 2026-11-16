@@ -644,7 +644,7 @@ class _Note extends StatelessWidget {
             Expanded(
               child: Text(text,
                   style: TextStyle(
-                      color: alert ? skin.color.alert : skin.color.fgMuted,
+                      color: alert ? skin.color.alertInk : skin.color.fgMuted,
                       fontSize: skin.type.sizeSm)),
             ),
           ],

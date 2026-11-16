@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'radio_lease.dart';
 import 'dart:async';
+import 'dart:collection';
 
 import '../chat/composer_budget.dart';
 import '../chat/friendly_ack.dart';
@@ -90,6 +91,9 @@ String deviceErrorReason(int? code) => switch (code) {
 /// [CommandAnswer] carries that distinction into the ledger.
 /// What a Retry did, so the screen can say it rather than guess.
 enum RetryOutcome { refused, sent, sentAfterPathReset }
+
+/// Lower-case hex only, for the key builders that parse a caller's string.
+final RegExp _kHexOnly = RegExp(r'^[0-9a-f]+$');
 
 class MeshcoreController extends ChangeNotifier with SafeNotifier {
   MeshcoreController({
@@ -307,7 +311,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
 
   final Set<String> _known = <String>{};
 
-  Set<String> get known => Set<String>.unmodifiable(_known);
+  /// A read-only *view*, not a copy.
+  ///
+  /// `Set.unmodifiable` copies the whole set on every read, and six screens
+  /// read it inside a loop over every node: 475 nodes x 2 sets x 350 keys is
+  /// 332,500 hash inserts per build, on a map that rebuilds up to twenty times
+  /// a second. `UnmodifiableSetView` is the same guarantee without the copy.
+  Set<String> get known => UnmodifiableSetView<String>(_known);
 
   bool isKnown(String pubKeyHex) => _known.contains(pubKeyHex);
 
@@ -354,7 +364,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
 
   /// Read-only view of favourited node pubkey-hexes (the user's
   /// **contacts** in our UX sense; **fabric** = all seen).
-  Set<String> get favorites => Set<String>.unmodifiable(_favorites);
+  Set<String> get favorites => UnmodifiableSetView<String>(_favorites);
 
   bool isFavorite(String pubKeyHex) => _favorites.contains(pubKeyHex);
 
@@ -1278,6 +1288,11 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       _gaveUp = false;
       _reconnectAttempt = 0;
       _reconnectGen++;
+      // A hand-asked connect is a new decision: give the bond repair its budget
+      // back, so a mistyped PIN or a radio that has since been power-cycled is
+      // not a permanent lockout. The automatic retry loop does not come through
+      // here, which is what keeps it from prompting for a PIN on every attempt.
+      BleConnector.resetRepairBudget();
     }
     _error = null;
     _failure = null;
@@ -1940,6 +1955,10 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// reused instead of rebuilt.
   int _nodesRevision = 0;
 
+  /// The revision of the node map. A cache keyed on this cannot go stale, and
+  /// it is cheaper than comparing the nodes themselves.
+  int get nodesRevision => _nodesRevision;
+
   /// The repeater prefix map, per route width, and the revision it was built
   /// from.
   ///
@@ -1959,13 +1978,29 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     _nodesRevision++;
   }
 
+  /// The sorted list, and the revision it was sorted from.
+  ///
+  /// The getter used to allocate and sort the whole fabric on every read, and
+  /// the map reads it three times per build while the dashboards read it twice
+  /// in one function. At 475 nodes and twenty notifications a second that is
+  /// sixty sorts a second for a list that changes only when a node does.
+  List<DiscoveredNode>? _nodesCache;
+  int _nodesCacheRevision = -1;
+
   /// Discovered nodes, most-recently-heard first.
   List<DiscoveredNode> get nodes {
+    final List<DiscoveredNode>? cached = _nodesCache;
+    if (cached != null && _nodesCacheRevision == _nodesRevision) return cached;
     final List<DiscoveredNode> v = _nodes.values.toList()
       ..sort((DiscoveredNode a, DiscoveredNode b) =>
           b.lastHeardUnix.compareTo(a.lastHeardUnix));
+    _nodesCache = v;
+    _nodesCacheRevision = _nodesRevision;
     return v;
   }
+
+  /// How many nodes are known, without sorting them.
+  int get nodeCount => _nodes.length;
 
   /// The node with this pubkey, or null when it has not been discovered.
   ///
@@ -5710,6 +5745,11 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     if (!isReady || _pathDiscoveryInFlight) return null;
     final String hex = pubKeyHex.toLowerCase();
     if (hex.length < kPubKeyPrefixSize * 2) return null;
+    // A length check is not a hex check: an odd length throws RangeError at the
+    // last `substring`, and a non-hex character throws FormatException, both
+    // before this method's own `try`. The caller awaits with no try, so the
+    // button stayed disabled for the life of the sheet.
+    if (hex.length.isOdd || !_kHexOnly.hasMatch(hex)) return null;
     final String prefix = hex.substring(0, kPubKeyPrefixSize * 2);
     final Uint8List key = Uint8List.fromList(<int>[
       for (int i = 0; i < hex.length; i += 2)
@@ -5741,6 +5781,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     if (!isReady || _advertPathInFlight) return null;
     final String hex = pubKeyHex.toLowerCase();
     if (hex.length != kPubKeySize * 2) return null;
+    if (!_kHexOnly.hasMatch(hex)) return null;
     final Uint8List key = Uint8List.fromList(<int>[
       for (int i = 0; i < hex.length; i += 2)
         int.parse(hex.substring(i, i + 2), radix: 16),

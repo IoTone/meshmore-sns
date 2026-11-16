@@ -12,6 +12,7 @@ import '../theme/mm_skin.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
 import '../ui/mm_components.dart';
+import '../ui/mm_confirm.dart';
 import '../ui/mm_shape.dart';
 
 /// Making a channel, in the order a person thinks about it.
@@ -413,7 +414,7 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
                 padding: EdgeInsets.only(top: skin.space.step(2)),
                 child: Text(l.channelsOfflineHint,
                     style: TextStyle(
-                        color: skin.color.alert, fontSize: skin.type.sizeSm)),
+                        color: skin.color.alertInk, fontSize: skin.type.sizeSm)),
               ),
             SizedBox(height: skin.space.step(4)),
             Row(
@@ -435,10 +436,69 @@ class _ChannelCreateSheetState extends State<ChannelCreateSheet> {
                 ),
               ],
             ),
+            // Removing a channel belongs in the same menu as adding one: a
+            // reader who wants to get rid of a channel should not have to find
+            // the slot's editor first, and "add" and "remove" are the two
+            // halves of one question.
+            if (widget.controller.channels.isNotEmpty) ...<Widget>[
+              SizedBox(height: skin.space.step(4)),
+              MmSectionHeader(l.channelRemoveSection),
+              SizedBox(height: skin.space.rowGap),
+              Text(l.channelRemoveBody,
+                  style: TextStyle(
+                      color: skin.color.fgMuted,
+                      fontSize: skin.type.sizeSm)),
+              SizedBox(height: skin.space.step(2)),
+              for (final MapEntry<int, String> e
+                  in widget.controller.channels)
+                Padding(
+                  padding: EdgeInsets.only(bottom: skin.space.step(1)),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          '${e.value}  ·  ${l.channelsSlotLabel(e.key)}',
+                          style: TextStyle(
+                              color: skin.color.fg,
+                              fontSize: skin.type.sizeBody),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      MmAction(
+                        key: ValueKey<String>('channel-remove-${e.key}'),
+                        label: l.channelRemoveAction,
+                        dense: true,
+                        onPressed: ready ? () => _remove(context, e.key) : null,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  /// Removes one configured channel, after the same confirmation the slot
+  /// editor uses.
+  Future<void> _remove(BuildContext context, int idx) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final bool ok = await mmConfirm(
+      context,
+      title: l.channelsClearConfirmTitle(idx),
+      body: l.channelsClearConfirmBody,
+      cancelLabel: l.channelsCancel,
+      confirmLabel: l.channelRemoveAction,
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+    await widget.controller.clearChannel(idx);
+    if (!mounted) return;
+    ScaffoldMessenger.maybeOf(this.context)
+      ?..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(l.channelsClearSnack(idx))));
+    setState(() {});
   }
 }
 

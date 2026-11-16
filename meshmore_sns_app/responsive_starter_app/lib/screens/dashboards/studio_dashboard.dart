@@ -16,6 +16,7 @@ import '../../ui/mm_components.dart';
 import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
 import 'my_pubkey_line.dart';
+import '../../util/mm_format.dart';
 
 /// R68 — the **Studio** dashboard: the clean, professional, readable
 /// dark layout. It exists because the SEELE monolith (what Studio used to
@@ -252,8 +253,7 @@ class StudioDashboard extends StatelessWidget {
       // Coordinates and where they came from, on one line: the source is a
       // fact about the reading, the rest of its provenance is Diagnostics.
       return Text(
-        '${loc.latitude.toStringAsFixed(5)}, '
-        '${loc.longitude.toStringAsFixed(5)}'
+        '${MmFormat.coordinate(loc.latitude, loc.longitude)}'
         '${loc.altitudeMeters == null ? '' : '  · '
             '${l.dashboardLocationAltitude(loc.altitudeMeters!.round())}'}'
         '  · ${loc.localizedSourceLabel(l)}',

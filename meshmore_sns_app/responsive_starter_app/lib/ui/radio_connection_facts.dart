@@ -285,6 +285,18 @@ String mmShortDuration(Duration d) {
   return rest == 0 ? '${m}m' : '${m}m ${rest.toString().padLeft(2, '0')}s';
 }
 
+/// A radio's uptime: `3d 4h`, `3h 12m`, `3m 4s`.
+///
+/// One rule for the whole app. The connection screen and the stats screen each
+/// had their own, and below an hour they disagreed: "Up 3m" beside "3m 4s" for
+/// the same radio at the same second.
+String mmUptime(int seconds) {
+  final Duration d = Duration(seconds: seconds);
+  if (d.inDays > 0) return '${d.inDays}d ${d.inHours % 24}h';
+  if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes % 60}m';
+  return '${d.inMinutes}m ${d.inSeconds % 60}s';
+}
+
 /// The first and last four hex characters of a key, which is enough to tell two
 /// radios apart without putting a 64-character key in a sentence.
 String mmShortKey(String hex) => hex.length <= 8

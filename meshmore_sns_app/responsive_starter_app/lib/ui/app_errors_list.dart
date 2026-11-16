@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../app/app_errors.dart';
 import '../gen/app_localizations.dart';
+import '../screens/diagnostics_redaction.dart';
 import '../theme/mm_skin.dart';
 
 /// The app's own error records, as rows.
@@ -57,7 +58,11 @@ class AppErrorsList extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: SelectableText(
-                  '${_age(now, r.at)} · ${r.where} · ${r.message}',
+                  // Masked like every other Diagnostics surface. An error
+                  // message can carry a short key or a URL, and this list was
+                  // the one place that printed it verbatim.
+                  '${_age(now, r.at)} · ${r.where} · '
+                  '${const DiagnosticsRedaction().maskSecrets(r.message)}',
                   style: TextStyle(
                       color: skin.color.fg,
                       fontSize: skin.type.sizeSm,

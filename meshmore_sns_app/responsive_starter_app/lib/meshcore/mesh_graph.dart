@@ -175,19 +175,36 @@ class MeshGraph {
     List<DiscoveredNode>? filteredNodes,
     int maxHops,
   ) {
-    final List<String> rows = <String>[
-      for (final DiscoveredNode n in mc.nodes)
-        '${n.pubKeyHex}:${n.name}:${n.type}:${n.hopCount}:'
-            '${n.viaFlood}:${n.outPathHashSize}:'
-            '${n.outPathHashes?.join(',') ?? ''}',
-    ]..sort();
+    // A hash of the fields the graph reads, not a string of them.
+    //
+    // The string cost a full sort of the fabric, 475 seven-field
+    // interpolations and a sort of those, on every notification — the same
+    // order as the graph build the cache exists to skip. The controller's own
+    // revision is not the answer either: it is bumped by a last-heard time,
+    // which the graph cannot show, and rebuilding on every advert is the cost
+    // this cache was added to remove.
+    int h = 0;
+    for (final DiscoveredNode n in mc.nodes) {
+      int row = n.pubKeyHex.hashCode;
+      row = row * 31 + n.name.hashCode;
+      row = row * 31 + n.type;
+      row = row * 31 + (n.hopCount ?? -1);
+      row = row * 31 + (n.viaFlood ? 1 : 0);
+      row = row * 31 + (n.outPathHashSize ?? 0);
+      for (final int b in n.outPathHashes ?? const <int>[]) {
+        row = row * 31 + b;
+      }
+      // Summed, not folded in order: the controller's own ordering is a
+      // function of the timestamps, which are deliberately not an input.
+      h += row;
+    }
     return <String>[
       '${identityHashCode(mc)}',
+      '$h',
       '$maxHops',
       mc.selfInfo?.name ?? '',
       mc.ownPubKeyHex ?? '',
       filteredNodes == null ? '-' : '${identityHashCode(filteredNodes)}',
-      ...rows,
     ].join('|');
   }
 

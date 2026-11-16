@@ -78,7 +78,9 @@ AgeReading readAge(Duration age, {Duration nowUnder = Duration.zero}) {
 /// default). A stamp of zero or less is the firmware's own "never", and the
 /// caller decides what that means before asking — this returns zero for it.
 Duration ageSinceUnix(int unixSeconds, {DateTime? now}) {
-  if (unixSeconds <= 0) return Duration.zero;
+  // The upper bound is the year 2100: `fromMillisecondsSinceEpoch` throws for
+  // a value near 2^63, and a corrupt stored stamp would crash a list row.
+  if (unixSeconds <= 0 || unixSeconds > 4102444800) return Duration.zero;
   final DateTime at = DateTime.fromMillisecondsSinceEpoch(unixSeconds * 1000);
   return (now ?? DateTime.now()).difference(at);
 }

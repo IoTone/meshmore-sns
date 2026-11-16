@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:meshmore_sns_app/geofence/geofence_controller.dart';
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
+import 'package:meshmore_sns_app/screens/street_map_view.dart';
 import 'package:meshmore_sns_app/maps/hex_field.dart';
 import 'package:meshmore_sns_app/maps/hex_field_layer.dart';
 import 'package:meshmore_sns_app/maps/map_fetch.dart';
@@ -68,7 +69,9 @@ List<HexCell> _hexPolygons(WidgetTester t) {
 List<Marker> _nodePins(WidgetTester t) {
   for (final MarkerLayer layer in t.widgetList<MarkerLayer>(
       find.byType(MarkerLayer))) {
-    if (layer.markers.any((Marker m) => m.width == 32)) return layer.markers;
+    if (layer.markers.any((Marker m) => m.width == StreetMapView.tapTarget)) {
+      return layer.markers;
+    }
   }
   return const <Marker>[];
 }

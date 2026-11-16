@@ -10,6 +10,7 @@ import '../theme/mm_skin.dart';
 import 'mm_components.dart';
 import '../tools/radio_stats_tool.dart';
 import '../tools/tools_controller.dart';
+import 'radio_connection_facts.dart';
 
 /// What the radio itself has measured, on the screen where a user goes when
 /// something sounds wrong.
@@ -109,12 +110,5 @@ class _RadioHealthBlockState extends State<RadioHealthBlock> {
     );
   }
 
-  static String _uptime(int s) {
-    final int d = s ~/ 86400;
-    final int h = (s % 86400) ~/ 3600;
-    final int m = (s % 3600) ~/ 60;
-    if (d > 0) return '${d}d ${h}h';
-    if (h > 0) return '${h}h ${m}m';
-    return '${m}m';
-  }
+  static String _uptime(int s) => mmUptime(s);
 }

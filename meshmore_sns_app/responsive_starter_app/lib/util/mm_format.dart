@@ -1,9 +1,11 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../gen/app_localizations.dart';
 import 'prefs.dart';
 
 /// How this reader wants distances written.
@@ -99,19 +101,35 @@ abstract final class MmFormat {
     final bool imperial = prefs?.units == DistanceUnits.imperial;
     if (imperial) {
       final double feet = metres * 3.280839895;
-      if (feet < 1000) return '${(feet / 10).round() * 10} ft';
+      if (feet < 1000) {
+        final int rounded = (feet / 10).round() * 10;
+        return '${feet > 0 && rounded == 0 ? 10 : rounded} ft';
+      }
       final double miles = metres / 1609.344;
       return miles < 10
           ? '${miles.toStringAsFixed(1)} mi'
           : '${miles.round()} mi';
     }
-    if (metres < 1000) return '${(metres / 10).round() * 10} m';
+    // Floored at one step for anything that is not exactly zero: four metres
+    // rounds to zero, and "0 m" for a node in the same room is a wrong answer
+    // rather than a rounded one. Zero itself stays zero, because that is the
+    // honest reading for a node sharing our fix.
+    if (metres < 1000) {
+      final int rounded = (metres / 10).round() * 10;
+      return '${metres > 0 && rounded == 0 ? 10 : rounded} m';
+    }
     final double km = metres / 1000.0;
     return km < 10 ? '${km.toStringAsFixed(1)} km' : '${km.round()} km';
   }
 
   /// A distance without the rounding-to-ten step, for a dial's ring labels
   /// where the number is already a round step.
+  ///
+  /// The kilometre figure truncates rather than rounds, so 1,500 m reads
+  /// "1 km". That is deliberate for a ring label, whose step is round by
+  /// construction, and it is the one rule every distance label in the app now
+  /// uses: the radar dial and the density chip each had their own and disagreed
+  /// with this one.
   static String step(double metres, {FormatPrefs? prefs}) {
     if (prefs?.units == DistanceUnits.imperial) {
       final double feet = metres * 3.280839895;
@@ -125,9 +143,26 @@ abstract final class MmFormat {
     return '${metres.round() ~/ 1000} km';
   }
 
+  /// A position, at the app's one precision: five decimal places, about a
+  /// metre. Seven screens wrote `toStringAsFixed(5)` themselves, so the rule had
+  /// no home and a change to it would have to be made seven times.
+  static String coordinate(double latitude, double longitude) =>
+      '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}';
+
+  /// A battery estimate's remaining time, in the reader's words.
+  ///
+  /// One rule for the whole app: the battery screen and the dashboard each had
+  /// their own copy, so a change to the "days and hours" rule had to be made
+  /// twice or the two screens disagreed.
+  static String batteryDuration(Duration d, AppLocalizations l) {
+    if (d.inDays > 0) return l.batteryDurDH(d.inDays, d.inHours % 24);
+    if (d.inHours > 0) return l.batteryDurHM(d.inHours, d.inMinutes % 60);
+    return l.batteryDurM(d.inMinutes);
+  }
+
   /// A temperature, in the reader's scale.
   static String temperature(double? celsius, {FormatPrefs? prefs}) {
-    if (celsius == null || celsius.isNaN) return '—';
+    if (celsius == null || !celsius.isFinite) return '—';
     if (prefs != null && !prefs.celsius) {
       return '${(celsius * 9 / 5 + 32).round()} °F';
     }
@@ -136,6 +171,7 @@ abstract final class MmFormat {
 
   /// A temperature range, for a summary that reports a low and a high.
   static String range(double lo, double hi, {FormatPrefs? prefs}) {
+    if (!lo.isFinite || !hi.isFinite) return '—';
     final bool f = prefs != null && !prefs.celsius;
     final String unit = f ? '°F' : '°C';
     final int a = f ? (lo * 9 / 5 + 32).round() : lo.round();

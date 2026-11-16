@@ -1,10 +1,14 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
+import 'package:meshmore_sns_app/meshcore/block_store.dart';
 import 'package:meshmore_sns_app/meshcore/chat_store.dart';
+import 'package:meshmore_sns_app/meshcore/secure/record_cipher.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 
 import 'fake_transport.dart';
@@ -64,6 +68,67 @@ void main() {
       expect(back.length, ChatStore.cap);
       expect(back.first.text, 'm30'); // oldest 30 dropped
       expect(back.last.text, 'm${ChatStore.cap + 29}');
+    });
+
+    test('the cap is per thread, which is what the settings page promises',
+        () async {
+      // Three channels, each with more than the cap. The cap used to be applied
+      // to the whole list, so three channels shared 250 rows while the page said
+      // "the newest 250 messages per channel".
+      final List<ChatMessage> many = <ChatMessage>[
+        for (int ch = 0; ch < 3; ch++)
+          for (int i = 0; i < ChatStore.cap + 10; i++)
+            ChatMessage(channelIdx: ch, text: 'c$ch-$i', outgoing: false),
+      ];
+      final List<ChatMessage> kept = ChatStore.capPerThread(many);
+      expect(kept.length, ChatStore.cap * 3);
+      for (int ch = 0; ch < 3; ch++) {
+        final List<ChatMessage> mine =
+            kept.where((ChatMessage m) => m.channelIdx == ch).toList();
+        expect(mine.length, ChatStore.cap, reason: 'channel $ch');
+        expect(mine.first.text, 'c$ch-10', reason: 'the oldest ten go');
+        expect(mine.last.text, 'c$ch-${ChatStore.cap + 9}');
+      }
+    });
+
+    test('clearing the history leaves the other sealed records alone',
+        () async {
+      // `mm_store.bin` holds ten records. `clear()` used to delete the file, so
+      // "Delete everything" also took the block list, the contact table, the
+      // fences and every unsent draft.
+      final Directory dir = Directory.systemTemp.createTempSync('chat_clear');
+      final MemoryRecordCipher cipher = MemoryRecordCipher.random();
+      ChatStore.cipherOverride = cipher;
+      ChatStore.directoryOverride = dir;
+      BlockStore.cipherOverride = cipher;
+      BlockStore.directoryOverride = dir;
+      addTearDown(() {
+        ChatStore.cipherOverride = null;
+        ChatStore.directoryOverride = null;
+        BlockStore.cipherOverride = null;
+        BlockStore.directoryOverride = null;
+        if (dir.existsSync()) dir.deleteSync(recursive: true);
+      });
+
+      final BlockStore blocks = BlockStore();
+      await blocks.load();
+      expect(
+          await blocks.block(BlockedKey(
+            pubKeyHex: 'a' * 64,
+            name: 'Ada',
+            sinceMs: 1,
+          )),
+          isTrue);
+      await ChatStore.save(<ChatMessage>[
+        ChatMessage(channelIdx: 0, text: 'gone', outgoing: false),
+      ]);
+      await ChatStore.clear();
+      expect(await ChatStore.load(), isEmpty);
+      final BlockStore after = BlockStore();
+      await after.load();
+      expect(after.all.map((BlockedKey b) => b.name), <String>['Ada'],
+          reason: 'the block list is a setting, and the dialog says settings '
+              'stay');
     });
 
     test('corrupt store loads clean (no throw)', () async {

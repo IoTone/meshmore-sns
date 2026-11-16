@@ -21,6 +21,8 @@ void main() {
       expect(MmFormat.distance(0, prefs: metric), '0 m');
       expect(MmFormat.distance(1247, prefs: metric), '1.2 km');
       expect(MmFormat.distance(24, prefs: metric), '20 m');
+      // Four metres is a node in the same room, not a node at zero.
+      expect(MmFormat.distance(4, prefs: metric), '10 m');
       expect(MmFormat.distance(24999, prefs: metric), '25 km');
     });
 

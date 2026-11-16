@@ -6,14 +6,18 @@ import 'package:provider/provider.dart';
 /// Looks a provider up by its *registered* type and answers null when the tree
 /// does not have it.
 ///
-/// `context.read<X?>()` looks like the tolerant spelling and is not: a provider
-/// registered as `X` does not match a lookup for `X?`, so the nullable form
-/// returns null in the app and only works in a test that happened to register
-/// the nullable type. That silent mismatch has cost this app two bugs — a strip
-/// that never drew and an offer store that was recreated per sheet.
+/// The difference from `context.read<X?>()` is the *value*, not the lookup.
+/// `Provider<X>` registers a scope for `X?` (provider 6.1.5 creates
+/// `_InheritedProviderScope<T?>`), so a nullable lookup does find it. What
+/// differs is what happens when the value itself is null: `Provider.of<X>`
+/// throws `ProviderNullException`, while `Provider.of<X?>` returns null. These
+/// helpers ask for `T` and catch only `ProviderNotFoundException`, so a
+/// registered provider whose value is null still throws rather than being
+/// silently read as absent.
 ///
-/// These helpers ask for `T`, which is what `Provider<T>` registers, and treat
-/// "not there" as absence rather than as a null value.
+/// An earlier version of this comment claimed the lookup types did not match.
+/// They do, and the claim taught the codebase that twenty working nullable
+/// lookups were broken.
 T? readOrNull<T>(BuildContext context) {
   try {
     return Provider.of<T>(context, listen: false);

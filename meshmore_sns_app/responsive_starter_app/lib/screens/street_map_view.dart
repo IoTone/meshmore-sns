@@ -111,6 +111,10 @@ class StreetMapView extends StatefulWidget {
   static const double controlCell = 48;
   static const double controlsInset = 12;
 
+  /// The app's floor for a control, in logical pixels. A map mark is a control:
+  /// the glyph inside stays small, the target does not.
+  static const double tapTarget = 48;
+
   /// How many cells the column draws today: layers, zoom in, zoom out,
   /// recentre, report a place. Pinned by `test/screens/map_chrome_test.dart` so
   /// a new control has to update this rather than silently misplacing whatever
@@ -1229,14 +1233,19 @@ class _StreetMapViewState extends State<StreetMapView> {
       for (final DiscoveredNode n in withLoc)
         Marker(
           point: LatLng(n.latitude!, n.longitude!),
-          width: 32,
-          height: 32,
+          // 48 dp, the app's own floor for a control. The glyph inside stays
+          // 12 px: the target grows, the mark does not. At 32 dp a reader with
+          // a tremor could not reliably open a node, which is the one gesture
+          // the map exists for.
+          width: StreetMapView.tapTarget,
+          height: StreetMapView.tapTarget,
           alignment: Alignment.center,
           child: Semantics(
             button: true,
             label:
                 l.nodeMarkerSemantics(n.name.isEmpty ? n.shortId : n.name),
             child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () => _showDetail(context, mc, n),
               child: _PeerGlyph(
                 node: n,
@@ -2355,12 +2364,17 @@ class _StreetMapViewState extends State<StreetMapView> {
                   // (`isInside`) is what changes it: standing inside a fence
                   // is the thing the reader needs to know at a glance, and the
                   // controller already computed it with nobody listening.
+                  // A circle fence only. A drawn fence is a polygon, and it
+                  // is drawn by the polygon layer above; giving it a circle as
+                  // well put a ring around the shape the reader had just
+                  // traced, which read as a second, invisible fence.
                   for (final StoredGeofence f in fences)
-                    _fenceCircle(
-                      f,
-                      inside: geofences?.isInside(f.id) ?? false,
-                      alert: context.skin.color.alert,
-                    ),
+                    if (!f.isPolygon)
+                      _fenceCircle(
+                        f,
+                        inside: geofences?.isInside(f.id) ?? false,
+                        alert: context.skin.color.alert,
+                      ),
                   // Reach estimates, drawn only where the screen can show
                   // them (see `peerReachRings` above).
                   ...peerReachRings,
@@ -2428,7 +2442,8 @@ class _StreetMapViewState extends State<StreetMapView> {
                         key: ValueKey<String>('fence-label-${f.id}'),
                         point: LatLng(f.latitude, f.longitude),
                         width: 140,
-                        height: 28,
+                        // The app's floor: the label is a tap target.
+                        height: StreetMapView.tapTarget,
                         alignment: Alignment.center,
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
@@ -2444,7 +2459,7 @@ class _StreetMapViewState extends State<StreetMapView> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: context.skin.color.alert,
+                                color: context.skin.color.alertInk,
                                 fontSize: context.skin.type.sizeSm,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: .5,
@@ -2527,25 +2542,33 @@ class _StreetMapViewState extends State<StreetMapView> {
                               behavior: HitTestBehavior.opaque,
                               onPanUpdate: (DragUpdateDetails d) =>
                                   _moveCorner(i, d.delta),
-                              child: Center(
-                                child: Container(
-                                  width: 26,
-                                  height: 26,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: context.skin.color.base,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: context.skin.color.alert,
-                                        width: 2.5),
-                                  ),
-                                  child: Text(
-                                    '${i + 1}',
-                                    style: TextStyle(
-                                      color: context.skin.color.alert,
-                                      fontSize: context.skin.type.size(11),
-                                      fontWeight: FontWeight.w700,
-                                      height: 1,
+                              // A 48 dp drag area around a 26 dp mark. A drag
+                              // target is harder than a tap target, not easier,
+                              // and reshaping a fence was unusable for a reader
+                              // with limited dexterity.
+                              child: SizedBox(
+                                width: StreetMapView.tapTarget,
+                                height: StreetMapView.tapTarget,
+                                child: Center(
+                                  child: Container(
+                                    width: 26,
+                                    height: 26,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: context.skin.color.base,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: context.skin.color.alert,
+                                          width: 2.5),
+                                    ),
+                                    child: Text(
+                                      '${i + 1}',
+                                      style: TextStyle(
+                                        color: context.skin.color.alertInk,
+                                        fontSize: context.skin.type.size(11),
+                                        fontWeight: FontWeight.w700,
+                                        height: 1,
+                                      ),
                                     ),
                                   ),
                                 ),

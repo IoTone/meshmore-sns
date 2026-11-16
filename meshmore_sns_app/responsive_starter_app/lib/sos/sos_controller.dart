@@ -706,8 +706,13 @@ final class SosController extends ChangeNotifier with SafeNotifier {
   /// rather than trusted from the text.
   String? _nameFor(String? peerHex) {
     if (peerHex == null || peerHex.isEmpty) return null;
-    for (final node in _mc.nodes) {
-      if (node.pubKeyHex.toLowerCase().startsWith(peerHex.toLowerCase())) {
+    final String hex = peerHex.toLowerCase();
+    // A full key is a map lookup. A 12-hex prefix is the only case that needs a
+    // scan, and it is the one the radio sends.
+    final DiscoveredNode? exact = _mc.nodeByPubKey(hex);
+    if (exact != null) return exact.name.isEmpty ? null : exact.name;
+    for (final DiscoveredNode node in _mc.nodes) {
+      if (node.pubKeyHex.toLowerCase().startsWith(hex)) {
         return node.name.isEmpty ? null : node.name;
       }
     }

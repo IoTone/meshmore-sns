@@ -183,9 +183,13 @@ class BlockStore extends ChangeNotifier {
       _unreadable = true;
       await _dropDamagedFile();
     } on FormatException {
+      // The file opened and decrypted; only this record's JSON is bad. Drop the
+      // record, not the file: the other nine records in it are intact, and
+      // deleting them because one block entry is malformed is a data loss the
+      // reader never asked for.
       _persisted = false;
       _unreadable = true;
-      await _dropDamagedFile();
+      await _dropDamagedRecord();
     }
     notifyListeners();
   }
@@ -194,11 +198,24 @@ class BlockStore extends ChangeNotifier {
   /// saved. The store copied the damaged bytes aside while it detected them,
   /// which is what makes deleting the original safe: the evidence survives the
   /// session and the user can block again.
+  ///
+  /// Only for [EncryptedStoreCorrupt], where the file itself is unreadable.
   Future<void> _dropDamagedFile() async {
     try {
       await _store().clear();
     } on EncryptedStoreCorrupt {
       // Nothing more to do: the read already failed and the copy is made.
+    }
+  }
+
+  /// Removes this record, and only this record, when its JSON is malformed.
+  Future<void> _dropDamagedRecord() async {
+    try {
+      await _store().remove(recordName);
+    } on EncryptedStoreCorrupt {
+      // The file went bad between the read and the write; the copy is made.
+    } on EncryptedStoreUnavailable {
+      // Nothing to remove.
     }
   }
 

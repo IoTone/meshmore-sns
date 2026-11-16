@@ -88,8 +88,26 @@ abstract final class BleConnector {
   /// the message says what to do.
   ///
   /// Cleared by any successful open, so a radio that recovers is not punished
-  /// for having failed once.
+  /// for having failed once, and by [resetRepairBudget] when the operator asks
+  /// to connect by hand.
+  ///
+  /// It used to be cleared only by a successful open, which the flag itself
+  /// prevents: one failed repair left every later attempt answering
+  /// "pairingNotKept" with no PIN prompt and no way back short of restarting
+  /// the app. A reader who mistyped the PIN was locked out of their own radio.
   static bool _repairFailed = false;
+
+  /// Give the repair budget back, for a connect the operator asked for.
+  ///
+  /// The automatic reconnect loop must not spend it again — that is the PIN
+  /// prompt per retry this flag exists to stop — but a deliberate tap is a new
+  /// decision, and the reader may have fixed the cause (the radio power-cycled,
+  /// the wrong PIN was typed, the bond was cleared in Android settings).
+  static void resetRepairBudget() {
+    _repairFailed = false;
+    _repairedThisRun = false;
+    _consecutiveFailures = 0;
+  }
 
   /// Consecutive failed opens since the last success.
   ///
