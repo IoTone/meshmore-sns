@@ -25,6 +25,7 @@ import '../chat/place_suggestion_line.dart';
 import '../chat/studio_message_row.dart';
 import '../chat/history_unreadable_notice.dart';
 import '../meshcore/dm_thread.dart';
+import '../sns/place_inference.dart';
 import '../chat/export_passphrase_dialog.dart';
 import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
@@ -990,41 +991,6 @@ class _ChatScreenState extends State<ChatScreen>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                     children: <Widget>[
-                // Direct messages come first, before the channels. They are the
-                // most personal thing in the strip and the only one that can
-                // arrive unasked, so a new conversation has to be visible without
-                // scrolling: appended after the channels it sat off the right edge
-                // of a three-channel strip. Before this an inbound DM from a peer
-                // the reader had never written to was stored and notified and then
-                // had no way in at all.
-                for (final DmThread t in mc.dmThreads)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Semantics(
-                      label: t.unread > 0
-                          ? '${t.name}, ${l.chatUnread(t.unread)}'
-                          : t.name,
-                      button: true,
-                      excludeSemantics: true,
-                      child: ActionChip(
-                        key: ValueKey<String>('chat-dm-chip-${t.peerPubKeyHex}'),
-                        avatar: Icon(
-                          t.unread > 0
-                              ? Icons.mark_chat_unread_outlined
-                              : Icons.person_outline,
-                          size: 16,
-                        ),
-                        label: _ChannelChipLabel(
-                          name: t.name,
-                          unread: t.unread,
-                          badgeKey:
-                              ValueKey<String>('dm-unread-${t.peerPubKeyHex}'),
-                        ),
-                        onPressed: () =>
-                            context.push('/dm/${t.peerPubKeyHex}'),
-                      ),
-                    ),
-                  ),
                 for (final MapEntry<int, String> ch in channels)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -1055,6 +1021,39 @@ class _ChatScreenState extends State<ChatScreen>
                         // is one mark too many beside a channel name.
                         showCheckmark: false,
                         onSelected: (_) => mc.setActiveChannel(ch.key),
+                      ),
+                    ),
+                  ),
+                // Direct messages sit at the end of the strip, after the channels
+                // and before the way to make one. Before this an inbound DM from a
+                // peer the reader had never written to was stored and notified and
+                // then had no way in at all: the only routes to a thread were the
+                // peer's own node sheet and a search hit.
+                for (final DmThread t in mc.dmThreads)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Semantics(
+                      label: t.unread > 0
+                          ? '${t.name}, ${l.chatUnread(t.unread)}'
+                          : t.name,
+                      button: true,
+                      excludeSemantics: true,
+                      child: ActionChip(
+                        key: ValueKey<String>('chat-dm-chip-${t.peerPubKeyHex}'),
+                        avatar: Icon(
+                          t.unread > 0
+                              ? Icons.mark_chat_unread_outlined
+                              : Icons.person_outline,
+                          size: 16,
+                        ),
+                        label: _ChannelChipLabel(
+                          name: t.name,
+                          unread: t.unread,
+                          badgeKey:
+                              ValueKey<String>('dm-unread-${t.peerPubKeyHex}'),
+                        ),
+                        onPressed: () =>
+                            context.push('/dm/${t.peerPubKeyHex}'),
                       ),
                     ),
                   ),
@@ -1657,8 +1656,14 @@ class _MessageRowState extends State<_MessageRow> {
     // `select` rather than `watch`: the answer changes only when this row's
     // own text stops being a suggestion, so a notify for some other message
     // does not rebuild the list.
-    final String? suggested = context.select<MeshcoreController, String?>(
-        (MeshcoreController mc) => mc.placeSuggestionFor(m));
+    // A position the message carries outright wins over a name it mentions:
+    // the coordinate is the fact, and the name is a guess about it.
+    final InferredPlace? carried = context.select<MeshcoreController, InferredPlace?>(
+        (MeshcoreController mc) => mc.coordinateSuggestionFor(m));
+    final String? suggested = carried != null
+        ? carried.displayName
+        : context.select<MeshcoreController, String?>(
+            (MeshcoreController mc) => mc.placeSuggestionFor(m));
     final Widget? chips = m.reactions.isEmpty ? null : _ReactionChips(m.reactions);
     if (suggested == null && chips == null) return row;
     return Column(
@@ -1666,7 +1671,8 @@ class _MessageRowState extends State<_MessageRow> {
       children: <Widget>[
         row,
         if (chips != null) chips,
-        if (suggested != null) PlaceSuggestionLine(message: m, name: suggested),
+        if (suggested != null)
+          PlaceSuggestionLine(message: m, name: suggested, place: carried),
       ],
     );
   }

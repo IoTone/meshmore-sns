@@ -3110,6 +3110,16 @@
   "placeFenceMade": "Fenced. {n} in your list.",
   "placeDirections": "Directions",
   "placeDirectionsCopied": "Coordinates copied",
+  "placeRemove": "Remove from the map",
+  "placeRemoveTitle": "Remove this place?",
+  "placeRemoveBody": "“{name}” comes off your map. The report stays on the mesh, so someone else can still see it.",
+  "@placeRemoveBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "placeShareAddress": "Share the address",
   "placeShareSubject": "A place on the mesh",
   "placeShareFailed": "No app took the address.",
@@ -4258,6 +4268,15 @@
   },
   "rawRecordNoRoute": "{name} has no direct route now, and a raw record cannot be flooded.",
   "@rawRecordNoRoute": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "placeSuggestHasPosition": "This message carries a position: {name}",
+  "@placeSuggestHasPosition": {
+    "description": "Offer to put a position a message carries outright onto the map. The name is the coordinate pair as the message wrote it.",
     "placeholders": {
       "name": {
         "type": "String"

@@ -184,6 +184,24 @@ final class PlaceStore extends ChangeNotifier with SafeNotifier {
     }
   }
 
+  /// Take one place off the map, whoever reported it.
+  ///
+  /// A place is a claim about the world, and a claim the reader does not want
+  /// on their map is theirs to drop: the row, its votes and its seen mark go
+  /// together, so a re-delivery of the same report does not bring it back as
+  /// new. Blocking a reporter is a different decision and stays separate.
+  bool remove(String id) {
+    final int before = _rows.length;
+    _rows.removeWhere((Place p) => p.id == id);
+    if (_rows.length == before) return false;
+    _seen.remove(id);
+    _votes.remove(id);
+    _rebuildTally();
+    _save();
+    notifyListeners();
+    return true;
+  }
+
   void setBlockFilter(bool Function(String reporterKeyHex)? isBlocked) {
     _isBlocked = isBlocked;
   }

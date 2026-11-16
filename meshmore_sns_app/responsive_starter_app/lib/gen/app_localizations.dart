@@ -7828,6 +7828,24 @@ abstract class AppLocalizations {
   /// **'Coordinates copied'**
   String get placeDirectionsCopied;
 
+  /// No description provided for @placeRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from the map'**
+  String get placeRemove;
+
+  /// No description provided for @placeRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this place?'**
+  String get placeRemoveTitle;
+
+  /// No description provided for @placeRemoveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” comes off your map. The report stays on the mesh, so someone else can still see it.'**
+  String placeRemoveBody(String name);
+
   /// No description provided for @placeShareAddress.
   ///
   /// In en, this message translates to:
@@ -10353,6 +10371,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} has no direct route now, and a raw record cannot be flooded.'**
   String rawRecordNoRoute(String name);
+
+  /// Offer to put a position a message carries outright onto the map. The name is the coordinate pair as the message wrote it.
+  ///
+  /// In en, this message translates to:
+  /// **'This message carries a position: {name}'**
+  String placeSuggestHasPosition(String name);
 
   /// No description provided for @placeSuggestLooksLike.
   ///

@@ -4428,6 +4428,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get placeDirectionsCopied => '座標をコピーしました';
 
   @override
+  String get placeRemove => '地図から削除';
+
+  @override
+  String get placeRemoveTitle => 'この場所を削除しますか？';
+
+  @override
+  String placeRemoveBody(String name) {
+    return '「$name」を地図から削除します。報告自体はメッシュ上に残るため、他の人には見えます。';
+  }
+
+  @override
   String get placeShareAddress => '住所を共有';
 
   @override
@@ -5924,6 +5935,11 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String rawRecordNoRoute(String name) {
     return '$name への直接経路がなくなりました。生データはフラッド送信できません。';
+  }
+
+  @override
+  String placeSuggestHasPosition(String name) {
+    return 'このメッセージは位置を含みます: $name';
   }
 
   @override

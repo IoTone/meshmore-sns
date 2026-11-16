@@ -260,6 +260,16 @@ class PlaceDetailSheet extends StatelessWidget {
                   label: l.placeShareAddress,
                   onPressed: () => _share(context),
                 ),
+                // A place is a claim about the world, and a claim the reader
+                // does not want on their map is theirs to drop, whoever
+                // reported it. Blocking the reporter is a different decision
+                // and stays where it is.
+                MmAction(
+                  key: const ValueKey<String>('place-remove'),
+                  icon: Icons.delete_outline,
+                  label: l.placeRemove,
+                  onPressed: () => _remove(context),
+                ),
               ],
             ),
           ],
@@ -351,6 +361,28 @@ class PlaceDetailSheet extends StatelessWidget {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
           SnackBar(content: Text(l.placeFenceMade(fences.fences.length))));
     }
+  }
+
+  /// Take this place off the map, after asking.
+  Future<void> _remove(BuildContext context) async {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final bool? go = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text(l.placeRemoveTitle),
+        content: Text(l.placeRemoveBody(place.label)),
+        actions: <Widget>[
+          MmAction(
+              label: l.actionCancel, onPressed: () => Navigator.pop(ctx, false)),
+          MmAction(
+              label: l.placeRemove,
+              onPressed: () => Navigator.pop(ctx, true)),
+        ],
+      ),
+    );
+    if (go != true || !context.mounted) return;
+    store.remove(place.id);
+    if (context.mounted) Navigator.of(context).maybePop();
   }
 
   Future<void> _share(BuildContext context) async {

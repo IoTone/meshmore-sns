@@ -387,6 +387,15 @@ class PlaceInferenceEngine {
     return c.clamp(0.0, 1.0);
   }
 
+  /// The explicit coordinates and grid locators in [message], strongest first.
+  ///
+  /// Public because a coordinate is not a guess: a message that carries one has
+  /// already said where it is, and the reader should be able to put it on the
+  /// map without the app inventing anything. The gazetteer-based [infer] needs
+  /// an origin and a region, which a direct message from a stranger has neither
+  /// of.
+  List<InferredPlace> coordinatesIn(String message) => _coordinates(message);
+
   List<InferredPlace> _coordinates(String message) {
     final List<InferredPlace> out = <InferredPlace>[];
     for (final RegExpMatch m in _decimalRe.allMatches(message)) {

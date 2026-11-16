@@ -1206,15 +1206,6 @@ class _ContactTableEditorState extends State<_ContactTableEditor> {
             l.autoAddFullDropsDms,
             style: TextStyle(color: cs.error, fontSize: context.skin.type.sizeBody),
           ),
-          const SizedBox(height: 6),
-          MmAction(
-            key: const ValueKey<String>('auto-add-overwrite-fix'),
-            icon: Icons.swap_horiz,
-            label: l.autoAddOverwriteOldest,
-            onPressed: allow
-                ? () => _write(() => mc.setAutoAddConfig(overwriteOldest: true))
-                : null,
-          ),
         ],
         if (cfg == null)
           Padding(

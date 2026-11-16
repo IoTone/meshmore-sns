@@ -4605,6 +4605,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placeDirectionsCopied => 'Coordinates copied';
 
   @override
+  String get placeRemove => 'Remove from the map';
+
+  @override
+  String get placeRemoveTitle => 'Remove this place?';
+
+  @override
+  String placeRemoveBody(String name) {
+    return '“$name” comes off your map. The report stays on the mesh, so someone else can still see it.';
+  }
+
+  @override
   String get placeShareAddress => 'Share the address';
 
   @override
@@ -6178,6 +6189,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String rawRecordNoRoute(String name) {
     return '$name has no direct route now, and a raw record cannot be flooded.';
+  }
+
+  @override
+  String placeSuggestHasPosition(String name) {
+    return 'This message carries a position: $name';
   }
 
   @override
