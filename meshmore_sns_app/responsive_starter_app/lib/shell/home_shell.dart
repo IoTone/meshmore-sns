@@ -90,6 +90,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   BotBridge? _botBridge;
   PlaceBridge? _placeBridge;
 
+  /// The block filter used when no store is above us, built once. A
+  /// `BlockStore()` per build is an allocation per controller notification.
+  BlockFilter? _fallbackFilter;
+
   /// D8.20 — who is on screen, for the notification decision.
   ///
   /// The shell owns this rather than the chat page: the page is kept alive
@@ -265,7 +269,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     // every controller notification (battery samples, telemetry, RSSI).
     final ChannelReadStore? reads = context.watch<ChannelReadStore?>();
     final BlockStore? blocks = context.watch<BlockStore?>();
-    final BlockFilter filter = BlockFilter(blocks ?? BlockStore());
+    // Cached, as the chat screen already does: a `BlockStore()` per build is an
+    // allocation per notification on a screen that watches a controller which
+    // notifies for every advert.
+    final BlockFilter filter =
+        _fallbackFilter ??= BlockFilter(blocks ?? BlockStore());
     final int chatUnread = context.select<MeshcoreController, int>(
       (MeshcoreController mc) => UnreadCounts.total(
         channels: mc.channels.map((MapEntry<int, String> e) => e.key),

@@ -330,8 +330,26 @@ class _DmScreenState extends State<DmScreen> {
   void _send(MeshcoreController mc) {
     final String t = _input.text;
     if (t.trim().isEmpty) return;
-    // The send button is disabled for a blocked key, but the text field's own
-    // send action is not, so the refusal is stated here as well as on the row.
+    // The send button is disabled for these three, but the text field's own
+    // send action is not, so each refusal is stated here as well. Without the
+    // first two the controller returned null and the reader was told "no
+    // MeshCore radio" while the radio was connected and simply waiting on the
+    // last message.
+    final AppLocalizations l = AppLocalizations.of(context);
+    if (!mc.isReady) {
+      context.cue?.play(CueKind.taskError);
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(l.dmSendNotSent)),
+      );
+      return;
+    }
+    if (mc.hasUnsettledDmTo(widget.peerPubKeyHex)) {
+      context.cue?.play(CueKind.taskError);
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(l.dmWaitingForAck)),
+      );
+      return;
+    }
     if (mc.isPeerBlocked(widget.peerPubKeyHex)) {
       context.cue?.play(CueKind.taskError);
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
@@ -358,7 +376,7 @@ class _DmScreenState extends State<DmScreen> {
           _restoreComposer(t, key);
           context.cue?.play(CueKind.taskError);
           ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context).chatSendNotSent)),
+            SnackBar(content: Text(AppLocalizations.of(context).dmSendNotSent)),
           );
           return;
         }

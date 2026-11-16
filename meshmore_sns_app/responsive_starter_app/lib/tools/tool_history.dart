@@ -122,7 +122,12 @@ class ToolHistoryStore extends ChangeNotifier with SafeNotifier {
   /// than narrowing it.
   Future<void>? _loading;
 
-  Future<void> load() => _loading ??= _load();
+  Future<void> load() => _loading ??= _load().catchError((Object e) {
+        // A throw out of the sealed read left the failed future cached, so
+        // every later call returned it and the history never loaded again.
+        _loading = null;
+        throw e;
+      });
 
   Future<void> _load() async {
     final ValueNotifier<bool> unreadable = ValueNotifier<bool>(false);

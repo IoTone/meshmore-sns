@@ -113,10 +113,13 @@ class DashboardModel {
   static DashboardModel gather(MeshcoreController mc, AppLocalizations l) {
     final ({String label, bool alert, bool busy}) st = _status(mc, l);
 
-    final int inRange = mc.nodes.where((DiscoveredNode n) {
-      final NodeProximity p = mc.proximityFor(n);
-      return p == NodeProximity.near || p == NodeProximity.recent;
-    }).length;
+    // Our own node can be in the fabric, and the Nodes screen excludes it, so
+    // the two counts differed by one for the same moment.
+    final String? selfPk = mc.ownPubKeyHex;
+    final int inRange = mc.nodes
+        .where((DiscoveredNode n) =>
+            n.pubKeyHex != selfPk && mc.inRangeNow(n))
+        .length;
 
     final SelfInfo? si = mc.selfInfo;
     final RegionPreset? rp = si == null
@@ -203,7 +206,7 @@ String _eventLine(AppLocalizations l, MeshEvent e) {
     MeshEventKind.deviceInfo => l.eventDeviceInfo(a['version'] ?? '?'),
     MeshEventKind.selfInfo => l.eventSelfInfo(a['name'] ?? '?'),
     MeshEventKind.queuedWaiting => a.containsKey('count')
-        ? l.eventQueuedWaitingN(a['count']!)
+        ? l.eventQueuedWaitingN(int.tryParse(a['count'] ?? '') ?? 0)
         : l.eventQueuedWaiting,
     MeshEventKind.oneKeyRejected => l.eventOneKeyRejected(a['key'] ?? '?'),
     MeshEventKind.radioRefused => l.eventRadioRefused,

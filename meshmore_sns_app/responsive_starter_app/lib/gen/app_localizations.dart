@@ -1301,7 +1301,7 @@ abstract class AppLocalizations {
   /// No description provided for @personalizationAudioMasterDisabled.
   ///
   /// In en, this message translates to:
-  /// **'Disabled by \"visual + haptic only\"'**
+  /// **'Disabled by \"Visual + haptic only\"'**
   String get personalizationAudioMasterDisabled;
 
   /// No description provided for @personalizationAudioMasterEnabled.
@@ -1907,7 +1907,7 @@ abstract class AppLocalizations {
   /// Screen-reader description of the elevation chart, which is a painted picture with no text of its own.
   ///
   /// In en, this message translates to:
-  /// **'Altitudes from {low} to {high} metres across {count} peers.'**
+  /// **'Altitudes from {low} to {high} metres, {count, plural, =1{1 peer} other{{count} peers}}.'**
   String elevationProfileSemantics(int low, int high, int count);
 
   /// No description provided for @elevationProfileAltLabel.
@@ -1931,7 +1931,7 @@ abstract class AppLocalizations {
   /// No description provided for @elevationProfilePeers.
   ///
   /// In en, this message translates to:
-  /// **'{n} nodes tracked'**
+  /// **'{n, plural, =1{1 node tracked} other{{n} nodes tracked}}'**
   String elevationProfilePeers(int n);
 
   /// No description provided for @elevationRefPerson.
@@ -2519,8 +2519,8 @@ abstract class AppLocalizations {
   /// No description provided for @eventQueuedWaitingN.
   ///
   /// In en, this message translates to:
-  /// **'{count} messages are queued on the MeshCore radio'**
-  String eventQueuedWaitingN(String count);
+  /// **'{count, plural, =1{1 message is queued on the MeshCore radio} other{{count} messages are queued on the MeshCore radio}}'**
+  String eventQueuedWaitingN(int count);
 
   /// No description provided for @chatManageChannels.
   ///
@@ -2681,8 +2681,20 @@ abstract class AppLocalizations {
   /// No description provided for @chatSendNotSent.
   ///
   /// In en, this message translates to:
-  /// **'Not sent: no MeshCore radio.'**
+  /// **'Not sent. The MeshCore radio is not ready, or it refused the message.'**
   String get chatSendNotSent;
+
+  /// Shown when a direct message produced no row: the radio is not ready, or the in-flight ceiling is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent. The MeshCore radio is not ready, or it is still waiting on an earlier message.'**
+  String get dmSendNotSent;
+
+  /// Shown when the keyboard send action is used while an earlier direct message to the same contact is unsettled.
+  ///
+  /// In en, this message translates to:
+  /// **'Still waiting for the last message to this contact. Send again once it is acknowledged.'**
+  String get dmWaitingForAck;
 
   /// No description provided for @chatSend.
   ///
@@ -3479,7 +3491,7 @@ abstract class AppLocalizations {
   /// No description provided for @weatherEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled. Enable \"Gather node telemetry\" in App settings.'**
+  /// **'No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled. Enable \"Fetch node temperature and altitude\" in App settings.'**
   String get weatherEmpty;
 
   /// No description provided for @weatherSelfNoTelemetry.
@@ -7257,6 +7269,12 @@ abstract class AppLocalizations {
   /// **'None recorded.'**
   String get diagnosticsErrorsNone;
 
+  /// A compact age in the Diagnostics error list, e.g. "3m ago".
+  ///
+  /// In en, this message translates to:
+  /// **'{age} ago'**
+  String diagnosticsAgo(String age);
+
   /// No description provided for @diagnosticsSectionM6.
   ///
   /// In en, this message translates to:
@@ -8833,7 +8851,7 @@ abstract class AppLocalizations {
   /// No description provided for @mediaFullPictureOnChannel.
   ///
   /// In en, this message translates to:
-  /// **'A picture is announced with one small preview and then sent to one person who asks for it. It is never broadcast to a channel.'**
+  /// **'A picture is announced with one small preview and then sent to one person who asks for it. In this mode it is not broadcast to a channel.'**
   String get mediaFullPictureOnChannel;
 
   /// No description provided for @mediaOffOnPublic.
@@ -9487,7 +9505,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatSearchRetention.
   ///
   /// In en, this message translates to:
-  /// **'This device keeps the newest {cap} messages, so older ones are not searched.'**
+  /// **'This device keeps the newest {cap} messages in each conversation, so older ones are not searched.'**
   String chatSearchRetention(int cap);
 
   /// No description provided for @chatSearchDm.
@@ -11713,7 +11731,7 @@ abstract class AppLocalizations {
   /// No description provided for @mapDensityCellSize.
   ///
   /// In en, this message translates to:
-  /// **'Cells: nodes per {size}'**
+  /// **'Cells: nodes per {size} cell'**
   String mapDensityCellSize(String size);
 
   /// No description provided for @actionReplyMention.
@@ -11869,7 +11887,7 @@ abstract class AppLocalizations {
   /// The feed's one line for a contact sync, which arrives as one frame per contact.
   ///
   /// In en, this message translates to:
-  /// **'the MeshCore radio\'s contact table loaded · {count} contacts'**
+  /// **'the MeshCore radio\'s contact table loaded · {count, plural, =1{1 contact} other{{count} contacts}}'**
   String eventContactBatch(int count);
 }
 

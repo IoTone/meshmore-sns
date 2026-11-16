@@ -141,6 +141,9 @@ class _NodeDetailSheetState extends State<NodeDetailSheet> {
       ),
     );
     if (picked == null || picked.isEmpty) return;
+    // The sheet is a modal: a system back while the dialog is up disposes it,
+    // and this ran against a dead State.
+    if (!mounted) return;
     if (_localTags.any(
         (String e) => e.toLowerCase() == picked.toLowerCase())) {
       return;

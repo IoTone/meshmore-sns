@@ -1060,12 +1060,14 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   bool _coverageDirty = false;
   Timer? _coverageSaveTimer;
 
-  /// Read-only snapshot of observed coverage cells, keyed by
+  /// Read-only view of observed coverage cells, keyed by
   /// `latBucket,lonBucket` strings (see [CoverageStore.cellKey]).
   /// Each value is the most-recent UNIX-second timestamp the cell
   /// was observed.
-  Map<String, int> get coverageCells =>
-      Map<String, int>.unmodifiable(_coverage);
+  ///
+  /// A view, not a copy: `Map.unmodifiable` copies the whole record on every
+  /// read, and the reception quilt that read it per build has left the map.
+  Map<String, int> get coverageCells => UnmodifiableMapView<String, int>(_coverage);
 
   Future<void> _loadCoverage() async {
     final Map<String, int> v = await CoverageStore.load();
@@ -1146,6 +1148,15 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// FAR is informative.
   static const double _nearThresholdMeters = 10000;
   static const double _farThresholdMeters = 50000;
+
+  /// Whether this node counts as "in range" for a count on a screen.
+  ///
+  /// The predicate was re-spelled at eight call sites, so a change to what
+  /// counts had to be made in eight places or the screens disagreed.
+  bool inRangeNow(DiscoveredNode n) {
+    final NodeProximity p = proximityFor(n);
+    return p == NodeProximity.near || p == NodeProximity.recent;
+  }
 
   NodeProximity proximityFor(DiscoveredNode n) {
     if (n.hasLocation) {
@@ -2204,8 +2215,10 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       ev = skew > 5
           ? MeshEvent(
               kind: MeshEventKind.deviceClockSkew,
+              // The magnitude, not the signed offset: "off" is a size, and a
+              // radio 30 s ahead rendered "the clock is -30s off".
               args: <String, String>{
-                'seconds': '$_deviceClockOffsetSec',
+                'seconds': '$skew',
               })
           : MeshEvent(kind: MeshEventKind.deviceClockSynced);
     } else if (f is MsgSentFrame) {
@@ -3870,10 +3883,9 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         return c;
       }
     }
-    if (snrDb == null) return null;
-    for (int i = 0; i < _rxCaptures.length; i++) {
-      if (sameChannel(_rxCaptures[i])) return _rxCaptures.removeAt(i);
-    }
+    // No SNR match means this message's own capture is not here. Taking the
+    // next capture on the channel attached another packet's RSSI and hop route
+    // to the row, so the row disagreed with itself.
     return null;
   }
 
@@ -4466,6 +4478,11 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         n.lastHeardUnix = adv + _deviceClockOffsetSec;
       }
     }
+    // `nodes` is sorted by `lastHeardUnix` and memoised on the revision, and
+    // this loop rewrites that field on every node. Without the bump the list
+    // kept the order it was sorted in under the old offset, so the Nodes screen
+    // and the map showed a stale order until some other write happened.
+    _nodesChanged();
   }
 
   // --- Battery (R16) ---

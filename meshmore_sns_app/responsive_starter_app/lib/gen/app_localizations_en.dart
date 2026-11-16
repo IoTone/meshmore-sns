@@ -700,7 +700,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get personalizationAudioMasterDisabled =>
-      'Disabled by \"visual + haptic only\"';
+      'Disabled by \"Visual + haptic only\"';
 
   @override
   String get personalizationAudioMasterEnabled =>
@@ -1038,7 +1038,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String elevationProfileSemantics(int low, int high, int count) {
-    return 'Altitudes from $low to $high metres across $count peers.';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count peers',
+      one: '1 peer',
+    );
+    return 'Altitudes from $low to $high metres, $_temp0.';
   }
 
   @override
@@ -1052,7 +1058,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String elevationProfilePeers(int n) {
-    return '$n nodes tracked';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n nodes tracked',
+      one: '1 node tracked',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1412,8 +1424,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventQueuedWaiting => 'messages are queued on the MeshCore radio';
 
   @override
-  String eventQueuedWaitingN(String count) {
-    return '$count messages are queued on the MeshCore radio';
+  String eventQueuedWaitingN(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages are queued on the MeshCore radio',
+      one: '1 message is queued on the MeshCore radio',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1532,7 +1550,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chatSendNotSent => 'Not sent: no MeshCore radio.';
+  String get chatSendNotSent =>
+      'Not sent. The MeshCore radio is not ready, or it refused the message.';
+
+  @override
+  String get dmSendNotSent =>
+      'Not sent. The MeshCore radio is not ready, or it is still waiting on an earlier message.';
+
+  @override
+  String get dmWaitingForAck =>
+      'Still waiting for the last message to this contact. Send again once it is acknowledged.';
 
   @override
   String get chatSend => 'Send';
@@ -2000,7 +2027,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weatherEmpty =>
-      'No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled. Enable \"Gather node telemetry\" in App settings.';
+      'No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled. Enable \"Fetch node temperature and altitude\" in App settings.';
 
   @override
   String get weatherSelfNoTelemetry =>
@@ -4246,6 +4273,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diagnosticsErrorsNone => 'None recorded.';
 
   @override
+  String diagnosticsAgo(String age) {
+    return '$age ago';
+  }
+
+  @override
   String get diagnosticsSectionM6 => 'Channel-tail evidence';
 
   @override
@@ -5212,7 +5244,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mediaFullPictureOnChannel =>
-      'A picture is announced with one small preview and then sent to one person who asks for it. It is never broadcast to a channel.';
+      'A picture is announced with one small preview and then sent to one person who asks for it. In this mode it is not broadcast to a channel.';
 
   @override
   String get mediaOffOnPublic =>
@@ -5631,7 +5663,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chatSearchRetention(int cap) {
-    return 'This device keeps the newest $cap messages, so older ones are not searched.';
+    return 'This device keeps the newest $cap messages in each conversation, so older ones are not searched.';
   }
 
   @override
@@ -6986,7 +7018,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mapDensityCellSize(String size) {
-    return 'Cells: nodes per $size';
+    return 'Cells: nodes per $size cell';
   }
 
   @override
@@ -7089,6 +7121,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventContactBatch(int count) {
-    return 'the MeshCore radio\'s contact table loaded · $count contacts';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count contacts',
+      one: '1 contact',
+    );
+    return 'the MeshCore radio\'s contact table loaded · $_temp0';
   }
 }

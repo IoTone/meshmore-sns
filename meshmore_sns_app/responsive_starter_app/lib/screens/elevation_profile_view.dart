@@ -88,6 +88,21 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
     });
   }
 
+  @override
+  void didUpdateWidget(ElevationProfileView old) {
+    super.didUpdateWidget(old);
+    // The shell keeps this view alive across a tab switch, so `initState` does
+    // not run again: a reader who turns "Remove animations" on while the grid
+    // is open kept the scan line running under a setting that promises it
+    // stops, and one who turns it off kept a frozen line.
+    if (old.reduceMotion == widget.reduceMotion) return;
+    if (widget.reduceMotion) {
+      _scan.stop();
+    } else if (!_scan.isAnimating) {
+      _scan.repeat();
+    }
+  }
+
   /// The polling indicator's reset. Held so a view that is closed before it
   /// fires cannot leave a timer behind: a delayed future that touches
   /// `setState` after disposal is a leak the harness (and a real device) sees.

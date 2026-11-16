@@ -1160,18 +1160,14 @@ class _StreetMapViewState extends State<StreetMapView> {
   /// viewport held none, which is the whole mesh — a hundred kilometres of
   /// lattice at a cell size measured in metres. `hexField` then built tens of
   /// thousands of cells in one build, and a build that takes four seconds is an
-  /// "isn't responding" dialog. A field with no node in it is not a reading, so
-  /// there is nothing to draw and nothing to build.
-  GeoBox? _fieldBox(List<DensityPoint> points) {
-    final GeoBox? visible = _visibleBox();
-    if (visible == null) return null;
-    final bool any = points.any((DensityPoint p) =>
-        p.lat >= visible.south &&
-        p.lat <= visible.north &&
-        p.lon >= visible.west &&
-        p.lon <= visible.east);
-    return any ? visible : null;
-  }
+  /// "isn't responding" dialog.
+  ///
+  /// The viewport is the answer in both cases: the field is a lattice over the
+  /// ground the reader is looking at, so it is drawn wherever they look, and a
+  /// viewport's worth of cells is bounded by the screen rather than by the
+  /// mesh. A view with no node in it is a field of empty cells, which is what
+  /// "no nodes here" looks like.
+  GeoBox? _fieldBox() => _visibleBox();
 
   /// The field box rounded outward to whole cells of the current radius.
   ///
@@ -1225,6 +1221,10 @@ class _StreetMapViewState extends State<StreetMapView> {
             '${mc.known.contains(n.pubKeyHex)}|'
             '${mc.favorites.contains(n.pubKeyHex)}',
       context.skin.preset.name,
+      // The markers embed a localised accessibility label, so a language change
+      // has to rebuild them: without this the pins kept the old language until
+      // a node moved or the skin changed.
+      Localizations.localeOf(context).toLanguageTag(),
     ].join(';');
     final List<Marker>? cached = _nodePinCache;
     if (cached != null && _nodePinSignature == sig) return cached;
@@ -1984,7 +1984,9 @@ class _StreetMapViewState extends State<StreetMapView> {
     // edges outward to whole cells keeps the key still while the map slides
     // inside the same cells, so a pan costs nothing until it crosses a cell
     // boundary, and the cells that are drawn do not shift when it does.
-    final GeoBox? rawBox = _fieldBox(densityPoints);
+    // The overlay's own switch is the gate: with it off there is no field to
+    // build, and the box is only asked for when there is.
+    final GeoBox? rawBox = _showDensity ? _fieldBox() : null;
     final GeoBox? fieldBox = rawBox == null ? null : _snapFieldBox(rawBox);
     final String hexKey = fieldBox == null
         ? ''

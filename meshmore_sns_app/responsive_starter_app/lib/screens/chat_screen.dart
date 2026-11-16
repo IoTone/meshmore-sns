@@ -660,6 +660,16 @@ class _ChatScreenState extends State<ChatScreen>
   void _send(MeshcoreController mc) {
     final String t = _input.text;
     if (t.trim().isEmpty) return;
+    // The send button is disabled while the radio is not ready, but the text
+    // field's own send action is not: it reached the controller, got null, and
+    // said "not sent" with no reason.
+    if (!mc.isReady) {
+      context.cue?.play(CueKind.taskError);
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).chatSendNotSent)),
+      );
+      return;
+    }
     final ComposerBudget budget = _budget;
     if (!budget.canSend(t)) {
       final AppLocalizations l = AppLocalizations.of(context);

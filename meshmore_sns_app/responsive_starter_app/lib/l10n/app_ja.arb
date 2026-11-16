@@ -324,7 +324,7 @@
   "personalizationVisualHapticOnlySubtitle": "通知は振動のみ",
   "personalizationAudioAlerts": "音声アラート",
   "personalizationAudioMaster": "音声アラート",
-  "personalizationAudioMasterDisabled": "「視覚 + 触覚のみ」により無効",
+  "personalizationAudioMasterDisabled": "「視覚 + 触覚のみ」が有効なため無効",
   "personalizationAudioMasterEnabled": "既定で ON。 補助としてのみ",
   "personalizationCueVolume": "通知音の音量",
   "personalizationCueVolumeSubtitle": "スマートフォンのメディア音量の {percent} %",
@@ -480,10 +480,10 @@
   "fujiLegendAutoQuery": "高度はゆっくり届きます。枠をタップすると再び問い合わせます。",
   "elevationProfileTitle": "MESHMORE :: 高度",
 
-  "elevationProfileSemantics": "{count} 台のピアで、高度は {low} メートルから {high} メートルです。",  "elevationProfileAltLabel": "高度",
+  "elevationProfileSemantics": "高度は {low} メートルから {high} メートル、{count} 台のピアです。",  "elevationProfileAltLabel": "高度",
   "elevationProfileMeLabel": "現在地",
   "elevationProfileUnknownLabel": "高度不明",
-  "elevationProfilePeers": "{n} 個のノードを追跡中",
+  "elevationProfilePeers": "{n} 台のノードを追跡中",
   "@elevationProfilePeers": {
     "placeholders": {
       "n": {
@@ -765,11 +765,11 @@
     }
   },
   "eventQueuedWaiting": "MeshCore 無線機に未配信のメッセージがあります",
-  "eventQueuedWaitingN": "MeshCore 無線機に {count} 件の未配信メッセージがあります",
+  "eventQueuedWaitingN": "MeshCore 無線機に {count} 件のメッセージが待機中です",
   "@eventQueuedWaitingN": {
     "placeholders": {
       "count": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -823,8 +823,10 @@
       }
     }
   },
-  "chatSendNotSent": "未送信：MeshCore 無線機なし",
-  "chatSend": "送信",
+  "chatSendNotSent": "送信できません。MeshCore 無線機の準備ができていないか、受け付けませんでした。",
+  "dmSendNotSent": "送信できません。MeshCore 無線機の準備ができていないか、前のメッセージの応答待ちです。",
+
+  "dmWaitingForAck": "この相手への前のメッセージの応答待ちです。確認できてからもう一度送ってください。",  "chatSend": "送信",
   "chatBudgetNear": "上限が近いです:無線機は自分の名前もこのバイト数に含めます",
   "chatBudgetTooLong": "{over} バイト超過しています。無線機は残りを通知せずに切り捨てます。",
   "chatMessageActions": "メッセージ操作",
@@ -1135,7 +1137,7 @@
   "wxCondStorm": "嵐",
   "wxCondHeat": "暑い",
   "wxCondCold": "寒い",
-  "weatherEmpty": "環境データを報告しているノードはまだありません。\nセンサー搭載ノードが照会されると表示されます 、 アプリ設定で「ノードのテレメトリを収集」を有効にしてください。",
+  "weatherEmpty": "環境データを報告しているノードはまだありません。\nセンサー付きのノードを取得すると表示されます。設定の「各ノードの気温と高度を取得」を有効にしてください。",
   "weatherSelfNoTelemetry": "このデバイスはまだテレメトリを返していません。接続を確認してから、この画面を開き直してください。",
   "weatherSelfNoEnv": "このデバイスのファームウェアは環境テレメトリに対応していません。\n報告内容: {types}。\nセンサー（例: T1000-E の BME280）には MeshCore センサーファームウェアが必要です。標準ビルドはバッテリーと GPS のみを送信します。これはデバイス側の制限で、アプリの設定ではありません。",
   "@weatherSelfNoEnv": {
@@ -2115,7 +2117,8 @@
   "diagnosticsErrorsCurrent": "今回の実行で {count} 件",
   "diagnosticsErrorsPrevious": "前回の実行で {count} 件",
   "diagnosticsErrorsNone": "記録はありません。",
-  "diagnosticsSectionM6": "チャンネル末尾の証跡",
+
+  "diagnosticsAgo": "{age} 前",  "diagnosticsSectionM6": "チャンネル末尾の証跡",
   "diagnosticsResolveTail": "チャンネル末尾を解決",
   "diagnosticsExportFixture": "フィクスチャを書き出す",
   "diagnosticsCopyFixture": "フィクスチャ JSON をコピー（自分のメッセージ本文を含みます）",
@@ -2413,7 +2416,7 @@
   "mediaSend": "送信",
   "mediaRetrySend": "再試行",
   "mediaClose": "閉じる",
-  "mediaFullPictureOnChannel": "写真は小さなプレビューで通知され、希望した1人にのみ送信されます。チャンネルにブロードキャストされることはありません。",
+  "mediaFullPictureOnChannel": "写真は小さなプレビューで通知され、希望した一人にだけ送られます。このモードではチャンネルに同報されません。",
   "mediaOffOnPublic": "パブリックチャンネルではメディアは送信できません。プライベートなチャンネルで送ってください。",
   "mediaPayloadUnusable": "送信する内容がありません。",
   "mediaChannelUnknown": "チャンネルが選択されていないため、送信先がありません。",
@@ -2536,7 +2539,7 @@
   "chatSearchNoResults": "「{query}」に一致するメッセージはありません。",
   "chatSearchHidden": "{count, plural, other{ブロックにより{count}件の一致を非表示}}",
   "chatSearchTruncated": "最新の{count}件を表示しています。絞り込むと残りを確認できます。",
-  "chatSearchRetention": "この端末は最新の{cap}件を保持するため、それより古いメッセージは検索されません。",
+  "chatSearchRetention": "この端末は会話ごとに最新 {cap} 件を保持するため、それより古いものは検索されません。",
   "chatSearchDm": "ダイレクトメッセージ",
   "chatUnread": "{count, plural, other{未読{count}件}}",
   "blockedKeysTitle": "ブロックした相手",
@@ -3055,7 +3058,7 @@
       }
     }
   },
-  "mapDensityCellSize": "セル: {size} あたりのノード数",
+  "mapDensityCellSize": "セル: {size} のセルあたりのノード数",
   "actionReplyMention": "{name} に返信",
   "actionQuote": "このメッセージを引用",
   "actionReact": "リアクション",
@@ -3149,7 +3152,7 @@
     }
   },
   "mapsEtaUnknown": "残り時間を計算中",
-  "eventContactBatch": "MeshCore 無線機の連絡先が読み込まれました · {count} 件",
+  "eventContactBatch": "MeshCore 無線機の連絡先テーブルを読み込みました · {count} 件",
   "@eventContactBatch": {
     "placeholders": {
       "count": {

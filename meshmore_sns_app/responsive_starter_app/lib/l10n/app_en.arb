@@ -360,7 +360,7 @@
   "personalizationVisualHapticOnlySubtitle": "Alerts by vibration only",
   "personalizationAudioAlerts": "AUDIO ALERTS",
   "personalizationAudioMaster": "Audio alerts",
-  "personalizationAudioMasterDisabled": "Disabled by \"visual + haptic only\"",
+  "personalizationAudioMasterDisabled": "Disabled by \"Visual + haptic only\"",
   "personalizationAudioMasterEnabled": "On by default. Augmentation only",
   "personalizationCueVolume": "Cue volume",
   "personalizationCueVolumeSubtitle": "{percent} % of the phone's media volume",
@@ -516,7 +516,7 @@
   "fujiLegendAutoQuery": "Altitudes arrive slowly. Tap the box to ask again.",
   "elevationProfileTitle": "MESHMORE :: ALTITUDE",
 
-  "elevationProfileSemantics": "Altitudes from {low} to {high} metres across {count} peers.",
+  "elevationProfileSemantics": "Altitudes from {low} to {high} metres, {count, plural, =1{1 peer} other{{count} peers}}.",
   "@elevationProfileSemantics": {
     "description": "Screen-reader description of the elevation chart, which is a painted picture with no text of its own.",
     "placeholders": {
@@ -527,7 +527,7 @@
   },  "elevationProfileAltLabel": "Altitude",
   "elevationProfileMeLabel": "Me",
   "elevationProfileUnknownLabel": "altitude unknown",
-  "elevationProfilePeers": "{n} nodes tracked",
+  "elevationProfilePeers": "{n, plural, =1{1 node tracked} other{{n} nodes tracked}}",
   "@elevationProfilePeers": {
     "placeholders": {
       "n": {
@@ -832,11 +832,11 @@
     }
   },
   "eventQueuedWaiting": "messages are queued on the MeshCore radio",
-  "eventQueuedWaitingN": "{count} messages are queued on the MeshCore radio",
+  "eventQueuedWaitingN": "{count, plural, =1{1 message is queued on the MeshCore radio} other{{count} messages are queued on the MeshCore radio}}",
   "@eventQueuedWaitingN": {
     "placeholders": {
       "count": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -911,8 +911,16 @@
       }
     }
   },
-  "chatSendNotSent": "Not sent: no MeshCore radio.",
-  "chatSend": "Send",
+  "chatSendNotSent": "Not sent. The MeshCore radio is not ready, or it refused the message.",
+
+  "dmSendNotSent": "Not sent. The MeshCore radio is not ready, or it is still waiting on an earlier message.",
+
+  "dmWaitingForAck": "Still waiting for the last message to this contact. Send again once it is acknowledged.",
+  "@dmWaitingForAck": {
+    "description": "Shown when the keyboard send action is used while an earlier direct message to the same contact is unsettled."
+  },  "@dmSendNotSent": {
+    "description": "Shown when a direct message produced no row: the radio is not ready, or the in-flight ceiling is reached."
+  },  "chatSend": "Send",
   "chatBudgetNear": "Nearly at the limit: the MeshCore radio counts its own name in these bytes",
   "chatBudgetTooLong": "Too long by {over} bytes. The MeshCore radio would cut the rest without telling you.",
   "@chatBudgetTooLong": {
@@ -1230,7 +1238,7 @@
   "wxCondStorm": "Storm",
   "wxCondHeat": "Hot",
   "wxCondCold": "Cold",
-  "weatherEmpty": "No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled. Enable \"Gather node telemetry\" in App settings.",
+  "weatherEmpty": "No nodes are reporting environment data yet.\nReadings appear as sensor-equipped nodes are polled. Enable \"Fetch node temperature and altitude\" in App settings.",
   "weatherSelfNoTelemetry": "This device hasn't returned telemetry yet. Make sure you're connected, then reopen this view.",
   "weatherSelfNoEnv": "Environment telemetry isn't supported by this device's firmware.\nIt reported: {types}.\nThe sensor (e.g. The T1000-E's BME280) needs a MeshCore sensor build. The standard build sends only battery and GPS. This is the device, not a setting.",
   "@weatherSelfNoEnv": {
@@ -2854,7 +2862,14 @@
     }
   },
   "diagnosticsErrorsNone": "None recorded.",
-  "diagnosticsSectionM6": "Channel-tail evidence",
+
+  "diagnosticsAgo": "{age} ago",
+  "@diagnosticsAgo": {
+    "description": "A compact age in the Diagnostics error list, e.g. \"3m ago\".",
+    "placeholders": {
+      "age": {"type": "String"}
+    }
+  },  "diagnosticsSectionM6": "Channel-tail evidence",
   "diagnosticsResolveTail": "Resolve channel-tail",
   "diagnosticsExportFixture": "Export fixture",
   "diagnosticsCopyFixture": "Copy fixture JSON (includes your own message text)",
@@ -3570,7 +3585,7 @@
   "@mediaRetrySend": {},
   "mediaClose": "Close",
   "@mediaClose": {},
-  "mediaFullPictureOnChannel": "A picture is announced with one small preview and then sent to one person who asks for it. It is never broadcast to a channel.",
+  "mediaFullPictureOnChannel": "A picture is announced with one small preview and then sent to one person who asks for it. In this mode it is not broadcast to a channel.",
   "mediaOffOnPublic": "Media stays off on the Public channel. Send it on a private channel instead.",
   "@mediaOffOnPublic": {},
   "mediaPayloadUnusable": "There is nothing to send.",
@@ -3899,7 +3914,7 @@
       }
     }
   },
-  "chatSearchRetention": "This device keeps the newest {cap} messages, so older ones are not searched.",
+  "chatSearchRetention": "This device keeps the newest {cap} messages in each conversation, so older ones are not searched.",
   "@chatSearchRetention": {
     "placeholders": {
       "cap": {
@@ -4789,7 +4804,7 @@
       }
     }
   },
-  "mapDensityCellSize": "Cells: nodes per {size}",
+  "mapDensityCellSize": "Cells: nodes per {size} cell",
   "@mapDensityCellSize": {
     "placeholders": {
       "size": {
@@ -4904,7 +4919,7 @@
     }
   },
   "mapsEtaUnknown": "estimating the time left",
-  "eventContactBatch": "the MeshCore radio's contact table loaded · {count} contacts",
+  "eventContactBatch": "the MeshCore radio's contact table loaded · {count, plural, =1{1 contact} other{{count} contacts}}",
   "@eventContactBatch": {
     "description": "The feed's one line for a contact sync, which arrives as one frame per contact.",
     "placeholders": {

@@ -130,7 +130,9 @@ class _NodesScreenState extends State<NodesScreen> {
         builder: (BuildContext _, void Function(void Function()) setSheet) {
           void both(VoidCallback f) {
             setSheet(f);
-            setState(f);
+            // The sheet can outlive the screen for a frame after a dismissal,
+            // and this is the screen's own setState, not the sheet's.
+            if (mounted) setState(f);
           }
 
           Widget label(String t) => Padding(
@@ -310,7 +312,11 @@ class _NodesScreenState extends State<NodesScreen> {
         final bool af = favs.contains(a.pubKeyHex);
         final bool bf = favs.contains(b.pubKeyHex);
         if (af != bf) return af ? -1 : 1;
-        return 0;
+        // Favourites first, and the controller's own most-recently-heard order
+        // kept inside each group. `List.sort` is not stable, and returning 0
+        // for almost every pair let it permute the rest: the list jumped around
+        // between rebuilds.
+        return b.lastHeardUnix.compareTo(a.lastHeardUnix);
       });
 
     // Spatial-aware: counts nodes the user would actually see as

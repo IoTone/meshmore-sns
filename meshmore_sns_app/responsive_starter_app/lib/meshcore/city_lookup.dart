@@ -71,7 +71,12 @@ class CityLookup {
   /// first call. Subsequent calls reuse the cached instance.
   static Future<CityLookup> load() {
     if (_cached != null) return Future<CityLookup>.value(_cached);
-    return _loading ??= _loadFromAsset();
+    // A failed load is not cached: one missing asset made every later call
+    // return the same failed future, with no retry and no way to reset.
+    return _loading ??= _loadFromAsset().catchError((Object e) {
+      _loading = null;
+      throw e;
+    });
   }
 
   /// Synchronous accessor — returns null if [load] hasn't completed.

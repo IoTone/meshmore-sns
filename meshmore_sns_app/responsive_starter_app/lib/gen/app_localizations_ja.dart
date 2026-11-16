@@ -668,7 +668,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get personalizationAudioMaster => '音声アラート';
 
   @override
-  String get personalizationAudioMasterDisabled => '「視覚 + 触覚のみ」により無効';
+  String get personalizationAudioMasterDisabled => '「視覚 + 触覚のみ」が有効なため無効';
 
   @override
   String get personalizationAudioMasterEnabled => '既定で ON。 補助としてのみ';
@@ -992,7 +992,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String elevationProfileSemantics(int low, int high, int count) {
-    return '$count 台のピアで、高度は $low メートルから $high メートルです。';
+    return '高度は $low メートルから $high メートル、$count 台のピアです。';
   }
 
   @override
@@ -1006,7 +1006,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String elevationProfilePeers(int n) {
-    return '$n 個のノードを追跡中';
+    return '$n 台のノードを追跡中';
   }
 
   @override
@@ -1362,8 +1362,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eventQueuedWaiting => 'MeshCore 無線機に未配信のメッセージがあります';
 
   @override
-  String eventQueuedWaitingN(String count) {
-    return 'MeshCore 無線機に $count 件の未配信メッセージがあります';
+  String eventQueuedWaitingN(int count) {
+    return 'MeshCore 無線機に $count 件のメッセージが待機中です';
   }
 
   @override
@@ -1471,7 +1471,13 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatSendNotSent => '未送信：MeshCore 無線機なし';
+  String get chatSendNotSent => '送信できません。MeshCore 無線機の準備ができていないか、受け付けませんでした。';
+
+  @override
+  String get dmSendNotSent => '送信できません。MeshCore 無線機の準備ができていないか、前のメッセージの応答待ちです。';
+
+  @override
+  String get dmWaitingForAck => 'この相手への前のメッセージの応答待ちです。確認できてからもう一度送ってください。';
 
   @override
   String get chatSend => '送信';
@@ -1930,7 +1936,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get weatherEmpty =>
-      '環境データを報告しているノードはまだありません。\nセンサー搭載ノードが照会されると表示されます 、 アプリ設定で「ノードのテレメトリを収集」を有効にしてください。';
+      '環境データを報告しているノードはまだありません。\nセンサー付きのノードを取得すると表示されます。設定の「各ノードの気温と高度を取得」を有効にしてください。';
 
   @override
   String get weatherSelfNoTelemetry =>
@@ -4100,6 +4106,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get diagnosticsErrorsNone => '記録はありません。';
 
   @override
+  String diagnosticsAgo(String age) {
+    return '$age 前';
+  }
+
+  @override
   String get diagnosticsSectionM6 => 'チャンネル末尾の証跡';
 
   @override
@@ -5028,7 +5039,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mediaFullPictureOnChannel =>
-      '写真は小さなプレビューで通知され、希望した1人にのみ送信されます。チャンネルにブロードキャストされることはありません。';
+      '写真は小さなプレビューで通知され、希望した一人にだけ送られます。このモードではチャンネルに同報されません。';
 
   @override
   String get mediaOffOnPublic =>
@@ -5414,7 +5425,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chatSearchRetention(int cap) {
-    return 'この端末は最新の$cap件を保持するため、それより古いメッセージは検索されません。';
+    return 'この端末は会話ごとに最新 $cap 件を保持するため、それより古いものは検索されません。';
   }
 
   @override
@@ -6729,7 +6740,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String mapDensityCellSize(String size) {
-    return 'セル: $size あたりのノード数';
+    return 'セル: $size のセルあたりのノード数';
   }
 
   @override
@@ -6828,6 +6839,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventContactBatch(int count) {
-    return 'MeshCore 無線機の連絡先が読み込まれました · $count 件';
+    return 'MeshCore 無線機の連絡先テーブルを読み込みました · $count 件';
   }
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app/app_errors.dart';
 import '../gen/app_localizations.dart';
 import '../screens/diagnostics_redaction.dart';
+import '../util/relative_time.dart';
 import '../theme/mm_skin.dart';
 
 /// The app's own error records, as rows.
@@ -61,7 +62,7 @@ class AppErrorsList extends StatelessWidget {
                   // Masked like every other Diagnostics surface. An error
                   // message can carry a short key or a URL, and this list was
                   // the one place that printed it verbatim.
-                  '${_age(now, r.at)} · ${r.where} · '
+                  '${_age(l, now, r.at)} · ${r.where} · '
                   '${const DiagnosticsRedaction().maskSecrets(r.message)}',
                   style: TextStyle(
                       color: skin.color.fg,
@@ -74,12 +75,11 @@ class AppErrorsList extends StatelessWidget {
     );
   }
 
-  /// Elapsed time, at the coarsest unit that is still true.
-  static String _age(DateTime now, DateTime at) {
-    final Duration d = now.difference(at);
-    if (d.inSeconds < 60) return '${d.inSeconds}s ago';
-    if (d.inMinutes < 60) return '${d.inMinutes}m ago';
-    if (d.inHours < 24) return '${d.inHours}h ago';
-    return '${d.inDays}d ago';
-  }
+  /// Elapsed time, in the app's own words.
+  ///
+  /// This was hardcoded English on a screen whose every other line goes through
+  /// `AppLocalizations`, so a Japanese reader saw "5m ago" in a column of
+  /// Japanese. `deviceAgo` is the family that already exists for this.
+  static String _age(AppLocalizations l, DateTime now, DateTime at) =>
+      l.diagnosticsAgo(compactAgo(now.difference(at)));
 }

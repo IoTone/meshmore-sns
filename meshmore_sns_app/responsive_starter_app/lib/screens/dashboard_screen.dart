@@ -529,7 +529,7 @@ String _eventLine(AppLocalizations l, MeshEvent e) {
     MeshEventKind.deviceInfo => l.eventDeviceInfo(a['version'] ?? '?'),
     MeshEventKind.selfInfo => l.eventSelfInfo(a['name'] ?? '?'),
     MeshEventKind.queuedWaiting => a.containsKey('count')
-        ? l.eventQueuedWaitingN(a['count']!)
+        ? l.eventQueuedWaitingN(int.tryParse(a['count'] ?? '') ?? 0)
         : l.eventQueuedWaiting,
     MeshEventKind.oneKeyRejected => l.eventOneKeyRejected(a['key'] ?? '?'),
     MeshEventKind.radioRefused => l.eventRadioRefused,

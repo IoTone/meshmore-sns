@@ -165,8 +165,9 @@ class BlockStore extends ChangeNotifier {
   Future<void> load() async {
     if (_loaded) return;
     _loaded = true;
+    Uint8List? raw;
     try {
-      final Uint8List? raw = await _store().read(recordName);
+      raw = await _store().read(recordName);
       if (raw == null) return;
       final Object? decoded = jsonDecode(utf8.decode(raw));
       if (decoded is! List) return;
@@ -189,7 +190,7 @@ class BlockStore extends ChangeNotifier {
       // reader never asked for.
       _persisted = false;
       _unreadable = true;
-      await _dropDamagedRecord();
+      await _dropDamagedRecord(raw);
     }
     notifyListeners();
   }
@@ -209,8 +210,13 @@ class BlockStore extends ChangeNotifier {
   }
 
   /// Removes this record, and only this record, when its JSON is malformed.
-  Future<void> _dropDamagedRecord() async {
+  ///
+  /// The bytes are kept first, in a `blocks.bad` record: the message the reader
+  /// sees promises that a copy of the damaged data is kept, and on this path
+  /// nothing else made one.
+  Future<void> _dropDamagedRecord(Uint8List? raw) async {
     try {
+      if (raw != null) await _store().write('$recordName.bad', raw);
       await _store().remove(recordName);
     } on EncryptedStoreCorrupt {
       // The file went bad between the read and the write; the copy is made.

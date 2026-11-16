@@ -92,6 +92,9 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
   RadioOperatingPoint? _armed;
   bool _pathHashLoaded = false;
 
+  /// Whether the armed-state read has been scheduled. See the build.
+  bool _armedChecked = false;
+
   /// The advert location policy the form is *staging*.
   ///
   /// It used to write to the radio the instant a segment was tapped, in the
@@ -594,7 +597,13 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     // DeviceInfo arrives on its own schedule, after the self-info snapshot,
     // so path hash cannot ride along with _loadFrom. Load it once and never
     // overwrite what the user then chose.
-    if (_armed == null) {
+    // Latched, like `_pathHashLoaded` below. `_reloadArmed` only assigns when
+    // the store has a value, so an ordinary "nothing armed" left the flag null
+    // and this scheduled a post-frame callback, an async hop and a preferences
+    // read on every build — and the screen watches a controller that notifies
+    // for every advert.
+    if (!_armedChecked) {
+      _armedChecked = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _reloadArmed(mc);
       });
@@ -1241,7 +1250,11 @@ class _ContactTableEditorState extends State<_ContactTableEditor> {
             trailing: SizedBox(
               width: telemLabelWidth(MediaQuery.textScalerOf(context)),
               child: TextFormField(
-                key: const ValueKey<String>('auto-add-hops'),
+                // Keyed on the value: `initialValue` is read once, in the
+                // field's own `initState`, so a config that arrives later left
+                // the switches above it live and this number stale — and the
+                // row's action then sent the stale number.
+                key: ValueKey<String>('auto-add-hops-${cfg.maxHops}'),
                 initialValue: '${cfg.maxHops}',
                 enabled: allow,
                 keyboardType: TextInputType.number,
