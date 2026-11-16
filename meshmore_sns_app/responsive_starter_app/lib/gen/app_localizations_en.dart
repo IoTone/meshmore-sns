@@ -6896,6 +6896,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapKeyReach => 'How far away we heard a peer';
 
   @override
+  String get mapKeySelfReach => 'How far your own MeshCore radio should reach';
+
+  @override
+  String mapSelfReachLabel(String km) {
+    return '~$km km';
+  }
+
+  @override
   String get mapKeyDensity => 'Nodes per cell';
 
   @override

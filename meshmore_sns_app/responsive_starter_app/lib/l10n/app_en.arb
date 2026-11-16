@@ -4727,6 +4727,15 @@
   "mapKeyYou": "You",
   "mapKeyHeading": "Which way the phone points",
   "mapKeyReach": "How far away we heard a peer",
+  "mapKeySelfReach": "How far your own MeshCore radio should reach",
+  "mapSelfReachLabel": "~{km} km",
+  "@mapSelfReachLabel": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
   "mapKeyDensity": "Nodes per cell",
   "mapKeyGeofence": "A fence you set",
   "mapKeyTrail": "Your own track",

@@ -1506,6 +1506,19 @@ class _StreetMapViewState extends State<StreetMapView> {
                             color: skin.color.accent, width: 1.2)),
                   ),
                   l.mapKeyReach),
+              // The ring around our own marker is a different claim from the
+              // rings around peers, and the key had one row for both.
+              row(
+                  Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: cs.tertiary.withValues(alpha: .75),
+                            width: 1.4)),
+                  ),
+                  l.mapKeySelfReach),
               row(
                   Container(
                     width: 16,
@@ -2619,6 +2632,35 @@ class _StreetMapViewState extends State<StreetMapView> {
                   // here" about the centre of the screen, wherever the reader had
                   // scrolled, while every distance, the trail and the fences were
                   // computed from the real fix.
+                  // The self reach ring is an estimate of how far this radio
+                  // should carry, and drawn as a bare circle it read as an
+                  // unexplained shape: the owner asked what the big ring was
+                  // and the key had no row for it. The label sits on the ring's
+                  // own edge and says the number.
+                  if (hasFix &&
+                      StreetMapView.reachRingReadable(rangeM, viewportMeters))
+                    Marker(
+                      key: const ValueKey<String>('map-self-reach-label'),
+                      point: LatLng(
+                        selfLat! + rangeM / 111320,
+                        selfLon!,
+                      ),
+                      width: 96,
+                      height: 24,
+                      alignment: Alignment.center,
+                      child: IgnorePointer(
+                        child: Text(
+                          l.mapSelfReachLabel(
+                              (rangeM / 1000).toStringAsFixed(0)),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: cs.tertiary,
+                            fontSize: context.skin.type.sizeMicro,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
                   if (hasFix)
                     Marker(
                       key: const ValueKey<String>('map-self-marker'),

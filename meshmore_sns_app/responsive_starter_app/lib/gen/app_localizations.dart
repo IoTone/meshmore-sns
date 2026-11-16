@@ -11548,6 +11548,18 @@ abstract class AppLocalizations {
   /// **'How far away we heard a peer'**
   String get mapKeyReach;
 
+  /// No description provided for @mapKeySelfReach.
+  ///
+  /// In en, this message translates to:
+  /// **'How far your own MeshCore radio should reach'**
+  String get mapKeySelfReach;
+
+  /// No description provided for @mapSelfReachLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'~{km} km'**
+  String mapSelfReachLabel(String km);
+
   /// No description provided for @mapKeyDensity.
   ///
   /// In en, this message translates to:

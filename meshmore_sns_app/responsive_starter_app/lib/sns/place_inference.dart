@@ -751,8 +751,14 @@ final RegExp _properRe =
 
 // Decimal "lat, lon" — both with a fractional part to avoid matching
 // plain integers.
-final RegExp _decimalRe =
-    RegExp(r'(-?\d{1,2}\.\d{2,}),?\s+(-?\d{1,3}\.\d{2,})');
+/// A decimal coordinate pair, however it was written.
+///
+/// The separator is a comma, whitespace, or both. It used to require whitespace
+/// after the comma, so the form people actually type and paste — `38.91993,-104.77313`,
+/// with no space — matched nothing, and a message that carried a position was
+/// read as prose.
+final RegExp _decimalRe = RegExp(
+    r'(-?\d{1,2}\.\d{2,})(?:\s*,\s*|\s+)(-?\d{1,3}\.\d{2,})');
 
 // Maidenhead grid locator (4 or 6 char), as a standalone token.
 final RegExp _gridRe =

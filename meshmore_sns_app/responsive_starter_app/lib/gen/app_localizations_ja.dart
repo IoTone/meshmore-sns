@@ -6622,6 +6622,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mapKeyReach => 'ピアを聞き取れた距離';
 
   @override
+  String get mapKeySelfReach => '自分の無線機が届くおよその距離';
+
+  @override
+  String mapSelfReachLabel(String km) {
+    return '約 $km km';
+  }
+
+  @override
   String get mapKeyDensity => 'セルあたりのノード数';
 
   @override
