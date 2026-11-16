@@ -111,10 +111,12 @@ class _StudioMessageRowState extends State<StudioMessageRow> {
                       child: BotTag(),
                     ),
                   LinkifiedText(
-                      key: const ValueKey<String>('studio-msg-body'),
+                      textKey: const ValueKey<String>('studio-msg-body'),
                       text: stripBotMarker(body),
                       style: TextStyle(
-                          color: skin.color.fg, fontSize: skin.type.size(15), height: 1.35)),
+                          color: skin.color.fg,
+                          fontSize: skin.type.size(15),
+                          height: 1.35)),
                   if (echo != null) echo!,
                   if (delivery)
                     Padding(

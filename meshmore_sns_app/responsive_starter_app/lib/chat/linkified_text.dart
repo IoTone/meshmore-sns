@@ -74,12 +74,20 @@ class LinkifiedText extends StatefulWidget {
     this.style,
     this.maxLines,
     this.overflow,
+    this.textKey,
   });
 
   final String text;
   final TextStyle? style;
   final int? maxLines;
   final TextOverflow? overflow;
+
+  /// The key the rendered `Text` carries.
+  ///
+  /// The key belongs on the text, not on this wrapper: a caller that keys a
+  /// message body is naming the text, and a test that reads it expects a
+  /// `Text`. Putting it here made `find.byKey` return a widget that is not one.
+  final Key? textKey;
 
   @override
   State<LinkifiedText> createState() => _LinkifiedTextState();
@@ -132,6 +140,7 @@ class _LinkifiedTextState extends State<LinkifiedText> {
     if (links.isEmpty) {
       _release();
       return Text(widget.text,
+          key: widget.textKey,
           style: widget.style,
           maxLines: widget.maxLines,
           overflow: widget.overflow);
@@ -162,6 +171,7 @@ class _LinkifiedTextState extends State<LinkifiedText> {
       spans.add(TextSpan(text: widget.text.substring(at)));
     }
     return Text.rich(
+      key: widget.textKey,
       TextSpan(style: widget.style, children: spans),
       maxLines: widget.maxLines,
       overflow: widget.overflow,

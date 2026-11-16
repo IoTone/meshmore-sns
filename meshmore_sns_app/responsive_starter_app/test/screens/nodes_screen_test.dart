@@ -208,7 +208,7 @@ void main() {
     expect(find.byIcon(Icons.star), findsOneWidget);
     expect(find.byIcon(Icons.star_border), findsNothing);
     expect(ctrl.favorites, hasLength(1));
-    expect(find.textContaining('1 contact'), findsOneWidget);
+    expect(find.textContaining('1 favourite'), findsOneWidget);
 
     // Untoggle.
     await t.tap(find.byIcon(Icons.star));

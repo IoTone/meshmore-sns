@@ -184,6 +184,9 @@ void main() {
       'You',
       'Which way the phone points',
       'How far away we heard a peer',
+      // The ring around our own marker is a different claim from the rings
+      // around peers, and the key had one row for both.
+      'How far your own MeshCore radio should reach',
       // The density field is a hexagon lattice, so the key says cell: it said
       // "square" from the grid it replaced.
       'Nodes per cell',
@@ -194,6 +197,10 @@ void main() {
       'Your own track',
       'A node that just sent a message',
     ]) {
+      // The key is a scrolling sheet and it grew a row, so a label below the
+      // fold has to be brought into view before it can be found.
+      await t.scrollUntilVisible(find.text(label), 80,
+          scrollable: find.byType(Scrollable).last);
       expect(find.text(label), findsOneWidget,
           reason: '$label is drawn on the map and must be explained');
     }
