@@ -1,0 +1,552 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'dart:typed_data';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:meshcore/meshcore.dart';
+import 'package:meshmore_sns_app/meshcore/chat_message.dart';
+import 'package:meshmore_sns_app/meshcore/mesh_event.dart';
+import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'fake_transport.dart';
+
+/// Three commands the codec has always been able to build and the app never
+/// sent. Each is the only way to answer a question the app was guessing at:
+///
+/// * `CMD_GET_AUTOADD_CONFIG` (0x3B) — which node types the radio stores by
+///   itself, whether it may overwrite the oldest non-favourite when the table
+///   is full, and how far away a node may be. Without it the table fills under
+///   a policy the user cannot see.
+/// * `CMD_SET_AUTOADD_CONFIG` (0x3A) — the whole byte at once, so a partial
+///   change has to carry the rest through, and writing from an unknown state
+///   would switch auto-add off for every type.
+/// * `CMD_GET_ADVERT_PATH` (0x2A) — the route the last advert took, which costs
+///   no airtime and is the cheap answer to "which repeaters hear this node".
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  Future<void> settle() async {
+    for (int i = 0; i < 8; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+  }
+
+  Future<MeshcoreController> connected(FakeMeshcoreTransport fake) async {
+    final MeshcoreController mc =
+        MeshcoreController(transportFactory: () async => fake);
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await settle();
+    return mc;
+  }
+
+  setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
+
+  /// `RESP_CODE_AUTOADD_CONFIG` (0x19): `[19][flags][max_hops]`.
+  Uint8List autoAddFrame(int flags, int maxHops) =>
+      Uint8List.fromList(<int>[0x19, flags, maxHops]);
+
+  /// `RESP_CODE_ADVERT_PATH` (0x16):
+  /// `[16][recv_ts u32 LE][path_len][path hashes]`.
+  Uint8List advertPathFrame(int ts, List<int> path, {int hashSize = 1}) {
+    final int pathLen = ((hashSize - 1) << 6) | (path.length ~/ hashSize);
+    return Uint8List.fromList(<int>[
+      0x16,
+      ts & 0xFF,
+      (ts >> 8) & 0xFF,
+      (ts >> 16) & 0xFF,
+      (ts >> 24) & 0xFF,
+      pathLen,
+      ...path,
+    ]);
+  }
+
+  group('the radio\'s own add policy', () {
+    test('the policy is read, and says what it means', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      expect(mc.autoAddConfig, isNull, reason: 'nothing has been read yet');
+
+      await mc.requestAutoAddConfig();
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.getAutoAddConfig.code),
+          isTrue);
+
+      fake.emit(autoAddFrame(0x01 | 0x02 | 0x04, 3));
+      await settle();
+      final AutoAddConfig? cfg = mc.autoAddConfig;
+      expect(cfg, isNotNull);
+      expect(cfg!.overwriteOldest, isTrue);
+      expect(cfg.chat, isTrue);
+      expect(cfg.repeater, isTrue);
+      expect(cfg.roomServer, isFalse);
+      expect(cfg.sensor, isFalse);
+      expect(cfg.maxHops, 3);
+      mc.dispose();
+    });
+
+    test('a change carries the other bits through and reads back', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      await mc.requestAutoAddConfig();
+      fake.emit(autoAddFrame(0x02, 5));
+      await settle();
+
+      fake.sent.clear();
+      expect(await mc.setAutoAddConfig(sensor: true), isTrue);
+      final Uint8List set = fake.sent.firstWhere((Uint8List f) =>
+          f.isNotEmpty && f[0] == MeshcoreCommand.setAutoAddConfig.code);
+      expect(set[1], 0x02 | 0x10,
+          reason: 'chat stays on, sensor is added, nothing else moves');
+      expect(set[2], 5, reason: 'the hop limit is carried, not reset to zero');
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.getAutoAddConfig.code),
+          isTrue,
+          reason: 'the radio clamps and may refuse, so its answer is the truth');
+      mc.dispose();
+    });
+
+    test('a write from an unread policy is refused, not guessed', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      fake.sent.clear();
+      expect(await mc.setAutoAddConfig(chat: true), isFalse,
+          reason: 'writing from zero would switch auto-add off entirely');
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.setAutoAddConfig.code),
+          isFalse);
+      mc.dispose();
+    });
+  });
+
+  group('the route the last advert took', () {
+    test('a reply becomes the path, at the width the reply states', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899';
+
+      final Future<AdvertPath?> pending = mc.advertPathFor(key);
+      await settle();
+      fake.emit(advertPathFrame(1700000000, <int>[0x11, 0x22], hashSize: 1));
+      final AdvertPath? p = await pending;
+      expect(p, isNotNull);
+      expect(p!.pathLen.hashSize, 1);
+      expect(p.pathLen.hopCount, 2);
+      expect(p.path, <int>[0x11, 0x22]);
+      expect(p.receivedAt, 1700000000);
+      mc.dispose();
+    });
+
+    test('a request with no answer is null, not a hang', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899';
+      expect(
+          await mc.advertPathFor(key,
+              timeout: const Duration(milliseconds: 40)),
+          isNull);
+      mc.dispose();
+    });
+
+    test('only one request is in flight, because the reply carries no key',
+        () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899';
+      final Future<AdvertPath?> first =
+          mc.advertPathFor(key, timeout: const Duration(milliseconds: 200));
+      await settle();
+      expect(await mc.advertPathFor(key), isNull,
+          reason: 'a second answer could not be told apart from the first');
+      fake.emit(advertPathFrame(1700000001, <int>[0x33]));
+      await first;
+      mc.dispose();
+    });
+  });
+
+  group('a retry clears a dead direct route first', () {
+    test('a direct DM that failed is retried over flood', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      // A contact with a direct route: `out_path_len` 0 is "in radio range",
+      // which is the state a retry has to invalidate when the neighbour moved.
+      fake.emit(contactFrame(name: 'Near', firstPubByte: 0x55, outPathLen: 0));
+      await settle();
+      const String peer =
+          '55565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f7071727374';
+      expect(mc.isSyncedContact(peer), isTrue);
+
+      final ChatMessage? m = await mc.sendDirectText(peer, 'hello');
+      expect(m, isNotNull);
+      // The radio refuses the send; the row becomes retryable.
+      fake.emit(Uint8List.fromList(<int>[0x01, 6]));
+      await settle();
+      expect(m!.delivery, MessageDelivery.failed);
+
+      fake.sent.clear();
+      expect(await mc.retryMessageOutcome(m.id), RetryOutcome.sentAfterPathReset);
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.resetPath.code),
+          isTrue,
+          reason: 'a dead route stays dead until something clears it');
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.getContactByKey.code),
+          isTrue,
+          reason: 'the app re-reads the record it just invalidated');
+      expect(fake.sent.any((Uint8List f) => f.isNotEmpty && f[0] == 0x02), isTrue,
+          reason: 'the message itself is still sent');
+      mc.dispose();
+    });
+
+    test('a flood-addressed retry clears nothing', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      // `out_path_len` 0xFF is the flood sentinel: there is no route to clear.
+      fake.emit(
+          contactFrame(name: 'Far', firstPubByte: 0x66, outPathLen: 0xFF));
+      await settle();
+      const String peer =
+          '666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485';
+      final ChatMessage? m = await mc.sendDirectText(peer, 'hello');
+      fake.emit(Uint8List.fromList(<int>[0x01, 6]));
+      await settle();
+      fake.sent.clear();
+      expect(await mc.retryMessageOutcome(m!.id), RetryOutcome.sent,
+          reason: 'nothing to reset, so the retry is reported plainly');
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.resetPath.code),
+          isFalse);
+      mc.dispose();
+    });
+  });
+
+  group('an add that the radio refuses', () {
+    test('a full table is state, not a silent success', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      fake.emit(contactFrame(name: 'Near', firstPubByte: 0x77));
+      await settle();
+      const String peer =
+          '7778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f90919293949596';
+      expect(await mc.addNodeAsDeviceContact(peer, name: 'Near'), isTrue,
+          reason: 'the frames were written; the radio answers separately');
+      expect(mc.contactsFull, isFalse);
+      // `ERR_CODE_TABLE_FULL` (3): the radio could not store it.
+      fake.emit(Uint8List.fromList(<int>[0x01, kErrTableFull]));
+      await settle();
+      expect(mc.contactsFull, isTrue,
+          reason: 'a full table drops every new advert, so it has to be shown');
+      mc.dispose();
+    });
+  });
+
+  group('asking the mesh for a route', () {
+    /// `PUSH_CODE_PATH_DISCOVERY_RESPONSE` (0x8D):
+    /// `[8D][reserved][prefix 6][out_len][out path][in_len][in path]`.
+    Uint8List discoveryFrame(List<int> prefix, List<int> out, List<int> back) =>
+        Uint8List.fromList(<int>[
+          0x8D,
+          0x00,
+          ...prefix,
+          (out.length & 0x3F),
+          ...out,
+          (back.length & 0x3F),
+          ...back,
+        ]);
+
+    test('a reply for this prefix is the route', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'a1b2c3d4e5f600112233445566778899aabbccddeeff00112233445566778899';
+      final Future<PathDiscoveryResult?> pending =
+          mc.discoverPathFor(key, timeout: const Duration(milliseconds: 500));
+      await settle();
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.sendPathDiscoveryReq.code),
+          isTrue);
+      fake.emit(discoveryFrame(<int>[0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6],
+          <int>[0x11, 0x22], <int>[0x22, 0x11]));
+      final PathDiscoveryResult? r = await pending;
+      expect(r, isNotNull);
+      expect(r!.outPath, <int>[0x11, 0x22]);
+      expect(r.inPath, <int>[0x22, 0x11]);
+      expect(r.outPathLen.hopCount, 2);
+      mc.dispose();
+    });
+
+    test('an answer for another node is not this request', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'a1b2c3d4e5f600112233445566778899aabbccddeeff00112233445566778899';
+      final Future<PathDiscoveryResult?> pending =
+          mc.discoverPathFor(key, timeout: const Duration(milliseconds: 40));
+      await settle();
+      fake.emit(discoveryFrame(<int>[0x99, 0x88, 0x77, 0x66, 0x55, 0x44],
+          <int>[0x01], <int>[]));
+      expect(await pending, isNull,
+          reason: 'the reply names a different prefix, so it is not an answer');
+      mc.dispose();
+    });
+  });
+
+  test('the bands the radio will relay in are read and shown', () async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await connected(fake);
+    expect(mc.allowedRepeatFreq, isNull);
+    await mc.requestAllowedRepeatFreq();
+    // `RESP_CODE_ALLOWED_REPEAT_FREQ` (0x1A): `[1A][lower u32 LE][upper u32 LE]…`,
+    // kHz. 902000..928000 and 2400000..2483500.
+    fake.emit(Uint8List.fromList(<int>[
+      0x1A,
+      0x70, 0xC3, 0x0D, 0x00,
+      0x00, 0x29, 0x0E, 0x00,
+      0x00, 0x9F, 0x24, 0x00,
+      0x2C, 0xE5, 0x25, 0x00,
+    ]));
+    await settle();
+    final List<({int lowerKhz, int upperKhz})>? r = mc.allowedRepeatFreq;
+    expect(r, isNotNull);
+    expect(r!.length, 2);
+    expect(r.first.lowerKhz, 902000);
+    expect(r.first.upperKhz, 928000);
+    expect(r.last.upperKhz, 2483500);
+    mc.dispose();
+  });
+
+  group('frames that were decoded and ignored', () {
+    test('a stranger\'s refused message is an event, not silence', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      // `PUSH_CODE_ONE_KEY_DM_REJECTED` (0x91): opcode + the 32-byte key.
+      fake.emit(Uint8List.fromList(<int>[
+        0x91,
+        for (int i = 0; i < kPubKeySize; i++) (0xC0 + i) & 0xFF,
+      ]));
+      await settle();
+      expect(
+          mc.recentEvents.any((MeshEvent e) =>
+              e.kind == MeshEventKind.oneKeyRejected),
+          isTrue,
+          reason: 'the reader cannot tell a stranger\'s attempt from silence');
+      mc.dispose();
+    });
+
+    test('the radio\'s tuning is read, and its airtime limit means something',
+        () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      expect(mc.tuningParams, isNull);
+      await mc.requestTuningParams();
+      // `RESP_CODE_TUNING_PARAMS` (0x17): `[17][rx ×1000 u32 LE][af ×1000 u32 LE]`.
+      // rx 0 s, af 0.5 -> the radio may transmit 1/(1+0.5) = 67% of the time.
+      fake.emit(Uint8List.fromList(<int>[
+        0x17,
+        0x00, 0x00, 0x00, 0x00,
+        0xF4, 0x01, 0x00, 0x00,
+      ]));
+      await settle();
+      final TuningParams? t = mc.tuningParams;
+      expect(t, isNotNull);
+      expect(t!.airtimeFactor, 0.5);
+      expect(t.rxDelayBaseSeconds, 0);
+      mc.dispose();
+    });
+
+    test('a disabled command fails at once instead of timing out', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      await mc.sendChannelText('hello');
+      final ChatMessage m = mc.messagesFor(0).single;
+      expect(m.delivery, MessageDelivery.sending);
+      // `RESP_CODE_DISABLED` (0x0F) instead of OK/ERR.
+      fake.emit(Uint8List.fromList(<int>[0x0F]));
+      await settle();
+      expect(m.delivery, MessageDelivery.failed);
+      expect(m.failReason, isNotNull,
+          reason: 'an answer the radio gives is better than a 15 s timeout');
+      mc.dispose();
+    });
+  });
+
+  group('sharing a contact as a link', () {
+    /// `RESP_CODE_EXPORT_CONTACT` (0x0B): opcode + the advert packet.
+    Uint8List exportedFrame(int len) => Uint8List.fromList(<int>[
+          0x0B,
+          for (int i = 0; i < len; i++) (0x40 + i) & 0xFF,
+        ]);
+
+    test('the link carries the radio\'s own advert packet', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899';
+      final Future<String?> pending = mc.exportContactLink(key);
+      await settle();
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.exportContact.code),
+          isTrue);
+      // A real advert packet is at least kImportContactMin bytes.
+      fake.emit(exportedFrame(kImportContactMin));
+      final String? link = await pending;
+      expect(link, isNotNull);
+      expect(link!.startsWith(MeshcoreController.contactLinkPrefix), isTrue);
+      expect((link.length - MeshcoreController.contactLinkPrefix.length),
+          kImportContactMin * 2,
+          reason: 'the link is the packet, not a record this app invented');
+      // And it reads back: the same bytes, in the size the radio accepts.
+      expect(MeshcoreController.parseContactLink(link),
+          hasLength(kImportContactMin));
+      mc.dispose();
+    });
+
+    test('a link or a bare hex packet both read, a bad one does not', () {
+      final String hex = 'ab' * 100;
+      expect(MeshcoreController.parseContactLink('meshcore://${hex.toUpperCase()}'),
+          hasLength(100));
+      expect(MeshcoreController.parseContactLink(hex), hasLength(100));
+      // Too short for the firmware, odd length, a non-hex character.
+      expect(MeshcoreController.parseContactLink('meshcore://abcd'), isNull);
+      expect(MeshcoreController.parseContactLink('abc'), isNull);
+      expect(MeshcoreController.parseContactLink('zz' * 100), isNull);
+    });
+
+    test('an import asks the radio and reads the table back', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      fake.sent.clear();
+      expect(await mc.importContactLink('meshcore://${'ab' * 100}'), isTrue);
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.importContact.code),
+          isTrue);
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.getContacts.code),
+          isTrue,
+          reason: 'the radio stores it, so the app asks for the table');
+      expect(await mc.importContactLink('nonsense'), isFalse);
+      mc.dispose();
+    });
+  });
+
+  test('the pairing PIN is written, and the readout is re-read', () async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await connected(fake);
+    fake.sent.clear();
+    expect(await mc.setDevicePin(123456), isTrue);
+    final Uint8List set = fake.sent.firstWhere((Uint8List f) =>
+        f.isNotEmpty && f[0] == MeshcoreCommand.setDevicePin.code);
+    expect(set.length, 5, reason: 'opcode plus a four-byte PIN');
+    expect(set[1] | (set[2] << 8) | (set[3] << 16) | (set[4] << 24), 123456);
+    expect(
+        fake.sent.any((Uint8List f) =>
+            f.isNotEmpty && f[0] == MeshcoreCommand.deviceQuery.code),
+        isTrue,
+        reason: 'the radio clamps and may refuse, so its value is the truth');
+    // The codec refuses anything that is neither 0 nor six digits.
+    expect(await mc.setDevicePin(12345), isFalse);
+    mc.dispose();
+  });
+
+  group('a repeater session', () {
+    /// `PUSH_CODE_LOGIN_SUCCESS` (0x85) legacy form:
+    /// `[85][permissions][prefix 6]`.
+    Uint8List loginFrame(List<int> prefix, {bool success = true, int perm = 1}) =>
+        Uint8List.fromList(<int>[
+          success ? 0x85 : 0x86,
+          if (success) perm else 0,
+          ...prefix,
+        ]);
+
+    test('a sign-in reports what the repeater granted', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'a1b2c3d4e5f600112233445566778899aabbccddeeff00112233445566778899';
+      final Future<LoginResult?> pending = mc.loginRepeater(key, 'hunter2');
+      await settle();
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.sendLogin.code),
+          isTrue);
+      fake.emit(loginFrame(<int>[0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6], perm: 3));
+      final LoginResult? r = await pending;
+      expect(r, isNotNull);
+      expect(r!.success, isTrue);
+      expect(r.permissions, 3);
+      mc.dispose();
+    });
+
+    test('a refusal is the answer, not a lost request', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'a1b2c3d4e5f600112233445566778899aabbccddeeff00112233445566778899';
+      final Future<LoginResult?> pending = mc.loginRepeater(key, 'wrong');
+      await settle();
+      fake.emit(loginFrame(<int>[0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6],
+          success: false));
+      final LoginResult? r = await pending;
+      expect(r, isNotNull);
+      expect(r!.success, isFalse);
+      mc.dispose();
+    });
+
+    test('a password the firmware would truncate is never sent', () async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController mc = await connected(fake);
+      const String key =
+          'a1b2c3d4e5f600112233445566778899aabbccddeeff00112233445566778899';
+      fake.sent.clear();
+      expect(await mc.loginRepeater(key, 'x' * (kLoginPasswordMax + 1)), isNull,
+          reason: 'the firmware cuts at 15 bytes, which would be a different '
+              'password');
+      expect(
+          fake.sent.any((Uint8List f) =>
+              f.isNotEmpty && f[0] == MeshcoreCommand.sendLogin.code),
+          isFalse);
+      mc.dispose();
+    });
+  });
+
+  test('one message in flight per contact, so the ACK table keeps its slots',
+      () async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await connected(fake);
+    const String peer =
+        '7778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f90919293949596';
+    expect(mc.hasUnsettledDmTo(peer), isFalse);
+    final ChatMessage? first = await mc.sendDirectText(peer, 'one');
+    expect(first, isNotNull);
+    expect(mc.hasUnsettledDmTo(peer), isTrue,
+        reason: 'the row is sending, so the contact has an unanswered entry');
+    // The composer refuses a second message to the same contact while one is
+    // unsettled; the controller allows it, because a diagnostic that measures
+    // several messages to one node is a legitimate caller.
+    expect(await mc.sendDirectText(peer, 'two'), isNotNull);
+    // The backstop is the radio's ACK table: eight entries, four kept for the
+    // app. A fifth unsettled message is refused rather than evicting an entry
+    // the radio needs to attribute an answer.
+    for (int i = 0; i < 8 && mc.unsettledOutgoingCount < 4; i++) {
+      await mc.sendDirectText(peer, 'filler $i');
+    }
+    expect(mc.unsettledOutgoingCount, 4);
+    expect(await mc.sendDirectText(peer, 'over the ceiling'), isNull);
+    expect(mc.unsettledOutgoingCount, 4, reason: 'a refusal sends nothing');
+    mc.dispose();
+  });
+}

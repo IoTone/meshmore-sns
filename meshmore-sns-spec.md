@@ -1,3 +1,6 @@
+> **Historical. This is R1 to R113 and the change record, kept for the reasoning behind each requirement.**
+> The record for requirements is `meshmore-app-spec.md`, and for state `meshmore-feature-register.md`. See `docs/INDEX.md` for the role of every document.
+
 # Overview
 
 Meshmore SNS is a mobile client built in Flutter, and used to communicate on the Meshcore network.
@@ -13,6 +16,23 @@ Meshmore SNS is a mobile client built in Flutter, and used to communicate on the
 - Seeed SenseCAP T1000-E + MeshCore setup (flash, "Companion Bluetooth" variant, BLE pair PIN 123456, LoRa region) : https://wiki.seeedstudio.com/sensecap_t1000_e_meshcore/
 - MeshCore v1.15.0 release notes (the pinned firmware; flash via flasher.meshcore.io) : https://blog.meshcore.io/2026/04/19/release-1-15-0
 
+### Documents
+
+This file holds the requirements and the change record. Specs that outgrew
+it live beside it:
+
+- `meshmore-sns-UX-spec.md` — implementation plan (U0–U15) and the six skins.
+- `meshmore-sns-maps-spec.md` — basemaps, offline region files (R61, R93).
+- `meshmore-sns-tools-spec.md` — the Tools surface (R60).
+- `meshmore-sns-radio-alerts.md` — where the radio's chime lives in firmware
+  and how to silence it, including the per-board matrix.
+- `meshmore-sns-telemetry-research.md`, `meshmore-sns-microclimate-wx.md` —
+  telemetry sources and the weather view.
+- `meshmore-sns-geofence-tracking.md`, `meshmore-sns-meshbook-mbk.md` —
+  tracking and Meshbook earmarks.
+- `meshmore-sns-UX-brief.md` and `.html` — visual brief with theme mockups.
+- `meshmore_sns_app/STATUS.md` — what is built, what is open, test counts.
+
 ## Problem
 
 While Meshcore protocol is open source, the client is not open source.  We want ta general purpose Meshcore compatible client available under a friendly academic open source license.
@@ -21,7 +41,9 @@ While Meshcore protocol is open source, the client is not open source.  We want 
 ## Requirements
 
 - R1: app is written in flutter
-- R2: app runs on Android and iOS
+- R2: app runs on Android and iOS — **corrected 2026-11-04: Android only for now.** The owner deprioritised iOS
+  ("we are not worried about at all about IOS right now"); the scope of record rules it out, and no iOS target is
+  built or tested. Keep the code portable, do not claim the platform.
 - R3: app uses bluetooth to communicate with a Meshcore client device. 
 - R4: app is localized to English and Japanese
 - R5: app can perform TTS using the GPU on the phone and should have a TTS mode that can be turned on, off by default
@@ -250,7 +272,8 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   Defaults inherit from the global setting; an explicit channel
   override is persisted. Reached from **Channel management → per-
   slot Notifications** (and a quick toggle in the Chat header). DMs
-  may later get the same treatment per-peer; out of R24 scope.
+  get the same treatment per-peer under **R58**, which also adds
+  per-peer voice and chime identity; out of R24 scope.
 - R25 (future): **reverse-geocoded equal-grid map** — a second map
   option in the **Hyperlocal grid** picker (the existing radial
   range-ring view becomes "Hyperlocal grid · radial" / default).
@@ -295,7 +318,9 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     public data sources (Natural Earth, GeoNames) for towns/POI
     + coastline/admin boundaries. (a) is cheapest to ship; (b)
     is the most ideologically aligned and avoids the live OSM
-    dependency. Decision deferred.
+    dependency. Decision deferred. **Resolved by R61:** a disk tile
+    cache. OSM is cached only as viewed, because its policy forbids
+    prefetch. Pre-pulled regions come from sources that allow them.
   - **Online detection** drives prefetch — when connected to
     Wi-Fi/cellular we pre-pull tiles for the area surrounding
     our last-known own location and a ring of N km out. Offline
@@ -317,7 +342,7 @@ While Meshcore protocol is open source, the client is not open source.  We want 
   (latitude / longitude / **altitude** if the protocol publishes
   it later) — adverts already carry lat/lon; altitude is a
   forward-looking extension.
-- R27 (future): **Macro-globe view via Globe.GL**. A third map
+- R27 (WITHDRAWN 2026-11-05, owner's direction): **Macro-globe view via Globe.GL**. A third map
   view (after the radial /grid and R25 equal-grid map) that
   pins our position and the fabric on a **3-D globe**, using
   [Globe.GL](https://globe.gl/) (Three.js wrapper) inside a
@@ -701,6 +726,1248 @@ While Meshcore protocol is open source, the client is not open source.  We want 
     screens + concepts (B/C/E/F), bundle the brief's OSS display/mono
     faces, palette-ize the 9 visualisation painters.
 
+- R58: **per-peer voice & signature chime (DM identity)**. R24 gave
+  channels their own notification overrides and explicitly deferred
+  the per-peer case; this is that case. Today TTS is one global voice
+  (`TtsController`: enabled/rate/pitch/voice) with per-*channel* mute
+  only, and every DM plays the same `CueKind.dmIn` from the active
+  skin's pack. So every peer sounds identical, and the user cannot
+  tell **who** is talking without looking at the screen.
+
+  The goal is **eyes-free sender identification**: a favourite peer
+  gets a distinct voice and a distinct arrival chime, so a message
+  from them is recognisable from across the room with the phone in a
+  pocket. This is app-side only and has nothing to do with the
+  device's own buzzer (see the Devices doc — that is firmware and is
+  not reachable from here).
+
+  **Model.** An override is an act of attention, exactly like
+  favouriting. Peers with no override are not stored at all; the
+  per-peer record exists only once the user creates one. Records are
+  keyed by **pubkey hex** (like `FavoriteStore`) so an override
+  survives a peer being deleted and re-added (R56).
+
+  **Per-peer record** (every field defaults to *inherit*):
+  - `speak`: inherit / always / never — tri-state, not a bool, so
+    "follow the global setting" stays expressible. **Landed** (see
+    below); the rest of the record is still design.
+  - `voice`: inherit, or a `TtsVoice.id`. Picker reuses the existing
+    installed-voice filter and the only-my-language toggle.
+  - `pitchOffset` / `rateOffset`: **relative** nudges (±0.3) applied
+    on top of the global values, not absolutes. Global rate is a
+    comprehension setting the user tunes once; per-peer pitch is an
+    identity setting. Absolutes would fight each other.
+  - `signature`: inherit, or one of a small set of **signature
+    slots** (`sig1..sigN`). Inherit = the pack's ordinary `dmIn`.
+    A slot is an *identity*, not a file — see below. **Landed**;
+    N turned out to be 5, and why is worth reading below.
+  - `announceName`: inherit / on / off. With a signature chime *and*
+    voice, a spoken "message from Alpha" is redundant and delays the
+    content; without them it is essential. The user decides.
+
+  **A signature is a slot; the active pack renders it.** Everything
+  is per theme pack, so the per-peer record stores a slot id and the
+  pack decides what that sounds — or feels — like:
+  - **Audible pack:** `assets/audio/<packKey>/sig<N>.wav`, generated
+    by `brand/_audio_pack.py` alongside the existing cues. That
+    script already owns each pack's aesthetic (SEELE stark, NERV
+    terse, Recon codec-chirp…), so extending its `CUES` table gives
+    every pack signatures in its own voice **by construction** —
+    6 themes × N slots, same as the current 6 × 14.
+  - **Silent pack or silent mode:** the same slot resolves to a
+    distinct **haptic rhythm**. Recon is already built this way — the
+    haptic profile comments call it out: *"built to run silent →
+    haptic carries the parity"* — and `visualHapticOnly` (which
+    forces `audioMaster` off) is the user-driven version of the same
+    state. The infrastructure is there: haptic patterns are already
+    `List<HapticHit>` sequenced with a `stepGap`, so a signature is a
+    short rhythm rather than a new mechanism.
+
+  A peer therefore keeps its identity across a theme switch while its
+  *expression* changes with the theme — which is the behaviour the
+  skin system already promises for everything else.
+
+  **Shipped — five slots, and the haptic channel really did decide.**
+  `CueKind` carries the slots (`sig1..sig5`) rather than a parallel
+  enum, so a signature travels the existing path for free:
+  `assetPathFor` already yields `audio/<pack>/sig3.wav` from
+  `kind.name`, the generator writes exactly those names, and the two
+  tests that sweep `CueKind.values` widened their coverage untouched.
+  Audio came out as predicted — five generic motifs in the `CUES`
+  table, every theme rendering them in its own base note and timbre
+  by construction, 6 × 5 = 30 files, and the 84 existing cues
+  regenerated byte-identical.
+
+  The haptic half went differently, and the collision guard earned its
+  keep on the first run:
+  - **No slot may be one beat.** Several themes already spend their
+    single-beat patterns on `ambient` or `dm`, so a lone thump cannot
+    be told from an ordinary channel message. `sig1` is a double, and
+    its *audio* was changed to a double ping to match.
+  - **NERV rendered `sig5` identically to its own `dm` pattern** — a
+    signed peer would have felt exactly like an unsigned one, which
+    defeats the feature entirely. Caught by the guard, not by eye.
+  - **DR Pop has only two legal (strong, weak) pairs in the whole
+    space**, its `ambient` and `dm` having already claimed both
+    same-intensity doubles. That is the hard evidence that the
+    vocabulary is nearly full: a sixth slot does not fit.
+
+  Persistence moved to a v2 JSON record (`mm.peer.profile.v2`) owned by
+  `PeerProfiles`, a single writer outside `TtsController` — the record
+  now spans speech *and* cues, and one prefs key must have one owner.
+  v1 is migrated once and deliberately left in place so a rollback
+  shows stale choices rather than none.
+
+  The picker lives in the node detail sheet. Chips are **numbered, not
+  named** — the pack decides what a slot sounds like, so "chirp" would
+  be a lie under five of six themes — and tapping one selects *and*
+  plays it, because a signature has to be recognised rather than read.
+
+  **On hardware** (SH-53D): the picker renders under Message/Favourite,
+  tapping *Signature 3* selects it and the app takes audio focus in the
+  same gesture, and the v2 record lands on disk in the intended shape —
+  keyed by full pubkey, carrying only the field that was actually set:
+
+  ```json
+  {"32acab2ac14ca...500ae5": {"sig": "sig3"}}
+  ```
+
+  No `speak` key, because speech is still inherit. The record survives a
+  force-stop and relaunch unchanged, which is the launch-order risk
+  worth checking by hand: a `load()` racing a save of an empty map would
+  wipe it silently.
+
+  **Not yet verified on hardware:** the DM arrival substitution itself.
+  That needs an inbound DM *from a peer that has a signature set*, and
+  the mesh gives no way to manufacture one on demand. The path is
+  covered by tests (signature fires, `dmIn` does not), but nobody has
+  heard it happen for real yet.
+
+  **The haptic channel is the binding constraint on slot count.**
+  `HapticHit` offers four intensities, and through a pocket a person
+  reliably tells apart far fewer rhythms than tones. So **N is set by
+  the haptic pool, not the audio pool** — target ~4–6 slots. A
+  signature that only works when the phone is already in your hand is
+  not a signature.
+
+  Two rules that follow from that:
+  - **A signature replaces the tier haptic; it does not stack.**
+    `_HTier.dm` already fires a per-theme pattern for every DM. When a
+    peer has a signature, it substitutes for that pattern — playing
+    both produces mush and destroys both identities.
+  - **Cap the rhythm** (≈3 pulses) so a burst of inbound messages
+    cannot queue into one continuous buzz.
+
+  The collision guard checks the **resolved rendering under the
+  active pack**, not the slot id: two slots that are clearly distinct
+  as tones may be near-identical as haptics.
+
+  **Speech obeys the audio master (fixed ahead of R58).** Found
+  while designing this and corrected as a standalone change, so R58
+  no longer carries it: `CueService` gated audio on
+  `theme.audioMaster && !theme.visualHapticOnly` while
+  `TtsController` gated only on its own `enabled` plus per-channel
+  mute, so the quick-mute silenced every chime and left **speech —
+  the loudest thing the app emits — running**.
+
+  `TtsController` now takes the `ThemeController` (optional, null =
+  permissive, matching how `SystemHapticBackend` treats a null theme)
+  and exposes `speechAudible`, folded into `channelSpeaks` so the
+  single-gate design survives. It re-notifies only when audibility
+  *flips*, not on unrelated theme changes. `previewPhrase` stays
+  ungated on purpose — choosing a voice while muted must remain
+  possible, the way a ringtone preview plays on a silenced handset.
+  Muting never clears `enabled`; the two are different facts.
+
+  R58 inherits the fixed behaviour: a per-peer voice and its
+  signature now sit on the same side of the mute, and in haptic-only
+  mode a peer's arrival is its rhythm with nothing spoken.
+
+  **Shipped: the `speak` tri-state and DM speech.** `PeerSpeechStore`
+  persists overrides keyed by pubkey hex (absence *is* inherit, so an
+  unconfigured peer costs no row), and `TtsController` gained
+  `peerSpeechMode` / `setPeerSpeechMode` / `peerSpeaks` /
+  `speakForPeer`. Precedence resolves master → per-peer → global.
+
+  Two implementation facts worth keeping:
+  - **DM speech is wired into `CueBridge`, not `DmScreen`.** The
+    bridge is app-scoped ("cues fire wherever — independent of which
+    screen is foregrounded"), and `always` means *I always want to
+    hear this radio*. Hanging it off the DM screen would have made
+    the mode near-useless, since a user looking at the thread can
+    read it.
+  - **Peer keys are matched prefix-tolerantly.** A DM carries the
+    full 64-hex pubkey when the fabric resolves it and only the
+    12-hex prefix when it does not, while the user sets an override
+    from a sheet that usually knows the full key. Exact lookup would
+    silently miss. Setting an override re-keys onto the longer form
+    so one peer converges on one row.
+
+  **Resolved — channel speech is app-scoped too.** This shipped with a
+  known asymmetry: *channel* speech stayed screen-scoped, owned by
+  `ChatScreen.initState`, so channel messages were spoken only while
+  that screen was mounted while DM speech worked anywhere. That has
+  since been fixed — `CueBridge._onIncomingChannelMessage` now calls
+  `speakForChannel`, and `ChatScreen` subscribes to nothing.
+
+  The old behaviour was worse than merely inconsistent. It spoke the
+  channel you were *already reading* — the one case where you do not
+  need it read aloud — and went silent the moment you switched to Map
+  or Nodes, which is exactly when speech earns its keep. The mute
+  toggle in the chat header was also misleading: it looked like a
+  property of the channel, but the channel was inaudible from every
+  other tab regardless of its setting.
+
+  What did **not** move: the per-channel mute UI stays in the chat
+  header, and the gate (`master → per-channel mute → global`) stays in
+  `TtsController`. Only the subscription changed hands. A widget test
+  in `chat_screen_test.dart` now asserts the screen speaks *nothing*
+  on its own, guarding against the subscription being re-added and
+  every message being spoken twice.
+
+  **Verified on hardware** (SH-53D, MeshCore-D38F07AED563, 910.525 MHz
+  SF7, live Public channel). Method: `GoogleTTSServiceImpl: Synthesis
+  request` in logcat is a reliable marker for an actual speak call.
+  Under the strict condition -- freshly launched process, **Nodes** tab
+  foregrounded, Chat never opened in that process -- three inbound
+  channel messages produced three synthesis events, 1:1:
+
+  | message | synthesis |
+  |---|---|
+  | 14:48 `PDX KC7HTA Mark KiekR: @[VanWA85]: 1 hop to NE Portland ...` | 14:48:31 |
+  | 14:49 `VanWA85: @[PDX KC7HTA Mark KiekR] thanks` | 14:49:17 |
+  | 14:49 `Thalestr: @[VanWA85] 11 hops Van BC` | 14:49:37 |
+
+  That condition is the decisive one: with the old screen-scoped
+  subscription, `ChatScreen.initState` never runs if Chat is never
+  opened, so no subscription could exist and none of those messages
+  could have been spoken.
+
+  Worth recording for whoever tests this next: **the Public channel has
+  long quiet gaps** (an observed 15-minute one, 14:22 to 14:37). Two
+  earlier capture windows returned zero speech events purely because no
+  channel traffic arrived in them. Cue playback (`audioplayers` in
+  logcat) is *not* a usable proxy for "a channel message arrived" --
+  adverts and discovery fire cues too, and one starved window logged 20
+  cues with no messages at all. Confirm against chat timestamps.
+
+  **Where it lives.** Three entry points, one sheet:
+  - **Node detail sheet → "Voice & chime"** — primary. This is where
+    peer identity already lives (the favourite toggle is there).
+  - **DM app bar** — a speaker icon reflecting the peer's current
+    state (inherits / custom / muted). Tap opens the sheet, long-press
+    is a quick mute. The DM bar currently carries only `info_outline`.
+  - **Voice Settings → "Assigned voices"** — the whole cast in one
+    list, because the failure mode of this feature is assigning two
+    peers voices you cannot actually tell apart.
+
+  **Audition the arrival, not the parts.** The sheet's preview plays
+  the chosen signature *then* speaks a canned line in the chosen
+  voice — the real sequence a message will produce, rendered by the
+  pack that is active right now. Previewing a voice alone is how you
+  end up with two peers that sound the same. In a silent pack the
+  preview is the haptic, so the user feels exactly what they are
+  assigning.
+
+  **Collision guard.** Assigning a voice or chime already held by
+  another peer shows an inline note naming them ("also used by
+  Bravo"). Not a block — the user may want a group to share a voice —
+  but never silent, since an unnoticed collision defeats the feature.
+
+  **Precedence**, consistent with R24: an explicit per-peer override
+  wins over the global setting; *inherit* follows it. The audio
+  master remains a master — when it is off, nothing sounds.
+
+  **Missing-voice honesty.** An assigned voice may not exist on this
+  handset (prefs restored from another phone, or the language pack
+  was removed). Resolve via `isLanguageAvailable`, fall back to the
+  global voice, and say so in the sheet — never silently speak in the
+  wrong voice, which reads as a bug and destroys the identification
+  the feature exists to provide.
+
+- R59 (future): **deterministic bot responder + local NLP engine**.
+  A conversation can be handed to a local rule engine that answers
+  inbound messages automatically. The driving use case is **soak
+  testing against our other projects**: a client that always replies,
+  deterministically when you need a reproducible trace, randomly when
+  you want traffic variety. Secondary use is genuine utility bots
+  (status, canned Q&A) on a private channel.
+
+  **Never on Public.** The responder must not bind to the public
+  channel (slot `#0` / the well-known public PSK). This is enforced
+  **structurally** — the binding is refused for any scope whose key
+  is the public PSK, which `Chan.publicKey` already identifies — not
+  by hiding a control. Eligible scopes are private channels and DMs.
+
+  **Configured where the conversation is configured.** The bot is a
+  section in the same per-peer (R58) and per-channel (R24) sheet,
+  off by default. Those sheets then answer one coherent question:
+  when this conversation receives a message, do we speak it, chime
+  it, or answer it?
+
+  **Engine.** `petitparser` (github.com/petitparser/dart-petitparser)
+  over a small term language. **Prolog-style beats LISP here**:
+  unification gives pattern-matching-with-capture over message text
+  for free, which is precisely the shape of a responder rule. Rules
+  are `reply(Pattern, Response)` with variables bound from the
+  inbound text.
+  - **Deterministic mode:** first matching rule wins under a stable
+    rule ordering — identical input always yields identical output.
+    This is the property that makes a soak trace diffable.
+  - **Random mode:** a **seeded** PRNG, with the seed persisted and
+    displayed. "Random" must stay reproducible from its seed, or a
+    soak failure is undebuggable.
+
+  **Rulepacks** ship as assets and are user-editable. The default
+  pack is **echo with a monotonic counter** — the single most useful
+  soak behaviour, since it proves round-trip and exposes drops,
+  duplicates, and reordering in one read.
+
+  **Loop and airtime guards — mandatory, not polish.** Two bots in
+  one channel ping-pong forever, and LoRa airtime is a shared, scarce
+  resource on somebody else's mesh as well as ours:
+  - never answer a message we sent (own-pubkey check);
+  - a minimum inter-reply interval per scope;
+  - a max-replies-per-window budget, with the remaining budget
+    visible in the UI rather than silently enforced;
+  - a loop breaker that declines to answer traffic matching our own
+    output signature.
+
+  **Machine output is labelled.** Bot-sent messages are tagged
+  distinctly in the transcript. Someone reading the log later — or
+  the human on the other end — must be able to tell what a machine
+  wrote. This is not negotiable.
+
+  **Soak instrumentation.** Per-scope counters (received, replied,
+  suppressed by rate limit, parse errors), surfaced on Diagnostics
+  and exportable, so a soak run produces evidence rather than a
+  vibe.
+
+- R60: **built-in tester tools (Settings → Tools)** — issue #7. The
+  active side of mesh testing, paired with R59's passive side: a
+  client that asks, measures and writes the result down. Six tools:
+  **Radio stats** (`CMD_GET_STATS`: noise floor, airtime, duty cycle,
+  packet counters), **Ping** (status request to repeaters / telemetry
+  request to chat nodes; loss + RTT), **Trace path** (per-hop SNR,
+  round trip by mirrored path, reset route), **Discover nearby**
+  (zero-hop repeater discovery, SNR both ways), **Soak test**
+  (sequenced `echo soak` messages to a DM or private channel; counts
+  delivery, and — against an R59 echo bot — drops, duplicates and
+  reordering), **Range test** (Meshtastic-style beacon / receiver log
+  with SNR and distance, CSV).
+
+  Binding rules: polite airtime (interval floors and count caps,
+  shown); **never on Public** (the R59 structural refusal); **one
+  tool at a time**, with the background telemetry poller held while a
+  tool runs, because the firmware keeps a single pending remote
+  request; timeouts from the radio's own estimate; firmware that lacks
+  a command says so in words; every series exportable. Full UI spec:
+  [`meshmore-sns-tools-spec.md`](./meshmore-sns-tools-spec.md).
+
+- R61: **offline maps (Settings → Offline maps)** — issue #5. Every map
+  view's tiles go through a disk cache.
+  - **Region packs**: choose a source, an area and a zoom range; see
+    the tile count and size before downloading.
+  - **Event maps**: GeoJSON by URL, drawn over the basemap.
+  - **One storage budget** across packs, event maps and viewed tiles.
+    Viewed tiles are evicted least-recently-used first, and packs stop
+    rather than overrun.
+  - **Delete-after** periods for packs and layers, and an idle limit
+    for viewed tiles.
+  - **Updates** by conditional request.
+  - **Setup is online-only.** Downloads are opportunistic: they park
+    while offline and resume by themselves.
+
+  Binding rule: **a server's tile policy is not a preference.**
+  - OpenStreetMap forbids prefetch and offline use, and OpenTopoMap
+    asks not to be mass-downloaded, so both are view-cache only.
+  - USGS National Map basemaps (public domain) allow packs inside the
+    US.
+  - A user-added tile server allows packs only when the user says it
+    does.
+  - No licensed or keyed maps are built in, and no event data ships.
+    The user brings the URL and the publisher's terms.
+
+  - **Map tab**: the street map viewer is a primary swipe page after the
+    Hyperlocal grid, in every skin; `PageView` swipe locked on it
+    (pan/zoom owns horizontal drags; edge bands change view, R67). Pack management stays under Settings.
+
+  Full spec: [`meshmore-sns-maps-spec.md`](./meshmore-sns-maps-spec.md).
+
+- R62: **periodic position beacon is opt-in** (App settings → Auto-publish
+  location → "Periodic position beacon"). Findings audit, location, item 7.
+  - While connected, the app polled SelfInfo every 60 s by first sending a
+    **zero-hop self-advert carrying the node's position** (to coax a fresh GPS
+    read), then `appStart`. Stock companion firmware never advertises on its
+    own (`advert_interval` is commented out, `NodePrefs.h:127-128`, tag
+    `companion-v1.17.1`), so this was OTA traffic and a position broadcast on a
+    schedule the user never chose.
+  - It is now a persisted switch (`mm.advert.periodicBeacon`), **default
+    off**. **Upgraders stop beaconing**: the old behaviour was never a setting,
+    so there is no choice to preserve, and a privacy default must not depend on
+    the user finding the switch.
+  - The 60 s poll itself stays (the dashboard's device-GPS readout needs it).
+    With the beacon off a tick sends `appStart` only, a BLE-local request that
+    transmits nothing. Companion firmware answers it from the live
+    `sensors.node_lat/lon` (`MyMesh.cpp:1059-1063`). **Not yet verified on GPS
+    hardware**; the dashboard refresh button still does advert + appStart.
+  - Not touched: the `appStart` on connect, `refreshSelfInfo` triggered by a
+    settings write, and R36 auto-publish (its own zero-hop advert after a phone
+    fix is a different, user-initiated publish).
+
+- R63: **Studio skin, layer-stack tokens, collapsible groups** (a seventh
+  preset, `MmThemePreset.studio`, "Studio Dark — clean · square").
+  - Language: professional creative tools (Blender / GIMP / Photoshop):
+    a four-step grey layer stack (base `#141414`, panel `#202020`, raised
+    `#2B2B2B`, selected `#363636`), a 1px hairline (`#3A3A3A` in R63, `#4A4A4A` from R65), square
+    controls, ONE accent (blue `#5B94CC` in R63, `#70A5DA` from R65, a light grey `#D0D0D0` from R68) used only for the
+    active/primary state, no ornament, no new font. Echoes the ldmux
+    mobile client's palette without sharing its code.
+  - `MmTokens` gains `raised`, `selected`, `hairline`, `onAccent`,
+    `fgDisabled`. They are optional and **derived** when a preset omits
+    them (`raised`/`selected` = `surfaceAlt`, `hairline` = `line`,
+    `onAccent` = `base`), which is exactly what `buildMmTheme` already
+    drew, so the six older presets are appearance-neutral (pinned by
+    `test/theme/mm_layers_test.dart`). `MmShape` gains `hairlineWidth`
+    (default 1) and `squareControls` (default false; true squares chips,
+    cards, segmented buttons, dialogs and sheets).
+  - `MmCollapsibleSection` (`lib/ui/mm_collapsible.dart`): a section
+    label (same style as `MmSectionHeader`), chevron whose shape is the
+    state, hairline rule, 48dp whole-row button with `expanded`
+    semantics, content not built while closed. State was per visit in R63;
+    R65 persists it. Used
+    by Location settings (Auto-publish / Beacon / Manual) under every skin.
+  - Audio: Studio **aliases** the Hyperlocal pack (`audioPackKey`), no
+    audio was synthesised. Haptics: the neutral profile.
+  - Not expressible yet: density/row-height per skin, per-skin control
+    height. Unverified on a device.
+
+- R64: **swipe-only navigation; the view strip replaces the quick-nav
+  sheet.** `HomeShell` no longer has a leading app-bar control or a
+  bottom sheet that switches views. The 6px dots (a ~4px-tall tap target
+  with no semantics, so the sheet had been the only accessible path) are
+  replaced by `_ViewStrip`: one icon per `MmView`, each a 48x48 button
+  labelled with the view's title, `selected` on the current one, scrolls
+  sideways on screens narrower than 8x48dp. Back still returns to the
+  Dashboard. Accessible alternative to swipe survives: the strip.
+  Tests: `test/shell/home_shell_test.dart`.
+  - Grouping: Device configuration (Region/band, Radio params,
+    Identity/advert, Other params, Device) and Profile & personalization
+    (Theme preset, Accessibility) use `MmCollapsibleSection`, all open
+    by default. Channels, Type and Audio alerts are single rows and stay
+    plain. The Settings hub stays a list: its seven rows are pushed
+    destinations, not content to fold. Test:
+    `test/screens/collapsible_screens_test.dart`.
+
+- R65: **collapsed state is persisted.** `MmCollapseController`
+  (`lib/ui/mm_collapse_controller.dart`) is a `ChangeNotifier` provided at
+  the root like `ThemeController`/`LocaleController`, backed by
+  `shared_preferences` key `mm.collapse.v1` (one JSON object
+  `{"<id>": bool}` holding only explicit user choices). `main()` awaits its
+  `load()` before `runApp`, so a folded group never paints open and snaps
+  shut. Every `MmCollapsibleSection` takes a required, non-localised `id`
+  from the closed set `MmGroupIds` (`location.*`, `device.*`,
+  `personalization.*`): a localised title or a list index would make the
+  state language- or order-dependent. Default is open (nothing hidden on a
+  fresh install, nothing stored). Unknown ids and non-bool or corrupt
+  values are ignored on load, and only registered ids are written back, so
+  the map cannot grow. A duplicate id on screen asserts in debug. Without a
+  provider the widget falls back to per-session state. Tests:
+  `test/ui/mm_collapse_controller_test.dart` (includes a check that
+  screens and `MmGroupIds` agree), `test/screens/collapsible_screens_test.dart`.
+
+  - R65 palette fix: the Studio hairline/`line` is `#4A4A4A`, accent
+    `#70A5DA`, alert `#E8887E`. Measured luminance ratios (base / panel /
+    raised / selected): hairline 2.08 / 1.84 / 1.60 / 1.36 (was 1.62 /
+    1.43 / 1.24 / **1.06**); accent 7.09 / 6.27 / 5.45 / 4.65 (was 5.75 /
+    5.08 / 4.42 / **3.77**); alert 7.24 / 6.40 / 5.57 / 4.75. R63 had
+    checked these only over the panel. `test/theme/mm_layers_test.dart`
+    now asserts them on every layer.
+
+- R66: **Studio edges.** `buildMmTheme` (`lib/theme/mm_tokens.dart`) gives
+  a `squareControls` skin a 1px `hairline` border on `Card`s (surface on
+  base is only ~1.13:1, so cards had no visible boundary; no elevation or
+  shadow) and a bottom-only 1px `hairline` `AppBarTheme.shape`, so the app
+  bar and the R64 view strip in its `bottom` separate from the body. Both
+  are null for the six older presets, so their `ThemeData` is unchanged.
+  Tests: `test/theme/mm_layers_test.dart` (group "R66 Studio edges").
+
+  - R66 missing provider: `MmCollapsibleSection` still falls back to
+    per-session state with no `MmCollapseController` above it (so bare
+    widget tests work), but its first toggle now logs a one-time
+    `debugPrint` naming the group id and that the state is session-only.
+    Once per widget instance (no static state), only on a toggle, never an
+    assert. Test: `test/ui/mm_collapsible_test.dart`.
+
+- R67: **Map edge swipe.** The Map tab (R61) locked the shell swipe
+  unconditionally, so a map user could leave only via Back or the view
+  strip. `lib/ui/mm_edge_swipe.dart` (`MmEdgeSwipe`) puts a 24dp band on
+  each screen edge, stacked above the map as an opaque hit-test target,
+  so touches in a band never reach the map (no gesture-arena race). An
+  inward drag starting in a band commits at >= 56dp travel or >= 500dp/s
+  and calls `HomeShell._edgeSwipe` (previous for the left band, next for
+  the right), clamped to the ends. Outward drags do nothing. The right
+  band starts 208dp down (R69: was 128, which left the basemap picker and
+  tile toggle half under the band) to clear StreetMapView's controls; the
+  Offline-maps button is a later Stack sibling so it stays tappable.
+  LTR only (EN/JA). The grid's panning views are not given bands: six
+  views with their own edge controls would each need auditing.
+  Tests: `test/shell/home_shell_test.dart` (group "Map edge swipe (R67)").
+
+- R84: **the basemap picker works on a vector skin.** In Studio the picker
+  changed the selected raster source and the vector layer ignored it, so
+  choosing USGS Imagery did nothing. The picker now lists the skin's own
+  vector basemap as a real entry, and a raster choice sets
+  `_rasterOverride` so that source is drawn (dimmed) instead; picking the
+  vector entry clears it. Credit and zoom ceiling follow what is drawn
+  (vector caps at z17, raster at 18.5). The skin flag is captured in
+  `build` and used in the menu callback, because `context.skin` watches a
+  provider and throws from a gesture handler. Tests:
+  `test/screens/map_basemap_picker_test.dart` (3).
+- R85: **six views; Docs and About live under Settings.** `MmView` is
+  `{dashboard, chat, nodes, grid, map, settings}`; the shell's PageView
+  drops the two static pages. The Settings hub gains an **Information** row
+  (`/settings/about`) and `AboutScreen` (`lib/screens/about_screen.dart`,
+  the old `_AboutView` promoted to a route) holds the brand/version block,
+  the licences page and (R85 only, moved out by R86) a **Docs** row.
+  `DocsHubScreen` becomes a routed sub-page with its own app bar; its
+  duplicate in-body heading is gone (the app bar names the page) and its
+  prose subtitle keeps `MmType.wordsMono`, which is sans under Studio and
+  mono under the older presets, so the R74 type rule still holds. New l10n:
+  `settingsHubInfo`, `settingsHubInfoSub` (EN + JA). Tests:
+  `home_shell_test` (R85: no Docs/About tooltips, Information opens About,
+  Docs pushes from there, Back returns to Information). **Superseded in
+  part by R86:** the Docs row no longer sits inside Information.
+- R86: **Docs is a Settings row beside Information; the view strip fills
+  the width.** `/settings/about/docs` becomes `/settings/docs` and the
+  Settings hub lists **Docs** immediately before **Information** (both are
+  static content, so they sit together at the end). `AboutScreen` loses its
+  Docs row and the private `_Row` it used. The strip (`_ViewStrip`) is a
+  full-width Row of `Expanded` cells when the window is at least 6 x 48dp,
+  so six views leave no dead space at either edge at any width; narrower it
+  is the fixed-cell scrolling row as before (an `Expanded` is invalid in an
+  unbounded scroll view). `settingsHubInfoSub` now reads "About, licences,
+  version" and the Docs row gets its own short `settingsHubDocsSub`
+  ("Protocol, firmware, app, field notes") instead of the ~150-character
+  hub subtitle, which wrapped to four lines in a settings row (EN + JA). Tests: `home_shell_test` (R86 peers, Back returns to
+  the Settings hub; strip rects at 320/360/393/412/600/1024dp).
+- R87: **clean-up and consistency pass after R86.** (1) `MmScaffold` now
+  puts a transparent `Material` under its `ColoredBox`: the ground was
+  painted without an ink surface, so every `ListTile`/`InkWell` on Device
+  configuration, Channels and Personalization had no tap ripple (Flutter's
+  debug assertion, which had failed 11 tests, was right). The `Material`
+  paints nothing and sets the same `bodyMedium` text style `Scaffold`'s own
+  `Material` already sets, so no text changes; the ripple draws under the
+  ornament `CustomPaint`. (2) Deleted dead code: `lib/about.dart` and
+  `lib/boilerplate_main.dart` (no reader on this or any other local branch)
+  and 24 ARB keys nothing reads. `docsHubTitle` stays: every other branch
+  still reads it. (3) `DocsHubScreen` is wrapped in `MmScaffold` like every
+  other routed page. (4) The NERV dashboard's device button and the
+  node-identity search's clear button get tooltips (`dashboardDevice`,
+  `nodesClearSearch`). (5) Three missing strings localised
+  (`settingsNotifDeniedPermanent`, `settingsNotifDeniedTransient`,
+  `deviceAdvertPropagatesHint`; the snackbar action reuses
+  `deviceOpenSettings`). The Diagnostics SEND / M6 / fixture / bot-soak
+  panels stay English by design (R69). (6) Tests: strip re-selection at
+  400dp (no `Scrollable`; `ensureVisible` is a no-op via
+  `Scrollable.maybeOf`) and below 288dp (scrolls into sight). **Found, not
+  changed (needs a layout decision):** at 320dp with 2.0x text the
+  Dashboard status row overflows by ~7 px and `/settings/maps/new`'s
+  `ToolChoice` dropdown by ~57 px.
+
+### Revision log
+
+Entries from here down are change records, not requirements. The block
+R88–R113 is newest first. Older entries below it were appended where they
+were written, so their numbering is not monotonic. A few records live in
+the sibling specs: R93 in `meshmore-sns-maps-spec.md`, R60 in
+`meshmore-sns-tools-spec.md`, R79 in `meshmore_sns_app/STATUS.md`.
+
+- R117: **the Hyperlocal grid keeps only what earns its place, and states one thing one way.** The tab leads
+  with three views (radar, coverage survey, weather), one row that leaves for the Map tab, and five parked
+  views one step down in the order a user is most likely to want (globe, equal grid, mesh tree, altitude, SNS
+  cells). The channel activity report left the tab entirely: it is a report about a conversation, so it opens
+  from the Chat strip on the channel it describes. Every "nothing to show" answer is one shared `GridNotice`
+  (an icon, one sentence, one action where an action exists) instead of five shapes across five views, the
+  no-fix sentence is one string instead of two, and the weather view's empty state offers the switch that
+  fixes it rather than naming a setting in prose. The nine view files read the skin's type ladder (zero
+  numeric sizes, zero literal monospace families, enforced by `test/screens/grid_views_type_test.dart`), and a
+  view closed while its poll indicator is pending cancels that timer instead of leaving it to fire after
+  disposal.
+- R114: **the pinned-blocks section was removed the day after it landed.** R114 gave the home screen a way to answer "what do I care about" by moving a content block — the coverage summary, the field/trail export, the radio-health block — off its own screen and onto the dashboard, with the origin laying out without it and the card as the block's only render site. The owner withdrew the premise on 2026-11-05 ("it seems like we have no use case for what I was describing, the movable elements and swappable and movable-to-be-moved-into-the-dashboard"): every block it could move is already visible on the screen that owns it, so the registry, the store, the card, the host, the header affordance and their strings are gone. What R114 got right and stays: the raw `selfInfo` latitude, the `advertLocPolicy` integer and the phone fix are not printed on the home screen; that readout lives in the Diagnostics developer section. What building it taught: a block moved away from the screen a user is looking at is a block they then cannot find.
+- R112: **the datagram's profile byte is read out.** The channel-datagram receive frame carries a
+  byte that the mainline firmware writes as 0 and a two-profile radio fills with the profile the packet
+  arrived on. The decoder now names it (`RxVia`), and Diagnostics states it with the channel and the
+  application data type — the byte only means something while a second profile is on, so "unreported" is
+  the honest reading on a single-profile radio. The datagram has no application consumer yet; that is the
+  `0x3E`/blob work, not this.
+- R111: **the link says what it negotiated, and a link that cannot carry a frame is refused.** One BLE
+  notification is one protocol frame, so a notification below the firmware's 176-byte `MAX_FRAME_SIZE`
+  plus the 3-byte ATT overhead cannot carry it; the app now reads the negotiated MTU before subscribing,
+  refuses below **179** with a typed failure carrying the number, and spends no reconnect attempt on it
+  (the same radio negotiates the same value). Diagnostics prints the MTU, the refusal in the user's
+  language, and two counters for frames the decoder could not finish — truncated, and trailing bytes —
+  which used to be dropped in silence by a `DecodeFailure` nothing consumed.
+
+- R113: **a channel tag has one canonical form.** The key is a hash of the
+  literal name, so `emergency` and `#emergency` derived two different keys for
+  what a person means as one channel, and only the prefixed form matches the
+  key everyone else derives (`docs/companion_protocol.md`, Channel Management:
+  a hashtag channel is the first 16 bytes of `sha256("#test")`). The
+  weak-tag check stripped the `#` and the derivation did not, so the two
+  halves of one form disagreed. `MeshcoreChannelCrypto.canonicalHashtag`
+  trims and prefixes, both the hash and the PSK use it, the screen's warning
+  reads the same canonical string, and a tag typed without `#` saves the
+  canonical name to the slot. Case is untouched: the firmware hashes the bytes
+  it is given, so `#Emergency` really is a different channel. Consequence
+  recorded, not silently fixed: a slot written before this change holds a key
+  derived from the bare form, the tag was never stored, so nothing can
+  re-derive it — such a slot keeps working among the nodes that joined it and
+  is not the public `#name` channel.
+
+- R109: **the swipe between views is the shell's again, gated per pan
+  surface.** R95 removed body paging in every skin; the app's owner then
+  shipped the opposite model on his own branch (`10a8c14`, `c81b051`,
+  2026-11-02/03): a left/right swipe changes screens, the map views change by
+  the picker, and a pan/zoom view carries a **Swipe ⇄ Pan** toggle whose only
+  reader was the grid's deleted capture flag. R95's two halves are separable,
+  so only the second is reversed: taps still `jumpToPage` with one cue, and a
+  vertical drag on the strip still steps one view. The body `PageView` pages
+  again, and a surface that needs the same drag takes it: the **Map** page
+  while it is the current view (a page is built as a neighbour before it is
+  shown, so this is a shell rule keyed on the current index, not a mount-time
+  hold — measured in the widget tests, a mount-time hold kept the shell locked
+  while a different view was on screen), and the grid while a pannable view is
+  in pan mode, through `shellDragClaim`
+  (`lib/shell/horizontal_drag_claim.dart`), which counts named holders and
+  publishes outside the build pass. Pan mode is **off on every visit** and the
+  toggle exists only on the five views that pan or zoom (globe, street map,
+  fabric, tree, SNS cells). The equal grid looks like a map but is not one:
+  its tiles are pinned to us and its zoom is the cell stepper, so a toggle
+  there would lock the swipe and hand the drag to nothing. In swipe mode a
+  pannable view drops its own drag and keeps its taps (`interactive: _panMode`
+  on globe, street map, fabric, tree and SNS cells), so a node you can see is a
+  node you can open; the hint says which mode is on. The Map keeps its R67 edge bands as
+  its gesture exit, and they change exactly one view because the page is
+  locked while it shows. New EN/JA strings: `gridSwipeModeTooltip`,
+  `gridPanModeTooltip`, `gridSwipeHint`, `gridPanHint`.
+- R108: **the node row's right column was centre-aligned, and the
+  proximity badge was lying.** Measured on the phone at 1.3x: on a two-line
+  name the age sat on the second line and the FAR / IN RANGE badge floated
+  between the two lines, because the trailing `Row` carried the 48 dp star
+  `IconButton` and centred its children against it, and the badge lived in
+  the title `Row`, which centres its children against a wrapped title.
+  Both rows are start-aligned now and the star is compact. The badge is
+  gone from the row: the same screen showed `CO-AURORA-HORSSHO-1  FAR  0s`
+  (heard this second, yet labelled far) next to `≈ 85 km`, so the badge
+  contradicted both the age and the distance, and the code's own comment
+  already said the distance text communicates it. `nodesFarBadge` /
+  `nodesInRangeBadge` stay alive for the sheet's chip, where there is room
+  to say what proximity means.
+- R107: **prose pass 2: the node sheet's conditions, not its mechanics.**
+  `nodeDetailShareTelemetryHelp` (139) explained the firmware's flag model
+  above four switches that already say Base / Location / Environment; it
+  now states the two preconditions ("Only applies when your telemetry mode
+  is Contacts and Base is on.", 68) and stops. The add-contact
+  confirmation (141 -> 76) and the remove-contact question (112 -> 87) lose
+  their second thoughts. `nodeIdentityLinkEmpty` (93 -> 66) no longer lists
+  three alternatives for one empty list. JA in lock-step. Not touched: the
+  two identity dialogs — they ask the question, and the answer changes data
+  that is not recoverable, so their wording stays.
+- R106: **three hand-rolled radio lists become the one picker.** The
+  location screen's interval and movement sheets and the device
+  configuration GPS-interval sheet were the last `showModalBottomSheet`
+  calls without a drag handle (25 call sites, 22 had one). They were the
+  same shape as R104's picker — a `Column` of `ListTile`s with a
+  `radio_button_checked` leading icon — so they now call `showMmPicker`
+  with the current value ticked and the row that opened them as the
+  sheet's name. Nothing else changed: the same options, the same
+  labels, the same setters.
+- R105: **first prose pass: say it once.** Ten explanation strings in the
+  node, channels, location and device-contact surfaces were restating what
+  the control next to them already said, or explaining the firmware instead
+  of the choice. Measured, EN: "Your radio doesn't have this node as a
+  contact, so direct messages may not reach it (channel messages still
+  work). Add it to route DMs." (135) is now "Not in your radio's contact
+  list, so DMs may not route. Channels still work." (74), and the add
+  action is the button beside it. `nodesEmptyReady` (138) loses its last
+  sentence because both actions are on the same screen. `locHelp` (191)
+  drops the register-level detail and says what the switch does.
+  `channelsHelp`/`channelsHelpEncryption` (154/185) stop teaching the wire
+  format. The test that asserted the old empty-state wording still passes:
+  the phrase it looks for ("Discovery is advert-driven") is the one fact
+  worth keeping. JA updated in lock-step. Not yet touched: the region
+  disclaimer (it is legal text, and it is already behind a dialog), the two
+  identity dialogs (they are the question, not prose), and the node sheet's
+  bot/telemetry sections.
+- R104: **the grid's three pickers are sheets.** View, interval and range
+  were `PopupMenuButton`s. A menu cannot scroll (the view list is ten
+  entries in three groups), it does not announce its group labels to a
+  screen reader, and it opens anchored away from the control that owns it.
+  `showMmPicker<T>` in `mm_components.dart` is the one pick-one-of-N
+  surface: a named sheet of 48 dp rows with the current value ticked, group
+  headers as quiet labels, and an optional leading icon. The grid's trigger
+  rows keep their tooltip and their icon+value, so nothing about the
+  transport bar changes visually; only the list does. Two bugs found while
+  building it: the sheet's first layout used `Column(mainAxisSize: min)` with
+  a `Flexible` body, which gave the list a zero-height viewport, so later
+  rows were built but painted outside the sheet and a tap on them hit the
+  scrim (the new `mm_picker_test` asserts the last row's rect is inside the
+  sheet, not merely present); and reading the skin through `context.skin`
+  inside an `onTap` asserted, because that getter watches — `context.skinRead`
+  is the non-subscribing form for event handlers and route builders.
+  `_viewMenuEntries` and `_shortLabel` are deleted with the menu.
+- R103: **the band picker folds; the applied band does not.** Region /
+  band was the first group on Device configuration and opened expanded, so
+  ~15 chips (three family headings plus Suggest-from-location and the
+  disclaimer) pushed RADIO PARAMS, IDENTITY and the rest off the first
+  screen on a 387 dp phone at 1.3x text. The applied-band banner moved
+  above the section and stays visible; the picker is `initiallyExpanded:
+  false`. The family headings were 12 px semibold, which read louder than
+  the 11 px tracked section header above them, so they now use the same
+  quiet label treatment. Tests: the collapsible test now expects four open
+  groups and a folded picker, and the two region-apply tests open the
+  section first.
+- R102: **two device-pass defects.** (1) Chat timestamps wrapped one
+  character per line at 1.3x text: the time gutter was a fixed 56 dp box
+  and "16:07" in mono no longer fit, so the row read "16:0" / "7" beside
+  the sender. The gutter is now `56 * textScaler.scale(1)` with
+  `maxLines: 1, softWrap: false`, in both the Studio row and the terminal
+  log row. (2) A node row joined six facts with `·` — type, signal,
+  distance, a 4-decimal coordinate pair and a bare 12-hex pubkey prefix —
+  which wrapped to three dense lines with the age and star floating in the
+  middle of the block. It is now `type · distance` on one line and the
+  signal on a second, in the skin's mono; coordinates and the full id stay
+  in the detail sheet, which is where a user goes to copy them. `MmListRow`
+  gained `alignTop` so the leading icon, age and star sit on the first line
+  of a multi-line row.
+- R101: **when a flow gets a page, and when it gets a panel.** The audit
+  found no routed screen without a back control (every route is reached with
+  `context.push` and every one has an `AppBar`, so the arrow is automatic);
+  the only surface with no exit was `NodeDetailSheet` (R96). What the audit
+  did find is the same task solved three ways: pick-one-of-N is a bottom
+  sheet for language and locations, a `PopupMenuButton` for grid view,
+  interval and range, and an inline dropdown for tool choice; a short form
+  (battery, About, voice, location, map self-test) takes a whole route while
+  a similar short form (region preset) expands inline. The rule from here:
+  **a panel (sheet or dialog) when the task is a choice or a confirmation
+  that ends where it started; a page when the task is a place you come back
+  to, with its own state and its own rows.** By that rule the sheet-based
+  pickers are right, the three grid `PopupMenuButton`s should become sheets
+  (they carry six items and a check state, and a menu is not scrollable or
+  labelled for a screen reader), and the five short routes may become sheets
+  only if they stop being destinations — they are not converted now, because
+  each is linked from Settings and a link that opens a sheet loses Back.
+  Full-screen is also the right answer wherever the content is a *surface*
+  (map, globe, grid, doc reader, DM thread): replacing the screen is the
+  point. The failure mode to avoid is the sheet that behaves like a page,
+  which is what R96 fixed: a long scrolling sheet with no close control.
+- R100: **settings live in Settings, and a readout stops being a form.**
+  R52 made the dashboard's device name tappable-to-rename, with a 14 px
+  pencil as the only tell: one row was both a status readout and an editor,
+  and it was the only mutating control on the dashboard that did not look
+  like one. Renaming now happens where the field, the 31-character limit and
+  an Apply button already live (Device configuration); the dashboard name is a
+  readout that walks there, with the same chevron the region and battery rows
+  carry. `showDashboardRenameDialog` and its dialog class are deleted, and so
+  is the `dashboardRenameTitle` string (EN + JA) that only they read. Studio
+  gets the same row behaviour, and its region row gains the chevron its
+  siblings already had. What stays on the dashboard: the link action
+  (Connect / Retry), the device picker, the audio mute and the refresh — each
+  is about *this* screen's subject, and none of them is a setting.
+- R99: **an action looks pressable.** Nine controls with real consequences
+  were bare `TextButton`s on the app's own ground: Connect / Retry (both
+  dashboards), Configure, the region disclaimer's Details, Load from device,
+  Set name, Set advert location, Copy key, and the sheet's bottom actions.
+  A `TextButton` here has no fill, no border and no elevation, so it reads as
+  a label until you happen to touch it. `MmAction` (in `mm_components.dart`)
+  keeps the text-sized footprint and puts the label on `surfaceAlt`, one tonal
+  step above the page, inside a hairline in the skin's own corner shape: 44 dp
+  minimum height, 12/8 padding, optional leading icon, disabled state dimmed.
+  Applied to the six highest-traffic sites; dialog Cancel/OK keep Material's
+  own `TextButton`, because a dialog's actions are already grouped by the
+  dialog. `MmAction` reads `MmSkin`, so it generalises to all seven presets
+  without a per-theme branch.
+- R98: **"square" is a 1 px corner, not 0.** Studio pinned every radius to
+  `BorderRadius.zero` in ten places plus `kSquareRadius`-less helpers. At 2.6x
+  density a 0 px corner cuts the border's own pixel, so a panel's corner read
+  as damaged rather than crisp. `kSquareRadius = 1` now backs `mmRadius`,
+  `mmShapeBorder` (sharp + `squareControls` only), `squareBorder`,
+  `squareButton`, `squareField`, the card and FAB shapes and the chat pill's
+  square branch. The three sharp-but-not-square presets (SEELE, DR Pop,
+  Recon) keep `BorderRadius.zero`, and the guard test still forbids any
+  screen-level radius of 6 px or more.
+- R97: **a live link is green, in every skin.** The "Linked" chip used
+  `colorScheme.tertiary`, which is `MmTokens.ok`: `#BCB6A8` (grey-beige) in
+  SEELE, `#22D3EE` (cyan) in AG-HUD, `#FFB000` (amber) in Recon. So the one
+  state that should read as "connected" was not green in any of them, and
+  Studio's dashboard drew a grey accent dot while its own app-bar chip drew
+  sage. `MmTokens.link` is a new token, one green (`#3DDC84`) for every
+  preset because a connection state is a state, not decoration. The app-bar
+  chip, the shared dashboard status slab, Studio's dot, and the AG-HUD,
+  NERV and Hyperlocal status pills all use it; proximity and success keep
+  using `ok`. `DashboardModel` gained `linked`, because "not alert" was
+  doing two jobs (a handshake is neither). Tests: hue/saturation/value of
+  every preset's `link` is green, the chip paints it in SEELE, Studio and
+  NERV, and Studio's dot test now expects it.
+- R96: **the node sheet has an exit.** The sheet used for repeaters,
+  contacts and self (Nodes, grid, globe, street map, weather, fabric survey,
+  DM) had no close control: the scrim, the drag handle or the OS back
+  gesture were the only ways out, and once it was scrolled the scrim could
+  be off-screen. It now has a close button in its header (EN "Close", JA
+  "閉じる"). Opening the sheet from a DM and pressing **Message** also
+  pushed a second copy of the same conversation onto the stack, and each
+  repeat added another; the action is hidden when the sheet came from that
+  peer's DM and stays everywhere else.
+- R95: **one navigation model, and the strip stops lying about how it
+  works.** A strip tap called `PageController.animateToPage` (250 ms), so
+  Dashboard -> Settings scrolled through four intermediate views, built all
+  of them, and `onPageChanged` played a nav cue on every crossing: one tap
+  gave five vibrations and five sounds, which is what the owner reported as
+  "it scrolls through all the options and vibrates a couple times". Taps now
+  `jumpToPage`, one cue, played at the tap. Swiping between views is gone in
+  every skin: the body `PageView` is `NeverScrollableScrollPhysics` always.
+  It fought every panning surface in the app (map, globe, street map, radar,
+  all special-cased), the Map tab had to be locked unconditionally, and
+  `MmShape.swipeNavigation` existed only to switch the special case off for
+  Studio. The flag, Studio's `false`, and `GridScreen.capturesHorizontalDrag`
+  (whose only reader was the shell) are deleted. A vertical drag on the strip
+  now steps one view (28 dp of travel or 220 dp/s), which is the gesture the
+  owner asked for in place of paging: the strip moves, the page does not.
+  The map keeps its edge bands (R67) because it is a pan surface and the band
+  is its only gesture exit. Definition: the strip is 56 dp tall (was 48) with
+  a 22 px icon and a 3 px selected rule, and the app bar ends in a 2 px
+  `fg`@22% rule in every preset, bottom edge only. Before, only Studio drew a
+  rule, at 1 px of `t.hairline`, which is near-black on the calm presets, so
+  the chrome floated over the page. Tests: the fling-to-navigate tests became
+  "the body never pages by swipe" plus "every skin locks the PageView", the
+  pan-lock test became the strip drag test, the Studio edge test became
+  "the map edge bands step one view in every skin", and the app-bar shape
+  tests in `mm_layers_test` now assert the shared 2 px rule. Suite 931.
+- R94: **the Settings hub's group labels were wrong on the device.**
+  R92 chose each label by list index in a `switch` (`0 / 4 / 8`) while the
+  four separator rows sit at `0 / 3 / 7 / 10`, so APP, CONNECTION and
+  ABOUT all fell through to the default and the phone rendered
+  RADIO / ABOUT / ABOUT / ABOUT. The label now travels with its own group
+  row instead of being derived from the index, which removes the whole
+  class of off-by-one. Test: `home_shell_test` renders the hub in a tall
+  viewport so every row is built, asserts each of the four labels appears
+  exactly once, and asserts their vertical order. Found on the phone
+  while recording the radio's identity (Heltec V4.3 OLED, firmware
+  `v1.17.1-d929643`); the suite had no test for the groups at all, which
+  is why R92 shipped it.
+- R92: **Settings says what it is for, and the walls of text come down.**
+  The hub was nine flat rows with subtitles: nothing said which rows
+  configure the radio, which the app, which are about the build. It is now
+  four labelled groups (RADIO, APP, CONNECTION, ABOUT) with the same nine
+  destinations in the same order. Three App settings rows were dead —
+  Connection, Notifications and Data/About, each with a chevron and
+  `onTap: () {}` — and every one of those jobs already lives somewhere that
+  works (Diagnostics, Information), so the rows and their six strings are
+  gone rather than faked. Two subtitles promised things the build does not
+  do: Offline maps said "Region downloads" (behind `kRegionFilesEnabled =
+  false`) and Diagnostics said "M6 capture" (an internal spec id). Text
+  cuts, each measured: the region disclaimer was 620 characters open under
+  the preset picker and is now one line with a Details dialog; the telemetry
+  mode help was 470 characters restating the three row labels and is one
+  sentence; the Nodes empty state was four paragraphs and is one; the Docs
+  hub subtitle was 150 characters in front of four cards that says the same
+  and is one line.
+- R91: **the three crowded headers get one job each.** Chat, Nodes and the
+  grid's transport were the examples the owner named; each had a header
+  doing several unrelated things. Chat: the caption "CHANNEL · PUBLIC"
+  repeated the selected chip two lines below it, the collapse chevron
+  existed only to hide the strip under it, and a "#" icon next to the
+  channel chips meant "manage channels" — 108 dp for one job. It is now a
+  single 48 dp strip: the chips switch channel, a "+ Manage channels" chip
+  opens the editor, and the per-channel speech toggle sits at the end of
+  the strip it applies to. Nodes: seven filter chips lived in a 44 dp
+  horizontal scroller, two of them opening menus positioned by a
+  hard-coded `RelativeRect.fromLTRB(16, 200, 16, 100)` that ignored where
+  the chip was, and the Clear action sat past the right edge. Search stays
+  on its own row with a Filters button that carries a count badge; every
+  filter (starred, in range, last seen, within, tags) lives in one sheet
+  that stays open while several are set, and Clear/Done are inside it.
+  The three radio actions are a Wrap now, so they drop to a second line
+  instead of squeezing. Grid: the transport bar added in R89 was a Row and
+  overflowed by 26 px at 320 dp (65 px more at 2.0x text, because
+  "Range · Wide" was too wide). It is a Wrap, and the range control is an
+  icon plus the stop name with the word "Range" in its tooltip. Dashboard:
+  Connect/Retry moved out of the status slab into its own row, shown only
+  when disconnected or failed — inside the slab it was one of five fixed
+  items and overflowed by 51 px at 256 dp, starving the very label it
+  explained.
+- R90: **the basemap is not optional, and event maps live on the map.**
+  Streets is now OpenStreetMap's vector service on every skin, not only the
+  one whose shape opted in: the bundled style is a neutral dark cartographic
+  palette (greys, one desaturated blue, one muted green), so it reads the
+  same under any preset, and gating it made the picker's first entry a dead
+  control on six presets. The raster OSM entry is gone from the picker (same
+  data, 4-10x the bytes, no seven-day cache floor); it stays in code as the
+  fallback the cell and fabric grid views hardcode. The map's layers button
+  no longer removes the basemap, which could leave pins and range rings on
+  the bare skin; that cell is now the event-maps control. Event layers had
+  no on-map control at all (visibility lived as a switch in Settings >
+  Offline maps), which is the wrong home for an overlay: the popup now
+  lists every layer with a checkbox, marks a visible layer whose GeoJSON is
+  missing, and points at Settings for add/refresh/delete. Every layer also
+  gets its own colour from the scheme's data colours instead of all being
+  `tertiary`, and the 10 dp point marker gets a 24 dp hit box so its label
+  is reachable. The basemap choice persists (`mm.basemap.v1`). The maps
+  self-test's reach check now treats the vector endpoint as reachable when
+  bytes arrive (it returns MVT, not an image) — it had silently gone to FAIL
+  the moment the vector source joined `kBuiltInSources`. OpenTopoMap remains
+  raster only: no MVT endpoint exists in 2026 (checked), and its style is
+  Mapnik-rendered PNG at z0-17.
+- R89: **the grid's chrome stops lying.** The hyperlocal grid had ten
+  views as flat peers in one menu and five header controls, four of which
+  did nothing in some views: play/interval were inert in the three report
+  views (altitude, weather, activity), the legend button was a no-op in
+  five of ten, and the range scale was editable only inside the radar
+  branch even though the equal grid consumes it. The status line printed
+  "paused" while the view was live (the snapshot followed `mc.nodes` until
+  the first interaction, and `frozen` stayed false). Now: (1) the header is
+  one control, the current view's icon + long name + chevron, and the menu
+  groups the ten views as PEERS / SURVEY / REPORTS, which is what they
+  actually are (node projections, accumulated surveys, reports);
+  (2) transport (play/pause + interval) and the range scale moved to a
+  bottom bar, shown only in the seven views that read a time-ordered
+  snapshot, with the range control present in radar and equal grid;
+  (3) the legend button exists only in the five views that draw a legend;
+  (4) `_live` starts true so the transport says live when it is live;
+  (5) the footer that restated the range slider and described the UI
+  ("info icon for the legend") is gone, as are `gridStatusReady`,
+  `gridPlayStateLive/Paused` and `gridFooter`; the counts line is now
+  `gridStatusCounts` and is shown in every view. Not changed: the
+  ten-view set itself (moving ROADS into the Map tab and the reports into
+  their own homes is a bigger change), the per-view toolbars, and the
+  ephemeral per-view toggles.
+- R88: **first device pass against a live radio, and what it found.**
+  Verified on a motorola edge 2024 (Android 16, 387dp) with the
+  `MeshCore-HELTEC-BASE` companion (`F8:5B:1B:BE:C5:3D`, firmware
+  `v1.17.1-d929643`) attached: connect and handshake reach LINKED, self
+  info/radio params/battery `4.37V`/device-sourced location
+  `38.92005, -104.77283` all populate, nodes arrive (`2 known`), the Docs
+  hub's FIRMWARE card shows the connected firmware version, and logcat
+  stayed free of Flutter assertions (no ink, overflow or dispose
+  complaints) across the tabs, every `/settings/*` route, 320dp, 256dp
+  and 2.0x text. The strip fills edge to edge at 387dp and 320dp and
+  scrolls at 256dp; Settings lists **Docs** (short subtitle, one row
+  tall) immediately above **Information**; Docs → Back returns to the hub;
+  Information → About carries no Docs row and renders its description.
+  **Fixed here:** the About page printed a note to self, "Terms &
+  Conditions — wired in U5." (JA "利用規約 — U5 で配線予定。"), because
+  `aboutTerms` was a placeholder and U5, the terms page, is still
+  unbuilt (UX spec U5 ☐). The line and both ARB keys are gone; a test
+  asserts no "wired in"/"配線予定" on About, so the placeholder cannot
+  return before the terms page exists. **Corrected from R87:** the
+  Dashboard status row is only squeezed in the DISCONNECTED state, where
+  the fixed CONNECT button starves the label; with a radio LINKED the
+  label wraps to two lines at 320dp/2.0x with no overflow. The remaining
+  layout question is therefore the disconnected row's button policy.
+
+### Earlier revisions
+
+- R83: **region files deferred; the live map made responsive.** The archive
+  machinery (R81) stays but is hidden behind `kRegionFilesEnabled = false`
+  until a region file is published; the UI test asserts the section is
+  absent, the mechanics stay covered. Map work: in-flight dedupe
+  (`MapsController._inflight`, one fetch per tile), a 24-tile prefetch ring
+  after the camera settles 500 ms, run only when the gate is idle and
+  sequentially through `loadTileDetailed`, so it never delays a visible
+  tile; `memoryTileCacheMaxSize` 24 MB; Studio zoom capped at z17 because
+  Shortbread stops at z14. Tests: `maps_test` (dedupe, prefetch),
+  `maps_screens_test` (deferred section), `home_shell_test`.
+- R82: **the basemap is OSM's own vector service, not a third party.** The
+  OSMF has served Shortbread v1 vector tiles at
+  `vector.openstreetmap.org/shortbread_v1/{z}/{x}/{y}.mvt` since 2025-07-22,
+  and its vector policy permits interactive app use with a unique User-Agent,
+  7-day caching, a corner credit and no bulk download. `tile.openstreetmap.org`
+  is raster-only, which is why a service like OpenFreeMap had a role at all.
+  `kOsmVector` (`lib/maps/map_source.dart`, id `osm-vec`, `.mvt`, maxzoom 14,
+  view-only, `minCacheAge` 7 days because the service advertises only
+  `max-age=300` while its policy requires a week) replaces
+  `kOpenFreeMapVector`. `assets/maps/studio_dark.json` is
+  rewritten against Shortbread: 28 layers, 14.9 KB (was 47 layers, 36 KB),
+  asserted against the schema's published layer names. `kArchiveRequiredLayers`
+  becomes `{water_polygons, streets}`, so a region file must also be
+  Shortbread. Rendering, the tile store, view cache, ETag revalidation,
+  budget, expiry, per-source backoff and the request gate are unchanged.
+  **Also fixed:** Android Auto Backup would have uploaded region archives
+  (`files/maps`, 25 MB quota) - `backup_rules.xml` and
+  `data_extraction_rules.xml` now exclude `maps/` from cloud backup and
+  device transfer, guarded by `test/maps/map_backup_exclusion_test.dart`.
+  iOS `isExcludedFromBackup` is **not** done (needs a platform channel).
+  Tests: `test/maps/vector_basemap_test.dart` (15), plus the new backup guard.
+- R81: **the map subsystem: bounded requests, per-source backoff, region
+  files, a legible style.** Defects found and fixed, each with a test:
+  (1) `kOpenFreeMapVector` was `allowsPacks: true`, but OpenFreeMap caps
+  offline use at 3,000 tiles / 50 MB per download with 4 parallel requests
+  (openfreemap.org/tos, "Offline Downloads"): now view-only; the pack-
+  capable sources are exactly USGS Topo and USGS Imagery. (2) one failed
+  fetch set a single global backoff (30 s doubling to 900 s) that blanked
+  every tile of every source: view backoff is now per source, after three
+  consecutive failures, jittered +-20% (`MapsController._noteView`).
+  (3) `VectorTileLayer.concurrency` is the parse-isolate pool, not network
+  parallelism, and was set below the library default (4); the library keeps
+  a second 30-day uncounted copy of every tile in the temp dir (capped to
+  1 MB / 1 h); `provide` cannot be cancelled. New `TileFetchGate`
+  (`lib/maps/fetch_gate.dart`, `MapsController.viewGate`): 4 at a time,
+  newest first, queue bounded at 32, the oldest dropped unrequested.
+  (4) a server "no such tile" is now a 404 the renderer draws empty,
+  distinct from an outage (`TileLoad.missing`). (5) The grey holes were the
+  FlutterMap background: Studio now uses the style's own background colour
+  (`kVectorBasemapBackground`, guard-tested); zoom-substitution of
+  neighbouring tiles is the library's, set explicitly to 2.
+  **Region files:** `lib/maps/pmtiles.dart` is a PMTiles v3 reader written
+  in-house (the `pmtiles` pub package is BSD-2-Clause; the unused
+  `vector_map_tiles_pmtiles` dependency was removed). `lib/maps/
+  map_archive.dart` downloads one file with `Range`/`If-Range` resume,
+  verifies size + SHA-256 + PMTiles structure + OpenMapTiles layers
+  (`kArchiveRequiredLayers`), keeps it in the byte budget, expires it, and
+  `MapsController._fromArchives` reads tiles from it by seek with no
+  network. Settings > Maps has a "Region files" section. **Style:** same 47
+  layers retuned to the Studio tokens, labels >= 4.5:1, water blue and
+  parks green (hue in content only). **Not done, and why:** the Protomaps
+  schema switch (see maps spec "R81 decisions"), a tile prefetch ring
+  (VectorTileLayer has no hook), HTTP range reads of a remote archive for
+  online use, sprite icons, a hosted catalog of regions (nothing is hosted
+  yet). **Not device-verified.** Tests: `fetch_gate_test`, `pmtiles_test`,
+  `map_archive_test`, `maps_test` (R81), `vector_basemap_test` (R81),
+  `maps_screens_test` (R81).
+
+- R80: **the Studio basemap is vector-rendered.** New
+  `lib/maps/vector_basemap.dart` (style loader, `MmVectorTileProvider`,
+  `VectorBasemapLayer`) draws the bundled style asset through
+  `vector_map_tiles`/`vector_tile_renderer` (**BSD-3-Clause**, not MIT as this entry first said; corrected in R81) under
+  `MmShape.vectorBasemap` (Studio only). Tiles are fetched as `.pbf`
+  through `MapsController.loadTile`, so offline packs, the view cache,
+  ETag revalidation, budget and expiry are unchanged; a vector tile is
+  simply fewer bytes for the same (z, x, y). `kOpenFreeMapVector` is the
+  source and carries the attribution the licence requires. No
+  `flutter_map` upgrade: `vector_map_tiles` 8.0.0 depends on
+  `flutter_map ^7.0.2`, the version this app already pins. Not done:
+  sprite icons (no atlas bundled - icon layers draw nothing), a pack
+  picker entry for the vector source (it is view-cached today), and a
+  per-preset style. Tests: `test/maps/vector_basemap_test.dart`.
+
+- R78: **Studio has no swipe navigation.** The owner's skin changes the
+  primary view only from the strip under the app bar. New
+  `MmShape.swipeNavigation` (true for the six older presets, false for
+  Studio) drives two things in `lib/shell/home_shell.dart`: the `PageView`
+  gets `NeverScrollableScrollPhysics`, and `MapScreen(onEdgeSwipe:)` is
+  given `null`, so R67's edge bands are not wired at all. The 48dp
+  `_ViewStrip` remains the only switcher, including its selected
+  underline, semantics and scroll-into-view. Back, `PopScope`, the nav
+  cues on a strip tap and map pan/zoom are unaffected (pan/zoom live
+  inside `StreetMapView`, not the shell). Tests:
+  `test/shell/home_shell_test.dart` ("only Studio turns swipe navigation
+  off (R78)", and the mapping test now asserts a fling does nothing under
+  Studio while every other preset still lands on Map).
+
+- R69: **The three defects R68 recorded.** (1) **Map with no fix.** The
+  Map tab was a blank "awaiting fix" screen without a position.
+  `StreetMapView(browseWithoutFix: true)` (only `MapScreen` passes it)
+  renders a world view (20N 0E, zoom 2, min zoom lowered to 2 while
+  browsing) with a quiet hairline banner (`mapNoFixBanner`, EN/JA); the
+  grid's street-map mode is unchanged. Tests:
+  `test/screens/map_no_fix_test.dart`. (2) **English in the Japanese
+  locale.** Localised (EN/JA, `lib/l10n/*.arb`): Device configuration
+  "Manage channels" / "Active: ..." / "device now: ..."
+  (`deviceManageChannels`, `deviceActiveChannelSub`, `deviceNowParams`);
+  the location source label (`OwnLocation.localizedSourceLabel`;
+  `sourceLabel` stays English for logs); the battery line's "CHG"
+  (`batteryChargingShort`); the Elevation self-telemetry chip
+  (`elevationSelf*`); the Nodes "Clear search" tooltip; and the
+  Diagnostics connection block (`diagnostics*Line`, `diagnosticsState*`,
+  `diagnosticsScanConnect`). Deliberately **not** localised: the
+  Diagnostics SEND / M6 interop / fixture-export / bot-soak panels
+  (developer tooling, English by design), brand marks ("MESHMORE"),
+  the "BLE" tooltip, URL/coordinate hint text, and the unused
+  boilerplate `about.dart` drawer. Test: `test/l10n/ja_literals_test.dart`
+  (each key's JA differs from EN and has no Latin word apart from
+  MHz/kHz/dBm/PSK/GPS/SF/CR; Diagnostics renders Japanese).
+  (3) **48dp touch targets.** Icon
+  buttons constrained to 28-36dp with `VisualDensity.compact` are now
+  48x48 with the compact density removed (density subtracts from the
+  constraint): message-actions in `chat_screen.dart` / `dm_screen.dart`,
+  the dashboard location refresh, `equal_grid_view.dart` (zoom out/in,
+  stats, tiles), `fabric_survey_view.dart` (zoom, recentre, tiles, reset),
+  and `MmAudioToggle(dense: true)` (glyph unchanged, 48x48 box; its NERV
+  sibling bluetooth button too). Tests: `test/ui/touch_targets_test.dart`.
+
+- R70: **Map tab defects found on the device.** (1) **Edge swipe.** A
+  swipe from the physical screen edge landed on the Dashboard from both
+  edges. `MmEdgeSwipe` was *not* repeating or inverted (tests pin one
+  call and the sign per band); the cause is Android gesture navigation,
+  which owns the outer edge zone as system Back and which the shell
+  turns into "go to Dashboard" (`PopScope`). Bands now start just inside
+  `MediaQuery.systemGestureInsets`; a swipe must begin inside that zone,
+  one from the very edge is the OS's. Not device-verified.
+  (2) **Attribution.** The credit line was hidden under the no-fix
+  banner (R69); it now shares one bottom column with the banner.
+  (3) **Controls.** The Map tab's five-button column is 48dp per control
+  and the right band's inset is derived from it
+  (`StreetMapView.controlsBottom`), not a constant. (4) **Dark basemap.**
+  `MmShape.darkBasemap` (Studio only) draws raster tiles through an
+  invert-luminance + desaturate colour matrix (`mmDarkTileFilter`), which
+  keeps label/road contrast, unlike a scrim; coloured features lose hue.
+  Tests: `test/ui/mm_edge_swipe_test.dart`, `test/maps/dim_basemap_test.dart`,
+  `test/screens/map_no_fix_test.dart`.
+
+- R74: **Words sans, data mono, swept.** The device pass showed prose in
+  mono beyond chat. `MmType.wordsMono` (`lib/theme/mm_skin.dart`) is the
+  face for words the older skins set in mono: null under Studio,
+  `monoFamily` otherwise. Applied to the docs hub (title, subtitle,
+  footer, card titles and text), the grid HUD heading, the readout label
+  and status pill (`lib/ui/mm_components.dart`), the voice-picker count
+  sentence, the battery draw sentence, the device-config "awaiting
+  device" line, and the four boot-overlay lines. The rule and the
+  data/prose table are in `meshmore-sns-UX-spec.md` ("Type rule").
+  `PEERS IN RANGE / 0 known` was investigated, not changed: both numbers
+  come from `MeshcoreController.nodes` (contact sync + heard adverts + DM
+  stubs); channel messages carry a sender *name* only, never a key, so
+  chatter on Public does not create a node (the Nodes empty state says
+  so). The label is accurate; proposed, not done: a separate "heard on
+  channel" line. Test: `test/ui/type_rule_guard_test.dart`.
+
+- R77: **The collapse rule split its own group.** `MmCollapsibleSection`
+  built `header, rule, content`, so an expanded group drew a divider
+  between its header and its own content and the header read as belonging
+  to the block above. It moved the rule to the end of the group.
+  **Superseded by R116**, which removed the header fill and the closing
+  rule; the group now starts at one rule and draws nothing else.
+
+- R116: **one boundary, one mark, on every ground.** R115 took the tinted
+  group header off paper only (a beige band there is a box). The dark
+  grounds kept it and closed each group with a hairline, so a boundary
+  between two groups was drawn twice: the previous group's closing rule sat
+  immediately above the next group's fill, and a folded group read as a box
+  bounded above and below. `MmCollapsibleSection` now draws one rule in the
+  border tier above the header, fills nothing, and draws nothing at the end
+  (`lib/ui/mm_collapsible.dart`). `MmShape.tintedHeaders` is deleted, so
+  all presets state a group boundary the same way. Studio Light also
+  stops having a dashboard of its own: `DashboardHost` sent it to the SEELE
+  monolith, so choosing the light Studio skin replaced the layout (a
+  colour-inverting status slab and an 88 sp numeral) instead of repainting
+  it. Both Studio presets now use `StudioDashboard`
+  (`lib/screens/dashboards/dashboard_host.dart`). Tests:
+  `test/theme/section_header_test.dart` (a group per preset, two groups = two
+  rules and no closing rule), `test/ui/mm_collapsible_test.dart`,
+  `test/screens/dashboard_host_test.dart`.
+
+- R73: **Studio's dark basemap was too dark.** The R70 filter inverted
+  luminance outright (pale land to luma ~15-40), so on the phone the
+  continents read but roads and labels did not. `mmDarkTileMatrix`
+  (`lib/maps/basemap.dart`) now computes `gain * inv + lift` with gain
+  0.8 and lift 48 (saturation 0.15 unchanged): OSM land 61, sea 90, road
+  casing 102, white road fill 48, label text 220 (WCAG label-on-land
+  8.0:1, sea-on-land 1.6:1, casing-on-land 1.9:1). Still Studio-only.
+  The white road *fill* is only 1.2:1 against land; roads read by their
+  casing. Needs a device look at real tiles. Test:
+  `test/maps/dim_basemap_test.dart`.
+
+- R72: **Chat reads as words over data under Studio.** The device pass
+  showed every chat part (sender, timestamp, body) in mono, one size and
+  weight. `StudioMessageRow` (`lib/chat/studio_message_row.dart`) now
+  renders channel and DM rows when `MmType.sansLabels` is on: **body**
+  sans 15/1.35 in `fg`; **sender** sans 12 w600 in `fgMuted`, above the
+  body; **timestamp** and the **meta line** (`flood`, `SNR 6.5`) mono 12 /
+  11 (machine data, column-aligned). The `«` / `»` glyph is the log
+  rows' direction mark (incoming / outgoing; `chat_screen.dart` `_log`,
+  `dm_screen.dart` `_DmRow`, `node_detail_sheet.dart`): it was never
+  explained on screen, so Studio drops it and marks outgoing rows with a
+  2dp accent rule plus an accent timestamp. SEELE / NERV / Recon keep
+  the all-mono terminal log and the glyph (mono is their identity).
+  Composer and channel header were already sans. Tests:
+  `test/screens/chat_type_hierarchy_test.dart`.
+
+- R71: **Studio controls are uniformly square.** The device pass showed
+  "Scan area" / "Advertise" / "Apply radio params" as stadium pills
+  beside square chips: M3's Filled/Outlined/Text/Elevated buttons, FAB,
+  popup menus and text fields carry their own rounded default, which the
+  R63 chip/card/dialog/sheet shapes never touched. `buildMmTheme` now
+  squares all of them when `MmShape.squareControls` is on
+  (`lib/theme/mm_tokens.dart`, one theme change covers ~60 button call
+  sites). Screens that draw their own corner (49 `BorderRadius.circular`
+  of 6px or more, plus the chat jump-to-latest `StadiumBorder`) go through
+  `mmRadius(context, r)` (`lib/ui/mm_shape.dart`): zero under Studio, `r`
+  otherwise, so the six older presets are unchanged. Left on purpose:
+  radii under 6px (progress bars, swatches), `BoxShape.circle` dots, and
+  the AG-HUD / Hyperlocal dashboards (Studio never shows them). Enforced
+  by `test/ui/square_controls_guard_test.dart` (theme resolves square,
+  older presets' theme untouched, and a source scan that fails on a new
+  literal radius of 6px+ or pill). Not enforceable by test: a radius
+  below 6px, or a painter that draws its own rounded rect.
+
+- R68: **Studio is monochrome.** Owner direction: "gray accent, light
+  gray, no saturation for any accents". `studio` tokens
+  (`lib/theme/mm_tokens.dart`): accent `#D0D0D0` (HSV saturation 0, so no
+  hue), `onAccent` `#141414`; alert `#D6A7A1` (saturation 0.25) and ok
+  `#A9C4A7` (0.15) are low-saturation tints, bound at <= 0.30 by test.
+  Active/selected/primary is carried by lightness. New optional token
+  `MmTokens.onAlert` (derived as `fg` for the six older presets, so
+  `ColorScheme.onError` is unchanged for them; Studio supplies `#141414`,
+  because light text on a pale alert fill was 1.5:1). Contrast of accent
+  on base/panel/raised/selected is 11.9/10.6/9.2/7.8, alert 8.7/7.7/6.7/5.7,
+  ok 9.8/8.6/7.5/6.4. This supersedes the "one blue accent" wording in R63
+  and R65. Tests: `test/theme/mm_layers_test.dart` (R68 groups).
+  - **Boot overlay no longer remounts the shell.** `BootOverlay`
+    (`lib/shell/boot_overlay.dart`) returned its child bare once
+    dismissed, changing the parent from `Stack` to the child, so Flutter
+    unmounted the whole shell and built a second one: every screen's
+    State was created twice at launch. It now keeps a one-child `Stack`.
+    Test: `test/shell/boot_overlay_test.dart` (init count 1; the old code
+    gave `[init, init, dispose]`).
+  - **Personalization is uniformly collapsible.** R64 left TYPE and Audio
+    alerts as plain headers because each held one row, which put a header
+    with no chevron between two folding groups (seen on the phone: TYPE
+    looked tappable and did nothing). Both are now `MmCollapsibleSection`s
+    (ids `personalization.type`, `personalization.audio`, persisted per
+    R65), so the screen has one idiom. Test:
+    `test/screens/collapsible_screens_test.dart` (4 groups, TYPE and audio
+    fold; fail-before with the old screen).
+  - **Region presets are grouped.** Device configuration showed fifteen
+    outlined chips as one wall (the dominant mass of the screen).
+    `RegionFamily` / `regionFamilyOf` (`lib/meshcore/region_presets.dart`)
+    group them under Americas / Europe / Asia-Pacific headings
+    (`deviceRegionFamily*` strings, EN and JA); an unmapped preset falls
+    under "Other" so it is never hidden. Same chips, same tap-to-apply.
+    Tests: `test/meshcore/region_presets_test.dart` and
+    `test/screens/collapsible_screens_test.dart`.
+  - **Studio boots grey.** `BootOverlay` always used the NERV orange /
+    lime on every preset ("a brand moment"). Studio now uses its own
+    tokens (surface / base / accent / muted / fg), since its owner asked
+    for no hue anywhere; the other presets keep the NERV palette.
+    Tests: `test/shell/boot_overlay_test.dart` (Studio gradient is
+    surface -> base, others stay NERV; fail-before for Studio).
+  - **The app-bar link chip is localised.** `RadioLinkIndicator`
+    (`lib/shell/home_shell.dart`, on every primary view) hard-coded
+    'LINKED' / 'SYNC' / 'RETRY' / 'FAIL' / 'SCAN' / 'OFFLINE' and the
+    semantics label 'Radio ...', so a Japanese user saw English on every
+    screen. Now `linkChip*` strings (EN and JA) and `linkChipSemantics`.
+    Test: `test/shell/radio_link_indicator_test.dart` (JA chip and
+    semantics; fail-before).
+  - **Studio dashboard** (`lib/screens/dashboards/studio_dashboard.dart`,
+    registered in `DashboardHost`): Studio used to inherit the SEELE
+    monolith (an 88sp numeral, a full-bleed colour-inverting status slab,
+    tracked caps). Now: a quiet status row (text plus a dot whose *shape*
+    says the state: filled / ring / spinner; Connect/Retry, device sheet
+    and audio toggle are 48dp), peers in range, then collapsible RADIO,
+    LOCATION and RECENT sections (ids `dashboard.radio`, `dashboard.location`,
+    `dashboard.recent`, persisted per R65, open by default). LOCATION reads
+    `MeshcoreController.ownLocation` only. The raw `dev:`/`pol:`/`phone:`
+    debug readout is not shown.
+  - **Type roles** (Studio): *words are sans, only machine data is mono.*
+    Sans (platform UI face) for labels, names, prose, status, region; mono
+    (`JetBrains Mono`) for counts, coordinates, radio parameters, the
+    public key, battery volts and timestamps. `MmType.sansLabels` (new,
+    default false) makes `mmSectionLabelStyle` use the UI face for Studio,
+    so section and collapsible headers are no longer mono caps beside sans
+    body text. Pinned by `test/screens/studio_dashboard_test.dart` (every
+    mono string on the dashboard contains a digit). Not bundled: a serif
+    (see STATUS). Other screens still hard-code mono in places.
+
 ### Terminology — Fabric vs Contact
 
 - **Fabric** = the set of nodes we have *seen* on the mesh (any
@@ -773,7 +2040,7 @@ test cases).
   (`https://github.com/meshcore-dev/MeshCore`). We **pin a specific
   firmware commit** and transcribe all opcodes, frame layouts, struct
   field orders, and crypto parameters from that commit. The pinned commit
-  is recorded in the protocol package (`lib/src/codec/constants.dart`
+  is recorded in the protocol package (`packages/meshcore/lib/src/codec/constants.dart`
   header + README) and **asserted by a test**; it is bumped deliberately,
   never silently.
 - **Current pin:** tag `companion-v1.15.0`, commit
@@ -1338,6 +2605,33 @@ Pure Phase / Codec. Audible cues default ON with a dashboard quick-mute.
   telemetry ("measured").
 - **Meshbook / MBk:** the channel's day — top voices, hourly histogram,
   reply rate, topics. Per-channel **persisted**, daily-reset, clearable.
+
+### Send confirmation and delivery state (R76)
+- **Channel text is confirmed by `RESP_CODE_OK` (0x00), not
+  `RESP_CODE_SENT` (0x06).** Firmware `examples/companion_radio/MyMesh.cpp`
+  `CMD_SEND_CHANNEL_TXT_MSG` calls `writeOKFrame()` (and
+  `writeErrFrame(ERR_CODE_NOT_FOUND)` for a bad channel slot); it never
+  writes SENT (line 1131 in tag `companion-v1.17.1`). The official
+  `meshcore.js` (`sendChannelTextMessage`) and `meshcore_py`
+  (`send_chan_msg`) wait for OK / ERR too. The upstream
+  `docs/companion_protocol.md` line "Response: `PACKET_MSG_SENT` (0x06)"
+  for *Send Channel Message* is **wrong for the firmware we target**.
+- Reply map (verified in `MyMesh.cpp`): channel text and self-advert →
+  `OK`; DM, status request, telemetry request, trace → `SENT`
+  (expectedAck tag + `estTimeoutMs`).
+- The controller keeps a pending record per send (id + expected reply)
+  and matches **by expected kind, oldest first**. OK and ERR carry no
+  tag, so within a kind this is strictly FIFO; BLE serialises commands.
+  A self-advert and tool requests register markers so their replies are
+  not credited to a message. ERR fails the oldest in-flight send at once
+  with `deviceErrorReason(code)`, stored as `ChatMessage.failReason`.
+- Transitions are monotonic: a watchdog (15 s; DM ack timeout = the
+  device's `estTimeoutMs`) only moves a message still in the state it
+  armed for, and a late reply never revives a failed row or lands on
+  another message.
+- A failed outgoing row offers **Retry** in the message action sheet; it
+  re-sends the same text to the same channel/peer on the same row.
+  Retry can duplicate a message the radio did transmit.
 
 ### Terminology (do not conflate)
 **Favourite** = an app star · **Known** = you've DM'd them · **Radio /

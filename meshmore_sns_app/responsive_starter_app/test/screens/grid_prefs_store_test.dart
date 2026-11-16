@@ -13,19 +13,24 @@ void main() {
     expect(await GridPrefsStore.load(), isNull);
   });
 
+  test('an older save that carries an orientation still loads', () async {
+    // The radar has no orientation any more; a save written before that must
+    // not throw and must keep the fields that still mean something.
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('mm.gridPrefs.v1',
+        '{"scale":2,"north":false,"live":true,"iv":10}');
+    final GridPrefs p = (await GridPrefsStore.load())!;
+    expect(p.scaleIndex, 2);
+    expect(p.intervalSec, 10);
+  });
+
   test('round-trips the grid preferences', () async {
     await GridPrefsStore.save(const GridPrefs(
-      modeIndex: 9,
       scaleIndex: 3,
-      northUp: false,
-      live: true,
       intervalSec: 30,
     ));
     final GridPrefs p = (await GridPrefsStore.load())!;
-    expect(p.modeIndex, 9);
     expect(p.scaleIndex, 3);
-    expect(p.northUp, isFalse);
-    expect(p.live, isTrue);
     expect(p.intervalSec, 30);
   });
 }

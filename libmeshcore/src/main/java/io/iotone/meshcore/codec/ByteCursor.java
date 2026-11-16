@@ -106,6 +106,37 @@ public final class ByteCursor {
     }
 
     /**
+     * Reads a signed 16-bit little-endian integer (used for the radio
+     * statistics' noise floor and RSSI, and for the trace SNR values that
+     * the firmware writes as a pair).
+     *
+     * @param ctx field context for truncation reporting
+     * @return value in {@code [-32768, 32767]}
+     * @throws FrameTruncatedException if fewer than 2 bytes remain
+     */
+    public int i16(String ctx) {
+        need(2, ctx);
+        int v = ((bytes[pos] & 0xFF) | ((bytes[pos + 1] & 0xFF) << 8));
+        pos += 2;
+        return (short) v;
+    }
+
+    /**
+     * Consumes the rest of the frame without interpreting it.
+     *
+     * <p>For a struct the firmware has grown in place: a tail this build
+     * does not model is a field added by a newer release, not a second
+     * frame, so the frame must still decode. The bytes are not returned
+     * because nothing may guess at their meaning.</p>
+     *
+     * @param ctx field context for the report when the caller expected a
+     *            tail (nothing is read either way)
+     */
+    public void skipRemaining(String ctx) {
+        pos = bytes.length;
+    }
+
+    /**
      * Reads an unsigned 32-bit little-endian integer.
      *
      * <p>Returned as {@code long} so the full unsigned range is

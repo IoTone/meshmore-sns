@@ -14,7 +14,9 @@ void main() {
     expect(v.node, skin.color.fgMuted);
     expect(v.self, skin.color.accent);
     expect(v.inferred, skin.color.accent);
-    expect(v.grid, skin.color.line);
+    // D11.5 — a grid line is a structure a reader has to see, so the viz
+    // grid takes the control-boundary role rather than the divider tier.
+    expect(v.grid, skin.color.edge);
   });
 
   test('the heat-map "hot" colour follows the theme (not a fixed hex)', () {

@@ -34,6 +34,20 @@ public final class MeshcoreConstants {
     public static final String FIRMWARE_PIN_COMMIT =
             "dee3e26ac081a5c668c69b66c16a6544a44ddc5b";
 
+    /**
+     * Protocol version announced in {@code CMD_DEVICE_QUERY}.
+     *
+     * <p>The firmware stores the byte verbatim
+     * ({@code examples/companion_radio/MyMesh.cpp:1029-1032}) and branches
+     * on it in exactly two places, both {@code >= 3}: the contact and
+     * channel receive frames that carry per-message SNR (codes 0x10 and
+     * 0x11, {@code MyMesh.cpp:435-443} and {@code :548-556}). Nothing else
+     * reads it, so announcing 3 is safe on firmware that predates those
+     * frames; announcing 1 made every modern radio answer with the legacy
+     * frames and lose the SNR.</p>
+     */
+    public static final int APP_TARGET_PROTOCOL_VERSION = 3;
+
     // --- Common protocol field sizes (firmware, pinned commit) ----------
 
     /** Ed25519 public key size ({@code PUB_KEY_SIZE}). */
@@ -73,6 +87,26 @@ public final class MeshcoreConstants {
 
     /** PSK bytes carried by SET_CHANNEL / CHANNEL_INFO. */
     public static final int CHANNEL_PSK_SIZE = 16;
+
+    /**
+     * The other width of the {@code CHANNEL_INFO} secret field: a reply
+     * carries all 32 secret bytes when the request asked for the full one
+     * with a third byte of 32 ({@code 1F <index> 20}). The reply length is
+     * the only signal, so a decoder accepts both widths and rejects a
+     * third one instead of guessing.
+     */
+    public static final int CHANNEL_PSK_SIZE_FULL = CHANNEL_SECRET_SIZE;
+
+    // --- Receive-profile tags (two-profile radios) -----------------------
+
+    /**
+     * Receive-profile tag for the primary radio, written in the byte after
+     * SNR on the receive frames while a second profile is on.
+     */
+    public static final int RX_VIA_PRIMARY_TAG = 0xA0;
+
+    /** Receive-profile tag for the second radio profile. */
+    public static final int RX_VIA_SECONDARY_TAG = 0xA1;
 
     /** Fixed channel-name field width. */
     public static final int CHANNEL_NAME_SIZE = 32;
@@ -227,6 +261,47 @@ public final class MeshcoreConstants {
 
     /** Path-length byte: hash-size code shift (bits 6-7). */
     public static final int PATH_HASH_SIZE_SHIFT = 6;
+
+    /**
+     * Path-length byte: the reserved hash-size code ({@code 3}, i.e. 4-byte
+     * hashes). {@code Packet::isValidPathLen} refuses it outright
+     * ({@code src/Packet.cpp:17-22}), so a path carrying it reads as
+     * invalid rather than as 252 bytes.
+     */
+    public static final int PATH_HASH_SIZE_RESERVED_CODE = 3;
+
+    // --- RESP_CODE_STATS (0x18) sub-types -------------------------------
+
+    /** {@code RESP_CODE_STATS} sub-type: the radio's own housekeeping. */
+    public static final int STATS_TYPE_CORE = 0;
+
+    /** {@code RESP_CODE_STATS} sub-type: what the radio hears. */
+    public static final int STATS_TYPE_RADIO = 1;
+
+    /** {@code RESP_CODE_STATS} sub-type: packet counters since boot. */
+    public static final int STATS_TYPE_PACKETS = 2;
+
+    // --- Control-packet types carried in PUSH_CODE_CONTROL_DATA (0x8E) ---
+
+    /** Control-packet type: a zero-hop node-discover response ({@code 0x9X}). */
+    public static final int CTL_TYPE_NODE_DISCOVER_RESP = 0x90;
+
+    // --- AUTOADD_CONFIG flags (RESP_CODE_AUTOADD_CONFIG 0x19) -----------
+
+    /** Auto-add flag: overwrite the oldest contact when the table is full. */
+    public static final int AUTO_ADD_OVERWRITE_OLDEST = 0x01;
+
+    /** Auto-add flag: store newly heard chat nodes. */
+    public static final int AUTO_ADD_CHAT = 0x02;
+
+    /** Auto-add flag: store newly heard repeaters. */
+    public static final int AUTO_ADD_REPEATER = 0x04;
+
+    /** Auto-add flag: store newly heard room servers. */
+    public static final int AUTO_ADD_ROOM_SERVER = 0x08;
+
+    /** Auto-add flag: store newly heard sensors. */
+    public static final int AUTO_ADD_SENSOR = 0x10;
 
     // --- Well-known PUBLIC channel (docs/qr_codes.md, pinned commit) ------
 

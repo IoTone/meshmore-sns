@@ -143,6 +143,19 @@ void main() {
   });
 
   group('rejection / no false positives', () {
+    test('an ordinary word that is also a village is not a place', () {
+      // The reported case: a channel message containing "can" produced a
+      // "looks like a place" offer, because a gazetteer of every settlement on
+      // Earth has a village called Can. Capitalisation is not evidence.
+      expect(_infer('Can you hear me now'), isEmpty);
+      expect(_engine().placeNames('Can you hear me now'), isEmpty);
+      expect(_infer('I can do that tomorrow'), isEmpty);
+    });
+
+    test('a city people actually name is still a place', () {
+      expect(_infer('grabbing lunch downtown Seattle'), isNotEmpty);
+    });
+
     test('non-place capitalised words do not place', () {
       final List<InferredPlace> r =
           _infer('See you Monday! Thanks Bob, great work');
@@ -174,6 +187,37 @@ void main() {
       final List<InferredPlace> r = _infer('Hello from Seattle', jitter: true);
       // Default jitter ≤ 1.2 km; centre is the Seattle centroid.
       expect(_km(r.first, 47.6062, -122.3321), lessThan(1.5));
+    });
+  });
+  // --- name-only suggestions ------------------------------------------
+  //
+  // The suggestion line under a chat row offers a name, never a position.
+  // These tests hold the two properties that make that honest: an unknown
+  // word yields nothing, and the same messages the placement path resolves
+  // also yield a name here, with no origin supplied at all.
+  group('placeNames: what a row can offer to report', () {
+    test('finds a named place without any origin', () {
+      expect(_engine().placeNames('Hello from Seattle, 73!'),
+          contains('Seattle'));
+    });
+
+    test('names the anchor a directional mention resolves to', () {
+      // "west of Seattle" is a place near Seattle, and the report's label
+      // starts from the anchor every other surface uses. The label field in
+      // the sheet is editable, so the writer's own words are one keystroke
+      // away rather than a second naming convention here.
+      expect(_engine().placeNames('meeting west of Seattle later'),
+          contains('Seattle'));
+    });
+
+    test('a message about nothing in the gazetteer yields nothing', () {
+      expect(_engine().placeNames('battery is at 3.9 volts, SNR 6'), isEmpty);
+    });
+
+    test('one name is offered once, however often it is said', () {
+      final List<String> names =
+          _engine().placeNames('Seattle to Tacoma, back to Seattle');
+      expect(names.where((String n) => n.contains('Seattle')).length, 1);
     });
   });
 }

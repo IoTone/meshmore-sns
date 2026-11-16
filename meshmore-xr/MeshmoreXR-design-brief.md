@@ -516,13 +516,16 @@ public channel gets a distinct ripple treatment inherited from the SNS grid.
 
 #### S6.0 · What actually ports from Meshmore SNS — and what must not
 
-The SNS map is **not offline**, and porting it as-is would carry that forward:
+**Corrected 2026-11-04:** this section said the SNS map is *not offline*. That was true when written and is now
+stale — R61 shipped a disk-first tile stack (`lib/maps/maps_controller.dart`, `map_pack.dart`, `map_archive.dart`,
+`maps_self_test.dart`, packs with a tile budget and a 50,000-tile cap). The offline *machinery* ports; the *tile
+source* still does not:
 
 | SNS asset | Offline? | Port verdict |
 |---|---|---|
 | `assets/data/cities15000.bin` — GeoNames, 812 KB, CC-BY 4.0, 1° bucket reverse-geocode, <1 ms | **Yes, genuinely** | **Port as-is.** Proven, tiny, already licensed and attributed |
 | `assets/data/world-110m.geojson` — Natural Earth, 97 KB | **Yes** | Port for GLOBE scale |
-| `street_map_view.dart` — `flutter_map` → `tile.openstreetmap.org` / `opentopomap.org` | **No.** No tile-cache package in `pubspec.yaml`, no tile store in `lib/`; `NetworkTileProvider` caches in memory for the session only | **Do not port.** Replace with PMTiles |
+| `street_map_view.dart` — `flutter_map` over `MapsController`, tiles from `tile.openstreetmap.org` / `opentopomap.org` | **Yes, as of R61** — disk first, network second, with a pack store and a self-test. The *source* is the problem, not the cache | **Port the machinery, change the source** to PMTiles or another permitting source; the OSM policy forbids bulk prefetch |
 | R25 equal-grid view | n/a | **Do not port** — see below |
 
 Two reasons the tile approach cannot simply be given a cache:
@@ -1751,7 +1754,7 @@ A fifth CONSOLE station, **RADIO**, closes that.
 | Spreading factor | TUMBLER (SF7–SF12) | `CMD_SET_RADIO_PARAMS` | **link-breaking** |
 | Coding rate | TUMBLER (4/5–4/8) | `CMD_SET_RADIO_PARAMS` | **link-breaking** |
 | TX power dBm | RAIL, capped at `maxTxPowerDbm` | `CMD_SET_RADIO_TX_POWER` (0x0C) | regulatory |
-| Advertised position | DETENT + source | `CMD_SET_ADVERT_LATLON` (0x0C) | **privacy** |
+| Advertised position | DETENT + source | `CMD_SET_ADVERT_LATLON` (14 = 0x0E) | **privacy** |
 | Advert loc policy | DETENT | `CMD_SET_OTHER_PARAMS` (0x26) | **privacy** |
 | Manual-add contacts | DETENT | `CMD_SET_OTHER_PARAMS` | low |
 | Telemetry mode | TUMBLER | `CMD_SET_OTHER_PARAMS` | low |

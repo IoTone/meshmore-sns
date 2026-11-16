@@ -1,6 +1,9 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'dart:async';
+import 'dart:isolate';
+
+import '../util/mesh_log.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -68,7 +71,12 @@ class CityLookup {
   /// first call. Subsequent calls reuse the cached instance.
   static Future<CityLookup> load() {
     if (_cached != null) return Future<CityLookup>.value(_cached);
-    return _loading ??= _loadFromAsset();
+    // A failed load is not cached: one missing asset made every later call
+    // return the same failed future, with no retry and no way to reset.
+    return _loading ??= _loadFromAsset().catchError((Object e) {
+      _loading = null;
+      throw e;
+    });
   }
 
   /// Synchronous accessor — returns null if [load] hasn't completed.
@@ -81,6 +89,15 @@ class CityLookup {
     final ByteData raw = await rootBundle.load(_assetPath);
     final Uint8List bytes = raw.buffer.asUint8List(
         raw.offsetInBytes, raw.lengthInBytes);
+    // **Off the UI isolate.** 33 000 rows, a string per row and two index maps,
+    // built in one synchronous pass: it ran on whatever isolate called `load`,
+    // which at launch is the main one, and it competed with the first frames. The
+    // bytes are copied across and the three plain collections come back.
+    return Isolate.run(() => _parse(bytes));
+  }
+
+  /// The parse itself, pure and sendable: no asset, no context, no side effects.
+  static CityLookup _parse(Uint8List bytes) {
     final ByteData view = ByteData.sublistView(bytes);
     if (view.getUint32(0, Endian.little) != _magic) {
       throw const FormatException(
@@ -194,8 +211,7 @@ Future<void> warmCityLookup() async {
   } catch (e) {
     // Asset missing or corrupt — log and degrade. The grid view
     // will fall through to coord-based cell labels.
-    // ignore: avoid_print
-    print('[city_lookup] warm failed: $e');
+    meshLog('city_lookup', 'warm failed: $e');
   }
 }
 

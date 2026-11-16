@@ -1,0 +1,131 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:meshmore_sns_app/gen/app_localizations.dart';
+import 'package:meshmore_sns_app/l10n/locale_controller.dart';
+import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
+import 'package:meshmore_sns_app/screens/chat_screen.dart';
+import 'package:meshmore_sns_app/theme/mm_skin.dart';
+import 'package:meshmore_sns_app/theme/mm_tokens.dart';
+import 'package:meshmore_sns_app/theme/theme_controller.dart';
+import 'package:meshmore_sns_app/tts/tts_controller.dart';
+
+import '../meshcore/fake_transport.dart';
+import 'chat_screen_test.dart' show FakeTtsSpeaker;
+import 'package:meshcore/meshcore.dart';
+
+/// The face machine data is set in *for a given preset*, taken from that
+/// preset's own type system: the rule under test is *words sans, data
+/// mono*, and which mono is the preset's decision.
+String monoOf(MmThemePreset preset) =>
+    mmSkinFor(preset).type.monoFamily;
+
+/// R71 — the type rule on the chat surface: under Studio the message body
+/// and the sender are sans and visibly ranked, the timestamp is mono, and
+/// the unexplained `«` direction glyph is gone. The terminal presets keep
+/// their all-mono log.
+void main() {
+  setUp(() => SharedPreferences.setMockInitialValues(<String, Object>{}));
+
+  Future<MeshcoreController> pump(
+      WidgetTester t, MmThemePreset preset, FakeMeshcoreTransport fake) async {
+    await t.binding.setSurfaceSize(const Size(900, 1600));
+    addTearDown(() => t.binding.setSurfaceSize(null));
+    final ThemeController tc = ThemeController();
+    await tc.setPreset(preset);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final TtsController tts = TtsController(speaker: FakeTtsSpeaker());
+    await t.pumpWidget(MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThemeController>.value(value: tc),
+        ChangeNotifierProvider<MeshcoreController>.value(value: mc),
+        ChangeNotifierProvider<TtsController>.value(value: tts),
+      ],
+      child: Builder(
+        builder: (BuildContext c) => MaterialApp(
+          theme: c.read<ThemeController>().theme,
+          locale: const Locale('en'),
+          supportedLocales: LocaleController.supported,
+          localizationsDelegates: const <LocalizationsDelegate<Object>>[
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const Scaffold(body: ChatScreen()),
+        ),
+      ),
+    ));
+    await mc.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+    fake.emit(channelMsgFrame(text: 'MikeP: a long line of ordinary prose'));
+    await t.pumpAndSettle();
+    return mc;
+  }
+
+  String? family(WidgetTester t, Finder f) {
+    final Text w = t.widget<Text>(f);
+    final BuildContext ctx = t.element(f);
+    return DefaultTextStyle.of(ctx).style.merge(w.style).fontFamily;
+  }
+
+  testWidgets('Studio: body and sender sans, ranked; time mono; no « glyph',
+      (WidgetTester t) async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await pump(t, MmThemePreset.studio, fake);
+
+    final String mono = monoOf(MmThemePreset.studio);
+    final Finder body = find.byKey(const ValueKey<String>('studio-msg-body'));
+    final Finder sender =
+        find.byKey(const ValueKey<String>('studio-msg-sender'));
+    expect(body, findsOneWidget);
+    expect(t.widget<Text>(body).data, 'a long line of ordinary prose');
+    expect(t.widget<Text>(sender).data, 'MikeP');
+    expect(family(t, body), isNot(mono));
+    expect(family(t, sender), isNot(mono));
+    // Hierarchy: the sender is smaller, heavier and dimmer than the body.
+    final TextStyle b = t.widget<Text>(body).style!;
+    final TextStyle s = t.widget<Text>(sender).style!;
+    expect(s.fontSize!, lessThan(b.fontSize!));
+    expect(s.fontWeight, FontWeight.w600);
+    expect(s.color, isNot(b.color));
+    // The send time is not on the row at all: a thread where every line carries
+    // `16:07` reads as a log file. It is the first line of the message's own
+    // sheet, which is where a reader asks for it.
+    expect(find.textContaining(RegExp(r'\d\d:\d\d')), findsNothing,
+        reason: 'a stamp nobody asked for is ink on every row');
+    await t.longPress(body);
+    await t.pumpAndSettle();
+    final Finder time = find.textContaining(RegExp(r'\d\d:\d\d'));
+    expect(time, findsOneWidget, reason: 'the sheet states the send time');
+    expect(find.textContaining('«'), findsNothing);
+    mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
+  testWidgets('SEELE keeps its all-mono terminal log and the « marker',
+      (WidgetTester t) async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = await pump(t, MmThemePreset.seele, fake);
+    final Finder body =
+        find.text('MikeP: a long line of ordinary prose');
+    expect(body, findsOneWidget);
+    expect(family(t, body), monoOf(MmThemePreset.seele));
+    expect(find.textContaining('«'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('studio-msg-body')), findsNothing);
+    mc.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+}

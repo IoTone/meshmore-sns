@@ -4,12 +4,12 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshcore/meshcore.dart';
+import 'package:meshmore_sns_app/meshcore/background_keepalive.dart';
 import 'package:meshmore_sns_app/meshcore/background_prefs.dart';
 import 'package:meshmore_sns_app/meshcore/discovered_node.dart';
 import 'package:meshmore_sns_app/meshcore/favorite_store.dart';
 import 'package:meshmore_sns_app/meshcore/known_store.dart';
 import 'package:meshmore_sns_app/meshcore/mesh_event.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/mesh_graph.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/meshcore/node_telemetry.dart';
@@ -308,6 +308,10 @@ void main() {
       fake.emit(contactFrame(firstByte: 0xAA, type: 1, outPath: <int>[]));
       await Future<void>.delayed(Duration.zero);
 
+      // The poller runs only while a screen that shows readings is open: the app
+      // being foregrounded is not interest, and asking the mesh for telemetry on
+      // the chat tab is airtime nobody asked for.
+      ctrl.holdTelemetryInterest();
       fake.sent.clear(); // drop the on-ready self request
       await Future<void>.delayed(const Duration(milliseconds: 60));
       expect(fake.sent.any((f) => f.isNotEmpty && f[0] == 0x27), isTrue,
@@ -429,7 +433,11 @@ void main() {
       // The graph should connect a flood node to self with a dashed
       // (flood) edge — reachable, but no fixed path. It must NOT be a
       // floating orphan, and must NOT claim a solid direct line.
-      final MeshGraph g = MeshGraph.fromController(ctrl, maxHops: 6);
+      // All, not six: below All a peer with no learned route is left out (see
+      // the rule on `MeshGraph.fromController`), and this test is about the
+      // edge a flood peer gets, so it has to be on screen.
+      final MeshGraph g = MeshGraph.fromController(ctrl);
+
       final MeshGraphEdge floodEdge = g.edges.firstWhere(
         (MeshGraphEdge e) => e.toId == peer.pubKeyHex,
         orElse: () => throw StateError('flood node had no edge to self'),
@@ -623,6 +631,69 @@ void main() {
           MeshGraph.fromController(ctrl, maxHops: 1);
       expect(hasNode(one, 'peer209'), isTrue);
       expect(hasNode(one, 'peer210'), isFalse);
+    });
+
+    test('below All, only a learned route is shown; All shows everything',
+        () async {
+      // The rule reversed on 2026-11-11, and this is the test that records why.
+      //
+      // Keeping unknown-depth peers at every setting made the tree non-empty on
+      // an unlearned mesh, but it also made the ladder filter *nothing*: All,
+      // ten, three, one and Direct drew the same picture, which the owner
+      // reported as the control being broken. A stop called "≤N hops" now
+      // asserts only what it can check — peers whose route the radio learned, at
+      // most N deep — and All (the default) still shows every peer, including
+      // the ones whose depth nobody knows.
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl = MeshcoreController(
+        transportFactory: () async => fake,
+        connection: MeshcoreConnection(
+            handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await ctrl.connect();
+      fake.emit(selfInfoFrame());
+      await Future<void>.delayed(Duration.zero);
+
+      // Two repeaters, one direct contact, one 2-hop contact, and two
+      // advert-only nodes with no outPath at all (the floaters).
+      fake.emit(contactFrame(firstByte: 0xB1, type: 2, outPath: <int>[]));
+      fake.emit(contactFrame(firstByte: 0xB2, type: 2, outPath: <int>[]));
+      fake.emit(contactFrame(firstByte: 0xD0, type: 1, outPath: <int>[]));
+      fake.emit(contactFrame(
+          firstByte: 0xD2, type: 1, outPath: <int>[0xB1, 0xB2]));
+      fake.emit(advertFrame(name: 'Floater1', firstPubByte: 0xE1));
+      fake.emit(advertFrame(name: 'Floater2', firstPubByte: 0xE2));
+      await Future<void>.delayed(Duration.zero);
+
+      bool hasNode(MeshGraph g, String name) =>
+          g.nodes.any((MeshGraphNode n) => n.label == name);
+
+      // Direct only: the 2-hop contact drops, and so do the floaters, because
+      // a depth limit cannot say anything about a peer with no learned route.
+      final MeshGraph direct = MeshGraph.fromController(ctrl, maxHops: 0);
+      expect(hasNode(direct, 'peer208'), isTrue, reason: 'direct contact');
+      expect(hasNode(direct, 'peer210'), isFalse, reason: 'known 2 hops');
+      expect(hasNode(direct, 'Floater1'), isFalse,
+          reason: 'no learned route, so ≤0 hops cannot claim it');
+      expect(hasNode(direct, 'Floater2'), isFalse);
+      expect(direct.routed, greaterThan(0),
+          reason: 'the contacts at depth 0 are routed');
+      expect(direct.hidden, greaterThan(0));
+
+      // ≤2 hops reaches the second contact.
+      final MeshGraph two = MeshGraph.fromController(ctrl, maxHops: 2);
+      expect(hasNode(two, 'peer210'), isTrue);
+      expect(two.routed, greaterThan(direct.routed),
+          reason: 'the 2-hop contact joins at ≤2');
+
+      // All is the default and shows the floaters too.
+      final MeshGraph all = MeshGraph.fromController(ctrl);
+      expect(hasNode(all, 'Floater1'), isTrue);
+      expect(hasNode(all, 'Floater2'), isTrue);
+      expect(all.hidden, 0, reason: 'All hides nothing');
+      expect(all.nodes.length, greaterThan(direct.nodes.length));
+      expect(all.peers, direct.peers, reason: 'the same peers were offered');
     });
   });
 
@@ -1369,8 +1440,8 @@ void main() {
     ctrl.dispose();
   });
 
-  test('reaching ready syncs the device clock (CMD_SET_DEVICE_TIME 0x06)',
-      () async {
+  test('the device clock is set only when the device is behind '
+      '(CMD_SET_DEVICE_TIME 0x06)', () async {
     final FakeMeshcoreTransport fake =
         FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl = MeshcoreController(
@@ -1381,14 +1452,44 @@ void main() {
     await ctrl.connect();
     fake.emit(selfInfoFrame()); // → ready
     await Future<void>.delayed(Duration.zero);
+    // The firmware only moves its clock forward, so a blind write is refused
+    // by any radio that kept time (`MyMesh.cpp:1247-1257`). The app reads
+    // first and writes only if the answer says the device is behind.
+    expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x06), isEmpty,
+        reason: 'nothing is written before the device clock is known');
 
-    final setTime =
+    final int behind =
+        DateTime.now().millisecondsSinceEpoch ~/ 1000 - 600;
+    fake.emit(currentTimeFrameAt(behind));
+    await Future<void>.delayed(Duration.zero);
+
+    final List<Uint8List> setTime =
         fake.sent.where((f) => f.isNotEmpty && f[0] == 0x06).toList();
     expect(setTime, isNotEmpty);
     // Payload is a plausible recent unix time (u32 LE after opcode).
-    final f = setTime.first;
+    final Uint8List f = setTime.first;
     final int ts = f[1] | (f[2] << 8) | (f[3] << 16) | (f[4] << 24);
     expect(ts, greaterThan(1735689600)); // > 2025-01-01
+    ctrl.dispose();
+  });
+
+  test('a device clock that is ahead is left alone', () async {
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    await Future<void>.delayed(Duration.zero);
+    final int ahead =
+        DateTime.now().millisecondsSinceEpoch ~/ 1000 + 600;
+    fake.emit(currentTimeFrameAt(ahead));
+    await Future<void>.delayed(Duration.zero);
+    expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x06), isEmpty,
+        reason: 'the firmware refuses a time behind its own, so do not ask');
     ctrl.dispose();
   });
 
@@ -1407,8 +1508,8 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x05),
           isNotEmpty); // GET_DEVICE_TIME
-      expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x06),
-          isNotEmpty); // SET_DEVICE_TIME
+      expect(fake.sent.where((f) => f.isNotEmpty && f[0] == 0x06), isEmpty,
+          reason: 'the write waits for the answer to the read');
       ctrl.dispose();
     });
 
@@ -1418,7 +1519,10 @@ void main() {
       final MeshcoreController ctrl =
           MeshcoreController(transportFactory: () async => fake);
       await ctrl.connect();
-      fake.emit(errorFrame(6)); // ERR code 6
+      // Connect reads the clock and writes it only when the device is behind
+      // (`MyMesh.cpp:1247-1257`), so no refusal is pending here: an ERR at
+      // this point is the user's business.
+      fake.emit(errorFrame(6));
       await Future<void>.delayed(Duration.zero);
       expect(
         ctrl.recentEvents.any((e) =>
@@ -1712,7 +1816,8 @@ void main() {
       ctrl.dispose();
     });
 
-    test('advertLocPolicy=2 + gps=0 → auto-enable gps only (no '
+    test('advertLocPolicy=1 (firmware ADVERT_LOC_SHARE — the live fix) + '
+        'gps=0 → auto-enable gps only (no '
         'gps_interval write — that errs on hardware that does not '
         'expose it)', () async {
       final FakeMeshcoreTransport fake =
@@ -1723,9 +1828,20 @@ void main() {
             handshakeTimeout: const Duration(seconds: 5)),
       );
       await ctrl.connect();
-      // SelfInfo carrying advertLocPolicy=2 (GPS).
+      // SelfInfo carrying advertLocPolicy=1 — the app's "Device GPS"
+      // option. MeshCore's `src/helpers/CommonCLI.h` defines
+      //   ADVERT_LOC_NONE 0 / ADVERT_LOC_SHARE 1 / ADVERT_LOC_PREFS 2
+      // and our label mapping follows it, so 1 is the mode whose GPS
+      // must be running for the choice to mean anything. This test used
+      // to pass 2, matching the app's reversed labels.
+      //
+      // The companion firmware itself only tests `== ADVERT_LOC_NONE`
+      // (`MyMesh.cpp:1252,1336,2251` at `companion-v1.17.1`), so 2 also
+      // advertises the live `sensors.node_lat/lon` — but powering the
+      // GPS for a choice labelled "Pinned" would overwrite the pinned
+      // pair, so the auto-heal deliberately keys off 1 only.
       final Uint8List si = Uint8List(58)..[0] = 0x05;
-      si[45] = 2; // advertLocPolicy byte
+      si[45] = 1; // advertLocPolicy byte
       fake.emit(si);
       await Future<void>.delayed(Duration.zero);
       // Device reports GPS disabled — and only exposes `gps`, not
@@ -1746,6 +1862,35 @@ void main() {
           isFalse,
           reason: 'auto-heal must NOT write gps_interval — hardware '
               "that doesn't expose it returns ILLEGAL_ARG");
+      ctrl.dispose();
+    });
+
+    test('advertLocPolicy=2 (firmware ADVERT_LOC_PREFS — the stored pair) '
+        '+ gps=0 → auto-heal does NOT run: stored coordinates need no GPS',
+        () async {
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl = MeshcoreController(
+        transportFactory: () async => fake,
+        connection: MeshcoreConnection(
+            handshakeTimeout: const Duration(seconds: 5)),
+      );
+      await ctrl.connect();
+      final Uint8List si = Uint8List(58)..[0] = 0x05;
+      si[45] = 2; // advertLocPolicy = PREFS (stored lat/lon)
+      fake.emit(si);
+      await Future<void>.delayed(Duration.zero);
+      fake.emit(customVarsFrame(<String, String>{'gps': '0'}));
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      final List<String> bodies = fake.sent
+          .where((f) => f.isNotEmpty && f[0] == 0x29)
+          .map((List<int> f) => String.fromCharCodes(f.skip(1).toList()))
+          .toList();
+      expect(bodies.contains('gps:1'), isFalse,
+          reason: 'PREFS advertises the stored pair — powering the GPS '
+              'would be a side effect the user did not ask for');
       ctrl.dispose();
     });
 
@@ -2147,6 +2292,36 @@ void main() {
     });
   });
 
+  group('background service refusal (L4)', () {
+    test('a refused start is recorded and retried when the app is resumed',
+        () async {
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final _RefusingKeepalive ka = _RefusingKeepalive();
+      final MeshcoreController ctrl = MeshcoreController(
+        transportFactory: () async => fake,
+        connection: MeshcoreConnection(
+            handshakeTimeout: const Duration(seconds: 5)),
+        backgroundKeepalive: ka,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      await ctrl.connect();
+      fake.emit(selfInfoFrame());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(ka.starts, 1);
+      expect(ctrl.keepaliveFailure, isNotNull,
+          reason: 'a refusal must be visible, not an unhandled error');
+
+      ka.refuse = false;
+      await ctrl.onAppResumed();
+      await Future<void>.delayed(Duration.zero);
+      expect(ka.starts, 2, reason: 'the foreground is where a retry is legal');
+      expect(ctrl.keepaliveFailure, isNull);
+      ctrl.dispose();
+    });
+  });
+
   group('app lifecycle resume (R17)', () {
     int syncs(FakeMeshcoreTransport f) =>
         f.sent.where((s) => s.isNotEmpty && s[0] == 0x0A).length;
@@ -2202,4 +2377,38 @@ void main() {
       ctrl.dispose();
     });
   });
+}
+
+/// Refuses `start()` the way Android 12+ refuses a background
+/// `startService`, then lets a retry succeed.
+class _RefusingKeepalive implements BackgroundKeepalive {
+  int starts = 0;
+  int stops = 0;
+  bool refuse = true;
+
+  /// What the OS would say. A refused start leaves nothing running, which is
+  /// the whole point of the retry: the old model claimed "running" because a
+  /// start had been *attempted*, so the retry could never fire.
+  bool running = false;
+
+  @override
+  Future<void> start() async {
+    starts++;
+    if (refuse) {
+      throw StateError('ForegroundServiceStartNotAllowedException');
+    }
+    running = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    stops++;
+    running = false;
+  }
+
+  @override
+  Future<bool> get isRunning async => running;
+
+  @override
+  bool get supported => true;
 }

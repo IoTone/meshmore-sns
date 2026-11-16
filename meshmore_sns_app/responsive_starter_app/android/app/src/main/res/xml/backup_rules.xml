@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and below. Nothing leaves the device in a backup.
+
+     The message history, places, drafts and the block list live in one file
+     sealed with an AES-256 key that the Android Keystore holds and will not
+     export, so a restored copy would be unreadable anyway; map tiles are
+     re-downloadable cache and would blow the 25 MB Auto Backup quota. Both
+     reasons point the same way, so every domain is excluded rather than a
+     list of paths that a later feature can quietly fall outside of.
+
+     Export is the one supported way off the device, and it is encrypted with
+     a passphrase the user chooses. -->
+<full-backup-content>
+    <exclude domain="root" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="file" path="maps/" />
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="external" path="." />
+</full-backup-content>

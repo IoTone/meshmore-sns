@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../gen/app_localizations.dart';
@@ -9,8 +10,8 @@ import '../../theme/mm_skin.dart';
 import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_components.dart';
 import '../../ui/mm_scaffold.dart';
-import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
+import 'my_pubkey_line.dart';
 
 /// Concept A — **NERV Terminal** dashboard: an information-maximal
 /// operations console. Chamfered HUD panels, hazard-stripe section
@@ -19,6 +20,7 @@ import 'dashboard_model.dart';
 /// SEELE monolith shows, re-imagined as a telemetry grid — proving a
 /// skin can drive layout, not just colour.
 class NervDashboard extends StatelessWidget {
+
   const NervDashboard({super.key});
 
   @override
@@ -28,37 +30,32 @@ class NervDashboard extends StatelessWidget {
     final MmSkin skin = context.skin;
     final DashboardModel m = DashboardModel.gather(mc, l);
     final TextStyle mono = TextStyle(
-        fontFamily: skin.type.monoFamily, color: skin.color.fg, fontSize: 12);
+        fontFamily: skin.type.monoFamily, color: skin.color.fg, fontSize: skin.type.sizeBody);
 
     return MmScaffold(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
+        padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.rowInset, skin.space.sectionGap),
         children: <Widget>[
-          // Brand bar + status pills.
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  'MESHMORE // NERV',
-                  style: TextStyle(
-                    fontFamily:
-                        skin.type.headingFamily ?? skin.type.monoFamily,
-                    color: skin.color.accent,
-                    fontSize: 15,
-                    letterSpacing: 3,
-                    fontWeight: FontWeight.w700,
-                  ),
+          SizedBox(height: skin.space.rowGap),
+          // Status pills, right-aligned. A Wrap rather than a Row: at the
+          // accessibility floor the two labels together are wider than a
+          // 320 dp screen, and a Row cannot give the width back.
+          Align(
+            alignment: Alignment.centerRight,
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 6,
+              runSpacing: 6,
+              children: <Widget>[
+                MmStatusPill(m.channelLabel),
+                MmStatusPill(
+                  m.statusLabel,
+                  alert: m.alert,
                 ),
-              ),
-              MmStatusPill(m.channelLabel),
-              const SizedBox(width: 6),
-              MmStatusPill(
-                m.statusLabel,
-                alert: m.alert,
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: skin.space.rowInset),
 
           // LINK panel.
           MmPanel(
@@ -74,29 +71,31 @@ class NervDashboard extends StatelessWidget {
                       MmAudioToggle(
                           dense: true, size: 18, color: skin.color.accent),
                       IconButton(
-                        visualDensity: VisualDensity.compact,
+                        tooltip: l.dashboardDevice,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
-                            minWidth: 28, minHeight: 28),
+                            minWidth: 48, minHeight: 48),
                         icon: Icon(Icons.bluetooth,
                             size: 18, color: skin.color.accent),
-                        onPressed: () => DeviceManagerSheet.show(context),
+                        onPressed: () => context.push('/settings/connection'),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: skin.space.rowGap),
                 MmReadout(
                   label: 'BLE',
                   value: m.statusLabel,
-                  valueColor: m.alert ? skin.color.alert : skin.color.ok,
+                  valueColor: m.alert
+                      ? skin.color.alert
+                      : (m.linked ? skin.color.link : skin.color.ok),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: skin.space.labelToControl),
                 MmReadout(label: l.dashNervNode, value: m.nodeName ?? '—'),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: skin.space.rowInset),
 
           // RADIO panel.
           MmPanel(
@@ -104,14 +103,24 @@ class NervDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 MmSectionHeader(l.dashboardRadio),
-                const SizedBox(height: 8),
-                Text(m.radioLine ?? l.dashboardAwaitingDevice, style: mono),
-                const SizedBox(height: 4),
+                SizedBox(height: skin.space.rowGap),
+                m.radioFields == null
+                    ? Text(l.dashboardAwaitingDevice, style: mono)
+                    : MmValueFields(
+                        fields: m.radioFields!,
+                        separator: '  ',
+                        // Two spaces, not the default middle dot: the radio's
+                        // settings are a tuple, not four separate facts.
+                        color: mono.color,
+                      ),
+                SizedBox(height: skin.space.insideText),
+                MyPubkeyLine(pubKeyHex: m.pubKeyHex, style: mono),
+                SizedBox(height: skin.space.labelToControl),
                 MmReadout(label: l.dashNervRegion, value: m.region),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: skin.space.rowInset),
 
           // MESH panel — hazard-striped header (the "live fabric" band).
           MmPanel(
@@ -119,26 +128,26 @@ class NervDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 MmSectionHeader(l.dashNervMesh),
-                const SizedBox(height: 10),
+                SizedBox(height: skin.space.rowGap),
                 MmReadout(
-                    label: l.dashboardPeersInRange,
+                    label: m.peersLabel(l),
                     value: '${m.peersInRange}',
                     emphasize: true),
-                const SizedBox(height: 4),
+                SizedBox(height: skin.space.labelToControl),
                 MmReadout(
                     label: l.dashNervKnown, value: '${m.knownCount}'),
                 if (m.contactsLabel != null) ...<Widget>[
-                  const SizedBox(height: 4),
+                  SizedBox(height: skin.space.labelToControl),
                   MmReadout(label: l.dashContacts, value: m.contactsLabel!),
                 ],
                 if (m.batteryLine != null) ...<Widget>[
-                  const SizedBox(height: 4),
+                  SizedBox(height: skin.space.labelToControl),
                   MmReadout(label: l.dashboardBattery, value: m.batteryLine!),
                 ],
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: skin.space.rowInset),
 
           // EVENTS log.
           MmPanel(
@@ -146,21 +155,21 @@ class NervDashboard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 MmSectionHeader(l.dashNervEvents),
-                const SizedBox(height: 8),
+                SizedBox(height: skin.space.rowGap),
                 if (m.events.isEmpty)
                   Text(l.dashboardNoActivity,
                       style: mono.copyWith(color: skin.color.fgMuted))
                 else
                   for (final ({String time, String text}) e in m.events)
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      padding: EdgeInsets.symmetric(vertical: skin.space.insideText),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(e.time,
                               style: mono.copyWith(
-                                  color: skin.color.fgMuted, fontSize: 11)),
-                          const SizedBox(width: 8),
+                                  color: skin.color.fgMuted, fontSize: skin.type.sizeSm)),
+                          SizedBox(width: skin.space.rowGap),
                           Expanded(child: Text(e.text, style: mono)),
                         ],
                       ),

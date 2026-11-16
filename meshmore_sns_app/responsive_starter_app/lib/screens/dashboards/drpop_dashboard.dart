@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../gen/app_localizations.dart';
@@ -8,8 +9,8 @@ import '../../meshcore/meshcore_controller.dart';
 import '../../theme/mm_skin.dart';
 import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_scaffold.dart';
-import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
+import 'my_pubkey_line.dart';
 
 /// Concept E — **DR Pop** dashboard: Designers-Republic maximalism. Flat
 /// saturated colour blocks, bold numerals, katakana run as graphics, and
@@ -18,6 +19,7 @@ import 'dashboard_model.dart';
 /// colour from being a sole information carrier (every block carries a
 /// label + value too). Same DashboardModel as every skin.
 class DrPopDashboard extends StatelessWidget {
+
   const DrPopDashboard({super.key});
 
   // Wipeout-flavoured fake corp names + katakana, picked deterministically
@@ -51,18 +53,18 @@ class DrPopDashboard extends StatelessWidget {
 
     return MmScaffold(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
+        padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.rowInset, skin.space.sectionGap),
         children: <Widget>[
           // Brand bar — magenta slab + PHASE code.
           Row(
             children: <Widget>[
               Expanded(
-                child: Text('MESHMORE',
+                child: Text('DR POP',
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                         fontFamily: skin.type.headingFamily,
                         color: magenta,
-                        fontSize: 20,
+                        fontSize: skin.type.sizeXl,
                         letterSpacing: 1,
                         fontWeight: FontWeight.w800)),
               ),
@@ -70,7 +72,7 @@ class DrPopDashboard extends StatelessWidget {
                   style: TextStyle(
                       color: skin.color.fgMuted,
                       fontFamily: skin.type.monoFamily,
-                      fontSize: 12,
+                      fontSize: skin.type.sizeBody,
                       letterSpacing: 1)),
               const MmAudioToggle(),
               IconButton(
@@ -78,11 +80,11 @@ class DrPopDashboard extends StatelessWidget {
                 icon: Icon(Icons.bluetooth,
                     size: 20,
                     color: m.alert ? skin.color.alert : magenta),
-                onPressed: () => DeviceManagerSheet.show(context),
+                onPressed: () => context.push('/settings/connection'),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: skin.space.rowGap),
           // Hero row — PEERS (acid) + STATUS (magenta / alert).
           Row(
             children: <Widget>[
@@ -90,12 +92,12 @@ class DrPopDashboard extends StatelessWidget {
                 child: _Block(
                   skin: skin,
                   color: acid,
-                  label: l.dashHyperPeers,
+                  label: l.dashPeers,
                   value: '${m.peersInRange}',
                   accent: 'ノード',
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: skin.space.rowGap),
               Expanded(
                 child: _Block(
                   skin: skin,
@@ -108,7 +110,7 @@ class DrPopDashboard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: skin.space.rowGap),
           // Channel sub-brand block — the generated livery.
           _SubBrandBlock(
             skin: skin,
@@ -118,7 +120,7 @@ class DrPopDashboard extends StatelessWidget {
             kata: kata,
             activity: act,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: skin.space.rowGap),
           // KNOWN + BATTERY row.
           Row(
             children: <Widget>[
@@ -131,7 +133,7 @@ class DrPopDashboard extends StatelessWidget {
                   accent: 'メッシュ',
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: skin.space.rowGap),
               Expanded(
                 child: _Block(
                   skin: skin,
@@ -144,12 +146,12 @@ class DrPopDashboard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: skin.space.rowGap),
           // Radio line as a thin coded strip.
           Container(
             width: double.infinity,
             color: skin.color.surface,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: EdgeInsets.symmetric(horizontal: skin.space.rowInset, vertical: skin.space.rowGap),
             child: Text(
                 '通信 ${m.radioLine ?? '—'}'
                 '${m.contactsLabel != null ? '  ·  ${l.dashContacts} ${m.contactsLabel}' : ''}',
@@ -157,7 +159,21 @@ class DrPopDashboard extends StatelessWidget {
                 style: TextStyle(
                     color: skin.color.fg,
                     fontFamily: skin.type.monoFamily,
-                    fontSize: 12)),
+                    fontSize: skin.type.sizeBody)),
+          ),
+          // Own pubkey — the identifier another operator needs to add
+          // you before their DMs can route.
+          Container(
+            width: double.infinity,
+            color: skin.color.surface,
+            padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.insideText, skin.space.rowInset, skin.space.rowGap),
+            child: MyPubkeyLine(
+              pubKeyHex: m.pubKeyHex,
+              style: TextStyle(
+                  color: skin.color.fg,
+                  fontFamily: skin.type.monoFamily,
+                  fontSize: skin.type.sizeBody),
+            ),
           ),
         ],
       ),
@@ -192,8 +208,12 @@ class _Block extends StatelessWidget {
         color.computeLuminance() > 0.45 ? const Color(0xFF101014) : skin.color.fg;
     final Color sub = ink.withValues(alpha: 0.7);
     return Container(
-      height: 116,
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      // A floor, not a fixed height: the block grid reads as equal blocks at
+      // normal text, and at 200 % the label, the numeral and the accent need
+      // more room than 116 dp, which overflowed by 52 px on a 320 dp phone.
+      constraints: const BoxConstraints(minHeight: 116),
+      padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowGap,
+          skin.space.rowInset, skin.space.rowGap),
       decoration: BoxDecoration(
         color: outline ? skin.color.surface : color,
         border: outline ? Border.all(color: color, width: 1.5) : null,
@@ -204,10 +224,13 @@ class _Block extends StatelessWidget {
           Text(label,
               style: TextStyle(
                   color: outline ? skin.color.fgMuted : sub,
-                  fontSize: 11,
+                  fontSize: skin.type.sizeSm,
                   letterSpacing: 1.5,
                   fontWeight: FontWeight.w700)),
-          const Spacer(),
+          // A gap, not a Spacer: with a height floor instead of a fixed
+          // height the column has no bounded space to distribute, and a flex
+          // child there is a layout error rather than a layout.
+          SizedBox(height: skin.space.labelToControl),
           Text(value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -218,11 +241,11 @@ class _Block extends StatelessWidget {
                   height: 1.0,
                   fontWeight: FontWeight.w700)),
           if (accent != null) ...<Widget>[
-            const SizedBox(height: 4),
+            SizedBox(height: skin.space.labelToControl),
             Text(accent!,
                 style: TextStyle(
                     color: outline ? skin.color.fgMuted : sub,
-                    fontSize: 13,
+                    fontSize: skin.type.sizeBodyLg,
                     letterSpacing: 2)),
           ],
         ],
@@ -257,43 +280,59 @@ class _SubBrandBlock extends StatelessWidget {
         '${'▮' * filled}${'▯' * (5 - filled)}';
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.rowInset, skin.space.rowInset),
       color: color,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text('[$brand·NET]',
-                  style: TextStyle(
-                      color: ink,
-                      fontFamily: skin.type.monoFamily,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1)),
-              const Spacer(),
+              // The brand tag is unbounded text in a Row: at 200 % on a 320 dp
+              // phone it pushed 229 px past the edge. It takes what is left and
+              // ellipsises; the katakana tag keeps its own room.
+              Expanded(
+                child: Text('[$brand·NET]',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: ink,
+                        fontFamily: skin.type.monoFamily,
+                        fontSize: skin.type.size(14),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1)),
+              ),
+              SizedBox(width: skin.space.rowGap),
               Text(kata,
                   style: TextStyle(
                       color: ink.withValues(alpha: 0.75),
-                      fontSize: 14,
+                      fontSize: skin.type.size(14),
                       letterSpacing: 3)),
             ],
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: skin.space.rowGap),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
-              Text(channel,
-                  style: TextStyle(
-                      color: ink,
-                      fontFamily: skin.type.monoFamily,
-                      fontSize: 30,
-                      height: 1.0,
-                      fontWeight: FontWeight.w800)),
-              const Spacer(),
+              // The channel name is the loudest thing in this skin, and at
+              // 200 % it is wider than the phone. It scales down inside the
+              // room it has rather than pushing the activity bars off the card.
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(channel,
+                      style: TextStyle(
+                          color: ink,
+                          fontFamily: skin.type.monoFamily,
+                          fontSize: skin.type.size(30),
+                          height: 1.0,
+                          fontWeight: FontWeight.w800)),
+                ),
+              ),
+              SizedBox(width: skin.space.rowGap),
               Text(bars,
                   style: TextStyle(
-                      color: ink, fontSize: 18, letterSpacing: 1)),
+                      color: ink, fontSize: skin.type.size(18), letterSpacing: 1)),
             ],
           ),
         ],

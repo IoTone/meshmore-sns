@@ -1,3 +1,6 @@
+> **Historical. This is 2026-05-26 research into using device altitude instead of phone GPS.**
+> The record for telemetry is `meshmore-telemetry-coverage-spec.md`. See `docs/INDEX.md` for the role of every document.
+
 # Telemetry research — using device altitude instead of phone GPS
 
 **Status:** research only, no code shipped yet. Reviewed against

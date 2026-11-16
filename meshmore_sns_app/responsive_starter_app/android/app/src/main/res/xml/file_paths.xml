@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The directories an export can come from. Both are app-private; the
+     provider only ever exposes the one file named in the intent. -->
+<paths>
+    <files-path name="app_files" path="." />
+    <cache-path name="app_cache" path="." />
+</paths>

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import io.iotone.meshcore.codec.MeshcoreFrameCodec;
 import io.iotone.meshcore.frames.BatteryStorageFrame;
+import io.iotone.meshcore.frames.ChannelDataFrame;
 import io.iotone.meshcore.frames.ChannelMessageFrame;
 import io.iotone.meshcore.frames.ContactMessageFrame;
 import io.iotone.meshcore.frames.ContactsStartFrame;
@@ -19,6 +20,7 @@ import io.iotone.meshcore.frames.MsgSentFrame;
 import io.iotone.meshcore.frames.NoMoreMessagesFrame;
 import io.iotone.meshcore.frames.OkFrame;
 import io.iotone.meshcore.frames.UnsupportedFrame;
+import io.iotone.meshcore.model.ChannelData;
 import io.iotone.meshcore.model.ChannelMessage;
 import io.iotone.meshcore.model.ContactMessage;
 import io.iotone.meshcore.model.RadioParams;
@@ -247,6 +249,24 @@ class GoldenVectorsTest {
                     assertEquals(exp.getString("signaturePrefix"),
                             TestUtil.toHex(m.signaturePrefix()));
                 }
+                break;
+            }
+            case "ChannelDataFrame": {
+                ChannelData d = assertInstanceOf(ChannelDataFrame.class, got)
+                        .data();
+                assertEquals(exp.getDouble("snrDb"), d.snrDb(), 1e-9);
+                assertEquals(exp.getInt("channelIndex"), d.channelIndex());
+                assertEquals(exp.getInt("pathLen"), d.pathLen());
+                assertEquals(exp.getBoolean("isFlood"), d.isFlood());
+                assertEquals(exp.getInt("dataType"), d.dataType());
+                assertEquals(exp.getJSONArray("data").length(),
+                        d.data().length);
+                for (int i = 0; i < d.data().length; i++) {
+                    assertEquals(exp.getJSONArray("data").getInt(i),
+                            d.data()[i] & 0xFF);
+                }
+                assertEquals(exp.getString("via"),
+                        d.via().name().toLowerCase());
                 break;
             }
             case "BatteryStorageFrame": {

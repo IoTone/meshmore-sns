@@ -123,8 +123,178 @@ List<double> parseTemperaturesC(String text) {
       if (g == null) continue;
       final double? v = double.tryParse(g);
       if (v == null) continue;
-      out.add(isF ? (v - 32) * 5 / 9 : v);
+      // Convert first, then judge, as `parseWxMeasurements` does: 95F is 35C
+      // and is an ordinary report. The range also drops a non-finite value,
+      // which `double.tryParse('Infinity')` happily returns.
+      final double c = isF ? (v - 32) * 5 / 9 : v;
+      if (!c.isFinite || c < -90 || c > 60) continue;
+      out.add(c);
     }
   }
   return out;
+}
+
+// ------------------------------------------------------- measured quantities
+
+/// A weather message counts only when it carries a measured quantity.
+///
+/// The owner's rule, and it is the right one: "nice weather", "rain later",
+/// "windy out there" are opinions, and a channel of them is not a weather
+/// station. A number and a unit is a report. Everything below exists so a real
+/// report is read correctly and a bare word is not.
+class WxMeasurements {
+  const WxMeasurements({
+    this.tempsC = const <double>[],
+    this.humidityPct,
+    this.pressureHpa,
+    this.windMps,
+  });
+
+  /// Temperatures found, normalised to °C. A range contributes both ends.
+  final List<double> tempsC;
+  final int? humidityPct;
+  final double? pressureHpa;
+
+  /// Wind speed, normalised to m/s.
+  final double? windMps;
+
+  bool get isEmpty =>
+      tempsC.isEmpty &&
+      humidityPct == null &&
+      pressureHpa == null &&
+      windMps == null;
+
+  bool get isNotEmpty => !isEmpty;
+}
+
+/// Numbers that are a speed, a pressure or a percentage rather than a
+/// temperature: a temperature match must not be read out of "12 mph".
+const String _nonTempUnit =
+    '(?!(?:\\s*(?:mph|kt|kts|knots?|km/?h|kph|m/s|fps|hPa|hpa|mb|mbar|inHg|inhg|%)))';
+
+/// A number immediately followed by a temperature unit. Decimals allowed, and
+/// the unit must not be one of the other weather units.
+final RegExp _tempUnitRe = RegExp(
+  r'(-?\d{1,3}(?:\.\d+)?)\s*(?:[-–~]\s*(-?\d{1,3}(?:\.\d+)?))?\s*'
+  r'(°c|℃|°f|℉|degrees?\s*fahrenheit|degrees?\s*celsius|degrees?\s*f\b|'
+  '${r'degrees?\s*c\b|degrees?|celsius|fahrenheit|°|度|c\b|f\b)'}$_nonTempUnit',
+  caseSensitive: false,
+);
+
+final RegExp _percentNearHumidity = RegExp(
+  r'(?:humid(?:ity)?|rh|相対湿度|湿度)[^.\n]{0,24}?(\d{1,3})\s*%',
+  caseSensitive: false,
+);
+/// "40% humidity" — the percentage first, which is how most people write it.
+final RegExp _numberThenHumidity = RegExp(
+  r'(\d{1,3})\s*%\s*(?:rh|relative\s+humidity|humidity|相対湿度|湿度)',
+  caseSensitive: false,
+);
+/// "humidity 40" / "humid 40 percent" — the word then the number, but the
+/// number must be a percentage and not a temperature: "humid 95F" is 95
+/// degrees at high humidity, not 95 % relative humidity.
+final RegExp _humidityWordThenNumber = RegExp(
+  r'(?:humid(?:ity)?|rh)[^.\n]{0,16}?(\d{1,3})\s*'
+  r'(?:%|percent|pct|パーセント)',
+  caseSensitive: false,
+);
+/// "rh 62" — the abbreviation is itself the unit, which is how weather nets
+/// read it. "humid 95" is not, because that number can be a temperature.
+final RegExp _rhThenNumber = RegExp(
+  r'\brh\s*[:=]?\s*(\d{1,3})\b',
+  caseSensitive: false,
+);
+
+final RegExp _pressureHpa = RegExp(
+  r'(\d{3,4}(?:\.\d{1,2})?)\s*(?:hpa|mb|mbar|ミリバール|ヘクトパスカル)',
+  caseSensitive: false,
+);
+final RegExp _pressureInHg = RegExp(
+  r'(\d{2}\.\d{1,2})\s*(?:inhg|in\s*hg|inches?(?:\s*of\s*mercury)?)',
+  caseSensitive: false,
+);
+
+final RegExp _windSpeed = RegExp(
+  r'(\d{1,3}(?:\.\d+)?)\s*(mph|kt|kts|knots?|km/?h|kph|m/s|fps)',
+  caseSensitive: false,
+);
+final RegExp _windContext = RegExp(
+  r'\b(?:wind|winds|windy|gust|gusts|gusting|breeze|blowing)\b|風',
+  caseSensitive: false,
+);
+
+double _toMps(double v, String unit) {
+  final String u = unit.toLowerCase();
+  if (u.startsWith('mph')) return v * 0.44704;
+  if (u.startsWith('kt')) return v * 0.514444;
+  if (u.startsWith('km') || u.startsWith('kph')) return v / 3.6;
+  if (u.startsWith('fp')) return v * 0.3048;
+  return v; // m/s
+}
+
+/// Parse the measured quantities in [text].
+///
+/// Deliberately strict, because the cost of a false positive is a microclimate
+/// card that claims a channel reported weather when somebody said "rain later".
+WxMeasurements parseWxMeasurements(String text) {
+  final List<double> temps = <double>[];
+
+  for (final RegExpMatch m in _tempUnitRe.allMatches(text)) {
+    final String unit = (m.group(3) ?? '').toLowerCase();
+    final bool isF = unit.contains('f') || unit.contains('℉');
+    for (final String? g in <String?>[m.group(1), m.group(2)]) {
+      if (g == null) continue;
+      final double? v = double.tryParse(g);
+      if (v == null) continue;
+      // Convert FIRST, then judge: 95F is 35 C and is a perfectly ordinary
+      // report, while the old order rejected anything over 70 before the
+      // Fahrenheit conversion and silently dropped every warm US reading.
+      final double c = isF ? (v - 32) * 5 / 9 : v;
+      if (c < -90 || c > 60) continue;
+      temps.add(c);
+    }
+  }
+
+  int? humidity;
+  final RegExpMatch? h1 = _percentNearHumidity.firstMatch(text);
+  final RegExpMatch? h2 = h1 == null
+      ? _numberThenHumidity.firstMatch(text)
+      : null;
+  final RegExpMatch? h3 = (h1 == null && h2 == null)
+      ? _humidityWordThenNumber.firstMatch(text)
+      : null;
+  final RegExpMatch? h4 = (h1 == null && h2 == null && h3 == null)
+      ? _rhThenNumber.firstMatch(text)
+      : null;
+  final String? hRaw =
+      h1?.group(1) ?? h2?.group(1) ?? h3?.group(1) ?? h4?.group(1);
+  final int? hVal = hRaw == null ? null : int.tryParse(hRaw);
+  if (hVal != null && hVal >= 0 && hVal <= 100) humidity = hVal;
+
+  double? pressure;
+  final RegExpMatch? pHpa = _pressureHpa.firstMatch(text);
+  final RegExpMatch? pIn = pHpa == null ? _pressureInHg.firstMatch(text) : null;
+  if (pHpa != null) {
+    final double? v = double.tryParse(pHpa.group(1)!);
+    if (v != null && v > 800 && v < 1100) pressure = v;
+  } else if (pIn != null) {
+    final double? v = double.tryParse(pIn.group(1)!);
+    if (v != null && v > 25 && v < 33) pressure = v * 33.8639;
+  }
+
+  double? wind;
+  if (_windContext.hasMatch(text)) {
+    final RegExpMatch? w = _windSpeed.firstMatch(text);
+    if (w != null) {
+      final double? v = double.tryParse(w.group(1)!);
+      if (v != null && v >= 0 && v <= 250) wind = _toMps(v, w.group(2)!);
+    }
+  }
+
+  return WxMeasurements(
+    tempsC: temps,
+    humidityPct: humidity,
+    pressureHpa: pressure,
+    windMps: wind,
+  );
 }

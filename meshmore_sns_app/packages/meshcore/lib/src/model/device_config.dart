@@ -50,6 +50,8 @@ class DeviceInfo {
     required this.firmwareVersion,
     required this.clientRepeat,
     required this.pathHashMode,
+    this.hasClientRepeat = true,
+    this.hasPathHashMode = true,
   });
 
   final int firmwareVerCode;
@@ -61,8 +63,24 @@ class DeviceInfo {
   final String firmwareBuildDate;
   final String manufacturer;
   final String firmwareVersion;
+  /// `repeat_enabled` at offset 80. Added at companion protocol version 9;
+  /// a frame from an older radio stops at offset 79 and reports `0` here,
+  /// which is also what a radio that does not repeat says.
   final int clientRepeat;
+
+  /// True when the frame actually carried [clientRepeat]. False means the
+  /// radio predates version 9, and `0` is the firmware's own default rather
+  /// than a reading.
+  final bool hasClientRepeat;
+
+  /// `path_hash_mode` at offset 81, the `set path.hash.mode` value: `0` is
+  /// one-byte hashes (the legacy setting), `1` two bytes, `2` three. Added at
+  /// version 10; an older frame stops at offset 80 and reports `0` here, which
+  /// is the only mode those radios can use.
   final int pathHashMode;
+
+  /// True when the frame actually carried [pathHashMode].
+  final bool hasPathHashMode;
 
   @override
   String toString() => 'DeviceInfo(fw: $firmwareVersion '

@@ -7,7 +7,7 @@ import io.iotone.meshcore.model.ChannelInfo;
 /**
  * {@code RESP_CODE_CHANNEL_INFO} (0x12) — reply to GET_CHANNEL.
  *
- * @param info the decoded channel slot (index, name, 16-byte PSK)
+ * @param info the decoded channel slot (index, name, PSK — 16 or 32 bytes)
  */
 public record ChannelInfoFrame(ChannelInfo info) implements MeshcoreInbound {
 

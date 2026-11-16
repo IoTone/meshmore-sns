@@ -1,3 +1,6 @@
+> **Historical. This is the Flutter template note about launch images.**
+> The record for the app is `meshmore_sns_app/README.md`. See `docs/INDEX.md` for the role of every document.
+
 # Launch Screen Assets
 
 You can customize the launch screen with your own desired assets by replacing the image files in this directory.

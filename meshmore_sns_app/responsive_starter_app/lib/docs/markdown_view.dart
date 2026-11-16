@@ -6,6 +6,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
+import '../theme/mm_skin.dart';
+import '../ui/mm_shape.dart';
 
 /// R53 — renders a Markdown string to widgets with the app's
 /// "futuristic" treatment: a monospace family throughout, tracked
@@ -88,8 +90,10 @@ class _MarkdownViewState extends State<MarkdownView> {
         return _codeBlock(context, node);
       case 'blockquote':
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.fromLTRB(14, 2, 8, 2),
+          margin: EdgeInsets.only(bottom: context.skin.space.rowInset),
+          padding: EdgeInsets.fromLTRB(context.skin.space.rowInset,
+              context.skin.space.insideText, context.skin.space.rowGap,
+              context.skin.space.insideText),
           decoration: BoxDecoration(
             border: Border(
                 left: BorderSide(color: cs.primary.withValues(alpha: .7), width: 3)),
@@ -105,7 +109,7 @@ class _MarkdownViewState extends State<MarkdownView> {
         return _list(context, node, ordered: true);
       case 'hr':
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: EdgeInsets.symmetric(vertical: context.skin.space.rowInset),
           child: Container(height: 1, color: cs.primary.withValues(alpha: .4)),
         );
       case 'table':
@@ -145,7 +149,11 @@ class _MarkdownViewState extends State<MarkdownView> {
       ),
     );
     return Padding(
-      padding: EdgeInsets.only(top: level <= 2 ? 18 : 12, bottom: 8),
+      padding: EdgeInsets.only(
+          top: level <= 2
+              ? context.skin.space.sectionGap - context.skin.space.step(2)
+              : context.skin.space.rowInset,
+          bottom: context.skin.space.rowGap),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -168,12 +176,12 @@ class _MarkdownViewState extends State<MarkdownView> {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final TextStyle base = TextStyle(
       fontFamily: _mono,
-      fontSize: 14,
+      fontSize: context.skin.type.size(14),
       height: 1.55,
       color: cs.onSurface,
     );
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: context.skin.space.rowGap),
       child: RichText(
         text: TextSpan(children: _inline(context, children, base: base)),
       ),
@@ -189,7 +197,7 @@ class _MarkdownViewState extends State<MarkdownView> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .4)),
       ),
       child: SingleChildScrollView(
@@ -198,7 +206,7 @@ class _MarkdownViewState extends State<MarkdownView> {
           code,
           style: TextStyle(
             fontFamily: _mono,
-            fontSize: 12.5,
+            fontSize: context.skin.type.size(12.5),
             height: 1.45,
             color: cs.onSurface.withValues(alpha: .92),
           ),
@@ -228,7 +236,7 @@ class _MarkdownViewState extends State<MarkdownView> {
               child: Text(marker,
                   style: TextStyle(
                       fontFamily: _mono,
-                      fontSize: 14,
+                      fontSize: context.skin.type.size(14),
                       height: 1.55,
                       color: cs.primary,
                       fontWeight: FontWeight.w700)),
@@ -264,7 +272,7 @@ class _MarkdownViewState extends State<MarkdownView> {
           children: _inline(context, List<md.Node>.of(inline),
               base: TextStyle(
                   fontFamily: _mono,
-                  fontSize: 14,
+                  fontSize: context.skin.type.size(14),
                   height: 1.55,
                   color: cs.onSurface)),
         ),
@@ -311,7 +319,7 @@ class _MarkdownViewState extends State<MarkdownView> {
                     context, cell.children ?? const <md.Node>[],
                     base: TextStyle(
                       fontFamily: _mono,
-                      fontSize: 12.5,
+                      fontSize: context.skin.type.size(12.5),
                       height: 1.4,
                       color: head ? cs.primary : cs.onSurface,
                       fontWeight:
@@ -338,7 +346,7 @@ class _MarkdownViewState extends State<MarkdownView> {
         child: Container(
           decoration: BoxDecoration(
             border: Border.all(color: cs.outline.withValues(alpha: .4)),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: mmRadius(context, 8),
           ),
           child: Table(
             defaultColumnWidth: const IntrinsicColumnWidth(),

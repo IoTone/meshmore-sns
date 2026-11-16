@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'paired_device_store.dart';
+import '../util/prefs.dart';
 
 /// R41+1 — a paired device the user has connected to in the past,
 /// with the wall-clock time of its last successful link. Persisted
@@ -130,7 +131,7 @@ abstract final class PairedDeviceHistoryStore {
   static Future<void> _persist(
       List<PairedDeviceHistoryEntry> list) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setString(
+    await Prefs.setString(p, 
         _kKey,
         jsonEncode(<Map<String, Object?>>[
           for (final PairedDeviceHistoryEntry e in list) e.toJson(),

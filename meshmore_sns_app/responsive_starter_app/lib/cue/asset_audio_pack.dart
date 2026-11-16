@@ -15,11 +15,11 @@ import 'cue_service.dart';
 /// service (or restarting the app).
 ///
 /// Asset shape — `assets/audio/<preset.audioPackKey>/<CueKind.name>.wav`.
-/// Six preset folders × fourteen CueKinds = 84 files (every theme has a
+/// Eleven preset folders × nineteen cues = 209 files (every theme has its own
 /// full bespoke set — none fall through to a generic motif); if a file is
 /// missing at runtime (asset bundling slipped, etc.) we silently fall back
 /// to the system click via [SystemSoundAudioPack].
-class AssetAudioPack implements AudioPack {
+class AssetAudioPack implements AudioPack, WarmableAudioPack {
   AssetAudioPack({
     required this.theme,
     AudioPlayer? player,
@@ -40,6 +40,65 @@ class AssetAudioPack implements AudioPack {
   /// for seconds and shouldn't dominate. Lower gain per the field brief.
   static const double _loopVolume = 0.45;
 
+  // One-shot cues are *sonification*, not media: they must not take audio
+  // focus (a cue that interrupts the owner's podcast for 100 ms is a
+  // nuisance, and a denied focus request is a cue that never plays), and on
+  // iOS an ambient session keeps the Ring/Silent switch authoritative.
+  static final AudioContext _cueContext = AudioContext(
+    android: AudioContextAndroid(
+      isSpeakerphoneOn: false,
+      audioMode: AndroidAudioMode.normal,
+      stayAwake: false,
+      contentType: AndroidContentType.sonification,
+      // USAGE_MEDIA, not USAGE_ASSISTANCE_SONIFICATION, and the difference is
+      // audible rather than academic: Android routes sonification to the
+      // *system* stream, so a phone with touch sounds off — which is most of
+      // them — plays a cue nobody hears. Media routing is the stream the volume
+      // keys and the user's own expectation are about.
+      //
+      // The reason this was changed in the first place was audio focus, and
+      // that is a separate knob: `audioFocus: none` is what keeps a cue from
+      // interrupting whatever else is playing.
+      usageType: AndroidUsageType.media,
+      audioFocus: AndroidAudioFocus.none,
+    ),
+    // Ambient mixes with anything already playing and obeys the Ring/Silent
+    // switch, which is the iOS way of saying "this is a UI sound".
+    iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
+  );
+
+  /// One prepared MediaPlayer, reused. `ReleaseMode.stop` keeps the loaded
+  /// buffer between plays instead of tearing it down (the default release mode
+  /// does exactly that, which is how two quick swipes lost the first cue).
+  ///
+  /// `PlayerMode.lowLatency` is deliberately **not** used, and this is the
+  /// reason. In that mode audioplayers drives a `SoundPool`, which loads a
+  /// source asynchronously (`audioplayers_android/.../SoundPoolPlayer.kt:93-140`
+  /// sets `prepared = false` and calls `soundPool.load`), while
+  /// `WrappedPlayer.play()` starts only when the player is already prepared
+  /// (`WrappedPlayer.kt:211-220`). Every cue is a different WAV, so every cue
+  /// needs a fresh load, and a `play()` issued straight after `setSource` is
+  /// dropped in silence with no exception — no cue, no fallback, nothing in the
+  /// log. A MediaPlayer's `setSource` resolves after it is prepared, so the
+  /// sequence below is deterministic.
+  bool _ready = false;
+
+  Future<void> _ensureReady() async {
+    if (_ready) return;
+    try {
+      await _player.setAudioContext(_cueContext);
+      await _player.setPlayerMode(PlayerMode.mediaPlayer);
+      await _player.setReleaseMode(ReleaseMode.stop);
+      await _loopPlayer.setAudioContext(_cueContext);
+      await _loopPlayer.setReleaseMode(ReleaseMode.loop);
+      _ready = true;
+    } catch (_) {
+      // Older platform / no audio service: leave the defaults in place and
+      // let `play` fail into the fallback below.
+      _ready = true;
+    }
+  }
+
   /// Compose the asset path the same way the synth script lays it out.
   /// Visible for the unit test (and for anyone reading the call site).
   static String assetPathFor(MmThemePreset preset, CueKind kind) =>
@@ -49,12 +108,27 @@ class AssetAudioPack implements AudioPack {
   Future<void> play(CueKind kind) async {
     final MmThemePreset p = theme.preset;
     final String path = assetPathFor(p, kind);
+    final double volume = theme.cueVolume;
     try {
+      final AudioPlayer? prepared = await _prepared(kind);
+      if (prepared != null) {
+        await prepared.setVolume(volume);
+        await prepared.seek(Duration.zero);
+        await prepared.resume();
+        return;
+      }
+      await _ensureReady();
       // `AssetSource` paths are rooted at `assets/` by audioplayers
       // convention; passing `audio/seele/messageIn.wav` resolves to
       // `assets/audio/seele/messageIn.wav` in the bundle.
-      await _player.stop();
-      await _player.play(AssetSource(path));
+      //
+      // Three explicit steps rather than `play(...)`: `setSource` is the call
+      // that resolves once the file is prepared, so `resume` cannot overtake
+      // it. `play()` with a mode argument takes the same path but leaves the
+      // ordering implicit, which is what made a silent drop possible.
+      await _player.setVolume(volume);
+      await _player.setSource(AssetSource(path));
+      await _player.resume();
     } catch (_) {
       // Asset missing / platform error → graceful degrade so the cue
       // is never silently lost, just less themed.
@@ -66,13 +140,71 @@ class AssetAudioPack implements AudioPack {
   Future<void> startLoop(CueKind kind) async {
     final String path = assetPathFor(theme.preset, kind);
     try {
+      await _ensureReady();
       await _loopPlayer.stop();
       await _loopPlayer.setReleaseMode(ReleaseMode.loop);
-      await _loopPlayer.setVolume(_loopVolume);
+      await _loopPlayer.setVolume(_loopVolume * theme.cueVolume);
       await _loopPlayer.play(AssetSource(path));
     } catch (_) {
       // Asset missing / platform error — the scan just runs silent.
       // (No system-sound fallback: it can't loop.)
+    }
+  }
+
+  /// A prepared player per cue, so a tap is a start rather than a load.
+  ///
+  /// A MediaPlayer holds one source at a time, so the only way to pre-load a
+  /// cue is to keep a player that already has it. The first design warmed the
+  /// shared playback player by playing each cue at zero volume and stopping it,
+  /// which both left that player at volume 0 and stopped whatever was playing —
+  /// the owner heard silence. Each kind gets its own idle player instead, source
+  /// set once, resumed on play.
+  final Map<CueKind, AudioPlayer> _warmPlayers = <CueKind, AudioPlayer>{};
+  MmThemePreset? _warmPreset;
+
+  /// The kinds worth the memory: the ones a reader hears in normal use.
+  static const List<CueKind> _warmKinds = <CueKind>[
+    CueKind.messageIn,
+    CueKind.dmIn,
+    CueKind.send,
+    CueKind.navNext,
+    CueKind.navPrev,
+    CueKind.discovery,
+    CueKind.alert,
+  ];
+
+  Future<AudioPlayer?> _prepared(CueKind kind) async {
+    final MmThemePreset preset = theme.preset;
+    if (_warmPreset != preset) {
+      // A theme change invalidates every prepared source.
+      for (final AudioPlayer p in _warmPlayers.values) {
+        p.dispose().catchError((Object _) {});
+      }
+      _warmPlayers.clear();
+      _warmPreset = preset;
+    }
+    if (!_warmKinds.contains(kind)) return null;
+    final AudioPlayer? existing = _warmPlayers[kind];
+    if (existing != null) return existing;
+    final AudioPlayer player = AudioPlayer();
+    try {
+      await player.setAudioContext(_cueContext);
+      await player.setPlayerMode(PlayerMode.mediaPlayer);
+      await player.setReleaseMode(ReleaseMode.stop);
+      await player.setSource(AssetSource(assetPathFor(preset, kind)));
+      _warmPlayers[kind] = player;
+      return player;
+    } catch (_) {
+      await player.dispose().catchError((Object _) {});
+      return null;
+    }
+  }
+
+  @override
+  Future<void> warm() async {
+    _warmPreset = null; // force a rebuild against the current preset
+    for (final CueKind kind in _warmKinds) {
+      await _prepared(kind);
     }
   }
 

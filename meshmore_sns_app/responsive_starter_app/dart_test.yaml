@@ -1,0 +1,7 @@
+# The suite is 334 test files, and the cost of the whole run is dominated by
+# compiling each file separately against the app (about a second each, on any
+# machine) rather than by the tests themselves. Running more of those compiles at
+# once is therefore the only lever that does not trade coverage: the default is
+# one process per core, and these compiles spend part of that time waiting on the
+# kernel cache and the filesystem.
+concurrency: 16

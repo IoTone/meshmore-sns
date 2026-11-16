@@ -2,14 +2,17 @@
 // SPDX-License-Identifier: MIT
 import 'dart:typed_data';
 
+import '../model/admin.dart';
 import '../model/advert.dart';
 import '../model/channel_info.dart';
 import '../model/channel_message.dart';
 import '../model/contact.dart';
 import '../model/contact_message.dart';
 import '../model/device_config.dart';
+import '../model/diagnostics.dart';
 import '../model/rf_log.dart';
 import '../model/self_info.dart';
+import 'constants.dart';
 import 'decode_error.dart';
 
 /// A decoded device→app frame. Sealed so callers exhaustively switch.
@@ -79,11 +82,15 @@ class MsgSentFrame extends MeshcoreInbound {
 /// originating message and mark it delivered. Broadcast/channel
 /// messages are flood-routed and never produce an ACK.
 class AckFrame extends MeshcoreInbound {
-  const AckFrame(this.ackCrc);
+  const AckFrame(this.ackCrc, {this.roundTripMs});
 
   /// The acknowledged message's CRC tag (u32 LE), equal to the
   /// [MsgSent.expectedAck] returned when the message was submitted.
   final int ackCrc;
+
+  /// The radio's own send→ACK time (`PUSH_CODE_SEND_CONFIRMED` carries
+  /// it after the tag). Null when the firmware omits it.
+  final int? roundTripMs;
 
   @override
   String toString() =>
@@ -209,6 +216,247 @@ class TelemetryResponseFrame extends MeshcoreInbound {
   String toString() =>
       'TelemetryResponseFrame(pub6=${pubKeyPrefix.length}B, '
       'lpp=${lppPayload.length}B)';
+}
+
+/// `RESP_CODE_STATS` (0x18). Exactly one of the three is set, per the
+/// sub-type the radio answered.
+class StatsFrame extends MeshcoreInbound {
+  const StatsFrame({this.core, this.radio, this.packets});
+  final CoreStats? core;
+  final RadioStats? radio;
+  final PacketStats? packets;
+  @override
+  String toString() => 'StatsFrame(${core ?? radio ?? packets})';
+}
+
+/// `PUSH_CODE_STATUS_RESPONSE` (0x87) — a repeater/sensor status reply.
+/// The firmware matches it to our request by pubkey; so do we.
+class StatusResponseFrame extends MeshcoreInbound {
+  const StatusResponseFrame({required this.pubKeyPrefix, this.status});
+  final Uint8List pubKeyPrefix;
+
+  /// Null when the payload is too short to be a `RepeaterStats`.
+  final RepeaterStatus? status;
+  @override
+  String toString() => 'StatusResponseFrame($status)';
+}
+
+/// `PUSH_CODE_TRACE_DATA` (0x89).
+class TraceDataFrame extends MeshcoreInbound {
+  const TraceDataFrame(this.trace);
+  final TraceResult trace;
+  @override
+  String toString() => 'TraceDataFrame($trace)';
+}
+
+/// `PUSH_CODE_CONTROL_DATA` (0x8E). [discover] is decoded when the
+/// payload is a node-discover response; [payload] is always kept.
+class ControlDataFrame extends MeshcoreInbound {
+  const ControlDataFrame({
+    required this.snrDb,
+    required this.rssi,
+    required this.pathLen,
+    required this.payload,
+    this.discover,
+  });
+  final double snrDb;
+  final int rssi;
+  final int pathLen;
+  final Uint8List payload;
+  final DiscoverResponse? discover;
+  @override
+  String toString() => 'ControlDataFrame(${discover ?? '${payload.length}B'})';
+}
+
+/// `RESP_CODE_EXPORT_CONTACT` (0x0B) — a raw advert packet, ready for
+/// `CMD_IMPORT_CONTACT` on another node.
+class ExportedContactFrame extends MeshcoreInbound {
+  const ExportedContactFrame(this.advertPacket);
+  final Uint8List advertPacket;
+  @override
+  String toString() => 'ExportedContactFrame(${advertPacket.length}B)';
+}
+
+/// `RESP_CODE_PRIVATE_KEY` (0x0E). The key is a secret: [toString]
+/// redacts it so it cannot leak through logging.
+class PrivateKeyFrame extends MeshcoreInbound {
+  const PrivateKeyFrame(this.privateKey);
+  final Uint8List privateKey;
+  @override
+  String toString() => 'PrivateKeyFrame(<redacted ${privateKey.length}B>)';
+}
+
+/// `RESP_CODE_DISABLED` (0x0F) — the firmware was built without this
+/// command (`ENABLE_PRIVATE_KEY_EXPORT` / `_IMPORT`).
+class DisabledFrame extends MeshcoreInbound {
+  const DisabledFrame();
+  @override
+  String toString() => 'DisabledFrame()';
+}
+
+/// `RESP_CODE_SIGN_START` (0x13) — [maxLength] is the signing buffer size.
+class SignStartFrame extends MeshcoreInbound {
+  const SignStartFrame(this.maxLength);
+  final int maxLength;
+  @override
+  String toString() => 'SignStartFrame($maxLength)';
+}
+
+/// `RESP_CODE_SIGNATURE` (0x14) — a 64-byte Ed25519 signature.
+class SignatureFrame extends MeshcoreInbound {
+  const SignatureFrame(this.signature);
+  final Uint8List signature;
+  @override
+  String toString() => 'SignatureFrame(${signature.length}B)';
+}
+
+/// `RESP_CODE_ADVERT_PATH` (0x16).
+class AdvertPathFrame extends MeshcoreInbound {
+  const AdvertPathFrame(this.advertPath);
+  final AdvertPath advertPath;
+  @override
+  String toString() => 'AdvertPathFrame(${advertPath.pathLen})';
+}
+
+/// `RESP_CODE_TUNING_PARAMS` (0x17).
+class TuningParamsFrame extends MeshcoreInbound {
+  const TuningParamsFrame(this.params);
+  final TuningParams params;
+  @override
+  String toString() => 'TuningParamsFrame($params)';
+}
+
+/// `RESP_CODE_AUTOADD_CONFIG` (0x19).
+class AutoAddConfigFrame extends MeshcoreInbound {
+  const AutoAddConfigFrame(this.config);
+  final AutoAddConfig config;
+  @override
+  String toString() => 'AutoAddConfigFrame($config)';
+}
+
+/// `PUSH_CODE_LOGIN_SUCCESS` (0x85) / `PUSH_CODE_LOGIN_FAIL` (0x86).
+class LoginResultFrame extends MeshcoreInbound {
+  const LoginResultFrame(this.result);
+  final LoginResult result;
+  @override
+  String toString() => 'LoginResultFrame(success=${result.success})';
+}
+
+/// `PUSH_CODE_PATH_DISCOVERY_RESPONSE` (0x8D).
+class PathDiscoveryFrame extends MeshcoreInbound {
+  const PathDiscoveryFrame(this.result);
+  final PathDiscoveryResult result;
+  @override
+  String toString() => 'PathDiscoveryFrame(out=${result.outPathLen}, '
+      'in=${result.inPathLen})';
+}
+
+/// `PUSH_CODE_CONTACT_DELETED` (0x8F) — a contact was overwritten to make
+/// room; the app must drop its copy.
+class ContactDeletedFrame extends MeshcoreInbound {
+  const ContactDeletedFrame(this.publicKey);
+  final Uint8List publicKey;
+  @override
+  String toString() => 'ContactDeletedFrame()';
+}
+
+/// `PUSH_CODE_CONTACTS_FULL` (0x90).
+class ContactsFullFrame extends MeshcoreInbound {
+  const ContactsFullFrame();
+  @override
+  String toString() => 'ContactsFullFrame()';
+}
+
+/// `PUSH_CODE_ONE_KEY_DM_REJECTED` (0x91). The radio refused a stranger's
+/// message for want of a signed introduction; [publicKey] is the sender.
+class OneKeyRejectedFrame extends MeshcoreInbound {
+  const OneKeyRejectedFrame(this.publicKey);
+  final Uint8List publicKey;
+  @override
+  String toString() => 'OneKeyRejectedFrame(${publicKey.length} bytes)';
+}
+
+/// `PUSH_CODE_PATH_UPDATED` (0x81). Only the key: re-read the contact.
+class PathUpdatedFrame extends MeshcoreInbound {
+  const PathUpdatedFrame(this.publicKey);
+  final Uint8List publicKey;
+  @override
+  String toString() => 'PathUpdatedFrame()';
+}
+
+/// `PUSH_CODE_RAW_DATA` (0x84): a raw-custom packet heard by the radio.
+///
+/// Carries no sender identity and is never queued by the firmware, so a
+/// disconnected app loses it (`MyMesh.cpp:801-818`).
+class RawDataFrame extends MeshcoreInbound {
+  const RawDataFrame({
+    required this.snrDb,
+    required this.rssi,
+    required this.payload,
+    this.via = RxVia.unknown,
+  });
+  final double snrDb;
+  final int rssi;
+  final Uint8List payload;
+
+  /// Which radio profile delivered the packet, when the radio reports it
+  /// (the same byte `ChannelDataFrame.via` comes from, with 0xFF as its
+  /// "none" value).
+  final RxVia via;
+
+  @override
+  String toString() =>
+      'RawDataFrame(${payload.length}B, rssi $rssi, via ${via.name})';
+}
+
+/// `PUSH_CODE_NEW_ADVERT` (0x8A): a contact frame for a first-heard node.
+class NewAdvertFrame extends MeshcoreInbound {
+  const NewAdvertFrame(this.contact);
+  final Contact contact;
+  @override
+  String toString() => 'NewAdvertFrame($contact)';
+}
+
+/// `RESP_CODE_CHANNEL_DATA_RECV` (0x1B): `data_type` is the 16-bit
+/// application tag (`docs/number_allocations.md`); [pathLen] is 0xFF when
+/// the packet was not flooded.
+class ChannelDataFrame extends MeshcoreInbound {
+  const ChannelDataFrame({
+    required this.snrDb,
+    required this.channelIndex,
+    required this.pathLen,
+    required this.dataType,
+    required this.data,
+    this.via = RxVia.unknown,
+  });
+  final double snrDb;
+  final int channelIndex;
+  final int pathLen;
+  final int dataType;
+  final Uint8List data;
+
+  /// Which radio profile delivered the datagram, when the radio reports it.
+  ///
+  /// Always [RxVia.unknown] on a single-profile radio and on mainline
+  /// firmware, which writes 0 in this byte.
+  final RxVia via;
+
+  @override
+  String toString() =>
+      'ChannelDataFrame(ch $channelIndex, via ${via.name}, '
+      'type 0x${dataType.toRadixString(16)}, ${data.length}B)';
+}
+
+/// `RESP_CODE_CLI_REPLY` (0x1D): one line of a command's output.
+///
+/// A `CMD_RUN_CLI_COMMAND` produces zero or more of these, each its own
+/// frame, followed by `OK`. The line is [text] and carries no framing
+/// beyond the frame length.
+class CliReplyFrame extends MeshcoreInbound {
+  const CliReplyFrame(this.text);
+  final String text;
+  @override
+  String toString() => 'CliReplyFrame("$text")';
 }
 
 /// A well-formed frame whose opcode this milestone does not decode yet.

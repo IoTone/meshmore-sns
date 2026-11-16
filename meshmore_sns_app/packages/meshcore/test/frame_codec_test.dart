@@ -358,4 +358,81 @@ void main() {
       expect((got as MessagesWaitingFrame).count, 3);
     });
   });
+
+  group('CMD_DEVICE_QUERY (0x16) protocol version', () {
+    test('the default asks for V3, the version whose frames carry SNR', () {
+      // [0x16][3]: the firmware stores the byte and gates the V3 receive
+      // frames on >= 3 (MyMesh.cpp:435-443, :548-556).
+      expect(_toHex(MeshcoreFrameCodec.deviceQuery()), '1603');
+      expect(kAppTargetProtocolVersion, 3);
+    });
+
+    test('an explicit older version is still expressible', () {
+      expect(_toHex(MeshcoreFrameCodec.deviceQuery(appTargetVer: 1)), '1601');
+    });
+
+    test('both V3 receive frames decode their SNR, the legacy ones do not', () {
+      // V3 channel: [11][snr*4][rsvd][rsvd][ch][path][type][ts][text]
+      final ChannelMessageFrame ch = MeshcoreFrameCodec.decode(
+          _hex('111e0000020500040302016869')) as ChannelMessageFrame;
+      expect(ch.message.snrDb, 7.5);
+      // V3 contact: [10][snr*4][rsvd][rsvd][prefix 6][path][type][ts][text]
+      final ContactMessageFrame dm = MeshcoreFrameCodec.decode(
+          _hex('101e00000102030405060200040302016869'))
+          as ContactMessageFrame;
+      expect(dm.message.snrDb, 7.5);
+      // The legacy shapes carry no SNR at all.
+      final ChannelMessageFrame legacy = MeshcoreFrameCodec.decode(
+          _hex('0800030004030201686579')) as ChannelMessageFrame;
+      expect(legacy.message.snrDb, isNull);
+    });
+  });
+
+  group('decode consumes the whole frame', () {
+    test('two frames in one buffer is reported, not half-decoded', () {
+      // CURR_TIME (0x09) is exactly 5 bytes, so a second one is visible.
+      final MeshcoreInbound got =
+          MeshcoreFrameCodec.decode(_hex('0900f153650900f15365'));
+      expect(got, isA<DecodeFailure>());
+      final DecodeFailure df = got as DecodeFailure;
+      expect(df.error.kind, DecodeErrorKind.trailingBytes);
+      expect(df.error.opcode, 0x09);
+      expect(df.error.message, contains('5 byte'));
+    });
+
+    test('one stray byte after a complete frame is reported', () {
+      final MeshcoreInbound got = MeshcoreFrameCodec.decode(_hex('0900f1536500'));
+      expect((got as DecodeFailure).error.kind,
+          DecodeErrorKind.trailingBytes);
+    });
+
+    test('an unknown opcode is still preserved, never a trailing failure', () {
+      final MeshcoreInbound got = MeshcoreFrameCodec.decode(_hex('7edeadbeef'));
+      expect(got, isA<UnsupportedFrame>());
+      expect((got as UnsupportedFrame).raw, hasLength(5));
+    });
+
+    test('a login reply may still carry a tail it does not model', () {
+      // The same writer grew this frame once (MyMesh.cpp:684-702), so a
+      // tail shorter than a whole extension is a future field.
+      final MeshcoreInbound got = MeshcoreFrameCodec.decode(
+          _hex('8500aabbccddeeff010203'));
+      expect(got, isA<LoginResultFrame>());
+      expect((got as LoginResultFrame).result.isLegacy, isTrue);
+    });
+  });
+
+  group('RESP_CODE_CLI_REPLY (0x1D) decode', () {
+    test('the line is the frame body', () {
+      final Uint8List body = Uint8List.fromList(<int>[0x1D, ...utf8.encode('ok')]);
+      final MeshcoreInbound got = MeshcoreFrameCodec.decode(body);
+      expect(got, isA<CliReplyFrame>());
+      expect((got as CliReplyFrame).text, 'ok');
+    });
+
+    test('a bare opcode is an empty line, not a failure', () {
+      final MeshcoreInbound got = MeshcoreFrameCodec.decode(_hex('1d'));
+      expect((got as CliReplyFrame).text, isEmpty);
+    });
+  });
 }

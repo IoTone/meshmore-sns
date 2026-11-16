@@ -1,0 +1,69 @@
+{
+  "_source": {
+    "pin_tag": "companion-v1.15.0",
+    "note": "CMD_SEND_CHANNEL_DATA (0x3E) layouts from examples/companion_radio/MyMesh.cpp, handler 'CMD_SEND_CHANNEL_DATA' at the pin: [3E][channel_idx][path_len][path][data_type u16 LE][blob]. path_len 0xFF means flood and carries no path bytes (OUT_PATH_UNKNOWN, src/helpers/ContactInfo.h:6). The path byte packs hops in the low six bits and hash-size minus one in the top two (src/Packet.cpp:20-30). data_type 0x0000 is DATA_TYPE_RESERVED and is refused (src/helpers/TxtDataHelpers.h:9).",
+    "blob_budget": "MAX_GROUP_DATA_LENGTH (165) minus the 3-byte inner type/length header = 162 (src/MeshCore.h:21, BaseChatMesh.cpp:518-522); the frame is 5 + path + blob, at most MAX_FRAME_SIZE (176)."
+  },
+  "encode": [
+    {
+      "name": "SEND_CHANNEL_DATA flood ch0 type 0xFF01 blob 01 02 03",
+      "encoder": "sendChannelData",
+      "args": {
+        "channelIdx": 0,
+        "dataType": 65281,
+        "blob": [
+          1,
+          2,
+          3
+        ]
+      },
+      "hex": "3e00ff01ff010203"
+    },
+    {
+      "name": "SEND_CHANNEL_DATA direct ch2 path_len 0x01 path ab type 0x0102 blob de",
+      "encoder": "sendChannelData",
+      "args": {
+        "channelIdx": 2,
+        "dataType": 258,
+        "blob": [
+          222
+        ],
+        "pathLen": 1,
+        "path": [
+          171
+        ]
+      },
+      "hex": "3e0201ab0201de"
+    },
+    {
+      "name": "SEND_CHANNEL_DATA direct ch5 path_len 0x41 one hop two-byte hash type 0xFF7F empty blob",
+      "encoder": "sendChannelData",
+      "args": {
+        "channelIdx": 5,
+        "dataType": 65407,
+        "blob": [],
+        "pathLen": 65,
+        "path": [
+          17,
+          34
+        ]
+      },
+      "hex": "3e054111227fff"
+    }
+  ],
+  "decode": [
+    {
+      "name": "RESP_CODE_CHANNEL_DATA_RECV ch3 via 0xA1 type 0xFF01 nine-byte blob",
+      "hex": "1b0fa100030101ff090a0b0c0d0e0f101112",
+      "expect": {
+        "type": "ChannelDataFrame",
+        "snrDb": 3.75,
+        "channelIndex": 3,
+        "pathLen": 1,
+        "dataType": 65281,
+        "via": "secondary",
+        "data": "0a0b0c0d0e0f101112"
+      }
+    }
+  ]
+}

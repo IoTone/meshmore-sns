@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// User-preferred default channel slot to land on at app launch
 /// (R33). Persisted via `shared_preferences` and applied by
@@ -14,7 +15,7 @@ abstract final class DefaultChannelStore {
   /// Returns the saved default slot index, or `null` if unset.
   static Future<int?> read() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    return p.getInt(_kKey);
+    return p.get(_kKey) == null ? null : Prefs.readInt(p, _kKey);
   }
 
   /// Persist a default slot index. Pass `null` to clear.
@@ -23,7 +24,7 @@ abstract final class DefaultChannelStore {
     if (idx == null) {
       await p.remove(_kKey);
     } else {
-      await p.setInt(_kKey, idx);
+      await Prefs.setInt(p, _kKey, idx);
     }
   }
 }

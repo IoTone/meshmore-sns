@@ -21,6 +21,9 @@ class WxObservation {
     required this.at,
     this.sourceMsgId,
     this.sourceSpan = '',
+    this.humidityPct,
+    this.pressureHpa,
+    this.windMps,
     this.lat,
     this.lon,
     this.placeName,
@@ -28,8 +31,21 @@ class WxObservation {
 
   final Set<WxCondition> conditions;
 
-  /// Normalised to °C; null when the message named a condition but no temp.
+  /// Normalised to °C; null when the message reported no temperature.
   final double? temperatureC;
+
+  /// Measured quantities beyond temperature. Any one of these is what makes a
+  /// message a weather report at all; the conditions are decoration on them.
+  final int? humidityPct;
+  final double? pressureHpa;
+  final double? windMps;
+
+  /// True when this observation carries a measured quantity.
+  bool get isMeasured =>
+      temperatureC != null ||
+      humidityPct != null ||
+      pressureHpa != null ||
+      windMps != null;
 
   /// Lexicon-match strength, 0..1.
   final double confidence;
@@ -53,6 +69,9 @@ class WxObservation {
         at: at,
         sourceMsgId: sourceMsgId,
         sourceSpan: sourceSpan,
+        humidityPct: humidityPct,
+        pressureHpa: pressureHpa,
+        windMps: windMps,
         lat: lat,
         lon: lon,
         placeName: name,
@@ -118,7 +137,20 @@ class AmbientWx {
     required this.tempMaxC,
     required this.mentions,
     required this.lastSeen,
+    this.humidityAvgPct,
+    this.pressureAvgHpa,
+    this.windMaxMps,
   });
+
+  /// Averages of the measured quantities in the window, when any message
+  /// carried them. The card states these next to the count, because a
+  /// measurement nobody can see is the same as one that was never parsed.
+  final double? humidityAvgPct;
+  final double? pressureAvgHpa;
+  final double? windMaxMps;
+
+  bool get hasMeasurement =>
+      humidityAvgPct != null || pressureAvgHpa != null || windMaxMps != null;
 
   /// condition → number of observations mentioning it.
   final Map<WxCondition, int> tally;
@@ -185,19 +217,33 @@ class WeatherInferenceEngine {
       }
     }
 
-    final List<double> temps = parseTemperaturesC(text);
-    if (found.isEmpty && temps.isEmpty) return null;
+    // **Measured data, or nothing.** A condition word on its own is an
+    // opinion, and a channel of opinions is not a weather station: the owner's
+    // rule is that a real report carries a number and a unit. A bare "rain
+    // later" no longer becomes a microclimate reading; "rain, 19°C" still does,
+    // and the condition is then decoration on a measurement.
+    final WxMeasurements wx = parseWxMeasurements(text);
+    if (wx.isEmpty) return null;
 
     double? tempC;
-    if (temps.isNotEmpty) {
-      tempC = temps.reduce((double a, double b) => a + b) / temps.length;
-      if (0.85 > conf) conf = 0.85;
-      if (found.isNotEmpty && conf < 1.0) conf = (conf + 0.10).clamp(0.0, 1.0);
+    if (wx.tempsC.isNotEmpty) {
+      tempC = wx.tempsC.reduce((double a, double b) => a + b) / wx.tempsC.length;
     }
+
+    final int measures = (tempC != null ? 1 : 0) +
+        (wx.humidityPct != null ? 1 : 0) +
+        (wx.pressureHpa != null ? 1 : 0) +
+        (wx.windMps != null ? 1 : 0);
+    // A measured quantity outranks any wording, and two of them outrank one.
+    final double measuredConf = (0.86 + 0.05 * (measures - 1)).clamp(0.0, 0.96);
+    if (measuredConf > conf) conf = measuredConf;
 
     return WxObservation(
       conditions: found,
       temperatureC: tempC,
+      humidityPct: wx.humidityPct,
+      pressureHpa: wx.pressureHpa,
+      windMps: wx.windMps,
       confidence: conf,
       at: at ?? DateTime.fromMillisecondsSinceEpoch(0),
       sourceMsgId: sourceMsgId,
@@ -222,6 +268,9 @@ class WeatherInferenceEngine {
     return WxObservation(
       conditions: <WxCondition>{...en.conditions, ...ja.conditions},
       temperatureC: en.temperatureC ?? ja.temperatureC,
+      humidityPct: en.humidityPct ?? ja.humidityPct,
+      pressureHpa: en.pressureHpa ?? ja.pressureHpa,
+      windMps: en.windMps ?? ja.windMps,
       confidence: en.confidence > ja.confidence ? en.confidence : ja.confidence,
       at: en.at,
       sourceMsgId: en.sourceMsgId,
@@ -264,14 +313,24 @@ AmbientWx? aggregateAmbient(Iterable<WxObservation> observations) {
 
   final Map<WxCondition, int> tally = <WxCondition, int>{};
   final List<double> temps = <double>[];
+  final List<double> humidity = <double>[];
+  final List<double> pressure = <double>[];
+  double? windMax;
   DateTime lastSeen = obs.first.at;
   for (final WxObservation o in obs) {
     for (final WxCondition c in o.conditions) {
       tally[c] = (tally[c] ?? 0) + 1;
     }
     if (o.temperatureC != null) temps.add(o.temperatureC!);
+    if (o.humidityPct != null) humidity.add(o.humidityPct!.toDouble());
+    if (o.pressureHpa != null) pressure.add(o.pressureHpa!);
+    if (o.windMps != null && (windMax == null || o.windMps! > windMax)) {
+      windMax = o.windMps;
+    }
     if (o.at.isAfter(lastSeen)) lastSeen = o.at;
   }
+  double? avg(List<double> xs) =>
+      xs.isEmpty ? null : xs.reduce((double a, double b) => a + b) / xs.length;
 
   WxCondition? dominant;
   int best = 0;
@@ -297,6 +356,9 @@ AmbientWx? aggregateAmbient(Iterable<WxObservation> observations) {
     tempMaxC: maxC,
     mentions: obs.length,
     lastSeen: lastSeen,
+    humidityAvgPct: avg(humidity),
+    pressureAvgHpa: avg(pressure),
+    windMaxMps: windMax,
   );
 }
 

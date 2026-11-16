@@ -1,6 +1,12 @@
 # Meshmore SNS — Node tracking & geofencing (team ops)
 
-**Status:** EARMARK — design only, NOT built. Captured 2026-06-08.
+**Status:** PARTLY BUILT (corrected 2026-11-15). Captured 2026-06-08 as a
+design. What ships: circle and polygon fences, one-second sampling with
+hysteresis, a persisted inside state, a crossing log, and the enter/exit cues in
+all eleven sound packs (`lib/geofence/`, `test/geofence/`). What does not ship,
+and is not planned: roster watching, node-to-node distance tracking, anchor
+fences, dwell triggers, the tracking grid view, and sharing zones over the mesh.
+The OS notification on a crossing is the one part of §5 still open.
 **Sibling docs:** place inference (R54), microclimate/wx, the hyperlocal
 grid `_GridViewMode` family. Composes with the map-pins design (see
 `lobospeak-design.md` → "Map pins & waypoints").

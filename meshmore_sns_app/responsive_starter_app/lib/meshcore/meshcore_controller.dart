@@ -1,30 +1,55 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import 'radio_lease.dart';
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:collection';
+
+import '../chat/composer_budget.dart';
+import '../chat/friendly_ack.dart';
+import '../chat/reactions.dart';
+import '../util/mesh_log.dart';
+import '../util/prefs.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:meshcore/meshcore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'failure.dart';
+import 'link_acquire.dart';
+// A cycle on purpose: the tree's memo is keyed on this controller's identity,
+// so the controller is the only thing that can drop it. Dart resolves the
+// cycle; nothing here is initialised from `mesh_graph.dart` at load time.
+import 'mesh_graph.dart';
 
+import 'airtime.dart';
+import 'airtime_prefs.dart';
+import 'airtime_meter.dart';
+import '../app/app_errors.dart';
 import 'background_keepalive.dart';
 import 'background_prefs.dart';
 import 'battery_history_store.dart';
 import 'battery_model.dart';
-import 'city_lookup.dart';
 import 'default_channel_store.dart';
 import 'device_power_specs.dart';
 import 'ble_connector.dart';
+import 'channel_datagram.dart';
+import 'command_ledger.dart';
+import 'contact_store.dart';
 import 'chat_message.dart';
+import 'radio_config_transaction.dart';
+import 'radio_identity_store.dart';
 import 'chat_store.dart';
 import 'discovered_node.dart';
+import 'dm_thread.dart';
+import 'topology_hop.dart';
 import 'dm_read_store.dart';
 import 'favorite_store.dart';
 import 'known_store.dart';
 import 'superseded_store.dart';
 import 'node_tags_store.dart';
 import 'mesh_event.dart';
-import 'meshcore_connection.dart';
 import 'message_heat.dart';
 import 'node_telemetry.dart';
 import 'own_location.dart';
@@ -34,11 +59,12 @@ import 'paired_device_store.dart';
 import 'reconnect_policy.dart';
 import '../perms/location_service.dart';
 import '../sns/city_gazetteer.dart';
-import '../sns/inferred_place_store.dart';
 import '../sns/meshbook.dart';
 import '../sns/meshbook_store.dart';
 import '../sns/place_inference.dart';
 import '../sns/weather_inference.dart';
+import '../util/frame_trackers.dart';
+import '../util/safe_notifier.dart';
 import '../util/geo.dart' as geo;
 
 /// App-facing facade over [MeshcoreConnection], exposed via Provider.
@@ -60,7 +86,18 @@ String deviceErrorReason(int? code) => switch (code) {
 /// The transport is obtained through [transportFactory]; the default
 /// scans/connects over BLE, but tests inject a fake transport so the
 /// whole controller path is `flutter test`-covered without hardware.
-class MeshcoreController extends ChangeNotifier {
+/// Which reply the firmware gives for a send (verified against
+/// `MyMesh.cpp`): channel text, raw data, channel datagrams and the
+/// self-advert are answered with a bare OK/ERR; a DM, a status request, a
+/// telemetry request and a trace are answered with `RESP_CODE_SENT`.
+/// [CommandAnswer] carries that distinction into the ledger.
+/// What a Retry did, so the screen can say it rather than guess.
+enum RetryOutcome { refused, sent, sentAfterPathReset }
+
+/// Lower-case hex only, for the key builders that parse a caller's string.
+final RegExp _kHexOnly = RegExp(r'^[0-9a-f]+$');
+
+class MeshcoreController extends ChangeNotifier with SafeNotifier {
   MeshcoreController({
     Future<MeshcoreTransport> Function()? transportFactory,
     MeshcoreConnection? connection,
@@ -69,9 +106,27 @@ class MeshcoreController extends ChangeNotifier {
     BackgroundKeepalive? backgroundKeepalive,
     LocationService? locationService,
     Duration? deliveryTimeoutOverride,
+    Duration? channelDataTimeout,
+    Duration? radioConfigTimeout,
     Duration? telemetryPollInterval,
+    Duration? selfInfoPollInterval,
+    Duration? linkCloseTimeout,
+    Duration? linkOpenTimeout,
+    Duration? contactIdleOverride,
+    Duration? channelProbeIdleOverride,
     PlaceInferenceEngine? placeInferenceEngine,
-  })  : _deliveryTimeoutOverride = deliveryTimeoutOverride,
+    AirtimeMeter? airtimeMeter,
+    bool Function(String? keyHex)? isBlocked,
+  })  : _isBlocked = isBlocked,
+        _deliveryTimeoutOverride = deliveryTimeoutOverride,
+        _linkCloseTimeout = linkCloseTimeout ?? kLinkCloseTimeout,
+        _linkOpenTimeout = linkOpenTimeout ?? kLinkOpenTimeout,
+        _contactIdleOverride = contactIdleOverride,
+        _channelProbeIdleOverride = channelProbeIdleOverride,
+        _channelDataTimeoutOverride = channelDataTimeout,
+        _radioConfigTimeoutOverride = radioConfigTimeout,
+        _selfInfoPollInterval =
+            selfInfoPollInterval ?? const Duration(seconds: 60),
         _telemPollIntervalOverride = telemetryPollInterval,
         _placeEngine = placeInferenceEngine ??
             PlaceInferenceEngine(gazetteer: const CityGazetteer()),
@@ -85,7 +140,11 @@ class MeshcoreController extends ChangeNotifier {
         _reconnect = reconnectPolicy ??
             ReconnectPolicy(floor: const Duration(seconds: 6)),
         _delay = reconnectDelay ?? Future<void>.delayed,
-        _location = locationService ?? NoopLocationService() {
+        _location = locationService ?? NoopLocationService(),
+        _airtime = airtimeMeter ?? AirtimeMeter() {
+    unawaited(_loadAirtimePolicy());
+    unawaited(_loadAirtimeSpend());
+    unawaited(_loadAirtimeCutoff());
     _statesSub = _connection.states.listen((MeshcoreConnectionState s) {
       _state = s;
       notifyListeners();
@@ -105,12 +164,15 @@ class MeshcoreController extends ChangeNotifier {
         // device-sourced timestamp (contact last-heard, message
         // times) is in an unset clock, so "in range" and ordering
         // are meaningless. Standard companion-app behaviour.
-        _syncDeviceTime();
-        // Also READ the device clock: if SET_DEVICE_TIME is rejected
-        // (some firmware returns ERR), we still learn the offset and
-        // judge "in range" against the device's own clock.
+        // READ the device clock first, and write it only if the reply shows
+        // the device behind. The firmware only moves its clock forward
+        // (`MyMesh.cpp:1247-1257`), so writing blind refuses on every radio
+        // that kept time across a reboot — a refused command the app then had
+        // to explain away in the activity feed.
         _requestDeviceTime();
         _requestDeviceInfo();
+        // Know whether this is still the radio the app has been talking to.
+        unawaited(_checkRadioIdentity());
         // R38 — read the device's custom-var map (gps, gps_interval,
         // …). Also: if the user already has advertLocPolicy=GPS but
         // the firmware's GPS module is disabled, auto-enable it so
@@ -132,11 +194,33 @@ class MeshcoreController extends ChangeNotifier {
         // temperature / altitude populate across the fabric.
         _startTelemetryPolling();
         // Drain anything the device queued before/while we connected
-        // (heard contacts/adverts + received messages).
-        _drainStart();
+        // (heard contacts/adverts + received messages). This one IS a
+        // backlog: it is history, not traffic arriving now.
+        _drainStart(backlog: true);
+        // The radio never pushes its stored contact table: it streams it only
+        // in answer to `CMD_GET_CONTACTS`, and `END_OF_CONTACTS` carries the
+        // most recent `lastmod` so the next request can ask for changes only
+        // (`MyMesh.cpp:2209-2232`). Without this the app connected to a radio
+        // holding twenty contacts, showed "0 known", and filled the list only
+        // if the user happened to open the device-contacts screen.
+        unawaited(_syncContactsOnConnect());
+        // D8.1: a channel broadcast goes out under the radio's own flood scope,
+        // so the app asks what that is and can tell the user who receives. The
+        // reply is `RESP_CODE_DEFAULT_FLOOD_SCOPE` (0x1C), which the frame
+        // codec leaves as an unsupported frame and decodes on demand.
+        _requestFloodScope();
+        // The radio's add policy, once per connection: the device page shows
+        // it, and it is what decides whether a new node becomes a contact at
+        // all. The repeat ranges explain a radio that hears but does not relay.
+        unawaited(requestAutoAddConfig());
+        unawaited(requestAllowedRepeatFreq());
+        unawaited(requestTuningParams());
         // Keep the process alive in the background so the link +
         // drain survive Doze (Android only; no-op elsewhere).
-        if (_bgKeepaliveEnabled) unawaited(_keepalive.start());
+        if (_bgKeepaliveEnabled) {
+          unawaited(_startKeepalive());
+          _syncKeepaliveWatchdog();
+        }
         // R33 — if the user has a saved default channel slot,
         // switch to it now. The device persists its own active
         // slot too; this preference wins on app launch so a
@@ -150,32 +234,40 @@ class MeshcoreController extends ChangeNotifier {
         }
       } else if (s == MeshcoreConnectionState.reconnecting ||
           s == MeshcoreConnectionState.failed) {
-        _maybeScheduleReconnect();
+        // The link the commands were sent over is gone, so the radio's
+        // answers cannot be attributed to them any more. Failing them here
+        // would be wrong (a reconnect may still deliver), so they keep
+        // their own watchdogs and the queue is cleared so the *next* OK is
+        // not credited to a command that may never be answered.
+        _voidPendingCommands('link lost before the radio answered');
+        // A radio-config write in flight on that link will never be answered
+        // now. Report it as silent rather than let the caller wait out the
+        // timeout for an answer that cannot come.
+        _completeRadioConfig(const RadioAnswer.silent());
+        // The next connection asks for the contact table again. The stream's
+        // watchdog stops here too: an end-of-contacts frame that never arrived
+        // would otherwise leave `_probing` true and make the next sync wait out
+        // its idle windows before asking anything.
+        _contactIdleTimer?.cancel();
+        _contactIdleTimer = null;
+        _probing = false;
+        _contactsSyncRequested = false;
+        _floodScopeAsked = false;
+        // A handshake timeout is not congestion: the radio never answered a
+        // frame that was sent to it, and the ladder's six-second floor exists
+        // for Android's BLE scan throttle rather than for this. The first
+        // retry after a timeout therefore goes out at once. Only the first:
+        // a radio that never answers would otherwise be re-scanned with no
+        // delay at all, which is the pattern that throttle drops silently, so
+        // from the second attempt the ladder and its floor apply again.
+        final int timeouts = _connection.handshakeTimeouts;
+        final bool handshakeTimedOut = timeouts > _handshakeTimeoutsSeen;
+        if (handshakeTimedOut) _handshakeTimeoutsSeen = timeouts;
+        _maybeScheduleReconnect(
+            immediate: handshakeTimedOut && _reconnectAttempt == 0);
       }
     });
-    _inboundSub = _connection.inbound.listen((MeshcoreInbound f) {
-      _lastFrame = f;
-      _trackDeviceClock(f);
-      _trackBattery(f);
-      _trackDeviceInfo(f);
-      _trackCustomVars(f);
-      _trackTelemetry(f);
-      // R25+1 — own movement trail. Every inbound frame might have
-      // bumped ownLocation (SelfInfoFrame's lat/lon), so sample
-      // here. Deduped internally by movement threshold.
-      _trackOwnLocationForTrail();
-      _ingestKnown(f);
-      _trackContactProbe(f);
-      _ingestDm(f);
-      _maybeDrain(f);
-      _ingestNode(f);
-      _ingestChat(f);
-      _trackMessageHeat(f);
-      _trackPlaceInference(f);
-      _trackDelivery(f);
-      _logEvent(f);
-      notifyListeners();
-    });
+    _inboundSub = _connection.inbound.listen(_processInbound);
     _rawSub = _connection.rawInbound.listen((Uint8List bytes) {
       final String hex = bytes
           .map((int b) => b.toRadixString(16).padLeft(2, '0'))
@@ -183,7 +275,13 @@ class MeshcoreController extends ChangeNotifier {
       _capture.add(hex);
       if (_capture.length > _captureCap) _capture.removeAt(0);
     });
-    _loadChatHistory();
+    _historyRestored = _loadChatHistory();
+    unawaited(_loadDropped());
+    unawaited(_loadContactsSince());
+    // The radio's contact table is kept across restarts. Without it the
+    // incremental token below asks the radio only for contacts changed since
+    // the last session, and the app searched a table it had thrown away.
+    _loadSyncedContacts();
     unawaited(_meshbook.load().then((_) => notifyListeners()));
     _loadBackgroundPref();
     _loadDefaultChannel();
@@ -195,6 +293,7 @@ class MeshcoreController extends ChangeNotifier {
     _loadBatteryHistory();
     _loadPowerSpecs();
     _loadTelemetryPollPref();
+    _loadPeriodicAdvertPref();
     _loadPlaceInferPrefs();
     unawaited(_dmReadStore.load().then((_) {
       // Notify so any UI watching unread counts (Nodes badge, etc.)
@@ -214,7 +313,13 @@ class MeshcoreController extends ChangeNotifier {
 
   final Set<String> _known = <String>{};
 
-  Set<String> get known => Set<String>.unmodifiable(_known);
+  /// A read-only *view*, not a copy.
+  ///
+  /// `Set.unmodifiable` copies the whole set on every read, and six screens
+  /// read it inside a loop over every node: 475 nodes x 2 sets x 350 keys is
+  /// 332,500 hash inserts per build, on a map that rebuilds up to twenty times
+  /// a second. `UnmodifiableSetView` is the same guarantee without the copy.
+  Set<String> get known => UnmodifiableSetView<String>(_known);
 
   bool isKnown(String pubKeyHex) => _known.contains(pubKeyHex);
 
@@ -251,6 +356,7 @@ class MeshcoreController extends ChangeNotifier {
       _nodes.remove(k);
       _contacts.remove(k);
     }
+    _nodesChanged();
     notifyListeners();
   }
 
@@ -260,15 +366,60 @@ class MeshcoreController extends ChangeNotifier {
 
   /// Read-only view of favourited node pubkey-hexes (the user's
   /// **contacts** in our UX sense; **fabric** = all seen).
-  Set<String> get favorites => Set<String>.unmodifiable(_favorites);
+  Set<String> get favorites => UnmodifiableSetView<String>(_favorites);
 
   bool isFavorite(String pubKeyHex) => _favorites.contains(pubKeyHex);
 
   /// Toggle, persist, notify.
+  ///
+  /// A star is also the radio's own favourite flag when the node is a device
+  /// contact. The firmware's overwrite-oldest rule skips contacts whose
+  /// `flags & 0x01` is set (`BaseChatMesh.cpp:88-95`), so a star that lived only
+  /// in this app protected nothing: the radio would evict a node the reader had
+  /// marked, and the DM thread with it. The local set stays the source of truth
+  /// for the UI, and the flag is written through on a best-effort basis.
   Future<void> toggleFavorite(String pubKeyHex) async {
-    if (!_favorites.add(pubKeyHex)) _favorites.remove(pubKeyHex);
+    final bool nowFavourite = _favorites.add(pubKeyHex);
+    if (!nowFavourite) _favorites.remove(pubKeyHex);
     notifyListeners();
     await FavoriteStore.save(_favorites);
+    if (isSyncedContact(pubKeyHex)) {
+      unawaited(setDeviceContactFavourite(pubKeyHex, nowFavourite));
+    }
+  }
+
+  /// Write the radio's favourite bit for a contact it already holds.
+  ///
+  /// `CMD_ADD_UPDATE_CONTACT` is the only way to change a contact's flags, so
+  /// the whole record is re-sent with the one bit changed. A node that is not a
+  /// device contact has no record to change and is left alone.
+  Future<bool> setDeviceContactFavourite(String pubKeyHex, bool favourite) async {
+    final Contact? cur = _contacts[pubKeyHex];
+    if (!isReady || cur == null) return false;
+    final int flags = favourite ? (cur.flags | 0x01) : (cur.flags & ~0x01);
+    if (flags == cur.flags) return true;
+    final Contact updated = Contact(
+      publicKey: cur.publicKey,
+      type: cur.type,
+      flags: flags,
+      outPathLen: cur.outPathLen,
+      outPath: cur.outPath,
+      name: cur.name,
+      lastAdvertTimestamp: cur.lastAdvertTimestamp,
+      latitudeMicros: cur.latitudeMicros,
+      longitudeMicros: cur.longitudeMicros,
+      lastMod: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    );
+    try {
+      await send(MeshcoreFrameCodec.addUpdateContact(updated));
+      _contacts[pubKeyHex] = updated;
+      _saveContactsSoon();
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _emitTaskError('addContact');
+      return false;
+    }
   }
 
   Future<void> _loadFavorites() async {
@@ -363,16 +514,103 @@ class MeshcoreController extends ChangeNotifier {
   /// enabled (R17 / U8). No-op on non-Android.
   bool get backgroundKeepaliveEnabled => _bgKeepaliveEnabled;
 
+  /// Whether the keep-alive service is actually running, as opposed to being
+  /// switched on. The settings row used to say "on" whenever the preference was
+  /// on and no Dart exception had been recorded, which is not the same thing:
+  /// the plugin can start and immediately stop the service natively (a refused
+  /// `startForeground` on Android 14+) and still return success.
+  bool _keepaliveRunning = false;
+  bool get keepaliveRunning => _keepaliveRunning;
+
+  /// Re-checks the service and restarts it if it is gone.
+  ///
+  /// The start used to happen exactly once, on the `ready` edge, with no retry:
+  /// Android 12+ refuses a foreground-service start from the background, and
+  /// this app auto-connects before the first frame, so that one attempt could
+  /// land while the activity was not yet resumed. One refusal then left the
+  /// session unprotected until the next launch, and the only trace was a
+  /// subtitle in App settings.
+  Timer? _keepaliveWatchdog;
+
+  void _syncKeepaliveWatchdog() {
+    final bool want = _bgKeepaliveEnabled && isReady && _keepalive.supported;
+    if (!want) {
+      _keepaliveWatchdog?.cancel();
+      _keepaliveWatchdog = null;
+      return;
+    }
+    _keepaliveWatchdog ??= Timer.periodic(const Duration(seconds: 60), (_) {
+      unawaited(_ensureKeepalive());
+    });
+  }
+
+  Future<void> _ensureKeepalive() async {
+    if (!_bgKeepaliveEnabled || !isReady) return;
+    try {
+      final bool running = await _keepalive.isRunning;
+      if (!running) {
+        await _keepalive.start();
+      }
+      final bool now = await _keepalive.isRunning;
+      if (now != _keepaliveRunning || (now && _keepaliveFailure != null)) {
+        _keepaliveRunning = now;
+        // A service that is running is the answer to the refusal that was
+        // recorded earlier, so the failure clears with it.
+        if (now) _keepaliveFailure = null;
+        notifyListeners();
+      }
+    } catch (error) {
+      final String message = AppErrors.firstLine(error);
+      AppErrors.record(error, StackTrace.current, where: 'keepalive');
+      if (_keepaliveFailure != message) {
+        _keepaliveFailure = message;
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Starts the keep-alive service, recording a refusal instead of letting it
+  /// escape as an unhandled error.
+  Future<void> _startKeepalive() async {
+    try {
+      await _keepalive.start();
+      _keepaliveRunning = await _keepalive.isRunning;
+      if (_keepaliveFailure != null) {
+        _keepaliveFailure = null;
+        notifyListeners();
+      }
+    } catch (error) {
+      final String message = AppErrors.firstLine(error);
+      AppErrors.record(error, StackTrace.current, where: 'keepalive');
+      if (_keepaliveFailure != message) {
+        _keepaliveFailure = message;
+        notifyListeners();
+      }
+    }
+  }
+
   Future<void> setBackgroundKeepaliveEnabled(bool v) async {
     _bgKeepaliveEnabled = v;
     notifyListeners();
     await BackgroundKeepalivePrefs.setEnabled(v);
     if (v && isReady) {
-      await _keepalive.start();
+      await _startKeepalive();
+      _syncKeepaliveWatchdog();
     } else if (!v) {
+      _keepaliveWatchdog?.cancel();
+      _keepaliveWatchdog = null;
       await _keepalive.stop();
+      _keepaliveRunning = false;
     }
   }
+
+  /// Completes when the restored history has been merged.
+  ///
+  /// Restoring is asynchronous because the store is a sealed file, so anything
+  /// that needs the history to be there waits for this rather than for a
+  /// guessed delay.
+  Future<void> get historyRestored => _historyRestored;
+  late final Future<void> _historyRestored;
 
   /// Restore persisted chat history (the protocol can't re-fetch it;
   /// the device queue is drained destructively). Loaded entries are
@@ -382,15 +620,92 @@ class MeshcoreController extends ChangeNotifier {
     final List<ChatMessage> hist = await ChatStore.load();
     if (hist.isEmpty) return;
     _messages.insertAll(0, hist);
+    // A reaction stored by a build that kept it as an ordinary row is folded
+    // into the message it names now, so an old reaction shows as a chip on its
+    // target instead of disappearing with the row.
+    for (final ChatMessage m in List<ChatMessage>.of(_messages)) {
+      if (!m.hidden) continue;
+      final ({String hash, String emoji, String? author, bool isOpen})? rx =
+          Reactions.parse(m.text.trim());
+      if (rx == null) continue;
+      _applyReaction(m.channelIdx < 0 ? 0 : m.channelIdx, m.peerPubKeyHex, rx);
+    }
     if (_messages.length > _messagesCap) {
+      for (final ChatMessage m
+          in _messages.getRange(0, _messages.length - _messagesCap)) {
+        _noteDropped(m);
+      }
       _messages.removeRange(0, _messages.length - _messagesCap);
     }
     _invalidateMessagesCache();
     notifyListeners();
   }
 
-  void _persistChat() =>
-      unawaited(ChatStore.save(List<ChatMessage>.from(_messages)));
+  /// Write the history soon, not necessarily now.
+  ///
+  /// `ChatStore.save` seals the whole kept history (up to 250 rows) through
+  /// the Keystore and rewrites one file, and this used to run on every ingest
+  /// *and* every delivery-state change — two full-history seals per message,
+  /// which on a busy channel is the most expensive thing the app does per
+  /// frame. A short window collapses a burst into one write; the dispose path
+  /// flushes whatever is pending, so an app killed inside the window still
+  /// loses nothing that was on screen.
+  ///
+  /// The debounce is the same shape the contact table already uses
+  /// (`_contactsSaveTimer`), because two stores with two strategies is how a
+  /// codebase grows a third.
+  static const Duration _chatSaveWindow = Duration(milliseconds: 400);
+  Timer? _chatSaveTimer;
+  bool _chatSavePending = false;
+
+  void _persistChat() {
+    _chatSavePending = true;
+    _chatSaveTimer ??= Timer(_chatSaveWindow, _flushChat);
+  }
+
+  void _flushChat() {
+    _chatSaveTimer?.cancel();
+    _chatSaveTimer = null;
+    if (!_chatSavePending) return;
+    _chatSavePending = false;
+    unawaited(ChatStore.save(List<ChatMessage>.from(_messages)));
+  }
+
+  /// Merges rows from an exported file into the history, in memory and on
+  /// disk, newest last. Returns how many rows were new.
+  ///
+  /// A restore is the one path that brings history back after the sealed key
+  /// is gone, so it must survive what the live path never meets: rows whose
+  /// ids already exist (a file exported twice), rows out of order, and more
+  /// rows than the cap holds.
+  Future<int> importHistory(List<ChatMessage> rows) async {
+    final Set<String> known = <String>{for (final ChatMessage m in _messages) m.id};
+    int added = 0;
+    for (final ChatMessage m in rows) {
+      if (known.add(m.id)) added++;
+    }
+    if (added == 0) return 0;
+    final List<ChatMessage> merged = <ChatMessage>[
+      ..._messages,
+      for (final ChatMessage m in rows)
+        if (!_messages.any((ChatMessage x) => x.id == m.id)) m,
+    ]..sort((ChatMessage a, ChatMessage b) => a.at.compareTo(b.at));
+    _messages
+      ..clear()
+      ..addAll(merged);
+    if (_messages.length > _messagesCap) {
+      for (final ChatMessage m
+          in _messages.getRange(0, _messages.length - _messagesCap)) {
+        _noteDropped(m);
+      }
+      _messages.removeRange(0, _messages.length - _messagesCap);
+    }
+    _invalidateMessagesCache();
+    await ChatStore.save(List<ChatMessage>.from(_messages));
+    ChatStore.unreadable.value = false;
+    notifyListeners();
+    return added;
+  }
 
   /// R20 / U11 — delete a single message **locally**. The OTA copy
   /// has already been delivered; MeshCore has no recall semantic, so
@@ -451,6 +766,39 @@ class MeshcoreController extends ChangeNotifier {
   final Future<MeshcoreTransport> Function() _transportFactory;
   final BackgroundKeepalive _keepalive;
   bool _bgKeepaliveEnabled = true; // default on (user-accepted)
+
+  /// Why the keep-alive service could not start, or null while it is up.
+  ///
+  /// Android 12 and later refuse a background `startService`
+  /// (`ForegroundServiceStartNotAllowedException`), and the refusal is silent
+  /// unless it is caught: a process without the service is one Doze may kill,
+  /// so the link and every buffered message go with it. The settings row shows
+  /// this instead of leaving the user to infer it from missing messages.
+  String? _keepaliveFailure;
+  String? get keepaliveFailure => _keepaliveFailure;
+
+  /// Whether the app is on screen. Timers that spend radio airtime check it.
+  ///
+  /// The battery, telemetry and self-info timers each cost a frame on the air,
+  /// and a frame a minute for a number nobody can see is the kind of cost this
+  /// product cannot carry on a shared band.
+  bool _visible = true;
+  bool get visible => _visible;
+
+  /// Called from the lifecycle observer. Polling resumes with the app.
+  void setVisible(bool v) {
+    if (_visible == v) return;
+    _visible = v;
+    if (v) {
+      if (isReady) {
+        _startBatteryPolling();
+        if (_telemPollEnabled) _startTelemetryPolling();
+      }
+    } else {
+      _battTimer?.cancel();
+      _telemPollTimer?.cancel();
+    }
+  }
   final MeshcoreConnection _connection;
 
   StreamSubscription<MeshcoreConnectionState>? _statesSub;
@@ -459,21 +807,70 @@ class MeshcoreController extends ChangeNotifier {
 
   final ReconnectPolicy _reconnect;
   final Future<void> Function(Duration) _delay;
+
+  /// The app's own transmitter meter. Every outgoing frame is quoted against
+  /// it before the write and charged after it, so the 1 % duty cycle is a
+  /// measurement rather than a claim (APP-C5, register §2).
+  final AirtimeMeter _airtime;
+
+  /// The meter itself, for a test that needs to fill or inspect it without
+  /// sending an hour of traffic.
+  @visibleForTesting
+  AirtimeMeter get airtimeMeterForTest => _airtime;
+
+  /// Frames the meter refused, since launch. A refusal never reaches the radio.
+  int _airtimeRefusals = 0;
   final LocationService _location;
   OwnLocation? _phoneFix;
 
   MeshcoreConnectionState _state = MeshcoreConnectionState.disconnected;
   MeshcoreInbound? _lastFrame;
   String? _error;
+  Failure? _failure;
+  BleMtuTooSmall? _mtuRefusal;
   bool _connecting = false;
   bool _manualDisconnect = false;
+
+  /// Another app on this phone holds the radio (see `RadioLease`). While this is set, nothing here
+  /// reaches for the companion: a second BLE central is not rejected by the firmware, it is accepted
+  /// and then dropped mid-traffic, which is the worst possible shape for both apps.
+  bool _yielded = false;
+
+  /// True while another app holds the radio, for the surfaces that want to say so.
+  bool get yielded => _yielded;
   bool _gaveUp = false;
   int _reconnectAttempt = 0;
   int _reconnectGen = 0;
 
+  /// How long a teardown of the previous link is given, and how long a new
+  /// transport is given, before the app stops waiting. See `link_acquire.dart`
+  /// for where the numbers come from.
+  final Duration _linkCloseTimeout;
+  final Duration _linkOpenTimeout;
+
+  /// Teardowns that outlasted [_linkCloseTimeout].
+  ///
+  /// Counted rather than treated as a failure: the app went on to open a new
+  /// link, so nothing was refused. It is a fact about the phone's stack, and
+  /// the reason a reconnect would otherwise look frozen.
+  int _linkCloseTimeouts = 0;
+
+  /// Handshake timeouts already reacted to, so one timeout is one immediate
+  /// retry rather than a retry on every state notification.
+  int _handshakeTimeoutsSeen = 0;
+
   MeshcoreConnectionState get state => _state;
   MeshcoreInbound? get lastFrame => _lastFrame;
   SelfInfo? get selfInfo => _connection.selfInfo;
+
+  /// Handshakes this session has started. One per link open.
+  int get handshakeAttempts => _connection.handshakeAttempts;
+
+  /// Handshakes this session that ended without the radio's SELF_INFO.
+  int get handshakeTimeouts => _connection.handshakeTimeouts;
+
+  /// Link teardowns that outlasted the wait the app allows.
+  int get linkCloseTimeouts => _linkCloseTimeouts;
 
   /// Our own node's 64-char pubkey hex (lower-case, no spaces), or
   /// `null` until `SelfInfo` arrives. Used to filter ourselves out
@@ -533,26 +930,38 @@ class MeshcoreController extends ChangeNotifier {
   OwnLocation? get phoneLocationFix => _phoneFix;
 
   /// R22 / U13 — capture a single phone-GPS fix and cache it as
-  /// our fallback own-location. The caller is expected to have
-  /// already obtained the location permission (typically via
-  /// `PermissionsService.requestLocation`); this method just talks
-  /// to the [LocationService]. Returns true on success.
+  /// our fallback own-location. The runtime permission is requested
+  /// just-in-time by the [LocationService] when the user has not
+  /// decided yet, so any caller works without asking first.
+  /// Returns true on success; see [requestPhoneLocationFixOutcome]
+  /// when the caller can explain a failure.
   Future<bool> requestPhoneLocationFix({
     Duration timeLimit = const Duration(seconds: 15),
+  }) async =>
+      (await requestPhoneLocationFixOutcome(timeLimit: timeLimit)).isOk;
+
+  /// The same request, reporting *why* it produced no fix, so a screen
+  /// can say "location permission needed" instead of "no GPS fix" when
+  /// the two are completely different problems.
+  Future<LocationOutcome> requestPhoneLocationFixOutcome({
+    Duration timeLimit = const Duration(seconds: 15),
   }) async {
-    final PhoneFix? fix = await _location.currentFix(timeLimit: timeLimit);
-    if (fix == null) return false;
+    final LocationOutcome outcome =
+        await _location.requestFix(timeLimit: timeLimit);
+    final PhoneFix? fix = outcome.fix;
+    if (fix == null) return outcome;
     _phoneFix = OwnLocation(
       latitude: fix.latitude,
       longitude: fix.longitude,
       altitudeMeters: fix.altitudeMeters,
       source: OwnLocationSource.phoneFix,
+      fixAt: fix.fixAt,
     );
     // R25+1 — record into the trail. Phone fixes are a primary
     // source of ownLocation when the device GPS is off or stale.
     _trackOwnLocationForTrail();
     notifyListeners();
-    return true;
+    return outcome;
   }
 
   /// Wipes the cached phone fix (so [ownLocation] reverts to
@@ -562,6 +971,44 @@ class MeshcoreController extends ChangeNotifier {
     _phoneFix = null;
     notifyListeners();
   }
+
+  StreamSubscription<PhoneFix>? _ownFixSub;
+
+  /// Keep our own position live while the app is open.
+  ///
+  /// The map, the radar and every distance in the app read [ownLocation], and
+  /// the only thing that ever refreshed it was an on-demand fix ("Find me") or
+  /// the auto-publish controller, which is off unless the user turned it on. So
+  /// a phone that walked two kilometres with the map open kept drawing its own
+  /// marker where it started — the owner's "the location is not updating live,
+  /// it still shows a different part of the city".
+  ///
+  /// The stream is cheap by construction: medium accuracy with a distance
+  /// filter, so it reports when the phone has moved rather than on a clock, and
+  /// it never prompts — a permission that was never granted leaves the stream
+  /// silent rather than raising a dialog from a background path.
+  void startOwnLocationStream({int distanceFilterMeters = 20}) {
+    if (_ownFixSub != null) return;
+    try {
+      _ownFixSub = _location
+          .positionStream(distanceFilterMeters: distanceFilterMeters)
+          .listen(cachePhoneFix, onError: (Object _) {});
+    } catch (_) {
+      // A platform that cannot open the stream (no permission recorded yet, no
+      // location hardware) is a state, not an error: the app falls back to the
+      // on-demand fix and the banner that asks for one.
+      _ownFixSub = null;
+    }
+  }
+
+  /// Stop the live position stream. Called from `dispose`.
+  Future<void> stopOwnLocationStream() async {
+    await _ownFixSub?.cancel();
+    _ownFixSub = null;
+  }
+
+  /// Whether the live position stream is running.
+  bool get ownLocationStreamRunning => _ownFixSub != null;
 
   /// Cache an externally-acquired [PhoneFix] as our phone-side
   /// own-location. Used by `AutoPublishController` (R36) which
@@ -660,12 +1107,14 @@ class MeshcoreController extends ChangeNotifier {
   bool _coverageDirty = false;
   Timer? _coverageSaveTimer;
 
-  /// Read-only snapshot of observed coverage cells, keyed by
+  /// Read-only view of observed coverage cells, keyed by
   /// `latBucket,lonBucket` strings (see [CoverageStore.cellKey]).
   /// Each value is the most-recent UNIX-second timestamp the cell
   /// was observed.
-  Map<String, int> get coverageCells =>
-      Map<String, int>.unmodifiable(_coverage);
+  ///
+  /// A view, not a copy: `Map.unmodifiable` copies the whole record on every
+  /// read, and the reception quilt that read it per build has left the map.
+  Map<String, int> get coverageCells => UnmodifiableMapView<String, int>(_coverage);
 
   Future<void> _loadCoverage() async {
     final Map<String, int> v = await CoverageStore.load();
@@ -747,6 +1196,15 @@ class MeshcoreController extends ChangeNotifier {
   static const double _nearThresholdMeters = 10000;
   static const double _farThresholdMeters = 50000;
 
+  /// Whether this node counts as "in range" for a count on a screen.
+  ///
+  /// The predicate was re-spelled at eight call sites, so a change to what
+  /// counts had to be made in eight places or the screens disagreed.
+  bool inRangeNow(DiscoveredNode n) {
+    final NodeProximity p = proximityFor(n);
+    return p == NodeProximity.near || p == NodeProximity.recent;
+  }
+
   NodeProximity proximityFor(DiscoveredNode n) {
     if (n.hasLocation) {
       final double? d = distanceMetersTo(n.latitude!, n.longitude!);
@@ -762,8 +1220,37 @@ class MeshcoreController extends ChangeNotifier {
     return NodeProximity.unknown;
   }
   String? get error => _error;
+
+  /// The last link failure as a translated cause (APP-N2). Null when the
+  /// last attempt did not fail, or when the failure was not a link one.
+  Failure? get failure => _failure;
   bool get isConnecting => _connecting;
   bool get isReady => _state == MeshcoreConnectionState.ready;
+
+  /// The link's negotiated ATT MTU, when the transport reports one.
+  ///
+  /// A link below [MeshcoreBle.requiredMtu] cannot carry the firmware's
+  /// largest frame in one notification. [BleConnector] refuses such a link on
+  /// Android, so this is normally the value of a link that is good enough —
+  /// shown because it is the number that explains a lost frame when one goes
+  /// missing anyway.
+  int? get mtu => _connection.mtu;
+
+  /// Set when the last connect attempt was refused for a too-small MTU.
+  /// Typed rather than a string so the screen can say it in the user's
+  /// language, with the number the link actually got.
+  BleMtuTooSmall? get mtuRefusal => _mtuRefusal;
+
+  /// Notifications that ended mid-frame (see [MeshcoreConnection
+  /// .truncatedFrames]).
+  int get truncatedFrames => _connection.truncatedFrames;
+
+  /// Frames that decoded with bytes left over (see [MeshcoreConnection
+  /// .trailingBytesFrames]).
+  int get trailingBytesFrames => _connection.trailingBytesFrames;
+
+  /// Notifications that arrived with no bytes in them.
+  int get emptyFrames => _connection.emptyFrames;
 
   /// Number of reconnect attempts since the last successful link.
   int get reconnectAttempt => _reconnectAttempt;
@@ -772,8 +1259,55 @@ class MeshcoreController extends ChangeNotifier {
   /// .maxAttempts] without recovering.
   bool get gaveUp => _gaveUp;
 
-  void _maybeScheduleReconnect() {
-    if (_manualDisconnect || _connecting) return;
+  /// The radio's own key as it was the last time the app accepted it, and
+  /// whether the link now answers with a different one. A reflash or a
+  /// replacement changes the key while the BLE identity can survive, so this
+  /// is the only signal that the history on screen belongs to another node
+  /// (D8.7). Nothing is migrated automatically: the user says which it is.
+  String? get previousRadioKey => _previousRadioKey;
+  bool get radioChanged => _radioChanged;
+  String? _previousRadioKey;
+  bool _radioChanged = false;
+
+  /// The connected radio is the one the user means: record its key and stop
+  /// asking. The diagnostics line is what offers this.
+  Future<void> acceptRadioIdentity() async {
+    final String? own = ownPubKeyHex;
+    if (own == null) return;
+    await RadioIdentityStore.save(own);
+    _previousRadioKey = own;
+    _radioChanged = false;
+    notifyListeners();
+  }
+
+  /// Compares the connected radio's key with the one on record. Silent the
+  /// first time (a fresh install records what it sees), and silent when the
+  /// radio reports an all-zero key, which means it has not been provisioned.
+  Future<void> _checkRadioIdentity() async {
+    final String? own = ownPubKeyHex;
+    if (own == null || own == '') return;
+    if (RegExp(r'^0+$').hasMatch(own)) return;
+    final String? stored = await RadioIdentityStore.read();
+    if (stored == null) {
+      await RadioIdentityStore.save(own);
+      _previousRadioKey = own;
+      _radioChanged = false;
+      notifyListeners();
+      return;
+    }
+    if (stored == own) {
+      _previousRadioKey = stored;
+      _radioChanged = false;
+      notifyListeners();
+      return;
+    }
+    _previousRadioKey = stored;
+    _radioChanged = true;
+    notifyListeners();
+  }
+
+  void _maybeScheduleReconnect({bool immediate = false}) {
+    if (_manualDisconnect || _connecting || _yielded) return;
     final int next = _reconnectAttempt + 1;
     if (!_reconnect.shouldRetry(next)) {
       if (!_gaveUp) {
@@ -784,7 +1318,8 @@ class MeshcoreController extends ChangeNotifier {
     }
     _reconnectAttempt = next;
     final int gen = _reconnectGen;
-    final Duration d = _reconnect.delayForAttempt(next);
+    final Duration d =
+        immediate ? Duration.zero : _reconnect.delayForAttempt(next);
     unawaited(_delay(d).then((_) {
       // Drop stale schedules (a newer connect/disconnect superseded us).
       if (gen != _reconnectGen || _manualDisconnect || _connecting) return;
@@ -797,51 +1332,749 @@ class MeshcoreController extends ChangeNotifier {
   /// after a failure. A user-initiated call ([isRetry] false) clears
   /// the manual-disconnect latch and resets the backoff.
   Future<void> connect({bool isRetry = false}) async {
+    // A scheduled retry obeys the lease. An operator asking to connect is a decision that the radio
+    // is theirs to take, so it clears the latch rather than waiting for the other app to finish.
+    if (isRetry && _yielded) return;
     if (_connecting) return;
     _connecting = true;
     if (!isRetry) {
+      // The operator asked by hand, so the stored hold is dropped too. Leaving
+      // it made this connect work and the next launch start disconnected again.
+      if (_yielded) await RadioLease.clear();
+      _yielded = false;
       _manualDisconnect = false;
       _gaveUp = false;
       _reconnectAttempt = 0;
       _reconnectGen++;
+      // A hand-asked connect is a new decision: give the bond repair its budget
+      // back, so a mistyped PIN or a radio that has since been power-cycled is
+      // not a permanent lockout. The automatic retry loop does not come through
+      // here, which is what keeps it from prompting for a PIN on every attempt.
+      BleConnector.resetRepairBudget();
     }
     _error = null;
+    _failure = null;
+    _mtuRefusal = null;
     notifyListeners();
     Object? failure;
     try {
-      await _transport?.close();
-      final MeshcoreTransport t = await _transportFactory();
+      // Both waits are bounded. An unbounded close held `_connecting` set
+      // forever and left the screen reading "handshaking" with nothing behind
+      // it; a timed-out close is recorded and the app goes on to open a new
+      // link, because the old transport is unreachable either way.
+      final MeshcoreTransport? previous = _transport;
+      if (previous != null) {
+        try {
+          await previous.close().timeout(_linkCloseTimeout);
+        } on TimeoutException {
+          _linkCloseTimeouts++;
+          notifyListeners();
+        }
+      }
+      final MeshcoreTransport t =
+          await _transportFactory().timeout(_linkOpenTimeout);
       _transport = t;
       _connection.attach(t);
       // Success: the handshake now drives state via the connection
       // stream. Do NOT inspect _state here — that transition is
       // delivered asynchronously and would still read `failed`.
+    } on TimeoutException {
+      // The factory did not resolve inside the wait. Typed rather than left
+      // as a raw timeout so the screen can name the half that stalled; a
+      // TimeoutException from inside the connector lands here too, and the
+      // copy holds for both.
+      failure = LinkAcquireTimeout(LinkStage.open, _linkOpenTimeout);
+      _error = failure.toString();
+      _failure = Failure.from(failure);
+      _state = MeshcoreConnectionState.failed;
     } catch (e) {
       failure = e;
+      // An MTU refusal is not a link fault and not retryable by backoff: the
+      // same radio will negotiate the same MTU. Keep it typed so the screen
+      // can explain it, and do not let the reconnect policy spin on it.
+      _mtuRefusal = e is BleMtuTooSmall ? e : null;
       _error = e.toString();
+      _failure = Failure.from(e);
       _state = MeshcoreConnectionState.failed;
     }
     _connecting = false;
     notifyListeners();
     // Transport acquisition failed (the connection stream never sees
-    // this, so drive the backoff from here).
-    if (failure != null) _maybeScheduleReconnect();
+    // this, so drive the backoff from here). An MTU refusal is the one
+    // failure backoff cannot fix: the same radio negotiates the same value,
+    // so retrying is only five more identical failures.
+    if (failure != null && _mtuRefusal == null) _maybeScheduleReconnect();
+  }
+
+  // --- Airtime metering ---
+
+  /// What the meter has charged in the last hour.
+  Duration get airtimeSpent => _airtime.spent;
+
+  /// The policy's allowance, or null when the policy has no cap.
+  Duration? get airtimeBudget => _airtime.budget;
+
+  AirtimePolicy get airtimePolicy => _airtime.policy;
+
+  /// Whether the meter refuses a send past the budget or only counts it.
+  bool get airtimeCutoff => _airtimeCutoff;
+  bool _airtimeCutoff = true;
+
+  /// Time left in the rolling hour, or null when the policy has no cap.
+  Duration? get airtimeLeft {
+    final Duration? budget = _airtime.budget;
+    if (budget == null) return null;
+    final Duration left = budget - _airtime.spent;
+    return left.isNegative ? Duration.zero : left;
+  }
+
+  Future<void> setAirtimeCutoff(bool value) async {
+    _cutoffChosen = true;
+    if (_airtimeCutoff == value) return;
+    _airtimeCutoff = value;
+    notifyListeners();
+    await AirtimePolicyPrefs.setCutoff(value);
+  }
+
+  /// Frames the meter refused since launch. A refusal is not a radio error:
+  /// the frame never left the phone.
+  int get airtimeRefusals => _airtimeRefusals;
+
+  /// Whether a frame of [bytes] would fit inside the current window.
+  bool canSpendAirtime(int bytes) =>
+      _airtime.quote(airtimeEstimator.forBytes(bytes)).allowed;
+
+  /// Changes the policy and persists it. The meter keeps its history: what has
+  /// already been spent is a fact about the hour, not about the policy.
+  /// True once the reader has set the switch, so the load that races the
+  /// constructor cannot undo their choice.
+  bool _cutoffChosen = false;
+
+  Future<void> _loadAirtimeCutoff() async {
+    final bool stored = await AirtimePolicyPrefs.cutoff();
+    if (_cutoffChosen) return;
+    if (_airtimeCutoff == stored) return;
+    _airtimeCutoff = stored;
+    notifyListeners();
+  }
+
+  Future<void> setAirtimePolicy(AirtimePolicy value) async {
+    _policyChosen = true;
+    if (_airtime.policy == value) return;
+    _airtime.policy = value;
+    notifyListeners();
+    await AirtimePolicyPrefs.setPolicy(value);
+  }
+
+  /// The exact time-on-air estimate for the radio that reports it, or the
+  /// documented flat figure until the first self-info arrives.
+  ///
+  /// Public because the media path needs it too: the photo composer was built
+  /// with the flat 4 ms/byte figure, which is calibrated to the USA/Canada
+  /// preset and understates a slow preset by an order of magnitude, so the cost
+  /// line a reader saw before spending the airtime was wrong.
+  AirtimeEstimator get airtimeEstimator {
+    final SelfInfo? si = selfInfo;
+    if (si != null) {
+      final AirtimeEstimator? exact = loraEstimator(
+        bandwidthKhz: si.bandwidthKhz,
+        spreadingFactor: si.spreadingFactor,
+        codingRate: si.codingRate,
+      );
+      if (exact != null) return exact;
+    }
+    return airtimeEstimatorFor(null);
+  }
+
+  bool _policyChosen = false;
+
+  Future<void> _loadAirtimePolicy() async {
+    try {
+      final AirtimePolicy stored =
+          await AirtimePolicyPrefs.policy(frequencyMhz: selfInfo?.frequencyMhz);
+      if (_policyChosen || _airtime.policy == stored) return;
+      _airtime.policy = stored;
+      notifyListeners();
+    } catch (_) {
+      // No preferences backend (a test, a host without the plugin): the
+      // constructor's fallback is already the safe policy.
+    }
+  }
+
+  /// Restores the rolling hour the last process was in the middle of.
+  Timer? _airtimeSaveTimer;
+
+  /// Writes the rolling hour at most once every two seconds.
+  ///
+  /// A media burst charges twelve frames in four seconds, and the snapshot is
+  /// one short string. Two seconds bounds what a kill can lose to a rounding
+  /// error while keeping the write off the frame path; [dispose] flushes what
+  /// is left.
+  Future<void> _persistAirtimeSpend() async {
+    // A send that lands after dispose must not arm a timer nothing will cancel:
+    // it writes once, immediately, and stops existing.
+    if (isDisposed) {
+      unawaited(AirtimePolicyPrefs.setSpend(_airtime.snapshot())
+          .catchError((Object _) {}));
+      return;
+    }
+    if (_airtimeSaveTimer != null) return;
+    _airtimeSaveTimer = Timer(const Duration(seconds: 2), () {
+      _airtimeSaveTimer = null;
+      unawaited(AirtimePolicyPrefs.setSpend(_airtime.snapshot())
+          .catchError((Object _) {}));
+    });
+  }
+
+  Future<void> _loadAirtimeSpend() async {
+    try {
+      _airtime.restore(await AirtimePolicyPrefs.spend());
+      notifyListeners();
+    } catch (_) {
+      // No preferences backend: the meter starts empty, which is the old
+      // behaviour rather than a wrong hour.
+    }
+  }
+
+  /// Re-derives the policy from the band the radio reports, but only for a user
+  /// who never chose one.
+  ///
+  /// The first `_loadAirtimePolicy` runs before any SelfInfo, so it can only
+  /// answer with the stricter fallback. A radio on 902-928 MHz has no duty
+  /// cycle, and holding it to the EU's 1 % because the answer arrived in the
+  /// wrong order is the defect this closes.
+  Future<void> _deriveAirtimePolicyForBand() async {
+    final SelfInfo? si = selfInfo;
+    if (si == null) return;
+    try {
+      if (await AirtimePolicyPrefs.hasChoice()) return;
+      final AirtimePolicy derived =
+          AirtimePolicy.defaultForBand(si.frequencyMhz);
+      if (derived == _airtime.policy) return;
+      _airtime.policy = derived;
+      meshLog('meshcore.airtime', 'policy follows the band: '
+          '${si.frequencyMhz} MHz -> ${derived.name}');
+      notifyListeners();
+    } catch (_) {
+      // No preferences backend: leave the fallback in place.
+    }
   }
 
   /// Send a raw command frame (e.g. from [MeshcoreFrameCodec]).
-  Future<void> send(Uint8List frame) => _connection.sendCommand(frame);
+  ///
+  /// This is the single write path for every outgoing frame (text, DM,
+  /// datagram, media chunk, tool request, advert, radio config), so it is
+  /// where the app's own duty cycle is charged. A frame that does not fit the
+  /// rolling window is refused *before* the write with [AirtimeRefused]; a
+  /// write that throws is refunded, because nothing left the phone.
+  /// [gated] marks the frames that are the user's traffic — text, DMs,
+  /// datagrams, adverts, tool requests. Those are what a duty cycle exists to
+  /// bound, and they are refused when the window is full. Link maintenance
+  /// (the handshake, the sync drain, a channel probe, a config write) always
+  /// goes: refusing it would leave an exhausted meter unable to reconnect or
+  /// be reconfigured, which is a worse failure than spending a few dozen
+  /// bytes. Only frames the radio *transmits* are charged: airtime is channel
+  /// time, and a BLE read of the battery does not occupy the channel.
+  /// Whether this frame leaves the radio over the air, and so costs channel time.
+  ///
+  /// **Airtime is a LoRa quantity, and most of this app's frames are not LoRa.**
+  /// Reading contacts, channels, battery, device info or the queue are BLE
+  /// questions to the radio in the reader's hand; they never occupy the shared
+  /// channel. Charging them made the meter answer the wrong question, and on a
+  /// busy session (a 400-contact sync, channel probes, a battery poll a minute)
+  /// that inflated window is what refuses the reader's next message with
+  /// "airtime budget".
+  ///
+  /// The list is the codec's own transmitters: text, datagrams, adverts,
+  /// telemetry/status/trace/control requests, raw sends and the tools built on
+  /// them. Anything not listed is treated as local, because a wrongly charged
+  /// frame takes airtime away from messages and a wrongly uncharged one only
+  /// understates a number.
+  ///
+  /// `CMD_SET_ADVERT_LATLON` (0x0E) is **not** here. It sets the position the
+  /// radio will advertise next (`assets/docs/protocol.md`: "update the lat/lon
+  /// for this node, as used in the advertisement packets"); the advert itself
+  /// is `CMD_SEND_SELF_ADVERT`. Charging both meant every auto-publish spent two
+  /// frames of budget for one transmission, and the meter is what the reader
+  /// reads and what can refuse their next message.
+  static const int _kCmdSendTextMessage = 0x02;
+  static const int _kCmdSendChannelMessage = 0x03;
+  static const int _kCmdSendSelfAdvert = 0x07;
+  static const int _kCmdSendRawData = 0x19;
+  static const int _kCmdSendStatusReq = 0x1B;
+  static const int _kCmdSendTracePath = 0x24;
+  static const int _kCmdSendTelemetryReq = 0x27;
+  static const int _kCmdSendBinaryReq = 0x32;
+  static const int _kCmdSendControlData = 0x37;
+  static const int _kCmdSendChannelDatagram = 0x3E;
+  static const int _kCmdSendRawPacket = 0x41;
+
+  static bool isOverTheAir(int opcode) => switch (opcode) {
+        _kCmdSendTextMessage ||
+        _kCmdSendChannelMessage ||
+        _kCmdSendChannelDatagram ||
+        _kCmdSendSelfAdvert ||
+        _kCmdSendTelemetryReq ||
+        _kCmdSendStatusReq ||
+        _kCmdSendTracePath ||
+        _kCmdSendControlData ||
+        _kCmdSendRawData ||
+        _kCmdSendRawPacket ||
+        _kCmdSendBinaryReq =>
+          true,
+        _ => false,
+      };
+
+  Future<void> send(Uint8List frame, {bool gated = false}) async {
+    final bool ota = frame.isNotEmpty && isOverTheAir(frame[0]);
+    final Duration cost = ota ? airtimeEstimator.forBytes(frame.length) : Duration.zero;
+    // A frame that spends no airtime is never refused for airtime: a spent
+    // budget used to refuse local commands too (`quote(0)` is not allowed once
+    // the hour is over), which turned the ceiling into "the app stops working".
+    if (gated && ota && cost > Duration.zero && _airtimeCutoff &&
+        !_airtime.quote(cost).allowed) {
+      _airtimeRefusals++;
+      notifyListeners();
+      throw AirtimeRefused(needed: cost, budget: _airtime.budget);
+    }
+    _airtime.charge(cost);
+    try {
+      await _connection.sendCommand(frame);
+    } catch (_) {
+      _airtime.refund(cost);
+      rethrow;
+    }
+    // Written between frames, not per frame: the snapshot is one short string
+    // and a burst would otherwise be a write per datagram. The dispose path
+    // flushes, so a kill inside the window loses a second of accounting rather
+    // than the hour.
+    unawaited(_persistAirtimeSpend());
+    _notifyAirtime();
+  }
+
+  /// A meter line does not need a rebuild per frame. One per second keeps the
+  /// figure live without turning a burst into a wall of notifications.
+  DateTime? _airtimeNotifiedAt;
+
+  void _notifyAirtime() {
+    final DateTime now = DateTime.now();
+    final DateTime? last = _airtimeNotifiedAt;
+    if (last != null && now.difference(last) < const Duration(seconds: 1)) {
+      return;
+    }
+    _airtimeNotifiedAt = now;
+    notifyListeners();
+  }
+
+  // --- R60 Tools seams ---
+
+  /// Every decoded inbound frame (broadcast). Tools match their own
+  /// replies here; the controller keeps processing them as usual.
+  Stream<MeshcoreInbound> get inboundFrames => _connection.inbound;
+
+  /// Marker id in [_ledger] for a tool request that will be answered
+  /// by RESP_CODE_SENT. Without it, that SENT would be taken as the
+  /// confirmation of whichever chat message is oldest in flight.
+  static const String _toolSendMarker = '\u0000tool';
+
+  /// Marker id in [_ledger] for a self-advert, which the firmware
+  /// answers with RESP_CODE_OK (`MyMesh.cpp` CMD_SEND_SELF_ADVERT).
+  /// Without it that OK would confirm a channel message that is still
+  /// waiting for its own OK.
+  static const String _advertSendMarker = '\u0000advert';
+
+  /// Send a tool's remote request (status / trace / telemetry) — one
+  /// the radio answers with RESP_CODE_SENT — without disturbing chat
+  /// delivery tracking. If the radio answers ERR instead, call
+  /// [abandonToolRequest].
+  Future<void> sendToolRequest(Uint8List frame) async {
+    _registerMarker(_toolSendMarker, CommandAnswer.sent);
+    try {
+      await send(frame, gated: true);
+    } catch (_) {
+      abandonToolRequest();
+      rethrow;
+    }
+  }
+
+  /// The radio refused a [sendToolRequest] (ERR) or never answered:
+  /// drop its marker so the next SENT goes to the right message.
+  void abandonToolRequest() => _dropPending(_toolSendMarker);
+
+  /// Marker id in [_ledger] for a channel datagram (`CMD_SEND_CHANNEL_DATA`),
+  /// which the firmware answers with a bare OK/ERR (`MyMesh.cpp:1158-1189`).
+  static const String _channelDataMarker = '\u0000chdata';
+
+  /// The datagram send currently waiting for its OK/ERR, if any. Sends are
+  /// serialised ([_channelDataTail]) because the answer carries no tag.
+  Completer<MeshcoreInbound>? _channelDataAnswer;
+  Future<void> _channelDataTail = Future<void>.value();
+
+  /// How long a datagram send waits for the radio's answer. Overridable so
+  /// tests do not spend five seconds proving a timeout.
+  final Duration? _channelDataTimeoutOverride;
+
+  static const Duration _channelDataTimeout = Duration(seconds: 5);
+
+  /// Send [blob] on [channelIdx] as a channel datagram (`0x3E`).
+  ///
+  /// The blob is a payload for whatever layer owns [dataType]; this method
+  /// only carries it. Sends are serialised: the radio's answer has no tag,
+  /// so two in flight could not be told apart.
+  Future<ChannelDataSendResult> sendChannelData({
+    required int channelIdx,
+    required int dataType,
+    required List<int> blob,
+    int pathLen = kPathLenFlood,
+    List<int> path = const <int>[],
+  }) {
+    final Future<ChannelDataSendResult> result =
+        _channelDataTail.then((_) => _sendChannelData(
+              channelIdx: channelIdx,
+              dataType: dataType,
+              blob: blob,
+              pathLen: pathLen,
+              path: path,
+            ));
+    _channelDataTail = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
+  }
+
+  /// Send a raw record to one contact over a known path (`0x19`).
+  ///
+  /// This is the only frame that cannot be flooded: the firmware requires a
+  /// path and answers `ERR_CODE_UNSUPPORTED_CMD` for a flood
+  /// (`MyMesh.cpp:1519-1533`). That is exactly what a picture needs, because a
+  /// photo must never be broadcast to a channel. A caller with no path has no
+  /// way to send, which is the honest answer rather than a flood.
+  ///
+  /// Serialised with the channel datagrams: the radio's answer carries no tag,
+  /// so two in flight could not be told apart.
+  Future<ChannelDataSendResult> sendRawData({
+    required List<int> path,
+    required List<int> payload,
+  }) {
+    final Future<ChannelDataSendResult> result =
+        _channelDataTail.then((_) => _sendRawData(path: path, payload: payload));
+    _channelDataTail = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
+  }
+
+  Future<ChannelDataSendResult> _sendRawData({
+    required List<int> path,
+    required List<int> payload,
+  }) async {
+    if (!isReady) {
+      return const ChannelDataSendResult(ChannelDataSendStatus.notReady);
+    }
+    final Uint8List frame;
+    try {
+      frame = MeshcoreFrameCodec.sendRawData(path: path, payload: payload);
+    } on ChannelDataException catch (e) {
+      return ChannelDataSendResult(
+        ChannelDataSendStatus.refusedLocally,
+        refusal: e.refusal,
+      );
+    }
+    final Completer<MeshcoreInbound> answer = Completer<MeshcoreInbound>();
+    _channelDataAnswer = answer;
+    _registerMarker(_channelDataMarker, CommandAnswer.ok);
+    try {
+      await send(frame, gated: true);
+      final MeshcoreInbound reply = await answer.future
+          .timeout(_channelDataTimeoutOverride ?? _channelDataTimeout);
+      if (reply is OkFrame) {
+        return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
+      }
+      return ChannelDataSendResult(
+        ChannelDataSendStatus.refusedByRadio,
+        errorCode: reply is ErrorFrame ? reply.code : null,
+      );
+    } on TimeoutException {
+      return const ChannelDataSendResult(ChannelDataSendStatus.noAnswer);
+    } catch (_) {
+      // A throw from the link is the link being gone, which the caller reads
+      // the same way as no answer: the record may or may not have gone out.
+      return const ChannelDataSendResult(ChannelDataSendStatus.noAnswer);
+    } finally {
+      _channelDataAnswer = null;
+    }
+  }
+
+  Future<ChannelDataSendResult> _sendChannelData({
+    required int channelIdx,
+    required int dataType,
+    required List<int> blob,
+    required int pathLen,
+    required List<int> path,
+  }) async {
+    if (!isReady) {
+      return const ChannelDataSendResult(ChannelDataSendStatus.notReady);
+    }
+    final Uint8List frame;
+    try {
+      frame = MeshcoreFrameCodec.sendChannelData(
+        channelIdx: channelIdx,
+        dataType: dataType,
+        blob: blob,
+        pathLen: pathLen,
+        path: path,
+      );
+    } on ChannelDataException catch (e) {
+      return ChannelDataSendResult(
+        ChannelDataSendStatus.refusedLocally,
+        refusal: e.refusal,
+      );
+    }
+    final Completer<MeshcoreInbound> answer = Completer<MeshcoreInbound>();
+    _channelDataAnswer = answer;
+    _registerMarker(_channelDataMarker, CommandAnswer.ok);
+    try {
+      await send(frame, gated: true);
+      final MeshcoreInbound reply = await answer.future
+          .timeout(_channelDataTimeoutOverride ?? _channelDataTimeout);
+      if (reply is OkFrame) {
+        return const ChannelDataSendResult(ChannelDataSendStatus.accepted);
+      }
+      return ChannelDataSendResult(
+        ChannelDataSendStatus.refusedByRadio,
+        errorCode: (reply as ErrorFrame).code,
+      );
+    } on TimeoutException {
+      _dropPending(_channelDataMarker);
+      // The frame was written, so the radio may have transmitted it.
+      return const ChannelDataSendResult(ChannelDataSendStatus.noAnswer);
+    } on AirtimeRefused {
+      _dropPending(_channelDataMarker);
+      return const ChannelDataSendResult(
+          ChannelDataSendStatus.refusedAirtime);
+    } catch (_) {
+      _dropPending(_channelDataMarker);
+      _emitTaskError('sendChannelData');
+      return const ChannelDataSendResult(ChannelDataSendStatus.notReady);
+    } finally {
+      if (identical(_channelDataAnswer, answer)) _channelDataAnswer = null;
+    }
+  }
+
+  /// Marker id in [_ledger] for a raw-data send (`CMD_SEND_RAW_DATA`),
+  /// which the firmware answers with a bare OK or ERR, never SENT
+  /// (`MyMesh.cpp` CMD_SEND_RAW_DATA: `writeOKFrame()` / `writeErrFrame()`).
+  /// Without it that OK would confirm a channel message still waiting for
+  /// its own.
+  static const String _rawSendMarker = '\u0000raw';
+
+  /// Send one raw-data command and register its OK/ERR so neither is
+  /// credited to a chat message. The caller reads the answer from
+  /// [inboundFrames]; if none arrives, call [abandonRawSend].
+  /// The record's answer: the OK or ERR the ledger credited to *this* send.
+  ///
+  /// Returning it is the point. The caller used to watch every inbound
+  /// OK/ERR itself, which credited one answer twice — once to the chat
+  /// message the ledger had claimed and once to the raw send waiting beside
+  /// it. An answer now belongs to whoever claimed it.
+  Future<MeshcoreInbound> sendRawCommand(Uint8List frame) async {
+    final Completer<MeshcoreInbound> answer = Completer<MeshcoreInbound>();
+    _rawAnswer = answer;
+    _registerMarker(_rawSendMarker, CommandAnswer.ok);
+    try {
+      await send(frame, gated: true);
+    } catch (_) {
+      abandonRawSend();
+      rethrow;
+    }
+    return answer.future;
+  }
+
+  Completer<MeshcoreInbound>? _rawAnswer;
+
+  void _completeRawSend(MeshcoreInbound f) {
+    final Completer<MeshcoreInbound>? c = _rawAnswer;
+    _rawAnswer = null;
+    if (c != null && !c.isCompleted) c.complete(f);
+  }
+
+  /// No answer came for a [sendRawCommand]: drop its marker so the next OK
+  /// goes to the right message, and forget the completer nobody can satisfy.
+  void abandonRawSend() {
+    _rawAnswer = null;
+    _dropPending(_rawSendMarker);
+  }
+
+  // --- Radio configuration: the radio's own answer, attributed ---
+
+  /// Marker id in [_ledger] for a radio-config command (frequency, bandwidth,
+  /// TX power, path-hash size) waiting for its bare `OK`/`ERR`.
+  static const String _configMarker = '\u0000cfg';
+  static const String _contactAddMarker = '\u0000cadd';
+
+  /// The key an add is about, so a refusal can take back the row it added.
+  ///
+  /// The add is reflected locally before the radio answers, which is right for
+  /// the common case and wrong for the one that matters: a full table refuses
+  /// the add, and the app kept listing a contact the radio does not have. A DM
+  /// to that peer is then dropped by the firmware, which only delivers from
+  /// senders in its own table, and nothing in the app said so.
+  String? _contactAddPending;
+
+  /// How long a config write waits for the radio's answer.
+  static const Duration _configAnswerTimeout = Duration(seconds: 5);
+  final Duration? _radioConfigTimeoutOverride;
+
+  Completer<RadioAnswer>? _configAnswer;
+
+  /// The command [_configAnswer] belongs to, so its reply can teach the
+  /// capability record which command the radio just accepted or refused.
+  MeshcoreCommand? _configCommand;
+
+  /// One config write at a time: the answer carries no tag, so two in flight
+  /// could not be told apart.
+  Future<void> _configTail = Future<void>.value();
+
+  /// What this connected radio has been shown to support. A capability is a
+  /// fact about the radio (D8.15), so it lives with the link.
+  final RadioCapabilities _capabilities = RadioCapabilities();
+  RadioCapabilities get capabilities => _capabilities;
+
+  /// Send one radio-config frame and return the radio's own answer.
+  ///
+  /// [send] returns when the bytes were accepted, which is how the app used
+  /// to report "sent" for a command the radio had refused. The three setters
+  /// answer with a bare `OK`/`ERR(ERR_CODE_ILLEGAL_ARG)`
+  /// (`MyMesh.cpp:1386-1478`), so the answer is attributed through the ledger
+  /// like any other untagged reply.
+  Future<RadioAnswer> sendRadioConfig(Uint8List frame) {
+    final Future<RadioAnswer> result =
+        _configTail.then((_) => _sendRadioConfigOnce(frame));
+    _configTail = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
+  }
+
+  Future<RadioAnswer> _sendRadioConfigOnce(Uint8List frame) async {
+    if (!isReady || frame.isEmpty) return const RadioAnswer.silent();
+    final MeshcoreCommand command = MeshcoreCommand(frame[0]);
+    // Refuse locally what this radio already said it cannot do. Unknown is
+    // not refused: the command is sent and the reply teaches the state.
+    if (_capabilities.stateOf(command) == CapabilityState.absent) {
+      return RadioAnswer.refused(MeshcoreErrorCode.unsupportedCmd.code);
+    }
+    final Completer<RadioAnswer> answer = Completer<RadioAnswer>();
+    _configAnswer = answer;
+    _configCommand = command;
+    _registerMarker(_configMarker, CommandAnswer.ok);
+    try {
+      await send(frame);
+      return await answer.future
+          .timeout(_radioConfigTimeoutOverride ?? _configAnswerTimeout);
+    } on TimeoutException {
+      _dropPending(_configMarker);
+      return const RadioAnswer.silent();
+    } catch (_) {
+      _dropPending(_configMarker);
+      _emitTaskError('sendRadioConfig');
+      return const RadioAnswer.silent();
+    } finally {
+      if (identical(_configAnswer, answer)) {
+        _configAnswer = null;
+        _configCommand = null;
+      }
+    }
+  }
+
+  void _completeRadioConfig(RadioAnswer answer) {
+    final MeshcoreCommand? command = _configCommand;
+    if (command != null) {
+      if (answer.isAccepted) {
+        _capabilities.observeReply(command);
+      } else if (answer.status == RadioAnswerStatus.refused) {
+        final int? code = answer.errorCode;
+        if (code != null) _capabilities.observeError(command, code);
+      }
+    }
+    final Completer<RadioAnswer>? c = _configAnswer;
+    if (c != null && !c.isCompleted) c.complete(answer);
+  }
+
+  /// Ask the radio for its device info again (the path-hash size and the
+  /// firmware build live there). Used after applying radio parameters, where
+  /// the reply is also the evidence that the write took effect.
+  void refreshDeviceInfo() => _requestDeviceInfo();
+
+  int _backgroundHolds = 0;
+
+  /// The firmware keeps ONE pending remote request; each new one
+  /// clears the last. While a tool measures, hold the background
+  /// telemetry poller so it cannot steal the slot. Nested holds count;
+  /// pair every `true` with a `false`.
+  void holdBackgroundRequests(bool hold) {
+    _backgroundHolds = hold
+        ? _backgroundHolds + 1
+        : (_backgroundHolds - 1).clamp(0, 1 << 20);
+  }
+
+  bool get backgroundRequestsHeld => _backgroundHolds > 0;
 
   // --- Discovery: nodes "in the area" (contacts + adverts) ---
 
   final Map<String, DiscoveredNode> _nodes = <String, DiscoveredNode>{};
 
+  /// Bumped whenever [_nodes] changes, so the repeater prefix map below can be
+  /// reused instead of rebuilt.
+  int _nodesRevision = 0;
+
+  /// The revision of the node map. A cache keyed on this cannot go stale, and
+  /// it is cheaper than comparing the nodes themselves.
+  int get nodesRevision => _nodesRevision;
+
+  /// The repeater prefix map, per route width, and the revision it was built
+  /// from.
+  ///
+  /// [topologyHopsFor] is called once per peer when the tree is built, and it
+  /// used to walk every contact to build this map each time: one graph was
+  /// O(n^2) in the number of contacts, and the tree rebuilds on every
+  /// notification. At 400 contacts that is 160 000 map insertions several times
+  /// a second, which is a plausible contributor to the app "periodically
+  /// stopping to respond".
+  int _prefixRevision = -1;
+  final Map<int, ({Map<String, DiscoveredNode> byPrefix, Set<String> ambiguous})>
+      _prefixCache =
+      <int, ({Map<String, DiscoveredNode> byPrefix, Set<String> ambiguous})>{};
+
+  /// Every write to [_nodes] goes through here, so the cache cannot go stale.
+  void _nodesChanged() {
+    _nodesRevision++;
+  }
+
+  /// The sorted list, and the revision it was sorted from.
+  ///
+  /// The getter used to allocate and sort the whole fabric on every read, and
+  /// the map reads it three times per build while the dashboards read it twice
+  /// in one function. At 475 nodes and twenty notifications a second that is
+  /// sixty sorts a second for a list that changes only when a node does.
+  List<DiscoveredNode>? _nodesCache;
+  int _nodesCacheRevision = -1;
+
   /// Discovered nodes, most-recently-heard first.
   List<DiscoveredNode> get nodes {
+    final List<DiscoveredNode>? cached = _nodesCache;
+    if (cached != null && _nodesCacheRevision == _nodesRevision) return cached;
     final List<DiscoveredNode> v = _nodes.values.toList()
       ..sort((DiscoveredNode a, DiscoveredNode b) =>
           b.lastHeardUnix.compareTo(a.lastHeardUnix));
+    _nodesCache = v;
+    _nodesCacheRevision = _nodesRevision;
     return v;
   }
+
+  /// How many nodes are known, without sorting them.
+  int get nodeCount => _nodes.length;
+
+  /// The node with this pubkey, or null when it has not been discovered.
+  ///
+  /// A sender's key is the only handle a message carries, and the map needs the
+  /// node behind it to know where a bubble belongs.
+  DiscoveredNode? nodeByPubKey(String pubKeyHex) =>
+      _nodes[pubKeyHex.toLowerCase()];
 
   /// R49 — resolved topology chain for a peer, ordered from the
   /// first hop *from us* to the last hop *before the peer*. Each
@@ -900,6 +2133,69 @@ class MeshcoreController extends ChangeNotifier {
     return List<DiscoveredNode>.unmodifiable(chain);
   }
 
+  /// The peer's learned route, one entry per hop, with a placeholder for every
+  /// hop that names nothing.
+  ///
+  /// Null means the radio has learned no route at all (flood or advert-only).
+  /// An empty list means the peer is a direct neighbour. Anything else is the
+  /// real depth, which is the number the tree exists to show.
+  ///
+  /// Grouping is by the route's own hash width, decoded from `out_path_len`:
+  /// iterating the raw path bytes one at a time read a two-byte route as twice
+  /// the hops it has.
+  List<TopologyHop>? topologyHopsFor(String pubKeyHex) {
+    final DiscoveredNode? peer = _nodes[pubKeyHex.toLowerCase()];
+    if (peer == null) return null;
+    final List<int>? bytes = peer.outPathHashes;
+    if (bytes == null) return null;
+    if (bytes.isEmpty) return const <TopologyHop>[];
+    final int width = (peer.outPathHashSize ?? 1).clamp(1, 3);
+    final int chars = width * 2;
+
+    // Repeaters by their truncated key, at this route's width. A prefix two
+    // repeaters share is ambiguous and names neither: picking the first would
+    // draw a route through a node that may not be on it.
+    //
+    // Built once per width and reused until the contact set changes: this runs
+    // once per peer in `MeshGraph.fromController`, so rebuilding it per call
+    // made one graph quadratic in the contacts and the tree rebuilds on every
+    // notification.
+    if (_prefixRevision != _nodesRevision) {
+      _prefixCache.clear();
+      _prefixRevision = _nodesRevision;
+    }
+    final ({Map<String, DiscoveredNode> byPrefix, Set<String> ambiguous})
+        named = _prefixCache.putIfAbsent(width, () {
+      final Map<String, DiscoveredNode> byPrefix =
+          <String, DiscoveredNode>{};
+      final Set<String> ambiguous = <String>{};
+      for (final DiscoveredNode n in _nodes.values) {
+        if (n.type != kAdvTypeRepeater) continue;
+        if (n.pubKeyHex.length < chars) continue;
+        final String prefix = n.pubKeyHex.substring(0, chars).toLowerCase();
+        if (byPrefix.containsKey(prefix)) {
+          ambiguous.add(prefix);
+        } else {
+          byPrefix[prefix] = n;
+        }
+      }
+      return (byPrefix: byPrefix, ambiguous: ambiguous);
+    });
+
+    final List<TopologyHop> hops = <TopologyHop>[];
+    for (int i = 0; i + width <= bytes.length; i += width) {
+      final String hex = bytes
+          .sublist(i, i + width)
+          .map((int b) => b.toRadixString(16).padLeft(2, '0'))
+          .join();
+      hops.add(TopologyHop(
+        hash: hex,
+        node: named.ambiguous.contains(hex) ? null : named.byPrefix[hex],
+      ));
+    }
+    return List<TopologyHop>.unmodifiable(hops);
+  }
+
   // --- Recent activity feed (Dashboard) ---
 
   final List<MeshEvent> _events = <MeshEvent>[];
@@ -931,6 +2227,18 @@ class MeshcoreController extends ChangeNotifier {
       ev = MeshEvent(kind: MeshEventKind.contact, args: <String, String>{
         'name': f.contact.name,
       });
+    } else if (f is OneKeyRejectedFrame) {
+      // The radio dropped a message from a key it does not hold a contact for
+      // (`PUSH_CODE_ONE_KEY_DM_REJECTED`, 0x91). Without this line the sender
+      // simply never appears and the reader cannot tell a stranger's attempt
+      // from silence, which is the one thing a busy mesh should say out loud.
+      ev = MeshEvent(
+          kind: MeshEventKind.oneKeyRejected,
+          args: <String, String>{
+            'key': _hex(f.publicKey).substring(0, 8),
+          });
+    } else if (f is DisabledFrame) {
+      ev = MeshEvent(kind: MeshEventKind.radioRefused);
     } else if (f is BatteryStorageFrame) {
       ev = MeshEvent(kind: MeshEventKind.battery, args: <String, String>{
         'volts': f.battery.batteryVolts.toStringAsFixed(2),
@@ -944,9 +2252,8 @@ class MeshcoreController extends ChangeNotifier {
       // the raw inbound stream.
       if (_squelchNextDeviceError > 0) {
         _squelchNextDeviceError--;
-        // ignore: avoid_print
-        print(
-            '[meshcore] squelching expected device ERR code=${f.code}');
+        meshLog('meshcore',
+            'squelching expected device ERR code=${f.code}');
         return;
       }
       ev = MeshEvent(
@@ -964,8 +2271,10 @@ class MeshcoreController extends ChangeNotifier {
       ev = skew > 5
           ? MeshEvent(
               kind: MeshEventKind.deviceClockSkew,
+              // The magnitude, not the signed offset: "off" is a size, and a
+              // radio 30 s ahead rendered "the clock is -30s off".
               args: <String, String>{
-                'seconds': '$_deviceClockOffsetSec',
+                'seconds': '$skew',
               })
           : MeshEvent(kind: MeshEventKind.deviceClockSynced);
     } else if (f is MsgSentFrame) {
@@ -978,11 +2287,10 @@ class MeshcoreController extends ChangeNotifier {
           args: <String, String>{'version': f.info.firmwareVersion});
     } else if (f is SelfInfoFrame) {
       final SelfInfo si = f.selfInfo;
-      // print() so it routes to I/flutter on Android → captured by
-      // `flutter logs`. developer.log was silent in the previous
-      // field log capture.
-      // ignore: avoid_print
-      print('[meshcore.loc] SelfInfoFrame in: '
+      // Through `meshLog`, which prints so the line routes to I/flutter on
+      // Android and is captured by `flutter logs`, and is compiled out of a
+      // release build because it carries a position.
+      meshLog('meshcore.loc', 'SelfInfoFrame in: '
           'lat=${si.latitude} lon=${si.longitude} '
           'pol=${si.advertLocPolicy} name=${si.name}');
       ev = MeshEvent(kind: MeshEventKind.selfInfo, args: <String, String>{
@@ -993,10 +2301,86 @@ class MeshcoreController extends ChangeNotifier {
     _pushEvent(ev);
   }
 
+  /// Kinds that describe a state rather than an occurrence. The radio reports
+  /// its battery and its own info on a timer, and a node advertises every so
+  /// often, so the same event arrives unchanged again and again.
+  /// How close together two contact frames have to be to be one table load.
+  ///
+  /// The radio streams its table over a few seconds; a minute is far longer than
+  /// that and far shorter than any gap between two deliberate loads.
+  static const Duration _contactSyncWindow = Duration(minutes: 1);
+
+  static const Set<MeshEventKind> _stateKinds = <MeshEventKind>{
+    MeshEventKind.battery,
+    MeshEventKind.selfInfo,
+    MeshEventKind.deviceInfo,
+    MeshEventKind.deviceClockSynced,
+    MeshEventKind.advert,
+    MeshEventKind.contact,
+  };
+
   /// Append an event to the rolling RECENT-feed buffer.
+  ///
+  /// A repeated state refreshes the row that already says it instead of
+  /// appending a twin. On the bench the feed read "battery 4.03V",
+  /// "self-info · WIOld", "battery 4.03V", "self-info · WIOld" … — one line
+  /// per poll interval, which taught a reader to skip the feed. A state that
+  /// CHANGES is still a new row, because that is the part worth reading.
+  /// Messages and faults always append: two identical messages are two
+  /// messages, and a repeated fault is a repeated fault.
   void _pushEvent(MeshEvent ev) {
+    // A contact sync is one event, not one per frame: the radio streams its
+    // table on connect, and a row for each entry buried every message the feed
+    // exists to show.
+    //
+    // The run is found anywhere in the feed rather than only at its end, because
+    // the radio does not pause its other polls while the table streams: a
+    // battery reading landing mid-sync split 350 contacts into "35 contacts" and
+    // "315 contacts" while the CONTACTS row said 350/350. A sync that starts
+    // more than [_contactSyncWindow] later is its own line, so a second table
+    // load is not added to the first.
+    if (ev.kind == MeshEventKind.contact) {
+      final int at = _events.lastIndexWhere(
+          (MeshEvent e) =>
+              e.kind == MeshEventKind.contact ||
+              e.kind == MeshEventKind.contactBatch,
+          );
+      if (at >= 0 &&
+          ev.at.difference(_events[at].at).abs() <= _contactSyncWindow) {
+        final int n = int.tryParse(_events[at].args['count'] ?? '') ?? 1;
+        _events[at] = MeshEvent(
+          kind: MeshEventKind.contactBatch,
+          args: <String, String>{'count': '${n + 1}'},
+          at: ev.at,
+        );
+        return;
+      }
+    }
+    if (_stateKinds.contains(ev.kind)) {
+      // The last row of this KIND, not the last row overall. The radio polls
+      // battery and self-info on the same timer, so they alternate and two
+      // consecutive rows are never the same event: the feed on the handset read
+      // "battery 3.96V", "self-info · WIOld", "battery 3.96V", "self-info ·
+      // WIOld" — one line each per minute, which is what taught a reader to skip
+      // it. Matching on the kind keeps the row in place and refreshes its
+      // timestamp, so a state that has not changed is one row that stays fresh
+      // and a state that HAS changed is a new row.
+      final int at = _events.lastIndexWhere((MeshEvent e) => e.kind == ev.kind);
+      if (at >= 0 && _sameArgs(_events[at].args, ev.args)) {
+        _events[at] = MeshEvent(kind: ev.kind, args: ev.args, at: ev.at);
+        return;
+      }
+    }
     _events.add(ev);
     if (_events.length > _eventsCap) _events.removeAt(0);
+  }
+
+  static bool _sameArgs(Map<String, String> a, Map<String, String> b) {
+    if (a.length != b.length) return false;
+    for (final MapEntry<String, String> e in a.entries) {
+      if (b[e.key] != e.value) return false;
+    }
+    return true;
   }
 
   String _hex(List<int> b) =>
@@ -1005,7 +2389,77 @@ class MeshcoreController extends ChangeNotifier {
   // --- Channel chat (R6) ---
 
   final List<ChatMessage> _messages = <ChatMessage>[];
-  static const int _messagesCap = 250;
+  /// One cap, not two: the store truncates at `ChatStore.cap` when it writes,
+  /// so a second number here would silently cut rows the store would have
+  /// kept (or keep rows it will drop) depending on which ran first.
+  static const int _messagesCap = ChatStore.cap;
+
+  /// Rows the cap has already dropped, per thread (`ch:<idx>` / `dm:<peer>`).
+  ///
+  /// The 250-row cap used to truncate in silence, which made "where did it
+  /// go" unanswerable. The count is persisted beside the history so the
+  /// notice survives the restart that made the rows disappear.
+  final Map<String, int> _dropped = <String, int>{};
+
+  /// How many older rows this thread has lost to the cap.
+  int droppedForChannel(int idx) => _dropped['ch:$idx'] ?? 0;
+
+  /// Same, for a DM thread (keyed by the 12-hex prefix the row stores).
+  int droppedForPeer(String peerPubKeyHex) {
+    final String prefix = peerPubKeyHex.length >= 12
+        ? peerPubKeyHex.substring(0, 12)
+        : peerPubKeyHex;
+    return _dropped['dm:$prefix'] ?? 0;
+  }
+
+  /// Count [m] as a row the cap dropped, and persist the tally.
+  void _noteDropped(ChatMessage m) {
+    final String k = ChatStore.threadKeyOf(m);
+    _dropped[k] = (_dropped[k] ?? 0) + 1;
+    unawaited(ChatStore.saveDropped(Map<String, int>.from(_dropped)));
+  }
+
+  Future<void> _loadDropped() async {
+    final Map<String, int> loaded = await ChatStore.loadDropped();
+    if (loaded.isEmpty) return;
+    _dropped
+      ..clear()
+      ..addAll(loaded);
+    notifyListeners();
+  }
+
+  /// Delete everything this app kept of the conversation: every stored row,
+  /// and the per-thread tally of rows the cap had already dropped.
+  ///
+  /// The radio's own copy is untouched, and so is anything already on air: this
+  /// removes what the phone held, not what was said. The in-memory rows go
+  /// first, because `ChatStore.clear()` alone would leave them on screen and the
+  /// next persist would write them back — a delete that reports success and then
+  /// resurrects the history is worse than no delete at all.
+  ///
+  /// Read markers (`DmReadStore`) are left alone deliberately: they are timestamps
+  /// keyed by peer, they carry no message content, and a peer whose thread is
+  /// re-created would otherwise have its newest row look unread.
+  Future<void> clearAllHistory() async {
+    _messages.clear();
+    _invalidateMessagesCache();
+    if (_dropped.isNotEmpty) {
+      _dropped.clear();
+      await ChatStore.saveDropped(<String, int>{});
+    }
+    await ChatStore.clear();
+    // The meshbook is a *copy* of the last 24 h of channel text, kept in
+    // SharedPreferences and remembered across launches, and the coverage record
+    // is a trail-shaped set of cells. Both survived "delete everything the app
+    // kept", which left a readable copy of yesterday's conversation on disk after
+    // the app said it had been deleted.
+    _meshbook.clearAll();
+    _meshbookSaveTimer?.cancel();
+    await _meshbook.clearPersisted();
+    _coverage.clear();
+    unawaited(CoverageStore.clear());
+    notifyListeners();
+  }
 
   /// Known channels by index → name. Channel 0 ("Public") always
   /// exists; the rest are filled in from `CHANNEL_INFO` replies.
@@ -1025,9 +2479,23 @@ class MeshcoreController extends ChangeNotifier {
   /// The list is unmodifiable; copy if you need to mutate.
   List<int>? channelPsk(int idx) => _channelPsks[idx];
 
-  /// Probe this many channel slots on link-up (typical meshes use a
-  /// handful; the radio answers only the ones it has).
+  /// Slots to probe before `DEVICE_INFO` says how many the radio actually has.
+  /// Four is the pessimistic count: most boards hold 40, small ones 8, and the
+  /// exact number arrives with the device query that follows the handshake.
   static const int _channelProbeCount = 4;
+
+  /// How long a slot may take to answer before the walk moves on. The reply is
+  /// one short frame the radio writes immediately, so a second is generous.
+  static const Duration _channelProbeIdle = Duration(seconds: 1);
+
+  Timer? _channelProbeIdleTimer;
+  int _channelProbeCursor = 0;
+  bool _channelProbeOutstanding = false;
+  final Duration? _channelProbeIdleOverride;
+
+  /// Slots asked for since the last link-up, so a repeated reply cannot make
+  /// the walk ask twice.
+  final Set<int> _channelsProbed = <int>{};
 
   int _activeChannel = 0;
 
@@ -1162,7 +2630,7 @@ class MeshcoreController extends ChangeNotifier {
     return _messagesByChannel.putIfAbsent(
         c,
         () => _messages
-            .where((ChatMessage m) => m.channelIdx == c)
+            .where((ChatMessage m) => m.channelIdx == c && !m.hidden)
             .toList(growable: false));
   }
 
@@ -1197,10 +2665,38 @@ class MeshcoreController extends ChangeNotifier {
     if (!_taskErrors.isClosed) _taskErrors.add(op);
   }
 
+  /// Records an MP1 preview heard on a channel as a thread row.
+  ///
+  /// A preview arrives as a channel datagram, not as text, so the thread would
+  /// otherwise have no row where the picture arrived: it would exist only in the
+  /// strip above the composer, sorted by when the strip noticed rather than by
+  /// when the sender sent it. The row carries the datagram's bytes, so it is
+  /// redrawn from the same palette grid after a restart and the full picture can
+  /// replace it once fetched.
+  ///
+  /// One row per transfer. A sender that repeats its preview (a retry, a second
+  /// datagram repeating the first) must not stack rows that say the same thing.
+  void recordPicturePreview({
+    required int channelIdx,
+    required Uint8List payload,
+    required int transferId,
+    required DateTime at,
+  }) {
+    if (_seenInbound('p|$channelIdx|$transferId')) return;
+    _addMessage(ChatMessage(
+      channelIdx: channelIdx,
+      text: '',
+      outgoing: false,
+      at: at,
+      mp1: payload,
+    ));
+    notifyListeners();
+  }
+
   void _addMessage(ChatMessage m) {
     _messages.add(m);
     if (_messages.length > _messagesCap) {
-      _messages.removeAt(0);
+      _noteDropped(_messages.removeAt(0));
       // The cap-eviction may have removed a row from any channel,
       // not just `m.channelIdx`. Conservative: clear the whole cache
       // when we evict; otherwise just invalidate the affected slot.
@@ -1218,15 +2714,36 @@ class MeshcoreController extends ChangeNotifier {
   // Lifecycle: sending → sent → (DM only) delivered, or → failed.
   // - sending: we issued the BLE send command; a watchdog catches a
   //   device that never confirms.
-  // - sent: RESP_CODE_SENT (MsgSentFrame) arrived. We correlate it to
-  //   the oldest message still awaiting confirmation (sends are
-  //   serialised over BLE, so FIFO order holds) and record its
-  //   expectedAck tag. Channel/broadcast messages stop here — flood
-  //   routing yields no recipient receipt.
+  // - sent: the device confirmed. Channel text is confirmed by a bare
+  //   RESP_CODE_OK (firmware `MyMesh.cpp` CMD_SEND_CHANNEL_TXT_MSG; the
+  //   official meshcore.js / meshcore_py clients wait for OK too) and
+  //   stops here — flood routing yields no recipient receipt. A DM is
+  //   confirmed by RESP_CODE_SENT (MsgSentFrame), which carries the
+  //   expectedAck tag and the device's timeout estimate. Each pending
+  //   send records which reply it expects and is matched oldest-first
+  //   within that kind (sends are serialised over BLE).
+  // - ERR: RESP_CODE_ERR fails the oldest in-flight send at once, with
+  //   the device's reason (`deviceErrorReason`).
   // - delivered: a DM's PUSH_CODE_ACK arrived carrying the same
   //   expectedAck tag.
-  // - failed: the BLE send threw, the confirm watchdog fired, or a
-  //   DM's ack-timeout elapsed with no receipt.
+  // - unknown: a send the app cannot vouch for. A timer expired without
+  //   the radio's answer, or the link went away mid-send; nothing on the
+  //   phone can say whether the frame was transmitted. It is deliberately
+  //   not `failed` (APP-C3).
+  // - failed: the BLE send threw (the frame never left the app), the
+  //   radio answered `ERR` with a reason (an explicit rejection), or a
+  //   direct message passed its ack timeout *and* the 30 s grace with no
+  //   ACK.
+  //
+  // APP-C2's four rules bind the timeouts, and each one is a branch below:
+  //  1. a sync-poll timeout never fails a row — [_expireCommands] moves it
+  //     to `unknown`;
+  //  2. a channel send never fails from a timeout — channel data has no
+  //     ACK — the confirm watchdog moves it to `unknown`;
+  //  3. a DM fails only from an explicit `ERR`, or after the grace;
+  //  4. the 30 s grace lets a late ACK still resolve to delivered, so the
+  //     ack timeout moves the row to `unknown` first and only the grace
+  //     timer fails it.
   //
   // Ordering: some firmware pushes the PUSH_CODE_ACK *before* the
   // RESP_CODE_SENT confirmation (the ACK can't be matched yet — we
@@ -1235,8 +2752,144 @@ class MeshcoreController extends ChangeNotifier {
   // frame lands; otherwise the message would (wrongly) time out as
   // failed despite having been delivered.
 
-  /// Outgoing message ids awaiting a RESP_CODE_SENT, oldest first.
-  final List<String> _pendingSendIds = <String>[];
+  /// Bumped on every delivery-state change of an outgoing message.
+  /// `context.select<..., List<ChatMessage>>(messagesFor)` cannot see
+  /// those changes: provider compares selected lists with
+  /// `DeepCollectionEquality`, and the elements are the same mutable
+  /// [ChatMessage] objects, so a state flip inside one is "equal". A
+  /// screen that selects this counter as well repaints the row glyph.
+  int get deliveryRevision => _deliveryRevision;
+  int _deliveryRevision = 0;
+
+  /// Commands awaiting the device's reply, oldest first. Each entry says
+  /// which reply it expects, because the firmware does not answer every
+  /// command the same way; [CommandLedger] decides which entry a reply
+  /// belongs to and refuses to credit one out of order.
+  final CommandLedger _ledger = CommandLedger(
+    timeout: const Duration(seconds: 20),
+  );
+
+  /// Replies that arrived with nothing at the head to take them: a late
+  /// answer to a command that had timed out, a duplicate, or an answer to a
+  /// command this app never registered. Each one used to be credited to
+  /// whatever happened to be waiting.
+  int get unclaimedReplies => _ledger.unclaimed;
+
+  /// Commands that reached the ledger's timeout without an answer.
+  int get unansweredCommands => _ledger.unanswered;
+
+  void _dropPending(String id) => _ledger.drop(id);
+
+  /// Retire every command that has waited past the ledger's timeout, so a
+  /// silent radio cannot hold the head of the queue and misroute the next
+  /// reply. A marker (tool, raw, advert) has no message to fail; its
+  /// removal is the whole effect.
+  ///
+  /// APP-C2 rule 1: a wait that ran out is not evidence the send failed —
+  /// the frame may still be queued on the radio — so the row becomes
+  /// `unknown`, never `failed`.
+  void _expireCommands() => _resolveExpired(_ledger.expire());
+
+  /// Resolves ids the ledger swept while a reply was being claimed.
+  ///
+  /// `claim` and `takeHead` expire first, so a command that reached its
+  /// deadline between two ticks of the expiry timer is swept there rather
+  /// than here. Draining is what keeps those rows from waiting forever.
+  void _resolveSwept() => _resolveExpired(_ledger.drainSwept());
+
+  /// How many commands in a row have run out of time without an answer.
+  int _consecutiveSilentCommands = 0;
+
+  /// Silence from a radio that is still connected is a fault, not congestion.
+  ///
+  /// The link can stay up while the firmware stops answering: a wedged companion
+  /// loop, or another central accepted and starved. Nothing used to notice — the
+  /// app read LINKED, every send became `unknown` after its watchdog, and no path
+  /// led to a reconnect. Three unanswered commands in a row is the threshold here:
+  /// a busy radio occasionally drops one, and three is what a report of "it says
+  /// connected and does nothing" looks like.
+  static const int silentCommandLimit = 3;
+
+  @visibleForTesting
+  void noteCommandAnswered() => _consecutiveSilentCommands = 0;
+
+  void _noteCommandsExpired(int count) {
+    if (count <= 0) return;
+    _consecutiveSilentCommands += count;
+    if (_consecutiveSilentCommands < silentCommandLimit) return;
+    if (_state != MeshcoreConnectionState.ready) return;
+    _consecutiveSilentCommands = 0;
+    // Report it before tearing the link down, so Diagnostics has the reason.
+    _error = 'the radio stopped answering; reconnecting';
+    // A silent radio gets the existing ladder, not a new one: disconnect marks
+    // the stop manual, so the reconnect is re-armed explicitly here.
+    unawaited(disconnect().then((_) async {
+      _manualDisconnect = false;
+      autoConnectIfPaired();
+    }));
+  }
+
+  void _resolveExpired(List<String> ids) {
+    _noteCommandsExpired(ids.length);
+    for (final String id in ids) {
+      if (id == _toolSendMarker ||
+          id == _advertSendMarker ||
+          id == _rawSendMarker ||
+          id == _cliMarker ||
+          id == _configMarker ||
+          id == _channelDataMarker) {
+        continue;
+      }
+      _uncertainOutgoing(id, 'the radio did not answer');
+    }
+  }
+
+  void _completeChannelData(MeshcoreInbound reply) {
+    final Completer<MeshcoreInbound>? c = _channelDataAnswer;
+    if (c != null && !c.isCompleted) c.complete(reply);
+  }
+
+  /// Fail a message that is still in flight, with a reason. Monotonic: only
+  /// a row in one of [from] moves, so a late watchdog or ERR never overwrites
+  /// a terminal state. The caller narrows [from]: an explicit rejection
+  /// fails a `sending` row, and the end of the ack grace fails an `unknown`
+  /// one.
+  void _failOutgoing(String id, String reason,
+      {Set<MessageDelivery> from = const <MessageDelivery>{
+        MessageDelivery.sending
+      },
+      FailureCause? cause}) {
+    _dropPending(id);
+    _deliveryTimers.remove(id)?.cancel();
+    final ChatMessage? m = _messageById(id);
+    if (m == null || m.delivery == null || !from.contains(m.delivery)) return;
+    m
+      ..delivery = MessageDelivery.failed
+      ..failReason = reason
+      ..failCause = cause;
+    _deliveryRevision++;
+    _persistChat();
+  }
+
+  /// Mark a send the app cannot vouch for: a timer expired with no answer,
+  /// or the link went away before the radio confirmed. Monotonic like
+  /// [_failOutgoing] — only an in-flight row moves — and it keeps the
+  /// reason so the row can say why it cannot be vouched for.
+  void _uncertainOutgoing(String id, String reason) {
+    _dropPending(id);
+    _deliveryTimers.remove(id)?.cancel();
+    final ChatMessage? m = _messageById(id);
+    if (m == null || m.delivery == null) return;
+    if (m.delivery != MessageDelivery.sending &&
+        m.delivery != MessageDelivery.sent) {
+      return;
+    }
+    m
+      ..delivery = MessageDelivery.unknown
+      ..failReason = reason;
+    _deliveryRevision++;
+    _persistChat();
+  }
 
   /// Per-message lifecycle timers (confirm watchdog, then DM ack
   /// timeout), keyed by message id.
@@ -1247,6 +2900,22 @@ class MeshcoreController extends ChangeNotifier {
   /// age so a never-matched ACK can't accumulate.
   final Map<int, int> _recentAcks = <int, int>{};
   static const int _recentAckTtlMs = 30000;
+
+  /// APP-C2 rule 4: how long an unanswered DM stays `unknown` before it is
+  /// failed. A late ACK anywhere in this window still resolves to delivered.
+  static const Duration _lateAckGrace = Duration(seconds: 30);
+
+  /// The radio's own send-to-ACK time for the newest confirmed message, in
+  /// milliseconds, or null until one has arrived.
+  ///
+  /// `PUSH_CODE_SEND_CONFIRMED` carries it, and it is the one round-trip
+  /// number this app cannot compute for itself: the phone's clock stops at
+  /// the radio's door. A firmware that omits the field leaves this null
+  /// rather than showing a zero.
+  int? _lastAckTripMs;
+
+  /// See [_lastAckTripMs].
+  int? get lastAckTripMs => _lastAckTripMs;
 
   /// How long to wait for the device's send confirmation before
   /// giving up on an outgoing message.
@@ -1264,29 +2933,36 @@ class MeshcoreController extends ChangeNotifier {
     return null;
   }
 
-  void _registerOutgoing(ChatMessage m) {
-    _pendingSendIds.add(m.id);
+  /// A command that is not a chat message (a tool request, a raw send, a
+  /// self-advert) still has to hold its place in the answer order, or the
+  /// next reply lands on whatever is waiting. Re-registering an id that is
+  /// already in flight is a no-op: the old entry still owns its answer.
+  void _registerMarker(String id, CommandAnswer answer) {
+    if (_ledger.isPending(id)) return;
+    _ledger.register(id, answer);
+  }
+
+  void _registerOutgoing(ChatMessage m, CommandAnswer expect) {
+    if (_ledger.isPending(m.id)) _ledger.drop(m.id);
+    _ledger.register(m.id, expect);
     _deliveryTimers[m.id]?.cancel();
     _deliveryTimers[m.id] =
         Timer(_deliveryTimeoutOverride ?? _confirmWatchdog, () {
-      final ChatMessage? msg = _messageById(m.id);
-      if (msg != null && msg.delivery == MessageDelivery.sending) {
-        msg.delivery = MessageDelivery.failed;
-        _pendingSendIds.remove(m.id);
-        _deliveryTimers.remove(m.id);
-        _persistChat();
-        notifyListeners();
-      }
+      // APP-C2 rule 2: a channel send never fails from a timeout — the
+      // radio's `OK` is its only receipt and channel data has no ACK. A DM
+      // that never got its `RESP_CODE_SENT` is equally unprovable (rule 3
+      // allows failure only from an explicit rejection or past the grace).
+      _uncertainOutgoing(m.id, 'no confirmation from the radio');
+      notifyListeners();
     });
   }
 
-  void _markOutgoingFailed(String id) {
-    final ChatMessage? m = _messageById(id);
-    if (m != null) m.delivery = MessageDelivery.failed;
-    _pendingSendIds.remove(id);
-    _deliveryTimers.remove(id)?.cancel();
-    _persistChat();
-  }
+  void _markOutgoingFailed(String id, [String reason = 'send failed']) =>
+      _failOutgoing(id, reason,
+          from: const <MessageDelivery>{
+            MessageDelivery.sending,
+            MessageDelivery.sent
+          });
 
   /// DM ack-timeout = the device's estimate, padded 50 % for OTA
   /// jitter, clamped so a tiny or absurd estimate can't make the glyph
@@ -1312,12 +2988,137 @@ class MeshcoreController extends ChangeNotifier {
     return DateTime.now().millisecondsSinceEpoch - ts <= _recentAckTtlMs;
   }
 
+  /// Take [answer] if it belongs to the command at the head of the queue.
+  ///
+  /// The wire carries no correlation tag, so order is the only evidence
+  /// there is. A reply for the other kind is therefore *not* skipped past
+  /// the head: the ledger counts it as unclaimed and the caller gets null.
+  CommandEntry? _takePending(CommandAnswer answer) {
+    final CommandEntry? entry = _ledger.claim(answer);
+    // Any answer at all — even one with nothing at the head to take — proves the
+    // radio is alive, which is what the silence counter is measuring.
+    noteCommandAnswered();
+    return entry;
+  }
+
   void _trackDelivery(MeshcoreInbound f) {
-    if (f is MsgSentFrame) {
-      if (_pendingSendIds.isEmpty) return;
-      final String id = _pendingSendIds.removeAt(0);
+    _trackDeliveryInner(f);
+    _resolveSwept();
+  }
+
+  void _trackDeliveryInner(MeshcoreInbound f) {
+    if (f is OkFrame) {
+      // Channel text, raw data, channel datagrams and the self-advert are
+      // acknowledged with a bare OK.
+      final CommandEntry? p = _takePending(CommandAnswer.ok);
+      if (p == null) return;
+      if (p.id == _configMarker) {
+        _completeRadioConfig(const RadioAnswer.accepted());
+        return;
+      }
+      if (p.id == _channelDataMarker) {
+        _completeChannelData(f);
+        return;
+      }
+      if (p.id == _rawSendMarker) {
+        _completeRawSend(f);
+        return;
+      }
+      if (p.id == _cliMarker) {
+        _completeCli(f);
+        return;
+      }
+      if (p.id == _advertSendMarker) {
+        return;
+      }
+      if (p.id == _contactAddMarker) {
+        _contactAddPending = null;
+        _clearContactsFull();
+        notifyListeners();
+        return;
+      }
+      final ChatMessage? m = _messageById(p.id);
+      _deliveryTimers.remove(p.id)?.cancel();
+      if (m == null || m.delivery != MessageDelivery.sending) return;
+      // Flood channel text has no recipient receipt: sent is terminal.
+      m.delivery = MessageDelivery.sent;
+      _deliveryRevision++;
+      _persistChat();
+    } else if (f is ErrorFrame) {
+      // ERR answers the command at the head, whatever kind it is: an ERR
+      // for a raw send must not fail a chat message that happens to be
+      // older. A probe whose ERR is expected (see [_squelchNextDeviceError])
+      // is not a send.
+      if (_squelchNextDeviceError > 0) return;
+      final CommandEntry? p = _ledger.takeHead();
+      if (p == null) return;
+      if (p.id == _configMarker) {
+        _completeRadioConfig(RadioAnswer.refused(f.code));
+        return;
+      }
+      if (p.id == _channelDataMarker) {
+        _completeChannelData(f);
+        return;
+      }
+      if (p.id == _rawSendMarker) {
+        _completeRawSend(f);
+        return;
+      }
+      if (p.id == _cliMarker) {
+        _completeCli(f);
+        return;
+      }
+      if (p.id == _contactAddMarker) {
+        // The radio refused the add. `ERR_CODE_TABLE_FULL` is the one that a
+        // user can act on, so it becomes state rather than a silent refusal.
+        if (f.code == kErrTableFull) _contactsFull = true;
+        // Take back the row the optimistic add wrote. Leaving it there claimed
+        // a contact the radio does not have, and a DM to that peer is dropped
+        // by the firmware without a word.
+        final String? pending = _contactAddPending;
+        _contactAddPending = null;
+        if (pending != null && _contacts.remove(pending) != null) {
+          _saveContactsSoon();
+        }
+        _emitTaskError('addContact');
+        notifyListeners();
+        return;
+      }
+      if (p.id == _toolSendMarker || p.id == _advertSendMarker) {
+        return;
+      }
+      _failOutgoing(p.id, deviceErrorReason(f.code),
+          cause: Failure.causeForDeviceError(f.code),
+          from: const <MessageDelivery>{MessageDelivery.sending});
+    } else if (f is DisabledFrame) {
+      // `RESP_CODE_DISABLED` (0x0F) is an answer, not silence: the command
+      // exists and is switched off on this radio. Claiming the head here turns
+      // a 15-second timeout into the truth, and the copy says it is the radio's
+      // setting rather than the link's fault.
+      final CommandEntry? p = _ledger.takeHead();
+      if (p == null) return;
+      if (p.id == _contactAddMarker) {
+        _emitTaskError('addContact');
+        notifyListeners();
+        return;
+      }
+      if (p.id == _configMarker ||
+          p.id == _channelDataMarker ||
+          p.id == _rawSendMarker ||
+          p.id == _toolSendMarker ||
+          p.id == _advertSendMarker) {
+        return;
+      }
+      _failOutgoing(p.id, 'the radio has that command switched off',
+          cause: FailureCause.commandDisabled,
+          from: const <MessageDelivery>{MessageDelivery.sending});
+    } else if (f is MsgSentFrame) {
+      final CommandEntry? p = _takePending(CommandAnswer.sent);
+      if (p == null) return;
+      final String id = p.id;
+      if (id == _toolSendMarker) return; // a tool's request, not a message
       final ChatMessage? m = _messageById(id);
-      if (m == null) return;
+      if (m == null || m.delivery != MessageDelivery.sending) return;
       m
         ..delivery = MessageDelivery.sent
         ..expectedAck = f.sent.expectedAck;
@@ -1326,32 +3127,50 @@ class MeshcoreController extends ChangeNotifier {
         // The ACK raced ahead of this SENT confirmation (firmware
         // ordering). Reconcile now — delivered, no timeout.
         m.delivery = MessageDelivery.delivered;
+      } else if (f.sent.expectedAck == 0 && !f.sent.isFlood) {
+        // The radio said no acknowledgement will come for this send (it reports
+        // `expected_ack = 0` when none is expected). `sent` is then the last
+        // word there will ever be, so waiting out an ACK watchdog would turn a
+        // successful send into `unknown` and then `failed`.
       } else if (!f.sent.isFlood) {
-        // Direct message: wait for the recipient ACK. Channel/
-        // broadcast (flood) has no receipt → terminal at sent.
+        // Direct message: wait for the recipient ACK, bounded by the
+        // device's own estimate (`estTimeoutMs`).
         _deliveryTimers[id] = Timer(_ackTimeoutFor(f.sent.estTimeoutMs), () {
-          final ChatMessage? msg = _messageById(id);
-          if (msg != null && msg.delivery == MessageDelivery.sent) {
-            msg.delivery = MessageDelivery.failed;
-            _deliveryTimers.remove(id);
-            _persistChat();
+          // APP-C2 rule 4: the device's estimate running out is not the
+          // end of the story — a late ACK still resolves to delivered, so
+          // the row first becomes `unknown`, and only the grace timer below
+          // fails it.
+          _uncertainOutgoing(id, 'no acknowledgement yet from the recipient');
+          notifyListeners();
+          _deliveryTimers[id] =
+              Timer(_deliveryTimeoutOverride ?? _lateAckGrace, () {
+            _failOutgoing(id, 'no acknowledgement from the recipient',
+                from: const <MessageDelivery>{MessageDelivery.unknown});
             notifyListeners();
-          }
+          });
         });
       }
+      _deliveryRevision++;
       _persistChat();
     } else if (f is AckFrame) {
+      if (f.roundTripMs != null && f.roundTripMs! > 0) {
+        _lastAckTripMs = f.roundTripMs;
+      }
       // Match the ack tag to the most recent still-sent message. Tags
       // are 32-bit; collisions are unlikely within a handful of
       // in-flight messages, and matching newest-first is the safe
       // choice.
       for (int i = _messages.length - 1; i >= 0; i--) {
         final ChatMessage m = _messages[i];
+        // A row inside the grace window has already moved to `unknown`;
+        // a late ACK there is exactly what rule 4 exists for.
         if (m.outgoing &&
-            m.delivery == MessageDelivery.sent &&
+            (m.delivery == MessageDelivery.sent ||
+                m.delivery == MessageDelivery.unknown) &&
             m.expectedAck == f.ackCrc) {
           m.delivery = MessageDelivery.delivered;
           _deliveryTimers.remove(m.id)?.cancel();
+          _deliveryRevision++;
           _persistChat();
           return;
         }
@@ -1371,6 +3190,13 @@ class MeshcoreController extends ChangeNotifier {
   /// Inbound DMs (broadcast). Outgoing DMs are NOT emitted here.
   Stream<ChatMessage> get incomingDirectMessages => _incomingDm.stream;
 
+  /// Every stored row, channels and direct messages together, oldest first.
+  ///
+  /// The whole-history export needs the whole list, and it must not be a
+  /// mutable view: the backup encodes what was there when the passphrase was
+  /// accepted, not what a frame arriving mid-encode would add.
+  List<ChatMessage> get allMessages => List<ChatMessage>.unmodifiable(_messages);
+
   /// All DM messages for a peer (by full pubkey hex, or 12-hex
   /// prefix when only the prefix was resolvable on receive), oldest
   /// first.
@@ -1381,6 +3207,7 @@ class MeshcoreController extends ChangeNotifier {
     return _messages
         .where((ChatMessage m) =>
             m.peerPubKeyHex != null &&
+            !m.hidden &&
             (m.peerPubKeyHex == peerPubKeyHex ||
                 m.peerPubKeyHex == prefix))
         .toList(growable: false);
@@ -1441,6 +3268,7 @@ class MeshcoreController extends ChangeNotifier {
         lastHeardUnix: now,
         viaAdvert: false,
       );
+      _nodesChanged();
     }
     await reconcileIdentity(fromPubKeyHex: fromPubKeyHex, toPubKeyHex: to);
     // Make the radio able to route DMs to the new key (channel already
@@ -1584,6 +3412,11 @@ class MeshcoreController extends ChangeNotifier {
           peerPubKeyHex: toPubKeyHex,
           delivery: m.delivery,
           expectedAck: m.expectedAck,
+          // The explanation travels with the row. Recreating it without these
+          // two left a failed message with no cause after a key link: the row
+          // still said failed and could no longer say why.
+          failReason: m.failReason,
+          failCause: m.failCause,
         );
         msgChanged = true;
       }
@@ -1598,6 +3431,7 @@ class MeshcoreController extends ChangeNotifier {
     // re-synced old contact is pruned on every ingest from here on...
     _nodes.remove(fromPubKeyHex);
     _contacts.remove(fromPubKeyHex);
+    _nodesChanged();
     _superseded.add(fromPubKeyHex);
     unawaited(SupersededStore.save(_superseded));
     notifyListeners();
@@ -1634,10 +3468,143 @@ class MeshcoreController extends ChangeNotifier {
   /// Send a DM (`CMD_SEND_TXT_MSG` 0x02, addressed by 6-byte pubkey
   /// prefix). Optimistically appends an outgoing line. No-op if not
   /// ready, text is blank, or the peer hex is shorter than 12 chars.
-  Future<void> sendDirectText(
-      String peerPubKeyHex, String text) async {
+  /// Returns the outgoing row (so a caller can follow its delivery),
+  /// or null when nothing was sent.
+  /// [urgent] takes the frame out of the app's own duty-cycle refusal. An
+  /// alarm or a check-in must never be silenced by a budget this app invented
+  /// for itself, so those sends are always written; they are still charged, so
+  /// the meter keeps telling the truth. The same reasoning as link maintenance
+  /// in [send], for a stronger reason.
+  /// True while a message to [peerPubKeyHex] has not settled.
+  ///
+  /// The firmware keeps eight pending ACKs in a circular table, and a second
+  /// message to the same contact can overwrite the first one's entry, which
+  /// loses the ability to attribute the ACK rather than the message. The
+  /// published rule is therefore **one in-flight message per contact**; this is
+  /// that rule, checked against the rows the app already tracks. `unknown`
+  /// counts as unsettled because the radio may still be holding the entry; it
+  /// resolves to `failed` on its own grace timer, so the block is bounded.
+  /// How many outgoing messages are waiting for an answer, of any kind.
+  ///
+  /// Half the firmware's eight-entry ACK table: a message the radio cannot keep
+  /// an entry for is a message whose ACK cannot be attributed, and a lost entry
+  /// is worse than a refused send the caller can see.
+  static const int kMaxInFlightMessages = 4;
+
+  /// Messages the **current link** still owes an answer for.
+  ///
+  /// `unknown` is deliberately not counted. It means the app cannot vouch for
+  /// the send — the link went before the answer arrived — and a late ack may
+  /// still resolve it. Counting it made a replaced or disconnected radio block
+  /// every later DM and every radio switch forever: nothing can ever settle a
+  /// row whose link is gone.
+  int get unsettledOutgoingCount {
+    int n = 0;
+    for (final ChatMessage m in _messages) {
+      if (!m.outgoing || m.hidden) continue;
+      if (_inFlight(m)) n++;
+    }
+    return n;
+  }
+
+  /// How long a send can still be in the radio's acknowledgement table.
+  ///
+  /// The firmware's own window is a few seconds (`RESP_CODE_SENT` reports it,
+  /// measured at 4 s on the handset). A row that has said `sent` for longer than
+  /// this is not in flight any more: the answer is not coming, and treating it
+  /// as pending blocked every later message to that contact for the rest of the
+  /// session.
+  static const Duration kAckWindow = Duration(minutes: 2);
+
+  bool _inFlight(ChatMessage m) {
+    if (m.delivery != MessageDelivery.sending &&
+        m.delivery != MessageDelivery.sent) {
+      return false;
+    }
+    return DateTime.now().difference(m.at) < kAckWindow;
+  }
+
+  /// Every DM conversation, newest first, as the chat strip lists it.
+  ///
+  /// A DM is stored with `channelIdx: -1` and the peer's key, so the strip had
+  /// no way to name one: an inbound DM from a peer the reader had never written
+  /// to was stored, notified, and then unreachable, because the only routes to
+  /// a thread were a node's own sheet and a search hit. This is the list that
+  /// makes a new conversation appear where conversations appear.
+  List<DmThread> get dmThreads {
+    final Map<String, DmThread> byPeer = <String, DmThread>{};
+    for (final ChatMessage m in _messages) {
+      final String? peer = m.peerPubKeyHex;
+      if (peer == null || peer.isEmpty) continue;
+      final String key = peer.toLowerCase();
+      final bool unread = !m.outgoing &&
+          m.at.millisecondsSinceEpoch > _dmReadStore.lastReadAtMs(key);
+      final DmThread? cur = byPeer[key];
+      if (cur == null) {
+        byPeer[key] = DmThread(
+          peerPubKeyHex: key,
+          name: dmPeerName(key),
+          lastAt: m.at,
+          unread: unread ? 1 : 0,
+        );
+      } else {
+        byPeer[key] = DmThread(
+          peerPubKeyHex: key,
+          name: cur.name,
+          lastAt: m.at.isAfter(cur.lastAt) ? m.at : cur.lastAt,
+          unread: cur.unread + (unread ? 1 : 0),
+        );
+      }
+    }
+    return byPeer.values.toList()
+      ..sort((DmThread a, DmThread b) => b.lastAt.compareTo(a.lastAt));
+  }
+
+  /// What to call a peer: the node's own name when it has been heard, else the
+  /// key prefix, which is the only handle a DM carries.
+  String dmPeerName(String pubKeyHex) {
+    final String key = pubKeyHex.toLowerCase();
+    final DiscoveredNode? exact = _nodes[key];
+    if (exact != null && exact.name.isNotEmpty) return exact.name;
+    for (final DiscoveredNode n in _nodes.values) {
+      if (n.pubKeyHex.startsWith(key) && n.name.isNotEmpty) return n.name;
+    }
+    return key.length >= 12 ? key.substring(0, 12) : key;
+  }
+
+  bool hasUnsettledDmTo(String peerPubKeyHex) {
+    final String peer = peerPubKeyHex.toLowerCase();
+    for (final ChatMessage m in _messages) {
+      // A hidden row is a reaction's wire line, not something the reader is
+      // waiting on, and it must not hold the thread hostage.
+      if (!m.outgoing || m.hidden) continue;
+      if (m.peerPubKeyHex?.toLowerCase() != peer) continue;
+      // In flight on this link, not `unknown`: see [unsettledOutgoingCount].
+      if (_inFlight(m)) return true;
+    }
+    return false;
+  }
+
+  Future<ChatMessage?> sendDirectText(
+      String peerPubKeyHex, String text,
+      {bool urgent = false, bool hidden = false}) async {
     final String t = text.trim();
-    if (t.isEmpty || !isReady || peerPubKeyHex.length < 12) return;
+    if (t.isEmpty || !isReady || peerPubKeyHex.length < 12) return null;
+    // A blocked key is refused before a row is written: there is nothing to
+    // retry and nothing to show, and a row would claim a message the reader
+    // asked the app not to carry. The composer says which rule refused it.
+    if (!urgent && isPeerBlocked(peerPubKeyHex)) {
+      _emitTaskError('sendDm');
+      return null;
+    }
+    // The firmware keeps eight pending ACKs in one circular table, so a ninth
+    // in-flight message evicts the oldest entry and that message can no longer
+    // be attributed. The app keeps to half of it, leaving room for anything the
+    // radio is doing itself. The composer additionally refuses a *second*
+    // message to the same contact while one is unsettled ([hasUnsettledDmTo]),
+    // which is the published client rule; this ceiling is the backstop for
+    // callers that are not a composer.
+    if (unsettledOutgoingCount >= kMaxInFlightMessages) return null;
     final List<int> prefix = <int>[
       for (int i = 0; i < 12; i += 2)
         int.parse(peerPubKeyHex.substring(i, i + 2), radix: 16),
@@ -1650,49 +3617,261 @@ class MeshcoreController extends ChangeNotifier {
       channelIdx: -1,
       text: t,
       outgoing: true,
+      hidden: hidden,
       peerPubKeyHex: peerPubKeyHex,
       delivery: MessageDelivery.sending,
     );
     _addMessage(m);
-    _registerOutgoing(m);
+    _registerOutgoing(m, CommandAnswer.sent);
     notifyListeners();
     try {
-      await send(MeshcoreFrameCodec.sendTextMessage(
+      await send(gated: !urgent, MeshcoreFrameCodec.sendTextMessage(
         pubKeyPrefix: prefix,
         timestamp: ts,
         text: t,
       ));
+    } on AirtimeRefused {
+      // The radio never saw this frame, so it is not a link failure: the row
+      // says why it did not go, and the copy names the budget. The channel path
+      // has said this since it was written; a DM refused by the same meter used
+      // to read "send failed" with no cause at all.
+      _failOutgoing(m.id, 'airtime budget',
+          cause: FailureCause.airtimeBudget);
+      notifyListeners();
     } catch (_) {
+      // APP-C2 rule 2, applied to a DM as well: a write that threw may have
+      // reached the radio's buffer before the link went, so the honest state is
+      // "cannot vouch for this one", not "did not send". This used to call
+      // `_markOutgoingFailed`, which claims the message never left — the one
+      // claim the app cannot make, and the one that makes a reader send it
+      // twice.
       _emitTaskError('sendDm');
+      _uncertainOutgoing(m.id, 'link dropped while sending');
+      notifyListeners();
+    }
+    return m;
+  }
+
+  /// The block list, read at send time.
+  ///
+  /// A block is the app's own filter: the radio still receives and relays the
+  /// packet, and nothing on the mesh learns anything. That made it a display
+  /// rule only, and the send path never asked — so a blocked peer could be
+  /// messaged from the thread the block was meant to close, and the reply that
+  /// came back was hidden with no sign that it would be. The composer refuses
+  /// first and says why; this is the backstop for every other caller (the bot's
+  /// reply, a soak run, a place reply).
+  ///
+  /// An alarm outranks a block, the same way an SOS outranks a muted channel:
+  /// `urgent` sends are never refused here.
+  final bool Function(String? keyHex)? _isBlocked;
+
+  /// Whether [peerPubKeyHex] is on the block list. False when no list is
+  /// attached, which is the case in a test that does not care.
+  bool isPeerBlocked(String? peerPubKeyHex) =>
+      _isBlocked?.call(peerPubKeyHex) ?? false;
+
+  /// Re-send an outgoing message whose delivery did not settle in its
+  /// favour (same text, same channel or peer), reusing its row so the
+  /// history does not fill with copies. Re-arms the same delivery tracking
+  /// as a first send. Returns false when the row is not a `failed` or
+  /// `unknown` outgoing message or the radio is not ready.
+  ///
+  /// `unknown` retries too, and that is the point of keeping it distinct
+  /// from `failed`: a send the app could not vouch for is exactly the row a
+  /// user wants to try again, and refusing to retry it would leave a
+  /// timed-out message with no action at all. The text may already have
+  /// reached the mesh, so it can arrive twice; the user chose that by
+  /// tapping Retry.
+  Future<bool> retryMessage(String id) async =>
+      await retryMessageOutcome(id) != RetryOutcome.refused;
+
+  /// A retry, with what it did, so the screen can say it.
+  ///
+  /// A direct message that timed out was addressed down the radio's stored
+  /// route. The firmware replaces that route wholesale with whatever the newest
+  /// path return said and never ages it out, so a route that has died stays
+  /// dead: retrying down it fails again in exactly the same way. Clearing it
+  /// (`CMD_RESET_PATH` 0x0D) makes this attempt go out flooded, which is also
+  /// how the radio learns a fresh route from the reply. The row is reused, so
+  /// the user sees one message retried rather than a duplicate.
+  Future<RetryOutcome> retryMessageOutcome(String id) async {
+    final ChatMessage? m = _messageById(id);
+    if (m == null ||
+        !m.outgoing ||
+        (m.delivery != MessageDelivery.failed &&
+            m.delivery != MessageDelivery.unknown) ||
+        !isReady) {
+      return RetryOutcome.refused;
+    }
+    final int ts = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final bool dm = m.peerPubKeyHex != null;
+    final String? peer = m.peerPubKeyHex;
+    if (dm && peer!.length < 12) return RetryOutcome.refused;
+    // A retry is a send, so the block applies to it too: the row may predate
+    // the block, and retrying it would put a message into an inbox this device
+    // has been told not to show.
+    if (dm && isPeerBlocked(peer)) return RetryOutcome.refused;
+    bool resetRoute = false;
+    if (dm) {
+      final Contact? c = _contacts[peer!];
+      // `directPath == null` means flood/unknown, where a reset changes
+      // nothing; a non-null path is a route that just failed to deliver.
+      if (c != null && c.directPath != null) {
+        try {
+          await send(MeshcoreFrameCodec.resetPath(c.publicKey));
+          resetRoute = true;
+          // Re-read the record so the app's copy says "no route" like the
+          // radio now does, instead of holding a path that no longer exists.
+          unawaited(send(MeshcoreFrameCodec.getContactByKey(c.publicKey))
+              .catchError((Object _) => Uint8List(0)));
+        } catch (_) {
+          // The retry is still worth sending down the old route.
+        }
+      }
+    }
+    m
+      ..delivery = MessageDelivery.sending
+      ..failReason = null
+      ..expectedAck = null;
+    _registerOutgoing(m, dm ? CommandAnswer.sent : CommandAnswer.ok);
+    _deliveryRevision++;
+    _persistChat();
+    notifyListeners();
+    try {
+      await send(
+          dm
+          ? MeshcoreFrameCodec.sendTextMessage(
+              pubKeyPrefix: <int>[
+                for (int i = 0; i < 12; i += 2)
+                  int.parse(peer!.substring(i, i + 2), radix: 16),
+              ],
+              timestamp: ts,
+              text: m.text,
+            )
+          : MeshcoreFrameCodec.sendChannelTextMessage(
+              channelIdx: m.channelIdx,
+              timestamp: ts,
+              text: m.text,
+            ),
+          gated: true);
+    } on AirtimeRefused {
+      _failOutgoing(m.id, 'airtime budget',
+          cause: FailureCause.airtimeBudget);
+      notifyListeners();
+    } catch (_) {
+      _emitTaskError(dm ? 'sendDm' : 'sendChannel');
       _markOutgoingFailed(m.id);
       notifyListeners();
     }
+    return resetRoute ? RetryOutcome.sentAfterPathReset : RetryOutcome.sent;
   }
 
   /// Ingest an inbound DM into the message store + emit on the
   /// stream. Resolves the 6-byte sender prefix to a known fabric
   /// node's full pubkey if possible; falls back to storing under
   /// the 12-hex prefix.
+  /// Keys of the inbound messages just ingested, so a re-delivery is not a
+  /// second row.
+  ///
+  /// The protocol has no message identifier. A received message is identified
+  /// by its sender's prefix, the sender's own timestamp and its text, and the
+  /// radio's queue re-sends anything it never saw acknowledged: after a crash
+  /// or a dropped link the same message is delivered again, and appending it
+  /// puts the same words on screen twice with no way for the reader to tell a
+  /// duplicate from a repeat. Two genuinely identical messages inside one
+  /// second are indistinguishable in the protocol itself, and dropping the
+  /// second is the cheaper error than a guaranteed duplicate on every drain.
+  ///
+  /// Bounded, because it is a memory of the last few drains, not a history.
+  final List<String> _recentInbound = <String>[];
+  static const int _recentInboundCap = 64;
+
+  /// The time a received message was **sent**, when the sender's clock is
+  /// believable.
+  ///
+  /// The frame carries the sender's unix seconds and the app used to ignore it,
+  /// stamping every row with the moment it arrived. That is wrong in the case
+  /// that matters most: the radio queues inbound messages while the app is away
+  /// and the app drains them on reconnect, so a conversation from last night
+  /// arrived looking like it had just happened, all of it in one second.
+  ///
+  /// A sender's clock can also be wrong by years, so the stamp is used only
+  /// inside a window where it is evidence: not in the future, and not older than
+  /// the history the app keeps. Outside it the receive time is the honest answer,
+  /// because it is the one thing the app knows for certain.
+  DateTime _inboundAt(int unixSeconds) {
+    final DateTime now = DateTime.now();
+    if (unixSeconds <= 0) return now;
+    final DateTime sent =
+        DateTime.fromMillisecondsSinceEpoch(unixSeconds * 1000);
+    if (sent.isAfter(now.add(const Duration(hours: 1)))) return now;
+    if (sent.isBefore(now.subtract(const Duration(days: 7)))) return now;
+    return sent;
+  }
+
+  bool _seenInbound(String key) {
+    if (_recentInbound.contains(key)) return true;
+    _recentInbound.add(key);
+    if (_recentInbound.length > _recentInboundCap) _recentInbound.removeAt(0);
+    return false;
+  }
+
   void _ingestDm(MeshcoreInbound f) {
     if (f is! ContactMessageFrame) return;
     final ContactMessage cm = f.message;
     final String prefixHex = _hex(cm.pubKeyPrefix);
+    if (_seenInbound('d|$prefixHex|${cm.timestamp}|${cm.text}')) return;
+    // A reaction is a gesture on a message, not a message of its own, and a
+    // direct one is the same line without the author: the envelope already says
+    // who sent it. The channel path folded these in and this one did not, so a
+    // reaction that arrived in a direct message was stored as chat text and the
+    // reader saw an emoji and a code instead of a chip.
+    final ({String hash, String emoji, String? author, bool isOpen})? rx =
+        Reactions.parse(cm.text.trim());
+    if (rx != null) {
+      String? peerForReaction;
+      for (final DiscoveredNode n in _nodes.values) {
+        if (!n.pubKeyHex.startsWith(prefixHex)) continue;
+        if (peerForReaction != null) {
+          peerForReaction = null;
+          break;
+        }
+        peerForReaction = n.pubKeyHex;
+      }
+      if (_applyReaction(-1, peerForReaction ?? prefixHex, rx)) {
+        notifyListeners();
+        return;
+      }
+      _reactionsWithoutTarget++;
+      notifyListeners();
+      return;
+    }
+    // A six-byte prefix that matches two nodes is not evidence for either: the
+    // first match used to win, so one peer's message was filed under another's
+    // key, and the thread, its read mark and any block decision followed the
+    // wrong node. Ambiguous keeps the prefix, which is a thread the reader can
+    // still see, and attributes nothing.
     String? peer;
     for (final DiscoveredNode n in _nodes.values) {
-      if (n.pubKeyHex.startsWith(prefixHex)) {
-        peer = n.pubKeyHex;
+      if (!n.pubKeyHex.startsWith(prefixHex)) continue;
+      if (peer != null) {
+        peer = null;
         break;
       }
+      peer = n.pubKeyHex;
     }
     final ChatMessage m = ChatMessage(
       channelIdx: -1,
       text: cm.text,
       outgoing: false,
+      at: _inboundAt(cm.timestamp),
       snrDb: cm.snrDb,
       isFlood: cm.isFlood,
       peerPubKeyHex: peer ?? prefixHex,
     );
     _addMessage(m);
+    _noteSpeaker(peer ?? prefixHex);
     if (!_incomingDm.isClosed) _incomingDm.add(m);
   }
 
@@ -1712,20 +3891,292 @@ class MeshcoreController extends ChangeNotifier {
         changed = true;
       }
     }
-    if (changed) unawaited(KnownStore.save(_known));
+    if (changed) {
+      unawaited(KnownStore.save(_known));
+      // A node that just became known is a fact the fabric, the tree and the map
+      // all draw. Persisting it without telling anyone left the "known" pulse up
+      // to whatever unrelated frame happened to arrive next.
+      notifyListeners();
+    }
   }
+
+  /// Reacts to one message with [emoji], in MeshCore One's format.
+  ///
+  /// A channel reaction names the sender, because a channel line carries no key
+  /// and the hash is salted with it. A direct reaction does not, because the
+  /// envelope already says who sent it. The row is updated locally as well, so
+  /// the reactor sees the reaction without waiting for its own line to come
+  /// back from the mesh.
+  Future<bool> reactTo(ChatMessage target, String emoji) async {
+    if (!isReady) return false;
+    // A reaction is a gesture on a message, not a message of its own, so the
+    // same emoji on the same message is the same act however many times the row
+    // is tapped. Without this every tap put another line on the air, and the
+    // other clients counted the reactor once per tap. A different emoji is a
+    // different act and still sends.
+    if (target.ownReactions.contains(emoji)) return true;
+    final bool dm = target.peerPubKeyHex != null;
+    final String hash = Reactions.hashFor(
+      timestampSeconds: target.at.millisecondsSinceEpoch ~/ 1000,
+      text: target.text,
+    );
+    final String? own = selfInfo?.name;
+    final String line = dm
+        ? Reactions.encodeDirect(emoji: emoji, hash: hash)
+        : Reactions.encodeChannel(
+            // The name in the line is the **target message's sender**, not the
+            // reactor: MeshCore One puts it there because a channel line carries
+            // no key and the reader needs to know which author's message the
+            // hash was taken over. Writing the reactor's own name made every
+            // reaction this app sent unmatchable by the clients that follow the
+            // convention.
+            senderName: _senderNameOf(target) ?? own ?? '?',
+            emoji: emoji,
+            hash: hash,
+          );
+    // `hidden`: the line is the wire format for a reaction, not something a
+    // reader should see in the thread. The reaction shows as a chip on the
+    // message it names, and the row exists only so the radio's acknowledgement
+    // has something to be credited to.
+    final bool sent = dm
+        ? await sendDirectText(target.peerPubKeyHex!, line, hidden: true) !=
+            null
+        : await sendChannelTextTo(target.channelIdx, line, hidden: true) !=
+            null;
+    if (!sent) return false;
+    target.ownReactions.add(emoji);
+    final List<String?> who = target.reactions.putIfAbsent(emoji, () => <String?>[]);
+    if (!who.contains(own)) who.add(own);
+    _persistChat();
+    _invalidateMessagesCache(target.channelIdx);
+    notifyListeners();
+    return true;
+  }
+
+  /// The friendly-acknowledgement line for a received row.
+  ///
+  /// Composed, not sent: the answer is a message like any other, and a reader who
+  /// wants to add a word or drop a number should be able to. The chat puts this
+  /// in the composer (the same path Reply takes) and the reader sends it.
+  ///
+  /// The line is a plain text report in the format the other clients parse
+  /// (`ack: SNR 12.5 dB, RSSI -38 dBm, 3 hops via 4490, DF7C, 7F47`), carrying
+  /// what THIS radio measured when the row's packet arrived. It is a courtesy
+  /// rather than a protocol acknowledgement: MeshCore's ACK is a four-byte
+  /// checksum, channels have no acknowledgement at all, and a channel line's
+  /// sender name is unverified text.
+  ///
+  /// The route hangs off the RF-log capture of the same packet, so a row that
+  /// arrived without one reports the SNR and hop count it does have rather than
+  /// inventing a path.
+  String friendlyAckLineFor(ChatMessage target) {
+    final bool dm = target.peerPubKeyHex != null;
+    // A direct message already says who sent it, so it carries no mention; a
+    // channel line names the reader or it is not addressed to anyone.
+    final String? sender = dm ? null : parseChannelSenderName(target.text);
+    return friendlyAckLine(
+      sender: sender,
+      snrDb: target.snrDb,
+      rssiDbm: target.rssiDbm,
+      hopCount: target.hopCount,
+      pathHashes: target.pathHashes,
+      isFlood: target.isFlood,
+      // The radio writes `<name>: ` into the same budget, so the text budget is
+      // what is left after our own name.
+      maxBytes: ComposerBudget.forSender(selfInfo?.name).maxTextBytes,
+    );
+  }
+
+  /// The body of a channel message: after the `Name: ` prefix, when there is
+  /// one. A reaction line arrives wrapped in that prefix like any other line.
+  static String _reactionBodyOf(String text) {
+    final int i = text.indexOf(': ');
+    return i > 0 && i < 40 ? text.substring(i + 2) : text;
+  }
+
+  /// A received packet as the radio's own RF log reported it.
+  ///
+  /// The channel-message push carries the SNR and the hop count but neither the
+  /// RSSI nor the path, so the only way a client can say how a message arrived is
+  /// to pair the message with the raw capture of the same packet. That is what
+  /// this ring is for, and it is bounded because a capture is worthless once the
+  /// moment has passed.
+  static const int _rxCaptureCap = 12;
+  static const Duration _rxCaptureWindow = Duration(seconds: 3);
+  final List<_RxCapture> _rxCaptures = <_RxCapture>[];
+
+  /// The channel hash a slot's PSK produces, which is what the packet carries.
+  ///
+  /// Null until the slot's key has been read from the radio: a capture is then
+  /// matched on the SNR alone, which is the weaker pairing and the reason this
+  /// is worth having.
+  int? _channelHashOf(int channelIdx) {
+    final List<int>? psk = _channelPsks[channelIdx];
+    if (psk == null || psk.isEmpty) return null;
+    return MeshcoreChannelCrypto.channelHashFromPsk(psk);
+  }
+
+  /// The capture for [snrDb], or the newest one when the SNRs cannot be matched.
+  ///
+  /// An exact SNR match is what makes the pairing unambiguous when two messages
+  /// land inside the window: the RF log and the message frame report the same
+  /// measurement of the same packet. A matched capture is consumed, because each
+  /// packet is logged once and two messages must not both claim it.
+  _RxCapture? _takeRxCapture(double? snrDb, int? channelHash) {
+    final DateTime now = DateTime.now();
+    _rxCaptures.removeWhere(
+        (_RxCapture c) => now.difference(c.at) > _rxCaptureWindow);
+    if (_rxCaptures.isEmpty) return null;
+    // Oldest first: the radio logs the packet it heard before it pushes the
+    // message for it, so the capture that belongs to a message is the earliest
+    // one still in the window that matches it. Newest-first scanning swapped
+    // two packets whose SNR happened to be identical.
+    bool sameChannel(_RxCapture c) =>
+        channelHash == null || c.channelHash == null ||
+        c.channelHash == channelHash;
+    for (int i = 0; i < _rxCaptures.length; i++) {
+      final _RxCapture c = _rxCaptures[i];
+      if (snrDb != null && (c.snrDb - snrDb).abs() < 0.001 && sameChannel(c)) {
+        _rxCaptures.removeAt(i);
+        return c;
+      }
+    }
+    // No SNR match means this message's own capture is not here. Taking the
+    // next capture on the channel attached another packet's RSSI and hop route
+    // to the row, so the row disagreed with itself.
+    return null;
+  }
+
+  /// Reactions heard for a message this window no longer holds.
+  int _reactionsWithoutTarget = 0;
+  int get reactionsWithoutTarget => _reactionsWithoutTarget;
+
+  /// Folds a reaction into the message it names.
+  ///
+  /// Returns false when nothing in this channel matches the hash, which is the
+  /// common case for a client that did not hold the original message: the line
+  /// is then kept as an ordinary message rather than swallowed.
+  /// Whether two peer handles name the same node, by the prefix a DM carries.
+  static bool _samePeer(String? a, String? b) {
+    if (a == null || b == null) return a == b;
+    final int n = a.length < b.length ? a.length : b.length;
+    final int take = n < 12 ? n : 12;
+    return a.substring(0, take).toLowerCase() ==
+        b.substring(0, take).toLowerCase();
+  }
+
+  bool _applyReaction(
+    int channelIdx,
+    String? peerHex,
+    ({String hash, String emoji, String? author, bool isOpen}) rx,
+  ) {
+    for (int i = _messages.length - 1; i >= 0; i--) {
+      final ChatMessage m = _messages[i];
+      if (m.channelIdx != channelIdx) continue;
+      // Compare on the six-byte prefix, not the whole key. A row is stored with
+      // the full key when the prefix resolved to exactly one node and with the
+      // bare prefix when it did not, and the reaction line resolves the same
+      // prefix against whatever the node list holds at that moment. Requiring
+      // the two spellings to be identical meant a reaction silently found no
+      // target whenever the two resolutions disagreed.
+      if (!_samePeer(m.peerPubKeyHex, peerHex)) continue;
+      final String hash = Reactions.hashFor(
+        timestampSeconds: m.at.millisecondsSinceEpoch ~/ 1000,
+        text: m.text,
+      );
+      if (hash != rx.hash) continue;
+      // The hash names the text and the second. In a channel the sender is
+      // carried beside it, so two people who typed the same words at the same
+      // second are told apart here rather than colliding.
+      if (peerHex == null &&
+          rx.author != null &&
+          rx.author != _senderNameOf(m)) {
+        continue;
+      }
+      final List<String?> who = m.reactions.putIfAbsent(rx.emoji, () => <String?>[]);
+      // Who reacted is the sender prefix of the reaction line, not the author
+      // named inside it: that field says whose message was reacted to.
+      final String? tag = peerHex == null
+          ? parseChannelSenderName(_reactionBodyOf(m.text))
+          : null;
+      if (!who.contains(tag)) who.add(tag);
+      _persistChat();
+      _invalidateMessagesCache(m.channelIdx);
+      return true;
+    }
+    return false;
+  }
+
+  /// The name this app shows for a channel message's sender, which is the salt
+  /// MeshCore One's hash uses.
+  ///
+  /// A channel message carries no key, so the only handle on the sender is the
+  /// name its own text starts with (`Name: body`), which is exactly what the
+  /// chat row displays. Our own rows are salted with our own name, because that
+  /// is what the other clients will read off the line we send.
+  String? _senderNameOf(ChatMessage m) =>
+      m.outgoing ? selfInfo?.name : parseChannelSenderName(m.text);
 
   void _ingestChat(MeshcoreInbound f) {
     if (f is ChannelMessageFrame) {
       final ChannelMessage cm = f.message;
+      // Same rule as a direct message: the queue can deliver one twice, and a
+      // channel row is no less a duplicate for having no key on it.
+      if (_seenInbound('c|${cm.channelIdx}|${cm.timestamp}|${cm.text}')) return;
+      // A message can arrive for a slot the probe has not named yet, or for a
+      // slot whose name is empty. The row was stored either way, but the strip
+      // is built from `channels`, so a slot with no entry had no chip: the
+      // message existed and the reader could not reach it. Registering the slot
+      // here is what makes "a message for a channel we do not have" visible
+      // instead of merely stored.
+      if (!_channels.containsKey(cm.channelIdx)) {
+        _channels[cm.channelIdx] = 'CH ${cm.channelIdx}';
+        _invalidateChannelsCache();
+      }
+      // A reaction names another message by hash, and is folded into it rather
+      // than appended: a thread of one-emoji lines is not what a reader wants.
+      // The hash is salted with the sender's name in a channel, which is what
+      // the line itself carries (`@[name]emoji\nhash`).
+      // Parse the **body**, after the `Name: ` prefix a channel message carries.
+      // Parsing the whole line never matched, which is why real reactions from
+      // other clients arrived as ordinary messages.
+      final ({String hash, String emoji, String? author, bool isOpen})? rx =
+          Reactions.parse(_reactionBodyOf(cm.text));
+      if (rx != null && _applyReaction(cm.channelIdx, null, rx)) {
+        notifyListeners();
+        return;
+      }
+      if (rx != null) {
+        // A reaction whose target is not in this window is not a message: the
+        // line is an emoji and a hash, and showing it as chat text is what a
+        // stock client does and what makes a thread unreadable. It is counted
+        // instead, so the loss is visible in Diagnostics rather than silent.
+        _reactionsWithoutTarget++;
+        notifyListeners();
+        return;
+      }
+      // The packet this row arrived in, when the radio's RF log caught it: the
+      // SNR and the hop count come with the message, the RSSI and the route only
+      // with the capture.
+      final _RxCapture? cap = _takeRxCapture(cm.snrDb, _channelHashOf(cm.channelIdx));
       final ChatMessage m = ChatMessage(
         channelIdx: cm.channelIdx,
         text: cm.text,
         outgoing: false,
+        at: _inboundAt(cm.timestamp),
         snrDb: cm.snrDb,
         isFlood: cm.isFlood,
+        rssiDbm: cap?.rssiDbm,
+        // A flood's hop count is only in the capture: the message frame reports
+        // `0xFF` for "flood", not how far it travelled.
+        hopCount: cap?.hopCount ?? (cm.isFlood ? null : cm.pathLen),
+        pathHashes: cap?.pathHashes,
       );
       _addMessage(m);
+      // A channel message carries no key, so the only handle on the sender is
+      // the name in its text: attributed only on an unambiguous match, the same
+      // rule the heat map uses.
+      _noteSpeaker(_resolveChannelSender(cm.text)?.pubKeyHex);
       if (!_incomingCh.isClosed) _incomingCh.add(m);
     } else if (f is ChannelInfoFrame) {
       final ChannelInfo ci = f.info;
@@ -1738,6 +4189,11 @@ class MeshcoreController extends ChangeNotifier {
       // carries 16 bytes — the AES-128 key. We store a defensive
       // copy because Uint8List can be a view.
       _channelPsks[ci.channelIdx] = List<int>.unmodifiable(ci.psk);
+      // The next slot is only asked for once this one has answered: the
+      // firmware serialises replies, so a burst would overtake itself. The walk
+      // skips slots it has already asked for, so a late or repeated reply
+      // cannot make it ask twice.
+      _channelProbeAnswered();
     }
   }
 
@@ -1751,6 +4207,32 @@ class MeshcoreController extends ChangeNotifier {
 
   final MessageHeatTracker _heat = MessageHeatTracker();
 
+  // -------------------------------------------------------------------
+  // Who has spoken in the last minute, for the map's message bubble.
+  //
+  // A message arrives on the chat tab; the map is a different page and has no
+  // reason to know that anything happened. Keyed by sender so a burst refreshes
+  // one bubble rather than stacking a dozen, and stamped so the map can fade it
+  // out on its own clock without a second source of truth.
+  // -------------------------------------------------------------------
+
+  static const Duration recentSpeakerWindow = Duration(minutes: 1);
+
+  final Map<String, DateTime> _recentSpeakers = <String, DateTime>{};
+
+  /// Sender pubkey → when they last sent something, within
+  /// [recentSpeakerWindow]. The map draws a bubble at each of these nodes.
+  Map<String, DateTime> get recentSpeakers =>
+      Map<String, DateTime>.unmodifiable(_recentSpeakers);
+
+  void _noteSpeaker(String? pubKeyHex) {
+    if (pubKeyHex == null || pubKeyHex.isEmpty) return;
+    final DateTime now = DateTime.now();
+    _recentSpeakers.removeWhere((String _, DateTime at) =>
+        now.difference(at) > recentSpeakerWindow);
+    _recentSpeakers[pubKeyHex] = now;
+  }
+
   /// cellKey → hotness in [0, 1] over the last hour. Pruned on read.
   Map<String, double> messageHeatScores() => _heat.scores();
 
@@ -1760,6 +4242,10 @@ class MeshcoreController extends ChangeNotifier {
   /// Most recently observed message (drives the sns-cells toast).
   HeatPing? get lastHeatPing => _heat.lastPing;
 
+  /// The newest heat pings, oldest first. A view that was not on screen when
+  /// they arrived reads them all instead of only the last one.
+  List<HeatPing> get recentHeatPings => _heat.recentPings;
+
   /// Wipe all accumulated social heat (sns-cells "clear" control).
   void clearMessageHeat() {
     _heat.clear();
@@ -1767,18 +4253,28 @@ class MeshcoreController extends ChangeNotifier {
   }
 
   // -------------------------------------------------------------------
-  // R54 — message-derived place inference ("place echoes"). Incoming
-  // channel banter is scanned for place references and plotted as
-  // ephemeral ghost markers on the SNS grid, region-scoped to our known
-  // location. Per-channel opt-in (default on for the public channel).
+  // R54 — place names in messages. A channel's messages are scanned for
+  // place names and a row that names one offers to report it. Nothing is
+  // plotted and no position is derived from the words: the offer carries a
+  // name, and the pin comes from the user's own position when they accept.
+  // Per-channel opt-in (default on for the public channel).
   // -------------------------------------------------------------------
 
   final PlaceInferenceEngine _placeEngine;
-  final InferredPlaceStore _inferredStore = InferredPlaceStore();
   Map<int, bool> _placeInferOverrides = <int, bool>{};
 
   Future<void> _loadPlaceInferPrefs() async {
-    _placeInferOverrides = await PlaceInferencePrefs.overrides();
+    // The read wins over the defaults, never over a choice the user already
+    // made in this session: the load is asynchronous, so a switch flipped
+    // while it was in flight would otherwise be silently undone by the file.
+    _placeInferOverrides = <int, bool>{
+      ...await PlaceInferencePrefs.overrides(),
+      ..._placeInferOverrides,
+    };
+    _dismissedSuggestions = <String>{
+      ...await PlaceSuggestionDismissals.load(),
+      ..._dismissedSuggestions,
+    };
     notifyListeners();
   }
 
@@ -1797,51 +4293,43 @@ class MeshcoreController extends ChangeNotifier {
     await PlaceInferencePrefs.save(_placeInferOverrides);
   }
 
-  /// Live inferred-place markers for the SNS grid, strongest first.
-  List<InferredMarker> inferredPlaces() =>
-      _inferredStore.current(now: DateTime.now());
-
-  /// Clear all inferred places (SNS "clear" control).
-  void clearInferredPlaces() {
-    _inferredStore.clear();
-    notifyListeners();
-  }
-
-  /// Dismiss a single inferred place by its marker key ("not a place").
-  void dismissInferredPlace(String key) {
-    _inferredStore.dismiss(key);
-    notifyListeners();
-  }
-
-  void _trackPlaceInference(MeshcoreInbound f) {
-    if (f is! ChannelMessageFrame) return;
-    final ChannelMessage cm = f.message;
-    final bool enabled = placeInferenceEnabled(cm.channelIdx);
-    final OwnLocation? own = ownLocation;
-    final int gaz = CityLookup.cachedOrNull?.cityCount ?? -1;
-    if (!enabled || own == null) {
-      // Diagnostic: why a channel message was skipped (gaz=-1 means the
-      // city gazetteer hasn't loaded yet).
-      debugPrint('[place] ch=${cm.channelIdx} enabled=$enabled '
-          'located=${own != null} gaz=$gaz — skipped');
-      return;
+  /// The place a chat row may offer to report, or null.
+  ///
+  /// This is what the per-channel inference switch actually controls now. It
+  /// names a place and stops there: no coordinates are derived, nothing is
+  /// drawn on a map, and the row offers the name to the person who can put a
+  /// position on it. A name the user already dismissed for these words is not
+  /// offered again.
+  String? placeSuggestionFor(ChatMessage m) {
+    if (m.outgoing) return null;
+    if (!placeInferenceEnabled(m.channelIdx)) return null;
+    if (_dismissedSuggestions
+        .contains(PlaceSuggestionDismissals.keyFor(m.channelIdx, m.text))) {
+      return null;
     }
-    final List<InferredPlace> hits = _placeEngine.infer(
-      cm.text,
-      originLat: own.latitude,
-      originLon: own.longitude,
-    );
-    debugPrint('[place] ch=${cm.channelIdx} gaz=$gaz '
-        'text="${cm.text}" → ${hits.length} hit(s)'
-        '${hits.map((InferredPlace h) => ' ${h.anchorName}'
-            '(${h.confidence.toStringAsFixed(2)})').join()}');
-    if (hits.isEmpty) return;
-    final DateTime now = DateTime.now();
-    for (final InferredPlace p in hits) {
-      _inferredStore.add(p, now: now);
-    }
-    // The dispatch loop calls notifyListeners() after all trackers.
+    if (_placeNameMemo.containsKey(m.text)) return _placeNameMemo[m.text];
+    final List<String> names = _placeEngine.placeNames(m.text);
+    final String? name = names.isEmpty ? null : names.first;
+    // The chat rebuilds rows constantly; the scan is a set of regexes plus a
+    // gazetteer lookup, so one answer per distinct text is cached and the
+    // cache is thrown away rather than grown without bound.
+    if (_placeNameMemo.length >= 500) _placeNameMemo.clear();
+    _placeNameMemo[m.text] = name;
+    return name;
   }
+
+  /// Remember that these words are not a place, so the row stops offering it.
+  Future<void> dismissPlaceSuggestion(ChatMessage m) async {
+    _dismissedSuggestions = <String>{
+      ..._dismissedSuggestions,
+      PlaceSuggestionDismissals.keyFor(m.channelIdx, m.text),
+    };
+    notifyListeners();
+    await PlaceSuggestionDismissals.save(_dismissedSuggestions);
+  }
+
+  Set<String> _dismissedSuggestions = <String>{};
+  final Map<String, String?> _placeNameMemo = <String, String?>{};
 
   // --- Microclimate / wx (P2): located weather observations -----------
   // Microclimates are *reprocessed from persisted chat history* (a rolling
@@ -1966,6 +4454,69 @@ class MeshcoreController extends ChangeNotifier {
     return best;
   }
 
+  // --- Channel datagrams (`CMD_SEND_CHANNEL_DATA` / `0x1B`) ---
+  //
+  // The frame has decoded for a while; nothing consumed it. Every media and
+  // place payload will arrive this way, and the data type is the only thing
+  // that says which layer owns the bytes. The firmware forwards a type it
+  // does not know (`MyMesh.cpp:592-625`), so an unrecognised type is kept
+  // and counted rather than dropped: a dropped datagram looks exactly like
+  // one that never arrived.
+
+  static const int _channelDatagramCap = 32;
+  final List<ChannelDatagram> _channelDatagrams = <ChannelDatagram>[];
+  final StreamController<ChannelDatagram> _channelDatagramStream =
+      StreamController<ChannelDatagram>.broadcast();
+  int _channelDatagramsUnrecognised = 0;
+
+  /// Recent channel datagrams, oldest first, capped at
+  /// [_channelDatagramCap].
+  List<ChannelDatagram> get channelDatagrams =>
+      List<ChannelDatagram>.unmodifiable(_channelDatagrams);
+
+  /// Every channel datagram as it arrives, for the layers that own a type.
+  Stream<ChannelDatagram> get channelDatagramStream =>
+      _channelDatagramStream.stream;
+
+  /// Every raw-custom packet the radio hears (`PUSH_CODE_RAW_DATA`, 0x84).
+  ///
+  /// This is the carrier for a picture fetched by request: the firmware refuses
+  /// to flood a raw record, so anything on this stream came to us on a path and
+  /// was addressed to us. It carries no sender identity, which is why the fetch
+  /// plane names the requester in its request rather than the sender.
+  Stream<Uint8List> get incomingRawData => _rawDataStream.stream;
+  final StreamController<Uint8List> _rawDataStream =
+      StreamController<Uint8List>.broadcast();
+
+  /// Datagrams whose type this build does not interpret. They are still
+  /// delivered; the count exists so diagnostics can show that a payload
+  /// arrived and was not understood, instead of the two cases looking alike.
+  int get channelDatagramsUnrecognised => _channelDatagramsUnrecognised;
+
+  void _publishRawData(MeshcoreInbound f) {
+    if (f is! RawDataFrame) return;
+    if (!_rawDataStream.isClosed) _rawDataStream.add(f.payload);
+  }
+
+  void _ingestChannelData(MeshcoreInbound f) {
+    if (f is! ChannelDataFrame) return;
+    final ChannelDatagram d = ChannelDatagram(
+      channelIndex: f.channelIndex,
+      dataType: f.dataType,
+      blob: f.data,
+      rxVia: f.via,
+      snrDb: f.snrDb,
+      pathLen: f.pathLen,
+      receivedAt: DateTime.now(),
+    );
+    if (d.dataType != kChannelDataTypeDev) _channelDatagramsUnrecognised++;
+    _channelDatagrams.add(d);
+    if (_channelDatagrams.length > _channelDatagramCap) {
+      _channelDatagrams.removeAt(0);
+    }
+    if (!_channelDatagramStream.isClosed) _channelDatagramStream.add(d);
+  }
+
   void _trackMessageHeat(MeshcoreInbound f) {
     if (f is ContactMessageFrame) {
       // DM: resolve sender by 6-byte prefix; place heat at the
@@ -2035,8 +4586,18 @@ class MeshcoreController extends ChangeNotifier {
   /// timestamps (contact `lastAdvertTimestamp`, message times) are
   /// comparable to "now" — fixes nodes showing "known" but never
   /// "in range". Best-effort.
+  ///
+  /// The firmware only moves its clock forward (`MyMesh.cpp:1247-1257`,
+  /// `CMD_SET_DEVICE_TIME`: `secs >= curr` else `ERR_CODE_ILLEGAL_ARG`). A
+  /// radio whose clock already leads the phone therefore refuses every write,
+  /// which is a normal state after a reboot onto a device that kept time, not
+  /// a fault. The ERR is expected, so it is squelched exactly like a probing
+  /// `setCustomVar`; without this every connect ended with "device error (code
+  /// illegal argument)" in the activity feed, which reads as a fault and is
+  /// the kind of noise that teaches a user to ignore the feed.
   void _syncDeviceTime() {
     final int nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    _squelchNextDeviceError++;
     unawaited(
         send(MeshcoreFrameCodec.setDeviceTime(nowUnix)).catchError((_) {}));
   }
@@ -2047,15 +4608,41 @@ class MeshcoreController extends ChangeNotifier {
   /// "in range" is correct even when SET_DEVICE_TIME was rejected.
   int _deviceClockOffsetSec = 0;
 
+  /// The radio's own clock as it last reported it, or null before it answers.
+  int? _lastDeviceUnix;
+
+  /// Whether the radio's clock has never been set.
+  ///
+  /// A MeshCore radio with no battery-backed clock boots to a fixed early date,
+  /// and every time it reports is then wrong. This is the signal the dashboard's
+  /// degraded banner needs and did not have: it hardcoded "clock is fine", so a
+  /// radio whose clock never moved reported times nobody could trust and said
+  /// nothing about it.
+  bool get radioClockUnset =>
+      _lastDeviceUnix != null && _lastDeviceUnix! < 946684800;
+
   void _requestDeviceTime() {
     unawaited(
         send(MeshcoreFrameCodec.getDeviceTime()).catchError((_) {}));
   }
 
+  /// True once this session has offered the phone's clock to the device.
+  /// One offer is enough: the write either moved the device forward or the
+  /// firmware refused it for being behind, and repeating it would only
+  /// produce the same answer and the same noise.
+  bool _clockOffered = false;
+
   void _trackDeviceClock(MeshcoreInbound f) {
     if (f is! CurrentTimeFrame || f.unixSeconds <= 0) return;
     final int phoneNow = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    _lastDeviceUnix = f.unixSeconds;
     _deviceClockOffsetSec = phoneNow - f.unixSeconds;
+    // The device is a couple of seconds behind: offer the phone's clock. A
+    // device that is ahead is left alone, because the firmware would refuse.
+    if (!_clockOffered && _deviceClockOffsetSec > 2) {
+      _clockOffered = true;
+      _syncDeviceTime();
+    }
     // Re-derive freshness for contacts that arrived before we knew
     // the offset (GET_CONTACTS reply can precede CURR_TIME).
     for (final DiscoveredNode n in _nodes.values) {
@@ -2064,6 +4651,11 @@ class MeshcoreController extends ChangeNotifier {
         n.lastHeardUnix = adv + _deviceClockOffsetSec;
       }
     }
+    // `nodes` is sorted by `lastHeardUnix` and memoised on the revision, and
+    // this loop rewrites that field on every node. Without the bump the list
+    // kept the order it was sorted in under the old offset, so the Nodes screen
+    // and the map showed a stale order until some other write happened.
+    _nodesChanged();
   }
 
   // --- Battery (R16) ---
@@ -2103,7 +4695,7 @@ class MeshcoreController extends ChangeNotifier {
     _battTimer?.cancel();
     _requestBattery();
     _battTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      if (isReady) _requestBattery();
+      if (isReady && _visible) _requestBattery();
     });
   }
 
@@ -2226,7 +4818,9 @@ class MeshcoreController extends ChangeNotifier {
     _battHistoryDirty = true;
     _battHistorySaveTimer ??=
         Timer(const Duration(seconds: 10), _flushBatteryHistory);
-    notifyListeners();
+    // No notify here: this runs inside the frame pipeline, and that pipeline
+    // notifies once per frame (coalesced during a burst). A second notify
+    // from in here rebuilt every watcher twice for one battery push.
   }
 
   Future<void> _flushBatteryHistory() async {
@@ -2262,13 +4856,62 @@ class MeshcoreController extends ChangeNotifier {
   /// is 60 s — bigger than the old 30 s because the advert is
   /// actual OTA traffic (single zero-hop frame, no flood, low
   /// impact but real).
+  ///
+  /// R62 — that advert is the periodic *beacon*, and it is now opt-in
+  /// ([periodicAdvertEnabled], default off). The poll itself keeps
+  /// running, because the dashboard's device-GPS readout needs it, but
+  /// with the beacon off a tick sends only `appStart`: one BLE request
+  /// to the paired radio, nothing over the air. Companion firmware
+  /// builds SELF_INFO from the live `sensors.node_lat/lon`
+  /// (`MyMesh.cpp:1059-1063`, tag companion-v1.17.1), so that is enough
+  /// to see a moving GPS. Whether real GPS hardware refreshes without
+  /// an advert has NOT been verified on a device; the manual refresh
+  /// button on the dashboard still does the full advert + appStart.
+  /// `appStart` on connect is a separate, wanted exchange and is
+  /// untouched.
   Timer? _selfInfoTimer;
+  final Duration _selfInfoPollInterval;
+
+  bool _periodicAdvert = false;
+
+  /// R62 — whether the 60 s poll also sends a position-bearing
+  /// zero-hop self-advert. Persisted; default off.
+  bool get periodicAdvertEnabled => _periodicAdvert;
+
+  Future<void> _loadPeriodicAdvertPref() async {
+    _periodicAdvert = await PeriodicAdvertPrefs.enabled();
+    notifyListeners();
+  }
+
+  Future<void> setPeriodicAdvertEnabled(bool v) async {
+    if (v == _periodicAdvert) return;
+    _periodicAdvert = v;
+    notifyListeners();
+    await PeriodicAdvertPrefs.setEnabled(v);
+  }
 
   void _startSelfInfoPolling() {
     _selfInfoTimer?.cancel();
-    _selfInfoTimer = Timer.periodic(const Duration(seconds: 60), (_) {
-      if (isReady) unawaited(refreshSelfInfo());
+    _selfInfoTimer = Timer.periodic(_selfInfoPollInterval, (_) {
+      // The first SelfInfo may have arrived before the stored policy was read,
+      // so the band's own rule is re-derived here rather than once at startup.
+      unawaited(_deriveAirtimePolicyForBand());
+      if (!isReady) return;
+      if (_periodicAdvert) {
+        unawaited(refreshSelfInfo());
+      } else {
+        unawaited(_pollSelfInfoQuietly());
+      }
     });
+  }
+
+  /// `appStart` only: pull SelfInfo from the radio, transmit nothing.
+  Future<void> _pollSelfInfoQuietly() async {
+    try {
+      await send(MeshcoreFrameCodec.appStart(appName: _connection.appName));
+    } catch (_) {
+      // link dropped mid-poll — best-effort, like refreshSelfInfo.
+    }
   }
 
   /// Public API for forcing a SelfInfo refresh from the device.
@@ -2279,8 +4922,7 @@ class MeshcoreController extends ChangeNotifier {
   Future<void> refreshSelfInfo() async {
     if (!isReady) return;
     final SelfInfo? before = selfInfo;
-    // ignore: avoid_print
-    print('[meshcore.loc] refreshSelfInfo fired '
+    meshLog('meshcore.loc', 'refreshSelfInfo fired '
         '(before: ${before == null ? 'null' : 'lat=${before.latitude} '
             'lon=${before.longitude} pol=${before.advertLocPolicy}'})');
     // **Option B** — re-send the *existing* advertLocPolicy as a
@@ -2326,7 +4968,14 @@ class MeshcoreController extends ChangeNotifier {
   }
 
   void _trackDeviceInfo(MeshcoreInbound f) {
-    if (f is DeviceInfoFrame) _deviceInfo = f.info;
+    if (f is! DeviceInfoFrame) return;
+    final bool grew = _deviceInfo == null ||
+        _deviceInfo!.maxGroupChannels != f.info.maxGroupChannels;
+    _deviceInfo = f.info;
+    // The walk starts before the device query answers, so it begins with the
+    // pessimistic four. Once the radio says how many slots it holds, carry on
+    // from where the walk stopped rather than starting over.
+    if (grew && state == MeshcoreConnectionState.ready) _probeNextChannel();
   }
 
   // --- R38: device custom variables (gps, gps_interval, …) ---
@@ -2409,23 +5058,30 @@ class MeshcoreController extends ChangeNotifier {
 
   bool _autoEnabledGpsOnce = false;
 
-  /// One-shot auto-heal: if the user has `advertLocPolicy=2` (GPS)
-  /// but the firmware reports `gps=0`, push `gps=1` + a sane
-  /// `gps_interval=30` so the GPS module actually starts updating
-  /// `sensors.node_lat/lon`. Without this, picking "Device GPS" in
-  /// our Device Config screen has no effect — the firmware just
-  /// keeps broadcasting whatever cached lat/lon it last had.
+  /// One-shot auto-heal: if the user has chosen the **live/GPS** advert
+  /// policy but the firmware reports `gps=0`, push `gps=1` so the GPS
+  /// module actually starts updating `sensors.node_lat/lon`. Without
+  /// this, picking the live-position option in our Device Config screen
+  /// has no effect — the firmware just keeps broadcasting whatever
+  /// cached lat/lon it last had.
+  ///
+  /// The policy integer follows MeshCore's shared definition
+  /// (`src/helpers/CommonCLI.h`: NONE 0 / SHARE 1 / PREFS 2) and our
+  /// "Device GPS" label is 1. The companion firmware itself only tests
+  /// `== ADVERT_LOC_NONE` (`MyMesh.cpp:1252,1336,2251` at
+  /// `companion-v1.17.1`), so policy 2 also advertises the live
+  /// `sensors.node_lat/lon`; this auto-heal deliberately keys off the
+  /// user's explicit "Device GPS" choice only.
   Future<void> _maybeAutoEnableGps() async {
     if (_autoEnabledGpsOnce) return;
     final SelfInfo? si = selfInfo;
     if (si == null) return;
-    if (si.advertLocPolicy != 2) return; // user hasn't asked for GPS
+    if (si.advertLocPolicy != 1) return; // user hasn't asked for live GPS
     final bool? on = deviceGpsEnabled;
     if (on != false) return; // already on, or unknown — leave alone
     _autoEnabledGpsOnce = true;
-    // ignore: avoid_print
-    print('[meshcore.loc] auto-enabling on-board GPS '
-        '(advertLocPolicy=2 but gps=0)');
+    meshLog('meshcore.loc', 'auto-enabling on-board GPS '
+        '(advertLocPolicy=1/SHARE but gps=0)');
     await setCustomVar(name: 'gps', value: '1');
     // We intentionally don't write `gps_interval` here. On at least
     // the T1000-E v1.15.0 build the sensors module only exposes
@@ -2441,8 +5097,7 @@ class MeshcoreController extends ChangeNotifier {
   void _trackCustomVars(MeshcoreInbound f) {
     if (f is! CustomVarsFrame) return;
     _customVars = Map<String, String>.from(f.values);
-    // ignore: avoid_print
-    print('[meshcore.loc] CustomVarsFrame in: $_customVars');
+    meshLog('meshcore.loc', 'CustomVarsFrame in: $_customVars');
     // Defer auto-enable to the microtask queue so SelfInfo (which
     // tells us the policy) has likely landed already on a fresh
     // connect.
@@ -2686,9 +5341,12 @@ class MeshcoreController extends ChangeNotifier {
         0;
   }
 
-  /// Total telemetry requests sent this session (incremented once
-  /// per actual outbound frame, not per call). Useful for the
-  /// observability chip in the elevation view.
+  /// Total telemetry requests sent this session (incremented once per actual
+  /// outbound frame, not per call).
+  ///
+  /// Read by the diagnostics facts block, which is where a reader can see what
+  /// the telemetry poller costs. It used to say it was for "the observability
+  /// chip in the elevation view", and no chip ever read it.
   int get telemetrySendCount =>
       _telemetryAttempts.values.fold(0, (int a, int b) => a + b);
 
@@ -2715,8 +5373,48 @@ class MeshcoreController extends ChangeNotifier {
 
   Timer? _telemPollTimer;
   bool _telemPollEnabled = true;
+
+  /// True while a screen that *shows* telemetry is open.
+  ///
+  /// The poller used to run on `_visible`, which only means the app is in front:
+  /// a reader on the chat tab was still asking every peer for temperature and
+  /// humidity, every ten seconds, and paying for the answers on a channel the
+  /// whole mesh shares. Interest is a screen saying it is looking, which is what
+  /// `WeatherView` and the elevation view now do.
+  bool _telemInterest = false;
+
+  /// Whether anything on screen is showing telemetry right now.
+  bool get telemetryInterest => _telemInterest;
+
+  /// A screen that shows telemetry, saying so. Refcounted, because the grid can
+  /// hold the weather page while a sheet over it also wants readings.
+  int _telemInterestHolders = 0;
+
+  void holdTelemetryInterest() {
+    _telemInterestHolders++;
+    _telemInterest = true;
+    if (isReady && _telemPollEnabled) _startTelemetryPolling();
+    // No `notifyListeners`: nothing on screen renders the interest flag, and a
+    // screen calls this from `initState`, where notifying rebuilds listeners in
+    // the middle of a build.
+  }
+
+  void releaseTelemetryInterest() {
+    if (_telemInterestHolders > 0) _telemInterestHolders--;
+    if (_telemInterestHolders > 0) return;
+    _telemInterest = false;
+    _telemPollTimer?.cancel();
+    _telemPollTimer = null;
+  }
   final Duration? _telemPollIntervalOverride; // test seam
-  static const Duration _telemPollInterval = Duration(seconds: 10);
+  /// How often the poller asks one peer for its telemetry.
+  ///
+  /// Ten seconds was six requests a minute on a channel every radio in range
+  /// shares, before a single peer had answered, and it ran whenever the app was
+  /// foregrounded — on the chat tab as much as on the weather list. A minute is
+  /// still fresher than any sensor behind it changes, and it is a sixth of the
+  /// traffic.
+  static const Duration _telemPollInterval = Duration(seconds: 60);
   static const int _telemPollMaxAttempts = 3;
   static const Duration _telemPollRefreshAfter = Duration(minutes: 15);
   static const int _telemPollMaxHopsAlways = 1;
@@ -2753,6 +5451,9 @@ class MeshcoreController extends ChangeNotifier {
   void _startTelemetryPolling() {
     _telemPollTimer?.cancel();
     if (!_telemPollEnabled) return;
+    // No interest, no timer: this is the line that stops the app paying for
+    // readings nobody is looking at.
+    if (!_telemInterest) return;
     _telemPollTimer = Timer.periodic(
         _telemPollIntervalOverride ?? _telemPollInterval,
         (_) => _stepTelemetryPoll());
@@ -2764,7 +5465,11 @@ class MeshcoreController extends ChangeNotifier {
   int _telemPollTierFor(DiscoveredNode n) {
     final List<int>? hops = n.outPathHashes;
     if (hops == null) return -1;
-    final int hopCount = hops.length;
+    // The route's own hop count, not the length of its byte list: a three-byte,
+    // two-hop peer used to read as six hops and fall straight through the tiers
+    // as "too many", so on a three-byte mesh the poller skipped almost everyone
+    // — which is also why the weather list could look empty.
+    final int hopCount = n.hopCount ?? hops.length;
     if (hopCount == 0) return 0;
     if (hopCount <= _telemPollMaxHopsAlways) return 1;
     if (hopCount <= _telemPollMaxHopsWithDistance && n.hasLocation) {
@@ -2774,8 +5479,14 @@ class MeshcoreController extends ChangeNotifier {
     return -1;
   }
 
+  /// One poller tick, for tests: the real timer is a minute apart, and a test
+  /// that waits a minute is a test nobody runs.
+  @visibleForTesting
+  void debugStepTelemetryPoll() => _stepTelemetryPoll();
+
   void _stepTelemetryPoll() {
-    if (!isReady || !_telemPollEnabled) return;
+    if (!isReady || !_telemPollEnabled || !_visible || !_telemInterest) return;
+    if (backgroundRequestsHeld) return;
     final String? own = ownPubKeyHex;
     final int nowMs = DateTime.now().millisecondsSinceEpoch;
     DiscoveredNode? target;
@@ -2837,7 +5548,7 @@ class MeshcoreController extends ChangeNotifier {
     );
     // Diagnostic so we can see exactly what a node reports (run
     // `flutter logs`): which LPP types arrived + the decoded env/alt.
-    debugPrint('[telem] key=$pub6 '
+    meshLog('telem', 'key=$pub6 '
         'types=${entries.map((LppEntry e) => '0x${e.type.toRadixString(16)}').join(',')} '
         'temp=${nt.temperatureC} hum=${nt.humidityPct} '
         'press=${nt.pressureHpa} alt=${nt.altitudeMeters}');
@@ -2869,41 +5580,136 @@ class MeshcoreController extends ChangeNotifier {
     _recordBatterySample(f.battery.batteryMillivolts, now);
   }
 
+  /// Read the radio's channel table, one slot at a time.
+  ///
+  /// The published rule is to fetch **every** slot, including past an empty
+  /// one, because a radio with five configured channels and a gap at two still
+  /// holds channels the user may need. This used to fire four blind requests
+  /// and stop, so a table beyond slot three was invisible in the picker.
+  ///
+  /// One slot is asked for at a time and the next waits for its answer or for
+  /// the idle window: the firmware serialises its replies, and a burst of forty
+  /// requests would have them overtake one another. The count comes from
+  /// `DEVICE_INFO`'s `max_group_channels` once known (8 on the small boards, 40
+  /// on most), and [_channelProbeCount] is the pessimistic count for the window
+  /// before that answer arrives.
   void _probeChannels() {
-    for (int i = 0; i < _channelProbeCount; i++) {
-      // Best-effort: ignore failures (radio replies only for the
-      // channels it actually has configured).
-      unawaited(send(MeshcoreFrameCodec.getChannel(i)).catchError((_) {}));
+    _channelProbeIdleTimer?.cancel();
+    _channelProbeIdleTimer = null;
+    _channelsProbed.clear();
+    _channelProbeCursor = 0;
+    _channelProbeOutstanding = false;
+    _probeNextChannel();
+  }
+
+  void _probeNextChannel() {
+    // One slot in flight: the firmware keeps a single reply buffer, so a second
+    // request would have its answer overtake the first.
+    if (_channelProbeOutstanding) return;
+    if (state != MeshcoreConnectionState.ready) return;
+    final int limit = _channelProbeLimit;
+    while (_channelProbeCursor < limit &&
+        _channelsProbed.contains(_channelProbeCursor)) {
+      _channelProbeCursor++;
     }
+    if (_channelProbeCursor >= limit) return;
+    final int idx = _channelProbeCursor;
+    _channelProbeCursor++;
+    _channelsProbed.add(idx);
+    _channelProbeOutstanding = true;
+    unawaited(send(MeshcoreFrameCodec.getChannel(idx)).catchError((_) {}));
+    _channelProbeIdleTimer =
+        Timer(_channelProbeIdleOverride ?? _channelProbeIdle, () {
+      // A slot that never answers is either unconfigured or refused; either
+      // way the table continues, so the walk does rather than stopping at the
+      // first gap.
+      _channelProbeOutstanding = false;
+      _probeNextChannel();
+    });
+  }
+
+  void _channelProbeAnswered() {
+    _channelProbeOutstanding = false;
+    _channelProbeIdleTimer?.cancel();
+    _channelProbeIdleTimer = null;
+    _probeNextChannel();
+  }
+
+  /// How many slots to ask about, once the radio has said how many it has.
+  int get _channelProbeLimit {
+    final int? reported = _deviceInfo?.maxGroupChannels;
+    if (reported == null || reported <= 0) return _channelProbeCount;
+    return reported;
   }
 
   /// Send a text message on the active channel (`SEND_CHANNEL_TXT_MSG`,
   /// 0x03). The radio does the OTA channel encryption; we append an
   /// optimistic outgoing line. No-op if not ready or text is blank.
-  Future<void> sendChannelText(String text) async {
+  Future<void> sendChannelText(String text) =>
+      sendChannelTextTo(_activeChannel, text);
+
+  /// Send on a **specific** channel slot rather than the active one.
+  ///
+  /// The bot (R59) needs this: it may be bound to a private slot while
+  /// the user is looking at another channel entirely, and routing its
+  /// reply to whatever happens to be on screen would put private
+  /// traffic somewhere it was never meant to go.
+  /// Returns the outgoing row, or null when nothing was sent.
+  /// See [sendDirectText] for [urgent]: an alarm is written even when the
+  /// app's duty-cycle window is full, and is charged all the same.
+  Future<ChatMessage?> sendChannelTextTo(int channelIdx, String text,
+      {bool urgent = false, bool hidden = false}) async {
     final String t = text.trim();
-    if (t.isEmpty || !isReady) return;
+    if (t.isEmpty || !isReady) return null;
+    // A capability the radio has denied is a local refusal with its own
+    // sentence, not an ERR that arrives after the row was written. Unknown is
+    // not refused: the first send is how the state gets learned.
+    if (_capabilities.stateOf(MeshcoreCommand.sendChannelMessage) ==
+        CapabilityState.absent) {
+      final ChatMessage refused = ChatMessage(
+        channelIdx: channelIdx,
+        text: t,
+        outgoing: true,
+        delivery: MessageDelivery.failed,
+        failReason: 'this radio has no channel send',
+        failCause: FailureCause.unsupportedCommand,
+      );
+      _addMessage(refused);
+      notifyListeners();
+      return refused;
+    }
     final int ts = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final ChatMessage m = ChatMessage(
-      channelIdx: _activeChannel,
+      channelIdx: channelIdx,
       text: t,
       outgoing: true,
+      hidden: hidden,
       delivery: MessageDelivery.sending,
     );
     _addMessage(m);
-    _registerOutgoing(m);
+    _registerOutgoing(m, CommandAnswer.ok);
     notifyListeners();
     try {
-      await send(MeshcoreFrameCodec.sendChannelTextMessage(
-        channelIdx: _activeChannel,
+      await send(gated: !urgent, MeshcoreFrameCodec.sendChannelTextMessage(
+        channelIdx: channelIdx,
         timestamp: ts,
         text: t,
       ));
+    } on AirtimeRefused {
+      // The radio never saw this frame, so it is not a link failure: the row
+      // says why it did not go, and the copy names the budget.
+      _failOutgoing(m.id, 'airtime budget',
+          cause: FailureCause.airtimeBudget);
+      notifyListeners();
     } catch (_) {
+      // APP-C2 rule 2: a channel send never reads `failed`. A write that
+      // threw may have reached the radio's buffer before the link went, so
+      // the honest state is "cannot vouch for this one", not "did not send".
       _emitTaskError('sendChannel');
-      _markOutgoingFailed(m.id);
+      _uncertainOutgoing(m.id, 'link dropped while sending');
       notifyListeners();
     }
+    return m;
   }
 
   // --- Inbound queue drain (CMD_SYNC_NEXT_MESSAGE) ---
@@ -2920,6 +5726,18 @@ class MeshcoreController extends ChangeNotifier {
   int _drainSteps = 0;
   static const int _drainStepCap = 512; // runaway guard
 
+  /// Watchdog for a drain that never finishes.
+  ///
+  /// The step cap only advances when frames *arrive*. If the radio goes
+  /// quiet after we send a SYNC — link wedged, firmware busy, unit out
+  /// of range mid-drain — nothing ever calls `_maybeDrain` again and
+  /// `_draining` stays true forever. That is worse than it sounds:
+  /// `CueBridge` mutes advert cues while draining and R59's bot
+  /// declines to answer, so a stuck drain silently disables both with
+  /// no visible symptom. Time-box it instead.
+  Timer? _drainWatchdog;
+  static const Duration _drainStall = Duration(seconds: 20);
+
   /// True while the controller is in the middle of a SYNC drain
   /// (post-handshake: pulling queued contacts/adverts/messages off the
   /// radio). Exposed so the Dashboard can flag the initial 1–3 s
@@ -2933,21 +5751,71 @@ class MeshcoreController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _drainStart() {
+  /// True while the current drain is replaying a **backlog** — traffic
+  /// the device queued before we were listening (link-up, resume,
+  /// reconnect) rather than a message that just arrived.
+  ///
+  /// The distinction matters because the firmware does **not** push
+  /// text messages in real time: every inbound message reaches us
+  /// through a drain, so "skip everything drained" would skip
+  /// everything, full stop. A drain kicked off by a live
+  /// `MSGS_WAITING` push while we were already connected is delivering
+  /// fresh traffic and must be treated as such.
+  bool get isBacklogDrain => _draining && _drainIsBacklog;
+  bool _drainIsBacklog = false;
+
+  void _drainStart({bool backlog = false}) {
     if (_draining) return;
+    _drainIsBacklog = backlog;
+    _drainRetried = false;
     _setDraining(true);
     _drainSteps = 0;
     _drainStep();
   }
 
+  /// Whether the current drain has already been restarted once after a stall.
+  ///
+  /// The MSGS_WAITING push is what starts a drain, and a push lost on the link
+  /// left the queued messages sitting until the next push or reconnect. One
+  /// restart is enough to cover a dropped push; a second would loop forever on
+  /// a radio that cannot answer.
+  bool _drainRetried = false;
+
   void _drainStep() {
     if (++_drainSteps > _drainStepCap) {
-      _setDraining(false);
+      _endDrain();
       return;
     }
+    _armDrainWatchdog();
     unawaited(send(MeshcoreFrameCodec.syncNextMessage()).catchError((_) {
-      _setDraining(false);
+      _endDrain();
     }));
+  }
+
+  /// Restart the stall timer — called on every SYNC we send, so the
+  /// window is "silence since the last request", not total drain time.
+  /// A long but healthy drain must not be cut short.
+  void _armDrainWatchdog() {
+    _drainWatchdog?.cancel();
+    _drainWatchdog = Timer(_drainStall, () {
+      if (!_draining) return;
+      _emitTaskError('drainStalled');
+      if (!_drainRetried) {
+        // One restart: the push that started this drain may simply have been
+        // lost, and the queued messages would otherwise wait for the next one.
+        _drainRetried = true;
+        _drainSteps = 0;
+        _drainStep();
+        return;
+      }
+      _endDrain();
+    });
+  }
+
+  void _endDrain() {
+    _drainWatchdog?.cancel();
+    _drainWatchdog = null;
+    _setDraining(false);
   }
 
   void _maybeDrain(MeshcoreInbound f) {
@@ -2963,7 +5831,7 @@ class MeshcoreController extends ChangeNotifier {
     }
     if (!_draining) return;
     if (f is NoMoreMessagesFrame) {
-      _setDraining(false); // queue emptied
+      _endDrain(); // queue emptied
     } else {
       // The frame we just received was the reply to our SYNC (a
       // queued contact/advert/message); pull the next one.
@@ -2971,59 +5839,344 @@ class MeshcoreController extends ChangeNotifier {
     }
   }
 
+  // --- The radio's own add policy (`CMD_GET/SET_AUTOADD_CONFIG`) --------
+  //
+  // Whether a newly heard node becomes a contact is the radio's decision, not
+  // the app's: the firmware adds by node type, may overwrite the oldest
+  // non-favourite when the 350-row table is full, and can limit how far away a
+  // node may be. Left unread, the table fills under a policy the user cannot
+  // see, and the first symptom is that a contact the app offered to add is
+  // refused. The reply is `RESP_CODE_AUTOADD_CONFIG` (0x19).
+
+  AutoAddConfig? _autoAddConfig;
+
+  /// The radio's add policy, or null while it has not answered.
+  AutoAddConfig? get autoAddConfig => _autoAddConfig;
+
+  void _trackAutoAddConfig(MeshcoreInbound f) {
+    if (f is! AutoAddConfigFrame) return;
+    _autoAddConfig = f.config;
+  }
+
+  /// Ask the radio what its add policy is. Cheap, and the reply is the only
+  /// way to know: the app cannot infer it from a table that may already be
+  /// full.
+  Future<void> requestAutoAddConfig() async {
+    if (!isReady) return;
+    try {
+      await send(MeshcoreFrameCodec.getAutoAddConfig());
+    } catch (_) {
+      _emitTaskError('getAutoAddConfig');
+    }
+  }
+
+  /// Change part of the radio's add policy. Every field is optional and the
+  /// rest is carried through, because the command replaces the whole byte.
+  ///
+  /// Refused when the current policy is unknown: writing from zero would
+  /// silently switch auto-add off for every node type, which is a setting the
+  /// user did not choose. [requestAutoAddConfig] has to land first.
+  Future<bool> setAutoAddConfig({
+    bool? overwriteOldest,
+    bool? chat,
+    bool? repeater,
+    bool? roomServer,
+    bool? sensor,
+    int? maxHops,
+  }) async {
+    final AutoAddConfig? cur = _autoAddConfig;
+    if (!isReady || cur == null) return false;
+    int flags = cur.flags;
+    void bit(int mask, bool? value) {
+      if (value == null) return;
+      flags = value ? (flags | mask) : (flags & ~mask);
+    }
+
+    bit(kAutoAddOverwriteOldest, overwriteOldest);
+    bit(kAutoAddChat, chat);
+    bit(kAutoAddRepeater, repeater);
+    bit(kAutoAddRoomServer, roomServer);
+    bit(kAutoAddSensor, sensor);
+    final int hops = maxHops ?? cur.maxHops;
+    try {
+      await send(MeshcoreFrameCodec.setAutoAddConfig(flags, maxHops: hops));
+      // The radio is the source of truth; read it back rather than assuming
+      // the write was taken as sent (it clamps and may refuse).
+      await requestAutoAddConfig();
+      return true;
+    } catch (_) {
+      _emitTaskError('setAutoAddConfig');
+      return false;
+    }
+  }
+
+  // --- The route the last advert took (`CMD_GET_ADVERT_PATH`) -----------
+  //
+  // A trace reports the route a packet took *now*; this answers the route the
+  // contact's last advertisement arrived by, from the radio's own record. It
+  // sends no mesh traffic, so it is the cheap way to answer "which repeaters
+  // hear this node at all".
+  //
+  // The reply carries no key, so only one request can be outstanding: a second
+  // answer could not be told apart from the first.
+
+  bool _pathDiscoveryInFlight = false;
+
+  /// Ask the mesh for the route to a node (`CMD_SEND_PATH_DISCOVERY_REQ` 0x34).
+  ///
+  /// This is the active counterpart to [advertPathFor]: the radio floods a
+  /// request, and whichever repeaters hear it answer with the outbound and
+  /// inbound paths they found, so it can return a route that did not exist a
+  /// minute ago. It costs airtime, so it is a deliberate action rather than
+  /// something a screen does on open. The reply carries the node's prefix, so
+  /// only one request is in flight and a stale answer cannot be mis-attributed.
+  Future<PathDiscoveryResult?> discoverPathFor(String pubKeyHex,
+      {Duration timeout = const Duration(seconds: 8)}) async {
+    if (!isReady || _pathDiscoveryInFlight) return null;
+    final String hex = pubKeyHex.toLowerCase();
+    if (hex.length < kPubKeyPrefixSize * 2) return null;
+    // A length check is not a hex check: an odd length throws RangeError at the
+    // last `substring`, and a non-hex character throws FormatException, both
+    // before this method's own `try`. The caller awaits with no try, so the
+    // button stayed disabled for the life of the sheet.
+    if (hex.length.isOdd || !_kHexOnly.hasMatch(hex)) return null;
+    final String prefix = hex.substring(0, kPubKeyPrefixSize * 2);
+    final Uint8List key = Uint8List.fromList(<int>[
+      for (int i = 0; i < hex.length; i += 2)
+        int.parse(hex.substring(i, i + 2), radix: 16),
+    ]);
+    _pathDiscoveryInFlight = true;
+    try {
+      final Future<MeshcoreInbound> reply = inboundFrames
+          .firstWhere((MeshcoreInbound f) =>
+              f is PathDiscoveryFrame &&
+              _hex(f.result.pubKeyPrefix) == prefix)
+          .timeout(timeout);
+      await send(MeshcoreFrameCodec.sendPathDiscoveryReq(key));
+      final MeshcoreInbound f = await reply;
+      return f is PathDiscoveryFrame ? f.result : null;
+    } catch (_) {
+      return null;
+    } finally {
+      _pathDiscoveryInFlight = false;
+    }
+  }
+
+  bool _advertPathInFlight = false;
+
+  /// The route the contact's last advert took, or null when the radio could
+  /// not answer inside [timeout] or another request is already waiting.
+  Future<AdvertPath?> advertPathFor(String pubKeyHex,
+      {Duration timeout = const Duration(seconds: 4)}) async {
+    if (!isReady || _advertPathInFlight) return null;
+    final String hex = pubKeyHex.toLowerCase();
+    if (hex.length != kPubKeySize * 2) return null;
+    if (!_kHexOnly.hasMatch(hex)) return null;
+    final Uint8List key = Uint8List.fromList(<int>[
+      for (int i = 0; i < hex.length; i += 2)
+        int.parse(hex.substring(i, i + 2), radix: 16),
+    ]);
+    _advertPathInFlight = true;
+    try {
+      final Future<MeshcoreInbound> reply = inboundFrames
+          .firstWhere((MeshcoreInbound f) => f is AdvertPathFrame)
+          .timeout(timeout);
+      await send(MeshcoreFrameCodec.getAdvertPath(key));
+      final MeshcoreInbound f = await reply;
+      return f is AdvertPathFrame ? f.advertPath : null;
+    } catch (_) {
+      return null;
+    } finally {
+      _advertPathInFlight = false;
+    }
+  }
+
+  /// The radio's own changes to its contact table.
+  ///
+  /// The table is the radio's, and the app's mirror is a cache of it. The
+  /// firmware pushes four events that change the table without the app asking:
+  /// it evicted a contact (0x8F, `PUSH_CODE_CONTACT_DELETED` — either the user
+  /// removed it or auto-add overwrote the oldest non-favourite), it stored a
+  /// newly advertised contact automatically (0x8A), it learned a new route
+  /// (0x81), or it could not store a new contact at all (0x90,
+  /// `PUSH_CODE_CONTACTS_FULL`). Ignoring them leaves the app showing contacts
+  /// the radio no longer has, missing ones it does, sending down routes the
+  /// radio replaced, and quietly failing to add anything because the table is
+  /// full.
+  void _trackContactLifecycle(MeshcoreInbound f) {
+    if (f is ContactDeletedFrame) {
+      final String hex = _hex(f.publicKey);
+      final Contact? gone = _contacts.remove(hex);
+      _saveContactsSoon();
+      if (_deviceContactCount != null && _deviceContactCount! > 0) {
+        _deviceContactCount = _deviceContactCount! - 1;
+      }
+      // A deleted contact may still be heard on air, so the node entry stays;
+      // it simply stopped being a synced contact, which is what makes it
+      // unaddressable for a DM or a telemetry request.
+      _pushEvent(MeshEvent(
+        kind: MeshEventKind.contact,
+        args: <String, String>{
+          'name': gone?.name.isNotEmpty == true
+              ? gone!.name
+              : hex.substring(0, 8),
+        },
+      ));
+    } else if (f is NewAdvertFrame) {
+      // Auto-add stored this node on the radio. Mirror it exactly as a
+      // streamed contact, or the app holds a contact the radio has and cannot
+      // offer it anywhere.
+      _ingestNode(ContactFrame(f.contact));
+    } else if (f is PathUpdatedFrame) {
+      // The radio replaced this contact's out_path. Re-read the record rather
+      // than guessing: the app draws routes and addresses sends by it.
+      final String hex = _hex(f.publicKey);
+      for (final Contact c in _contacts.values) {
+        if (_hex(c.publicKey) == hex) {
+          unawaited(send(MeshcoreFrameCodec.getContactByKey(c.publicKey))
+              .catchError((Object _) => Uint8List(0)));
+          break;
+        }
+      }
+    } else if (f is ContactsFullFrame) {
+      _contactsFull = true;
+    }
+  }
+
+  /// True while the radio has told us its contact table is full and it is not
+  /// overwriting the oldest entry, so every new advert is being dropped.
+  bool _contactsFull = false;
+  /// True when the radio's table has no room for another contact.
+  ///
+  /// The refusal flag alone is not enough: a radio that filled its table before
+  /// this app ever tried to add anything never sets it, and that is exactly the
+  /// state that silently drops direct messages. The count the radio reports is
+  /// the other half of the answer.
+  bool get contactsFull {
+    if (_contactsFull) return true;
+    final int? n = _deviceContactCount;
+    final int? max = maxContacts;
+    return n != null && max != null && max > 0 && n >= max;
+  }
+
+  void _clearContactsFull() {
+    if (!_contactsFull) return;
+    _contactsFull = false;
+  }
+
   void _ingestNode(MeshcoreInbound f) {
-    final int now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     if (f is ContactFrame) {
       final Contact c = f.contact;
-      // R56 — a key the user reconciled away. The radio still syncs this
-      // dead contact (no delete-contact command); drop it on arrival so
-      // it never reappears as a duplicate of the live key.
+      // R56 — a key the user reconciled away. The radio is asked to remove
+      // it (`CMD_REMOVE_CONTACT` 0x0F), but a sync can still deliver it before
+      // that lands, so it is dropped on arrival rather than reappearing as a
+      // duplicate of the live key.
       if (_superseded.contains(_hex(c.publicKey))) return;
       // Retain the raw contact record (path, flags, lastMod) so we can
       // re-send it byte-exactly via ADD_UPDATE_CONTACT when changing
       // per-contact telemetry permissions (R54 follow-on).
       _contacts[_hex(c.publicKey)] = c;
-      final int adv = c.lastAdvertTimestamp;
-      // `adv` is in the device clock; translate via the learned
-      // offset (0 until CURR_TIME, re-derived in _trackDeviceClock).
-      _nodes[_hex(c.publicKey)] = DiscoveredNode(
-        pubKeyHex: _hex(c.publicKey),
-        name: c.name,
-        type: c.type,
-        lastHeardUnix: adv == 0 ? now : adv + _deviceClockOffsetSec,
-        deviceAdvertUnix: adv == 0 ? null : adv,
-        latitude: c.latitudeMicros == 0 ? null : c.latitudeMicros / 1e6,
-        longitude: c.longitudeMicros == 0 ? null : c.longitudeMicros / 1e6,
-        viaAdvert: false,
-        // R49 — preserve the outbound repeater chain for topology
-        // drawing. activePath gives the prefix of valid bytes; the
-        // tail of the 64-byte buffer is zero-padding we discard.
-        //
-        // A flood-routed contact reports out_path_len == 0xFF (the
-        // flood sentinel) — there is no fixed path. activePath would
-        // clamp that to a bogus 64-byte chain, which then reads as a
-        // 64-hop peer and gets filtered out of the tree at every hop
-        // setting. Treat it as an UNKNOWN route (null) instead, so
-        // it shows as a floater at the "All" setting like any other
-        // advert-only peer.
-        outPathHashes: c.outPathLen == kPathLenFlood
-            ? null
-            : List<int>.unmodifiable(c.activePath),
-        // Flood-routed = reachable, no fixed path. Keep this flag so
-        // the UI can show "Flood" (like the official app) instead of
-        // conflating it with advert-only "unknown".
-        viaFlood: c.outPathLen == kPathLenFlood,
-      );
+      _saveContactsSoon();
+      _nodes[_hex(c.publicKey)] = _nodeFromContact(c);
+      _nodesChanged();
     } else if (f is AdvertFrame) {
       _upsertAdvert(f.advert);
     } else if (f is RfLogFrame) {
       // RF-log captures carry the raw OTA packet *with* SNR/RSSI —
       // the signal needed to judge "what's in my area".
-      final Advert? a = f.log.packet?.advert;
+      final OtaPacket? p = f.log.packet;
+      final Advert? a = p?.advert;
       if (a != null) {
         _upsertAdvert(a, snr: f.log.snrDb, rssi: f.log.rssi);
       }
+      // A channel packet is kept for the message push that follows it, which is
+      // where the RSSI and the path come from.
+      final GrpTxtPayload? grp = p?.grpTxt;
+      if (p != null && grp != null) {
+        _rxCaptures.add(_RxCapture(
+          snrDb: f.log.snrDb,
+          rssiDbm: f.log.rssi,
+          hopCount: p.hopCount,
+          pathHashes: p.pathHashes,
+          // Recorded so a capture cannot be lent to a row on another channel:
+          // a `#cos` message must not carry the RSSI and route of a packet heard
+          // on `#public`.
+          channelHash: grp.channelHash,
+          at: DateTime.now(),
+        ));
+        while (_rxCaptures.length > _rxCaptureCap) {
+          _rxCaptures.removeAt(0);
+        }
+      }
     }
+  }
+
+  /// The node entry a synced contact describes.
+  ///
+  /// One mapping, used when the radio streams a contact and when the persisted
+  /// table is read back at startup: a restart has to land on the same fabric the
+  /// previous session ended with, or the tools offer only the nodes that
+  /// happened to advertise since the app started, and a contact the radio can
+  /// still reach from its stored path becomes unpingable.
+  ///
+  /// A contact sync REBUILDS the node entry, so anything the contact record
+  /// does not carry is preserved from the previous entry: the record has no
+  /// RSSI/SNR/altitude, and it reports (0,0) for a node that hides its position.
+  /// `lastAdvertTimestamp` is in the device clock, so it is translated through
+  /// the learned offset (0 until `CURR_TIME`).
+  DiscoveredNode _nodeFromContact(Contact c) {
+    final String hex = _hex(c.publicKey);
+    final DiscoveredNode? prev = _nodes[hex];
+    final int adv = c.lastAdvertTimestamp;
+    return DiscoveredNode(
+      pubKeyHex: hex,
+      name: c.name,
+      type: c.type,
+      // An advert time of zero is the firmware's "never", not "now". Reporting
+      // it as `stamp` claimed a hearing that did not happen: measured on the
+      // handset, every contact-synced node in the list read "0s" and the
+      // recency badge called all of them recently heard. What the record does
+      // not carry is preserved from the previous entry, exactly as the rest of
+      // this method does with RSSI, SNR and altitude; failing that it stays
+      // unknown and the list says so.
+      // A contact sync is not a hearing, so it must never make a node look
+      // *less* recently heard than a live advert already did. The radio's
+      // `last_advert_timestamp` is the sender's own clock, and a freshly
+      // flashed radio has no RTC: measured on the handset, a node one metre
+      // away read "260 d ago" and counted as out of range, because its advert
+      // carried a date from months earlier. The later of the two is the honest
+      // answer, and a node that really has gone quiet still ages out, because
+      // nothing refreshes the live value.
+      lastHeardUnix: adv == 0
+          ? (prev?.lastHeardUnix ?? 0)
+          : math.max(adv + _deviceClockOffsetSec, prev?.lastHeardUnix ?? 0),
+      deviceAdvertUnix: adv == 0 ? null : adv,
+      latitude:
+          c.latitudeMicros == 0 ? prev?.latitude : c.latitudeMicros / 1e6,
+      longitude:
+          c.longitudeMicros == 0 ? prev?.longitude : c.longitudeMicros / 1e6,
+      snrDb: prev?.snrDb,
+      rssi: prev?.rssi,
+      altitudeMeters: prev?.altitudeMeters,
+      viaAdvert: false,
+      // R49 — preserve the outbound repeater chain for topology drawing.
+      // A flood-routed contact reports the flood sentinel, which `activePath`
+      // would clamp to a bogus 64-byte chain reading as a 64-hop peer, so it
+      // is an UNKNOWN route (null) rather than a path.
+      outPathHashes: c.outPathLen == kPathLenFlood
+          ? null
+          : List<int>.unmodifiable(c.activePath),
+      // Decoded here, where `out_path_len` still exists. `PathLen` is the
+      // package's own reader for that packed byte, and the two numbers it
+      // carries are what a depth means: hops, and bytes per hop.
+      outPathHopCount: c.outPathLen == kPathLenFlood
+          ? null
+          : PathLen(c.outPathLen).hopCount,
+      outPathHashSize: c.outPathLen == kPathLenFlood
+          ? null
+          : PathLen(c.outPathLen).hashSize,
+      viaFlood: c.outPathLen == kPathLenFlood,
+    );
   }
 
   void _upsertAdvert(Advert a, {double? snr, int? rssi}) {
@@ -3058,6 +6211,7 @@ class MeshcoreController extends ChangeNotifier {
       outPathHashes: prev?.outPathHashes,
       viaFlood: prev?.viaFlood ?? false,
     );
+    _nodesChanged();
     // F8 — peer's advertised position is a "the mesh extends to
     // here" observation. Same coverage bucket as own-location
     // samples; the FabricSurveyView shades both.
@@ -3070,8 +6224,8 @@ class MeshcoreController extends ChangeNotifier {
   }
 
   /// Ask the radio for its synced contact list (`CMD_GET_CONTACTS`).
-  Future<void> requestContacts() =>
-      send(MeshcoreFrameCodec.getContacts());
+  Future<void> requestContacts({int? since}) =>
+      send(MeshcoreFrameCodec.getContacts(since: since));
 
   // --- Device-contacts probe (diagnostic) ---------------------------
   // The app's `_contacts` hides keys the user superseded, and the
@@ -3083,6 +6237,10 @@ class MeshcoreController extends ChangeNotifier {
   final List<Contact> _probedContacts = <Contact>[];
   bool _probing = false;
   int? _deviceContactCount;
+
+  /// One full re-sync per session when the radio's count outruns ours.
+  bool _fullResyncTried = false;
+  Completer<void>? _contactSyncDone;
 
   /// The radio's reported total contact count (from `CONTACTS_START`).
   int? get deviceContactCount => _deviceContactCount;
@@ -3096,10 +6254,544 @@ class MeshcoreController extends ChangeNotifier {
 
   /// Trigger a fresh full contact sync (fills [probedContacts] +
   /// [deviceContactCount]); also refresh device info for [maxContacts].
+  /// How long the radio may go quiet mid-stream before the app asks again.
+  /// The radio streams one frame per contact, so the wait is for the next
+  /// frame, not for the whole table.
+  static const Duration contactIdleTimeout = Duration(seconds: 3);
+
+  /// How many times a stalled stream is re-requested before the app keeps what
+  /// arrived and says the table may be short.
+  static const int contactSyncAttempts = 3;
+
+  /// Overall ceiling for a caller waiting on a sync, derived from the watchdog
+  /// rather than guessed: every attempt costs at most one idle window, and the
+  /// caller gets a little slack on top.
+  static const Duration contactSyncTimeout = Duration(seconds: 8);
+
+  Timer? _contactIdleTimer;
+  final Duration? _contactIdleOverride;
+  int _contactSyncAttempt = 0;
+  bool _contactsIncomplete = false;
+
+  /// True when the last sync stopped before the radio's end-of-contacts frame:
+  /// the app kept what arrived, and the table it holds may be missing entries.
+  /// Cleared by the next end-of-contacts.
+  bool get contactsIncomplete => _contactsIncomplete;
+
+  void _armContactIdle() {
+    _contactIdleTimer?.cancel();
+    _contactIdleTimer =
+        Timer(_contactIdleOverride ?? contactIdleTimeout, _onContactIdle);
+  }
+
+  void _onContactIdle() {
+    if (!_probing) {
+      _completeContactSync();
+      return;
+    }
+    if (_contactSyncAttempt >= contactSyncAttempts) {
+      // Give up rather than wait forever, and keep the entries that did arrive:
+      // a partial table is more useful than none, and the flag says so instead
+      // of presenting it as complete.
+      _contactsIncomplete = true;
+      _completeContactSync();
+      return;
+    }
+    _contactSyncAttempt++;
+    unawaited(requestContacts(since: _contactsSince).catchError((_) {}));
+    _armContactIdle();
+  }
+
+  void _completeContactSync() {
+    _contactIdleTimer?.cancel();
+    _contactIdleTimer = null;
+    _probing = false;
+    final Completer<void>? done = _contactSyncDone;
+    if (done != null && !done.isCompleted) done.complete();
+  }
+
+  /// Full contact sync, returning once the radio says the list ended.
+  ///
+  /// Callers that need a fresh table (BIND does) must not poll a fixed delay and
+  /// hope: the count is in `CONTACTS_START` and the end is in
+  /// `END_OF_CONTACTS`, so wait for that. A radio that never answers costs
+  /// [contactSyncTimeout] rather than hanging.
   Future<void> refreshDeviceContacts() async {
     if (!isReady) return;
-    await send(MeshcoreFrameCodec.deviceQuery());
-    await requestContacts();
+    if (_contactSyncDone != null) return _contactSyncDone!.future;
+    final Completer<void> done = Completer<void>();
+    _contactSyncDone = done;
+    try {
+      await send(MeshcoreFrameCodec.deviceQuery());
+      await requestContacts();
+      // A radio that honours the request answers CONTACTS_START at once. If it
+      // never starts, waiting the whole timeout only delays the caller's
+      // refusal, so give it a short window to begin and then wait for the end.
+      for (int i = 0; i < 30 && _probing == false && !done.isCompleted; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+      if (!_probing) return;
+      // The watchdog owns the retries and completes `done` when it stops; the
+      // outer ceiling is only a guard against a bug in it.
+      await done.future.timeout(
+          (_contactIdleOverride ?? contactIdleTimeout) *
+              (contactSyncAttempts + 2),
+          onTimeout: () {});
+    } finally {
+      if (identical(_contactSyncDone, done)) _contactSyncDone = null;
+    }
+  }
+
+  /// The `lastmod` the radio reported when it last finished streaming its
+  /// contact table. Sent back as `since` so a reconnect asks for changes
+  /// rather than the whole table.
+  int _contactsSince = 0;
+  bool _contactsSyncRequested = false;
+
+  /// The incremental-sync token, for the test that proves a reconnect asks for
+  /// changes rather than the whole table.
+  @visibleForTesting
+  int get contactsSinceForTest => _contactsSince;
+  static const String _kContactsSince = 'mm.contacts.since';
+
+  Future<void> _persistContactsSince(int lastmod) async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    await Prefs.setInt(p, _kContactsSince, lastmod);
+  }
+
+  Future<void> _loadContactsSince() async {
+    final SharedPreferences p = await SharedPreferences.getInstance();
+    _contactsSince = p.getInt(_kContactsSince) ?? 0;
+  }
+
+  /// The in-flight load of the persisted table, so the first connect waits for
+  /// it instead of reading an empty table as "we hold nothing".
+  Future<void>? _contactsLoad;
+
+  void _loadSyncedContacts() {
+    _contactsLoad = () async {
+      final List<Contact> rows = await ContactStore.load();
+      if (rows.isEmpty) return;
+      // The user's reconciled-away keys are stale rows on the radio too, so
+      // they are dropped on the way in for the same reason `_ingestNode` drops
+      // them: a persisted table can still carry a key the radio has since
+      // removed.
+      final Set<String> gone = await SupersededStore.load();
+      bool added = false;
+      for (final Contact c in rows) {
+        final String hex = _hex(c.publicKey);
+        if (gone.contains(hex) || _superseded.contains(hex)) continue;
+        if (_contacts.containsKey(hex)) continue;
+        _contacts[hex] = c;
+        // The node entry too, through the same mapping a streamed contact uses:
+        // otherwise the fabric starts empty on every launch and the pickers
+        // offer only what has advertised since.
+        _nodes.putIfAbsent(hex, () => _nodeFromContact(c));
+        added = true;
+      }
+      if (added) {
+        // The prefix cache is keyed on this revision, and a tree built before
+        // the persisted table finished loading would otherwise keep a partial
+        // prefix map until the next advert. Every other write to `_nodes` goes
+        // through `_nodesChanged`; this one did not.
+        _nodesChanged();
+        notifyListeners();
+      }
+    }();
+  }
+
+  Timer? _contactsSaveTimer;
+
+  /// Persist the table once the burst settles: a sync streams one frame per
+  /// contact, and sealing a 200-row document on every frame would cost more
+  /// than the sync.
+  void _saveContactsSoon() {
+    _contactsSaveTimer?.cancel();
+    _contactsSaveTimer = Timer(const Duration(seconds: 3), () {
+      unawaited(ContactStore.save(_contacts.values));
+    });
+  }
+
+  /// The radio's default flood scope name, or null while it is unknown and ''
+  /// when the radio answered that none is set. A channel send inherits it, so
+  /// "who receives this" cannot be answered without it.
+  String? _floodScopeName;
+  String? get floodScopeName => _floodScopeName;
+  bool _floodScopeAsked = false;
+
+  void _requestFloodScope() {
+    if (_floodScopeAsked) return;
+    _floodScopeAsked = true;
+    unawaited(send(MeshcoreFrameCodec.getDefaultFloodScope())
+        .catchError((Object _) => _floodScopeAsked = false));
+  }
+
+  // --- Sharing a contact as text ----------------------------------------
+  //
+  // `CMD_EXPORT_CONTACT` (0x11) answers with the contact's advert packet, which
+  // is the same bytes the radio puts on air, so the link that carries it is
+  // `meshcore://<hex>` and the receiving radio imports it as if it had heard the
+  // advert. That is the whole point of the format: it is the radio's own packet,
+  // not an app-specific record, so a contact shared from here can be imported by
+  // any MeshCore client. The reply carries no key, so one export is in flight at
+  // a time.
+
+  static const String contactLinkPrefix = 'meshcore://';
+
+  bool _exportContactInFlight = false;
+
+  /// The contact as a shareable link, or null when the radio did not answer.
+  Future<String?> exportContactLink(String pubKeyHex) async {
+    if (!isReady || _exportContactInFlight) return null;
+    final String hex = pubKeyHex.toLowerCase();
+    if (hex.length != kPubKeySize * 2) return null;
+    final Uint8List key = Uint8List.fromList(<int>[
+      for (int i = 0; i < hex.length; i += 2)
+        int.parse(hex.substring(i, i + 2), radix: 16),
+    ]);
+    _exportContactInFlight = true;
+    try {
+      final Future<MeshcoreInbound> reply = inboundFrames
+          .firstWhere((MeshcoreInbound f) => f is ExportedContactFrame)
+          .timeout(const Duration(seconds: 4));
+      await send(MeshcoreFrameCodec.exportContact(pubKey: key));
+      final MeshcoreInbound f = await reply;
+      if (f is! ExportedContactFrame || f.advertPacket.isEmpty) return null;
+      return '$contactLinkPrefix${_hex(f.advertPacket)}';
+    } catch (_) {
+      return null;
+    } finally {
+      _exportContactInFlight = false;
+    }
+  }
+
+  /// Import a contact from a `meshcore://` link (or the bare hex of an advert
+  /// packet). Returns false when the text is not a link, the packet is outside
+  /// the size the firmware accepts, or the radio refuses it.
+  ///
+  /// The radio validates the packet itself and answers `ERR_CODE_ILLEGAL_ARG`
+  /// for a bad advert, so a well-formed but wrong packet is its refusal to give.
+  Future<bool> importContactLink(String text) async {
+    if (!isReady) return false;
+    final Uint8List? packet = parseContactLink(text);
+    if (packet == null) return false;
+    try {
+      await send(MeshcoreFrameCodec.importContact(packet));
+      // The radio stores it; read the table back so the app can offer it.
+      await requestContacts();
+      return true;
+    } catch (_) {
+      _emitTaskError('importContact');
+      return false;
+    }
+  }
+
+  /// The advert packet inside a contact link, or null. Accepts the `meshcore://`
+  /// form and a bare even-length hex string, because a person may paste either.
+  static Uint8List? parseContactLink(String text) {
+    String t = text.trim();
+    if (t.toLowerCase().startsWith(contactLinkPrefix)) {
+      t = t.substring(contactLinkPrefix.length);
+    }
+    t = t.replaceAll(RegExp(r'[\s:,-]'), '');
+    if (t.length.isOdd || t.length < kImportContactMin * 2) return null;
+    if (t.length > kImportContactMax * 2) return null;
+    if (!RegExp(r'^[0-9a-fA-F]+$').hasMatch(t)) return null;
+    final Uint8List out = Uint8List(t.length ~/ 2);
+    for (int i = 0; i < out.length; i++) {
+      out[i] = int.parse(t.substring(i * 2, i * 2 + 2), radix: 16);
+    }
+    return out;
+  }
+
+  // --- A repeater session --------------------------------------------------
+  //
+  // `CMD_SEND_LOGIN` (0x1A) opens a session on a repeater or room server with a
+  // shared secret, and the verdict arrives as `PUSH_CODE_LOGIN_SUCCESS` (0x85,
+  // carrying the permission byte) or `_FAIL` (0x86). `CMD_LOGOUT` (0x1D) closes
+  // it. Both replies name the node's prefix, so a session cannot be
+  // mis-attributed to another repeater.
+  //
+  // What a session *permits* is the radio's business: this only reports what it
+  // said. It is also the prerequisite for a command console, which is not built:
+  // there is no `CMD_RUN_CLI_COMMAND` builder in the codec yet, so this is the
+  // whole of the session and not a half-built console.
+
+  /// Signs in to a repeater. Null when the radio never answered; a
+  /// [LoginResult] with `success == false` is the repeater refusing.
+  Future<LoginResult?> loginRepeater(String pubKeyHex, String password,
+      {Duration timeout = const Duration(seconds: 10)}) async {
+    if (!isReady) return null;
+    final String hex = pubKeyHex.toLowerCase();
+    if (hex.length != kPubKeySize * 2) return null;
+    final String prefix = hex.substring(0, kPubKeyPrefixSize * 2);
+    final Uint8List key = Uint8List.fromList(<int>[
+      for (int i = 0; i < hex.length; i += 2)
+        int.parse(hex.substring(i, i + 2), radix: 16),
+    ]);
+    try {
+      final Uint8List frame =
+          MeshcoreFrameCodec.sendLogin(key, password); // refuses a bad password
+      final Future<MeshcoreInbound> reply = inboundFrames
+          .firstWhere((MeshcoreInbound f) =>
+              f is LoginResultFrame &&
+              _hex(f.result.pubKeyPrefix) == prefix)
+          .timeout(timeout);
+      await send(frame);
+      final MeshcoreInbound f = await reply;
+      return f is LoginResultFrame ? f.result : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Ends a repeater session. The radio answers OK even for an unknown key, so
+  /// there is nothing to wait for.
+  Future<void> logoutRepeater(String pubKeyHex) async {
+    if (!isReady) return;
+    final String hex = pubKeyHex.toLowerCase();
+    if (hex.length != kPubKeySize * 2) return;
+    try {
+      await send(MeshcoreFrameCodec.logout(<int>[
+        for (int i = 0; i < hex.length; i += 2)
+          int.parse(hex.substring(i, i + 2), radix: 16),
+      ]));
+    } catch (_) {
+      _emitTaskError('logout');
+    }
+  }
+
+  // --- The radio's own alert outputs ------------------------------------
+  //
+  // `CMD_RUN_CLI_COMMAND` (0x42) is the radio's whole shell, which is why the
+  // app never sends text through it. `packages/meshcore` already models a
+  // closed whitelist of commands (`RadioCliCommand`, D8.24) and refuses
+  // everything else, including `remote`; this is the half that reaches the
+  // radio, and the only way to build a frame is one of those typed objects.
+  //
+  // Two things make the answer awkward. The reply is zero or more
+  // `RESP_CODE_CLI_REPLY` (0x1D) frames and then a bare OK or ERR, so the text
+  // and the verdict arrive separately. And the OK/ERR carries no tag, so it is
+  // claimed through the ledger like every other command — the two-character
+  // correlation prefix only tags the text lines.
+
+  /// Marker id in [_ledger] for a CLI command waiting for its OK/ERR.
+  static const String _cliMarker = '\u0000cli';
+
+  bool _cliInFlight = false;
+  Completer<MeshcoreInbound>? _cliAnswer;
+
+  /// True while a CLI command is waiting for its answers.
+  bool get cliBusy => _cliInFlight;
+
+  /// Run one whitelisted CLI command and collect what the radio says.
+  ///
+  /// One command at a time: the reply text is matched only by the two-character
+  /// prefix this call chose, and two overlapping calls would interleave their
+  /// lines with no way to tell them apart. A second call while one is waiting is
+  /// refused rather than queued, because the caller is a tap.
+  Future<RadioCliResult> runRadioCli(
+    RadioCliCommand command, {
+    Duration timeout = const Duration(seconds: 6),
+    String correlation = 'a1',
+  }) async {
+    if (!isReady) return const RadioCliUnavailable();
+    if (_cliInFlight) return const RadioCliBusy();
+    if (!RadioCliCommand.isCorrelationTag(correlation)) {
+      throw ArgumentError.value(
+          correlation, 'correlation', 'not a two-character tag');
+    }
+    _cliInFlight = true;
+    final Completer<MeshcoreInbound> answer = Completer<MeshcoreInbound>();
+    _cliAnswer = answer;
+    final List<String> lines = <String>[];
+    StreamSubscription<MeshcoreInbound>? watch;
+    _registerMarker(_cliMarker, CommandAnswer.ok);
+    try {
+      watch = inboundFrames.listen((MeshcoreInbound f) {
+        if (f is! CliReplyFrame) return;
+        final String text = f.text;
+        if (!text.startsWith(correlation)) return;
+        final String line = text.substring(correlation.length).trim();
+        if (line.isNotEmpty) lines.add(line);
+      });
+      await send(command.bytes(correlation: correlation), gated: true);
+      final MeshcoreInbound verdict = await answer.future.timeout(timeout);
+      final String said = lines.join('\n');
+      if (verdict is ErrorFrame) {
+        return RadioCliRejected(code: verdict.code, text: said);
+      }
+      return RadioCliAnswered(text: said);
+    } on TimeoutException {
+      // The text that did arrive is still worth showing: a radio that streams
+      // half an answer and then goes quiet has told the reader something.
+      return RadioCliSilent(partial: lines.join('\n'));
+    } catch (e) {
+      return RadioCliUnavailable(detail: '$e');
+    } finally {
+      // Not awaited: a broadcast subscription stops delivering the moment
+      // `cancel` is called, and the returned future is a formality. Awaiting it
+      // held the caller's continuation open in a widget test's zone until the
+      // test ended, which made the screen look as if it never answered.
+      unawaited(watch?.cancel());
+      _cliAnswer = null;
+      _dropPending(_cliMarker);
+      _cliInFlight = false;
+    }
+  }
+
+  void _completeCli(MeshcoreInbound f) {
+    final Completer<MeshcoreInbound>? c = _cliAnswer;
+    _cliAnswer = null;
+    if (c != null && !c.isCompleted) c.complete(f);
+  }
+
+  // --- The radio's pairing PIN ------------------------------------------
+  //
+  // `CMD_SET_DEVICE_PIN` (0x25): 0 clears the PIN, otherwise exactly six digits.
+  // It is the radio's own gate on a *new* Bluetooth pairing, separate from its
+  // list of bonded devices; the app already shows the current value out of
+  // `DEVICE_INFO`, so a setter is the missing half.
+
+  Future<bool> setDevicePin(int pin) async {
+    if (!isReady) return false;
+    if (pin != 0 && (pin < 100000 || pin > 999999)) return false;
+    try {
+      await send(MeshcoreFrameCodec.setDevicePin(pin));
+      // The answer is a bare OK; re-query device info so the readout is the
+      // radio's value rather than the one just typed.
+      await send(MeshcoreFrameCodec.deviceQuery());
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _emitTaskError('setDevicePin');
+      return false;
+    }
+  }
+
+  // --- Which radio profile a frame arrived on ---------------------------
+  //
+  // A two-profile radio splits one antenna's transmit time between two channel
+  // configurations, and tags each received frame with the profile that heard it
+  // (`RxVia`). The app decodes that tag and, until this, only used it to label
+  // one diagnostic line. It is the one honest thing the app can say about a
+  // second profile: it cannot read that profile's parameters and will not write
+  // them, because the second profile takes 96-99 % of the primary's airtime and
+  // that is a decision for the radio's own configuration, not for a phone
+  // gesture.
+
+  DateTime? _radio2LastSeen;
+
+  /// When a frame was last heard on the **second** radio profile, or null when
+  /// none has been since this session started.
+  DateTime? get radio2LastSeen => _radio2LastSeen;
+
+  /// True when this radio is running a second profile, evidenced by a frame it
+  /// carried. Absence is not evidence of a single profile: a quiet second
+  /// profile looks the same as none.
+  bool get radio2Seen => _radio2LastSeen != null;
+
+  void _trackRadioProfiles(MeshcoreInbound f) {
+    final RxVia via = switch (f) {
+      RawDataFrame(:final RxVia via) => via,
+      ChannelDataFrame(:final RxVia via) => via,
+      _ => RxVia.unknown,
+    };
+    if (via != RxVia.secondary) return;
+    _radio2LastSeen = DateTime.now();
+  }
+
+  // --- The radio's own airtime limit ------------------------------------
+  //
+  // `RESP_CODE_TUNING_PARAMS` (0x17) carries `rx_delay_base` and `airtime_factor`
+  // as thousandths. `airtime_factor` is the radio's own duty-cycle rule: it may
+  // transmit `1 / (1 + af)` of the time. The app's meter invents a budget of its
+  // own, so showing the radio's actual figure is the only way the two can be
+  // reconciled.
+
+  TuningParams? _tuningParams;
+
+  /// The radio's tuning, or null while it has not answered.
+  TuningParams? get tuningParams => _tuningParams;
+
+  void _trackTuningParams(MeshcoreInbound f) {
+    if (f is! TuningParamsFrame) return;
+    _tuningParams = f.params;
+  }
+
+  Future<void> requestTuningParams() async {
+    if (!isReady) return;
+    try {
+      await send(MeshcoreFrameCodec.getTuningParams());
+    } catch (_) {
+      _emitTaskError('getTuningParams');
+    }
+  }
+
+  // --- The frequency ranges the radio will repeat on -------------------
+  //
+  // `CMD_GET_ALLOWED_REPEAT_FREQ` (0x1A) is the radio's own rule about which
+  // bands it may relay in, as a list of kHz ranges. It is read-only and worth
+  // showing: it is the reason a radio hears a channel and will not repeat it,
+  // which is otherwise indistinguishable from a range problem.
+
+  List<({int lowerKhz, int upperKhz})>? _allowedRepeatFreq;
+
+  /// The ranges the radio will repeat on, in kHz, or null while it has not
+  /// answered. An empty list means it reported none.
+  List<({int lowerKhz, int upperKhz})>? get allowedRepeatFreq =>
+      _allowedRepeatFreq;
+
+  void _trackAllowedRepeatFreq(MeshcoreInbound f) {
+    if (f is! UnsupportedFrame) return;
+    if (f.opcode != MeshcoreResponse.allowedRepeatFreq.code) return;
+    _allowedRepeatFreq = MeshcoreFrameCodec.decodeAllowedRepeatFreq(f.raw);
+  }
+
+  Future<void> requestAllowedRepeatFreq() async {
+    if (!isReady) return;
+    try {
+      await send(MeshcoreFrameCodec.getAllowedRepeatFreq());
+    } catch (_) {
+      _emitTaskError('getAllowedRepeatFreq');
+    }
+  }
+
+  void _trackFloodScope(MeshcoreInbound f) {
+    if (f is! UnsupportedFrame) return;
+    if (f.opcode != MeshcoreResponse.defaultFloodScope.code) return;
+    final ({String name, Uint8List key})? scope =
+        MeshcoreFrameCodec.decodeDefaultFloodScope(f.raw);
+    _floodScopeName = scope?.name ?? '';
+    notifyListeners();
+  }
+
+  /// Ask for the table once per connection, incrementally when we know the
+  /// radio's last `lastmod`.
+  Future<void> _syncContactsOnConnect() async {
+    if (!isReady || _contactsSyncRequested) return;
+    _contactsSyncRequested = true;
+    try {
+      // `since` is only meaningful when the app still holds the table it
+      // describes. With an empty table an incremental request answers with the
+      // handful of contacts changed since the last session, so the app kept an
+      // empty list while the radio reported 193 of 350: Ping, Trace and every
+      // telemetry tool then said "no synced contacts yet".
+      // Wait for the persisted table: asking for `since` is only right when the
+      // table it describes is in memory, and the load is the only thing that
+      // puts it there. A load that fails leaves the table empty, which the rule
+      // below then reads as "ask for everything".
+      final Future<void>? load = _contactsLoad;
+      if (load != null) await load;
+      await requestContacts(
+          since: (_contactsSince == 0 || _contacts.isEmpty)
+              ? null
+              : _contactsSince);
+    } catch (_) {
+      // A refused or unsent request is not fatal: the device-contacts screen
+      // can ask again, and the next connect retries.
+      _contactsSyncRequested = false;
+    }
   }
 
   void _trackContactProbe(MeshcoreInbound f) {
@@ -3107,10 +6799,47 @@ class MeshcoreController extends ChangeNotifier {
       _deviceContactCount = f.count;
       _probedContacts.clear();
       _probing = true;
+      _contactSyncAttempt = 0;
+      _contactsIncomplete = false;
+      _armContactIdle();
     } else if (f is ContactFrame && _probing) {
       _probedContacts.add(f.contact);
+      // The wait is for the *next* frame, not for a fixed window: a full table
+      // is hundreds of frames and a slow link can take longer than any single
+      // timeout, so each arrival pushes the deadline out.
+      _armContactIdle();
     } else if (f is EndOfContactsFrame) {
-      _probing = false;
+      // The radio finished the table, so whatever an earlier stalled attempt
+      // missed is now supplied.
+      _contactsIncomplete = false;
+      // An incremental sync asks only for contacts modified since the last one,
+      // and that watermark is persisted. When the radio's table is rebuilt
+      // underneath it — a reflash, a factory reset, a clock that moved — the
+      // watermark is newer than every row, the radio answers with nothing, and
+      // the app holds an empty table while the radio holds hundreds. Every DM
+      // from a peer then fails, because the firmware only delivers from senders
+      // in its own table, and the app cannot see that it is the one that is
+      // wrong. The count in CONTACTS_START is the check: if the radio says it
+      // has more than we hold, ask for the whole table once.
+      final int? claimed = _deviceContactCount;
+      if (!_fullResyncTried &&
+          claimed != null &&
+          claimed > _contacts.length &&
+          _contactsSince > 0) {
+        _fullResyncTried = true;
+        _contactsSince = 0;
+        unawaited(_persistContactsSince(0));
+        unawaited(requestContacts());
+      }
+      _completeContactSync();
+      // The radio states the newest `lastmod` it sent, so the next request can
+      // be incremental. Persisted, because a reconnect after a restart is the
+      // common case and re-streaming the whole table costs BLE seconds.
+      final int lastmod = f.mostRecentLastMod;
+      if (lastmod > _contactsSince) {
+        _contactsSince = lastmod;
+        unawaited(_persistContactsSince(lastmod));
+      }
     }
   }
 
@@ -3129,6 +6858,11 @@ class MeshcoreController extends ChangeNotifier {
   /// The raw synced [Contact] for [pubKeyHex], or null if the node is
   /// only advert-heard (not a synced contact on the device).
   Contact? contactRecordFor(String pubKeyHex) => _contacts[pubKeyHex];
+
+  /// Every contact the radio has synced, as the app sees them (superseded
+  /// keys hidden). A snapshot, not a live view.
+  List<Contact> get syncedContacts =>
+      List<Contact>.unmodifiable(_contacts.values);
 
   /// True when the node is a synced contact — a prerequisite for any
   /// telemetry exchange (telemetry is contact-only).
@@ -3172,12 +6906,21 @@ class MeshcoreController extends ChangeNotifier {
           n?.longitude != null ? (n!.longitude! * 1e6).round() : 0,
       lastMod: now,
     );
+    // The radio answers OK or ERR, and a transport-level success is not an add:
+    // `send` throwing only means the frame did not reach the link. The marker
+    // puts the answer where every other command's answer goes, so `ERR_CODE_TABLE_FULL`
+    // (3) becomes state the device page can show instead of a silent refusal,
+    // and a caller is not blocked waiting for a reply that is normally immediate.
+    _registerMarker(_contactAddMarker, CommandAnswer.ok);
+    _contactAddPending = hex;
     try {
       await send(MeshcoreFrameCodec.addUpdateContact(c));
       _contacts[hex] = c; // reflect locally; device confirms on next sync
+      _saveContactsSoon();
       notifyListeners();
       return true;
     } catch (_) {
+      _dropPending(_contactAddMarker);
       _emitTaskError('addContact');
       return false;
     }
@@ -3199,6 +6942,8 @@ class MeshcoreController extends ChangeNotifier {
     try {
       await send(MeshcoreFrameCodec.removeContact(pub));
       _contacts.remove(hex);
+      _clearContactsFull();
+      _saveContactsSoon();
       notifyListeners();
     } catch (_) {
       _emitTaskError('removeContact');
@@ -3224,6 +6969,8 @@ class MeshcoreController extends ChangeNotifier {
     _contacts.clear();
     _probedContacts.clear();
     _deviceContactCount = 0;
+    _clearContactsFull();
+    _saveContactsSoon();
     notifyListeners();
     return n;
   }
@@ -3326,8 +7073,17 @@ class MeshcoreController extends ChangeNotifier {
   }
 
   /// Broadcast our own advert so neighbours discover us.
-  Future<void> sendSelfAdvert({bool flood = true}) =>
-      send(MeshcoreFrameCodec.sendSelfAdvert(flood: flood));
+  Future<void> sendSelfAdvert({bool flood = true}) async {
+    // The firmware answers with OK; register it so that OK is not
+    // credited to a channel message waiting for its own.
+    _registerMarker(_advertSendMarker, CommandAnswer.ok);
+    try {
+      await send(gated: true, MeshcoreFrameCodec.sendSelfAdvert(flood: flood));
+    } catch (_) {
+      _dropPending(_advertSendMarker);
+      rethrow;
+    }
+  }
 
   bool _scanning = false;
   Timer? _scanTimer;
@@ -3354,8 +7110,9 @@ class MeshcoreController extends ChangeNotifier {
       await sendSelfAdvert(flood: true);
       await requestContacts();
       // Pull anything the device has already queued (heard adverts
-      // may be sitting behind MSGS_WAITING, not pushed live).
-      _drainStart();
+      // may be sitting behind MSGS_WAITING, not pushed live). A scan
+      // reaches back over whatever accumulated, so this is backlog.
+      _drainStart(backlog: true);
     } catch (_) {
       // Surface via state/error elsewhere; scan window still elapses.
     }
@@ -3368,8 +7125,16 @@ class MeshcoreController extends ChangeNotifier {
   /// auto-drains). Respects a user-initiated [disconnect].
   Future<void> onAppResumed() async {
     if (_manualDisconnect) return; // user chose to stay disconnected
+    // A refused service start is retryable once the app is in the foreground,
+    // which is the only place Android allows it.
+    if (_bgKeepaliveEnabled && isReady) {
+      // Every resume is a chance Android will allow the start, and a chance to
+      // notice the service died while the app was away.
+      unawaited(_ensureKeepalive());
+      _syncKeepaliveWatchdog();
+    }
     if (isReady) {
-      _drainStart(); // drain backlog buffered while backgrounded
+      _drainStart(backlog: true); // buffered while backgrounded
       return;
     }
     if (_connecting) return; // a (re)connect is already in flight
@@ -3386,6 +7151,30 @@ class MeshcoreController extends ChangeNotifier {
   /// not a local one), so the dashboard would otherwise still read
   /// "READY" until something else triggered a rebuild. Setting
   /// state inline is idempotent with any later stream-driven update.
+  /// Let go of the radio because another app asked for it.
+  ///
+  /// Not a disconnect the operator asked for and not a failure: the flag is what suppresses the
+  /// retry ladder, so the link stays down until [resumeRadio] or a deliberate connect.
+  Future<void> yieldRadio() async {
+    if (_yielded) return;
+    _yielded = true;
+    await disconnect();
+    _yielded = true;
+    notifyListeners();
+  }
+
+  /// The radio is free again: take it back the way a launch would.
+  void resumeRadio() {
+    if (!_yielded) return;
+    _yielded = false;
+    _manualDisconnect = false;
+    _gaveUp = false;
+    _reconnectAttempt = 0;
+    _reconnectGen++;
+    notifyListeners();
+    if (hasPairedDevice) unawaited(connect(isRetry: true));
+  }
+
   Future<void> disconnect() async {
     _manualDisconnect = true;
     _reconnectGen++; // cancel any pending scheduled retry
@@ -3396,7 +7185,45 @@ class MeshcoreController extends ChangeNotifier {
     await _transport?.close();
     _transport = null;
     _state = MeshcoreConnectionState.disconnected;
+    // A disconnect the app starts is as final as one the radio reports, and only
+    // the reported one used to void the ledger. `BleMeshcoreTransport.close`
+    // cancels its own connection subscription before disconnecting, so the `false`
+    // never reached the connection: after a local disconnect the ledger, the
+    // contact-sync flags and `selfInfo` all still described the closed link, and a
+    // reconnect inside the watchdog window credited the first answer on the new
+    // link to a command sent over the old one.
+    _voidPendingCommands('disconnected before the radio answered');
+    _contactIdleTimer?.cancel();
+    _contactIdleTimer = null;
+    _probing = false;
+    _contactsSyncRequested = false;
+    _floodScopeAsked = false;
     notifyListeners();
+  }
+
+  /// Every queued command loses its answer when the link goes.
+  ///
+  /// Extracted so the two paths that end a link — the radio reporting it and the
+  /// app closing it — cannot drift apart, which is exactly how the local one came
+  /// to keep a ledger alive.
+  void _voidPendingCommands(String why) {
+    for (final String id in _ledger.reset()) {
+      // A marker dropped by the link is not an answer. A chat row waiting on it
+      // reads unknown rather than being left in `sending` forever.
+      if (id == _channelDataMarker) {
+        _completeChannelData(const DecodeFailure(
+          MeshcoreDecodeError(DecodeErrorKind.empty, 'link lost'),
+        ));
+      } else if (id == _configMarker) {
+        _completeRadioConfig(const RadioAnswer.silent());
+      } else if (id == _rawSendMarker) {
+        abandonRawSend();
+      } else if (id == _toolSendMarker || id == _advertSendMarker) {
+        _dropPending(id);
+      } else {
+        _uncertainOutgoing(id, why);
+      }
+    }
   }
 
   /// Label of the saved paired device (loaded lazily for the UI).
@@ -3405,9 +7232,8 @@ class MeshcoreController extends ChangeNotifier {
   bool get hasPairedDevice => _pairedName != null;
 
   /// Saved remote ID for the currently-paired device, or null when
-  /// nothing is paired. Hydrated alongside [_pairedName]; used by
-  /// the device-manager UI to highlight which history row is
-  /// "current".
+  /// nothing is paired. Hydrated alongside [_pairedName]; it is what
+  /// [forgetDevice] clears and what the OS bond is forgotten under.
   String? get pairedRemoteId => _pairedRemoteId;
   String? _pairedRemoteId;
 
@@ -3444,14 +7270,39 @@ class MeshcoreController extends ChangeNotifier {
   /// auto-reconnect to it (direct connect, scan fallback). Safe to
   /// call when nothing is paired (no-op).
   Future<void> autoConnectIfPaired() async {
-    // Eagerly hydrate the history alongside the active pair so the
-    // device-manager sheet has its "Recently paired" list ready on
-    // first open — no second roundtrip needed.
-    final PairedDevice? p = await PairedDeviceStore.read();
+    // **The radio may already be somebody else's.** Read the lease before reaching for a paired
+    // companion: the request that set it may have arrived while this process was not running, and
+    // spending the first minute of another app's session trying to take the radio back is how both
+    // apps end up unusable.
+    // Read, not awaited: [RadioLease.refresh] runs in the boot chain before the
+    // first connect, so by here the answer is already in hand. Awaiting the
+    // channel here deadlocked every widget test that auto-connects.
+    if (RadioLease.yieldedNow) {
+      _yielded = true;
+      notifyListeners();
+      return;
+    }
+    // Eagerly hydrate the history alongside the active pair: it is the list of
+    // bonds this app owns, which is what `adoptableBond` may adopt and what
+    // forgetting a radio removes from.
+    PairedDevice? p = await PairedDeviceStore.read();
     _pairedHistory = await PairedDeviceHistoryStore.load();
+    // **A bond is a pairing, whichever menu made it.** Pairing a radio from
+    // the phone's own Bluetooth settings writes the OS bond and nothing here,
+    // so the app used to start saying "no device paired" for a radio Android
+    // was already bonded to — two states for one pairing. Adopt the OS bond
+    // and persist it, so from now on both routes read the same.
+    p ??= await BleConnector.adoptableBond(
+      historyIds: _pairedHistory
+          .map((PairedDeviceHistoryEntry e) => e.remoteId)
+          .toList(),
+    );
     if (p == null) {
       notifyListeners();
       return;
+    }
+    if (p.remoteId != _pairedRemoteId) {
+      await PairedDeviceStore.save(p.remoteId, p.name);
     }
     _pairedName = p.name;
     _pairedRemoteId = p.remoteId;
@@ -3466,7 +7317,23 @@ class MeshcoreController extends ChangeNotifier {
   /// breadcrumb pointing back at it.
   Future<void> forgetDevice() async {
     final String? rid = _pairedRemoteId;
+    // The table and the token that describes it belong to the radio being
+    // forgotten. Leaving them behind would let the next radio be searched with
+    // a token from this one, which is the same empty-table bug by another road.
+    _contactsSaveTimer?.cancel();
+    _contacts.clear();
+    _contactsSince = 0;
+    _deviceContactCount = null;
+    _contactsFull = false;
     await PairedDeviceStore.clear();
+    // Not awaited: forgetting a radio must not depend on a sealed store that
+    // may be unavailable. The in-memory table is already gone, and anything the
+    // clear leaves behind is overwritten by the next radio's sync.
+    unawaited(ContactStore.clear().catchError((Object _) {}));
+    // Forget the OS bond too, not just our record of it. Leaving it behind
+    // would let [autoConnectIfPaired] adopt the radio straight back on the
+    // next start — the user pressed Forget and would see it return.
+    await BleConnector.forgetBond(rid);
     if (rid != null) await PairedDeviceHistoryStore.remove(rid);
     _pairedName = null;
     _pairedRemoteId = null;
@@ -3526,9 +7393,144 @@ class MeshcoreController extends ChangeNotifier {
     await connect();
   }
 
+  /// Frames where at least one tracker threw, so the frame arrived in part.
+  ///
+  /// The trackers below are functions of the frame plus the app's stores and
+  /// none of them is sandboxed, so one throw used to discard every tracker
+  /// after it *and* the notification at the end: a message could be recorded
+  /// and never heat-mapped, or a delivery state left half-updated, with an
+  /// uncaught async error as the only trace. Each tracker now runs on its own
+  /// ([runFrameTrackers]); this counts the frames that lost one. Per session,
+  /// and Diagnostics says nothing while it is zero, like every other counter
+  /// there.
+  int get framesDropped => _framesDropped;
+  int _framesDropped = 0;
+
+  /// One received frame, through every tracker, then one notification.
+  ///
+  /// `_expireCommands` runs first and inside the same isolation: a command
+  /// whose reply waited past the ledger's timeout cannot hold the head of the
+  /// answer order any more, and that matters more than the rest of the frame
+  /// when a tracker is the thing that broke.
+  void _processInbound(MeshcoreInbound f) {
+    _lastFrame = f;
+    final List<void Function(MeshcoreInbound)> trackers =
+        <void Function(MeshcoreInbound)>[
+      // A command that has waited past the ledger's timeout cannot hold the
+      // head of the answer order any more.
+      (MeshcoreInbound _) => _expireCommands(),
+      _trackDeviceClock,
+      _trackBattery,
+      _trackDeviceInfo,
+      _trackCustomVars,
+      _trackFloodScope,
+      _trackAllowedRepeatFreq,
+      _trackTuningParams,
+      _trackRadioProfiles,
+      _trackTelemetry,
+      // R25+1 — own movement trail. Every inbound frame might have bumped
+      // ownLocation (SelfInfoFrame's lat/lon), so sample here. Deduped
+      // internally by movement threshold.
+      (MeshcoreInbound _) => _trackOwnLocationForTrail(),
+      _ingestKnown,
+      _trackContactProbe,
+      _trackContactLifecycle,
+      _trackAutoAddConfig,
+      _ingestDm,
+      _maybeDrain,
+      _ingestNode,
+      _ingestChat,
+      _ingestChannelData,
+      _publishRawData,
+      _trackMessageHeat,
+      _trackDelivery,
+      _logEvent,
+    ];
+    final int lost = runFrameTrackers(
+      trackers,
+      f,
+      onFailure: (Object error, StackTrace stack) =>
+          AppErrors.record(error, stack, where: 'frame'),
+    );
+    if (lost > 0) _framesDropped++;
+    _notifyForFrame(f);
+  }
+
+  /// Notify at the leading edge of a burst, then at most once per window.
+  ///
+  /// Every inbound frame calls this and 43 widgets watch the whole controller,
+  /// so a contact sync of 350 nodes rebuilt all of them 350 times in a few
+  /// seconds, which is the jank a user reads as "the app is busy".
+  ///
+  /// Two things travel on this notification and cannot be allowed to wait:
+  /// a listener that *reacts* to a frame (the SOS watchdog classifies a
+  /// refusal from the message row, the CLI path resolves from the ledger) and
+  /// any frame the user just caused. Those notify synchronously — see
+  /// [notifyNow]. Only the bulk streams, which arrive as a flood and whose
+  /// readers are all `watch`ing widgets, are coalesced.
+  ///
+  /// The timer exists only while a burst is being coalesced, which matters
+  /// twice: an isolated frame must never leave a timer armed (a pending timer
+  /// fails a widget test and wakes a phone), and the trailing notify is what
+  /// guarantees the last frame's state is ever rendered.
+  static const Duration _frameNotifyWindow = Duration(milliseconds: 50);
+  Timer? _frameNotifyTimer;
+  DateTime? _lastFrameNotifyAt;
+
+  /// Frames whose delivery changes something a listener acts on, rather than
+  /// something a widget draws. A command answer, a send confirmation and the
+  /// self-info handshake all belong here: they are the ones a caller is
+  /// awaiting, and delaying them by a notification window would make the app
+  /// look slower than it is.
+  bool _answersSomebodyNow(MeshcoreInbound f) =>
+      f is OkFrame ||
+      f is ErrorFrame ||
+      f is MsgSentFrame ||
+      f is AckFrame ||
+      f is SelfInfoFrame ||
+      f is DisabledFrame;
+
+  void _notifyForFrame(MeshcoreInbound f) {
+    if (_answersSomebodyNow(f)) {
+      _frameNotifyTimer?.cancel();
+      _frameNotifyTimer = null;
+      _lastFrameNotifyAt = DateTime.now();
+      notifyListeners();
+      return;
+    }
+    final DateTime now = DateTime.now();
+    final DateTime? last = _lastFrameNotifyAt;
+    if (last == null || now.difference(last) >= _frameNotifyWindow) {
+      _frameNotifyTimer?.cancel();
+      _frameNotifyTimer = null;
+      _lastFrameNotifyAt = now;
+      notifyListeners();
+      return;
+    }
+    // Inside the window: this frame shares the burst's trailing notify.
+    if (_frameNotifyTimer != null) return;
+    _frameNotifyTimer = Timer(_frameNotifyWindow - now.difference(last), () {
+      _frameNotifyTimer = null;
+      _lastFrameNotifyAt = DateTime.now();
+      notifyListeners();
+    });
+  }
+
+  /// Late notifications are dropped rather than thrown, by [SafeNotifier]:
+  /// several paths can land after disposal — the constructor's unawaited
+  /// `_meshbook.load()` / `_dmReadStore.load()` chains, and any `await` still
+  /// in flight when the screen goes away. `ChangeNotifier` asserts in debug on
+  /// that, so "construct a controller, dispose it, keep going" (what a widget
+  /// test does, and what any future re-create-the-controller flow does) used to
+  /// throw out of the framework rather than being a no-op.
   @override
   void dispose() {
     _manualDisconnect = true;
+    // The tree's memo is process-wide and keyed on this controller's identity,
+    // so it is dropped with the controller rather than retained by a dead one.
+    MeshGraph.clearCache();
+    // The live position stream outlives a radio, not the app.
+    unawaited(stopOwnLocationStream());
     _reconnectGen++; // invalidate any pending scheduled retry
     _scanTimer?.cancel();
     _battTimer?.cancel();
@@ -3536,6 +7538,39 @@ class MeshcoreController extends ChangeNotifier {
     _battHistorySaveTimer?.cancel();
     _telemPollTimer?.cancel();
     _meshbookSaveTimer?.cancel();
+    // The keep-alive watchdog is a periodic timer, so it must not outlive the
+    // controller: a test that connects and disposes would otherwise leave a
+    // pending timer behind, and a real app would keep waking for a link that is
+    // gone.
+    _keepaliveWatchdog?.cancel();
+    _keepaliveWatchdog = null;
+    // The contact table has its own debounce, so closing the app inside the
+    // three-second window must still write it: a restart would otherwise ask
+    // the radio only for changes since a token describing a table that was
+    // never saved, which is the empty-table bug this store exists to end.
+    if (_contactsSaveTimer != null) {
+      _contactsSaveTimer!.cancel();
+      unawaited(ContactStore.save(_contacts.values)
+          .catchError((Object _) {}));
+      _contactsSaveTimer = null;
+    }
+    // The rolling hour is a fact about the hour, so a kill inside the two-second
+    // write window must not cost it: a restart that forgets what the last
+    // process spent hands out a fresh allowance over a band that has none.
+    _airtimeSaveTimer?.cancel();
+    _airtimeSaveTimer = null;
+    unawaited(
+        AirtimePolicyPrefs.setSpend(_airtime.snapshot()).catchError((Object _) {}));
+    _drainWatchdog?.cancel();
+    // The two protocol walks own timers of their own: the channel probe's idle
+    // window and the contact stream's watchdog. Left armed they outlive the
+    // controller and fire into a disposed one.
+    _channelProbeIdleTimer?.cancel();
+    _channelProbeIdleTimer = null;
+    _contactIdleTimer?.cancel();
+    _contactIdleTimer = null;
+    _frameNotifyTimer?.cancel();
+    _frameNotifyTimer = null;
     for (final Timer t in _deliveryTimers.values) {
       t.cancel();
     }
@@ -3543,15 +7578,143 @@ class MeshcoreController extends ChangeNotifier {
     _statesSub?.cancel();
     _inboundSub?.cancel();
     _rawSub?.cancel();
-    _persistChat(); // final flush
+    _flushChat(); // final flush
     unawaited(_flushBatteryHistory()); // final flush
     unawaited(_keepalive.stop());
     unawaited(_incomingCh.close());
     unawaited(_incomingDm.close());
     unawaited(_taskErrors.close());
     unawaited(_adverts.close());
+    unawaited(_channelDatagramStream.close());
     unawaited(_transport?.close());
     unawaited(_connection.dispose());
     super.dispose();
   }
+}
+
+/// What came back from one radio CLI command.
+///
+/// The firmware answers `CMD_RUN_CLI_COMMAND` with zero or more text frames and
+/// then a bare answer, so there are five outcomes and each one is a different
+/// thing to tell the reader. None of them is a bool: "the radio said nothing"
+/// and "the radio refused" are not the same fact, and a screen that renders them
+/// as one teaches the user to distrust both.
+sealed class RadioCliResult {
+  const RadioCliResult();
+
+  /// The radio's own words, when it said any. Present on every outcome that
+  /// carried text, including a refusal and a half-finished answer.
+  String get text;
+}
+
+/// The radio ran the command and closed the answer with `OK`.
+final class RadioCliAnswered extends RadioCliResult {
+  const RadioCliAnswered({required this.text});
+
+  @override
+  final String text;
+
+  /// The on/off state the reply states, when it states one plainly.
+  ///
+  /// This is a convenience over the radio's own text, not a second parser of the
+  /// CLI: the last whole word that is `on`/`off`/`true`/`false` wins, and
+  /// anything else is `null` so the screen shows the verbatim text rather than
+  /// guessing. A firmware that answers "buzzer: disabled" therefore reads as
+  /// unknown until someone teaches this rule that word — deliberately, because a
+  /// wrong state is worse than no state on a control that changes a radio.
+  bool? get onOff {
+    final List<String> words = text
+        .toLowerCase()
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((String w) => w.isNotEmpty)
+        .toList();
+    for (final String w in words.reversed) {
+      if (w == 'on' || w == 'true' || w == '1') return true;
+      if (w == 'off' || w == 'false' || w == '0') return false;
+    }
+    return null;
+  }
+
+  @override
+  String toString() => 'RadioCliAnswered("$text")';
+}
+
+/// The radio refused the command, with its own error code when it sent one.
+final class RadioCliRejected extends RadioCliResult {
+  const RadioCliRejected({required this.code, required this.text});
+
+  final int? code;
+
+  @override
+  final String text;
+
+  @override
+  String toString() => 'RadioCliRejected(err $code, "$text")';
+}
+
+/// Nothing closed the answer inside the window. The link may still be fine and
+/// the radio still working: a command that produces no output is answered by the
+/// same OK as one that produces ten lines, so silence is a missing answer, not a
+/// verdict.
+final class RadioCliSilent extends RadioCliResult {
+  const RadioCliSilent({this.partial = ''});
+
+  /// The lines that did arrive before the window closed, if any.
+  final String partial;
+
+  @override
+  String get text => partial;
+
+  @override
+  String toString() => 'RadioCliSilent("$partial")';
+}
+
+/// A command is already waiting for its answer, so this one was not sent.
+final class RadioCliBusy extends RadioCliResult {
+  const RadioCliBusy();
+
+  @override
+  String get text => '';
+
+  @override
+  String toString() => 'RadioCliBusy()';
+}
+
+/// There is no usable link: not connected, or the send failed.
+final class RadioCliUnavailable extends RadioCliResult {
+  const RadioCliUnavailable({this.detail = ''});
+
+  final String detail;
+
+  @override
+  String get text => '';
+
+  @override
+  String toString() => 'RadioCliUnavailable("$detail")';
+}
+
+/// One raw packet as the radio's RF log reported it.
+///
+/// Decoded `PUSH_CODE_LOG_RX_DATA` (`0x88`): the measurements and the path of a
+/// packet this radio heard, kept only long enough to be paired with the
+/// channel-message push for the same packet.
+class _RxCapture {
+  const _RxCapture({
+    required this.snrDb,
+    required this.rssiDbm,
+    required this.hopCount,
+    required this.pathHashes,
+    required this.at,
+    this.channelHash,
+  });
+
+  final double snrDb;
+  final int rssiDbm;
+  final int hopCount;
+  final List<String> pathHashes;
+
+  /// The packet's own `GRP_TXT` channel hash, so a capture can only answer a
+  /// message on the channel it was heard on.
+  final int? channelHash;
+  final DateTime at;
 }

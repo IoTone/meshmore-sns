@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+. Same reasoning as backup_rules.xml: the sealed store cannot
+     be read anywhere but this device (the key is in the Android Keystore), so
+     neither cloud backup nor device transfer may carry it, and nothing else
+     the app keeps is worth transferring either. Every domain is excluded in
+     both directions. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+    <exclude domain="file" path="maps/" />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+    <exclude domain="file" path="maps/" />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+    </device-transfer>
+</data-extraction-rules>

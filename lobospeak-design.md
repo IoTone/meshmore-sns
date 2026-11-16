@@ -1,5 +1,8 @@
 # lobospeak (1805PK)
 
+> **Out of scope for this repository.** lobospeak is a separate product: `meshmore-scope-of-record.md` decides "No lobospeak in MeshMore, separate product, mine it for ideas only". The document is kept here as design material, not as a plan for this app.
+
+
 > *Wolf speak.* A small, opinionated control plane for robots and
 > unattended devices over MeshCore — **no side channel required**.
 >
@@ -8,6 +11,16 @@
 **Status:** design — no code yet. This document captures the wire
 format, command set, trust model, and interaction patterns so the
 implementation can proceed in clean increments.
+
+> **Checked against firmware `companion-v1.17.1`, 2026-10-24.** Three
+> assumptions below do not hold on stock MeshCore, and one budget is
+> optimistic: unknown binary requests are dropped by the radio rather than
+> forwarded to the app (§2.2), `PUSH_CODE_RAW_DATA` carries no sender
+> pubkey (§2.4), only one binary request can be outstanding at a time
+> (§2.2), and the app payload ceiling is 143 B, not ~180 B. The evidence and
+> the two viable carriages are in
+> [`meshmore-sns-meshcore-interop.md`](./meshmore-sns-meshcore-interop.md) §2-§3.
+> The design itself is unchanged.
 
 ---
 

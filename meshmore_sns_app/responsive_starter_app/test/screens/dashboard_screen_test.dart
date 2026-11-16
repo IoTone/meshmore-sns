@@ -10,11 +10,11 @@ import 'package:provider/provider.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/dashboard_screen.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 const List<LocalizationsDelegate<Object>> _kLocaleDelegates =
     <LocalizationsDelegate<Object>>[
@@ -46,22 +46,25 @@ void main() {
       ),
     );
 
-    // Disconnected state.
-    expect(find.text('PEERS IN RANGE'), findsOneWidget);
-    expect(find.text('0'), findsOneWidget);
+    // Nothing yet: one status slab and its action, not eight placeholders.
+    // The peers numeral, the radio block, the location block, the battery
+    // block and the feed each appear when they have a value, so a fresh
+    // install shows a state and the way out of it.
+    expect(find.text('NODES IN RANGE'), findsNothing);
     expect(find.textContaining('OFFLINE'), findsOneWidget);
-    expect(find.text('CONNECT'), findsOneWidget);
-    expect(find.text('— awaiting device —'), findsOneWidget);
-    expect(find.text('— no activity —'), findsOneWidget);
+    expect(find.byTooltip('Connect'), findsOneWidget);
+    expect(find.text('PEERS IN RANGE'), findsNothing);
+    expect(find.text('Waiting for the MeshCore radio…'), findsNothing);
+    expect(find.text('No activity yet'), findsNothing);
 
     // Connect + handshake.
     await ctrl.connect();
     fake.emit(selfInfoFrame());
     await t.pumpAndSettle();
 
-    expect(find.textContaining('LINKED · NO ALERTS'), findsOneWidget);
-    expect(find.text('CONNECT'), findsNothing);
-    expect(find.textContaining('self-info'), findsOneWidget);
+    expect(find.textContaining('LINKED'), findsOneWidget);
+    expect(find.byTooltip('Connect'), findsNothing);
+    expect(find.textContaining('checked in'), findsOneWidget);
 
     // An inbound channel message lands in the recent feed.
     final Uint8List chMsg = Uint8List.fromList(<int>[
@@ -70,7 +73,98 @@ void main() {
     ]);
     fake.emit(chMsg);
     await t.pumpAndSettle();
+    // The feed is a fold that only exists once it has something to show.
+    expect(find.textContaining('RECENT'), findsOneWidget);
     expect(find.textContaining('"hello mesh"'), findsOneWidget);
+    ctrl.dispose();
+  });
+
+  // Measured on the handset: LINK LOST sat directly above "NODES IN RANGE 52",
+  // a reachability claim no dead link can support. The count is real (nodes
+  // whose stored position is within 10 km, or heard in the last five minutes),
+  // so it stays; its name says what it is now.
+  testWidgets('the peers count is not called "in range" without a link',
+      (WidgetTester t) async {
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _kLocaleDelegates,
+        home: ChangeNotifierProvider<MeshcoreController>.value(
+          value: ctrl,
+          child: const Scaffold(body: DashboardScreen()),
+        ),
+      ),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    fake.emit(advertFrameAt(lat: 39.7, lon: -104.9, name: 'Nearby'));
+    // Bounded pumps: a live dashboard keeps a timer running for the feed, so
+    // `pumpAndSettle` never returns.
+    for (int i = 0; i < 10; i++) {
+      await t.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('NODES IN RANGE'), findsOneWidget,
+        reason: 'a live link can say what it reaches');
+
+    // The link goes away with the count still on screen: what is left is the
+    // last positions the app heard, not what the radio can reach now.
+    fake.setConnected(false);
+    for (int i = 0; i < 20; i++) {
+      await t.pump(const Duration(milliseconds: 100));
+    }
+    // "LAST KNOWN" used to trail this label and the readout clipped it to
+    // "NODES NEAR YOU (LA…" — the parenthetical is gone, and the stale fact is
+    // carried by the status row's LINK LOST line above the block.
+    expect(find.text('NODES NEAR YOU'), findsOneWidget,
+        reason: 'no link, so no reachability claim');
+
+    // Dispose inside the body: the feed's timer is checked before teardowns.
+    ctrl.dispose();
+    await t.pumpWidget(const SizedBox());
+    await t.pump(const Duration(seconds: 30));
+  });
+
+  testWidgets('a block says its name once, and one refresh belongs to it',
+      (WidgetTester t) async {
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _kLocaleDelegates,
+        home: ChangeNotifierProvider<MeshcoreController>.value(
+          value: ctrl,
+          child: const Scaffold(body: DashboardScreen()),
+        ),
+      ),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    // The section header carries the word; the block under it starts with the
+    // value. It used to print LOCATION again, under a second refresh icon on
+    // its own baseline — the light skin made that look like two blocks.
+    // The list builds lazily, so scroll the block into view first.
+    final Finder location = find.text('LOCATION');
+    await t.scrollUntilVisible(location, 200,
+        scrollable: find.byType(Scrollable).first);
+    await t.pumpAndSettle();
+    expect(location, findsOneWidget);
+    expect(find.byTooltip('Refresh location from device'), findsOneWidget);
     ctrl.dispose();
   });
 }

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../perms/location_service.dart';
 import 'meshcore_controller.dart';
+import '../util/prefs.dart';
 
 /// R36 — auto-publish location while moving.
 ///
@@ -38,8 +39,17 @@ class AutoPublishController extends ChangeNotifier {
   static const String _kMinMovementM = 'mm.autoPublish.minMovementM';
 
   /// Allowed periodic interval values (seconds). 0 means off.
+  ///
+  /// Five minutes is deliberately absent. The other radio project measured its
+  /// own five-minute advert cadence at **564 times the community's** and found
+  /// it bought nothing, because a repeater advertises every 47 hours and drops
+  /// an advert after eight hops (`ldmux`, `docs/AIRTIME.md`, ADR-0032) — a
+  /// position beacon every five minutes is airtime spent telling repeaters what
+  /// they already know. Fifteen minutes is the shortest interval the app
+  /// offers; a stored five-minute value loads as fifteen rather than silently
+  /// switching the feature off.
   static const List<int> intervalOptions = <int>[
-    0, 300, 900, 1800, 3600,
+    0, 900, 1800, 3600,
   ];
 
   /// Allowed smart-broadcast movement thresholds (meters). 0 means
@@ -80,9 +90,18 @@ class AutoPublishController extends ChangeNotifier {
   /// Load persisted settings + start the loops if enabled.
   Future<void> load() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    _enabled = p.getBool(_kEnabled) ?? false;
-    _intervalSec = p.getInt(_kIntervalSec) ?? 0;
-    _minMovementM = p.getInt(_kMinMovementM) ?? 0;
+    _enabled = Prefs.readBool(p, _kEnabled);
+    final int stored = Prefs.readInt(p, _kIntervalSec);
+    // A value this build no longer offers (five minutes) becomes the shortest
+    // interval it does offer, not zero: the user asked for beacons, and a
+    // silent switch-off is a worse answer than a slower cadence.
+    _intervalSec = intervalOptions.contains(stored) ? stored : 900;
+    // Validated on the way in as well as through the setter: a stored value this
+    // build does not offer (an old build's 1 m, say) re-adverts on every metre
+    // walked. Zero — "publish on the interval only" — is the answer that keeps
+    // the radio quiet.
+    final int movement = Prefs.readInt(p, _kMinMovementM);
+    _minMovementM = movementOptions.contains(movement) ? movement : 0;
     _restart();
     notifyListeners();
   }
@@ -91,7 +110,7 @@ class AutoPublishController extends ChangeNotifier {
     if (v == _enabled) return;
     _enabled = v;
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setBool(_kEnabled, v);
+    await Prefs.setBool(p, _kEnabled, v);
     _restart();
     notifyListeners();
   }
@@ -101,7 +120,7 @@ class AutoPublishController extends ChangeNotifier {
     if (v == _intervalSec) return;
     _intervalSec = v;
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setInt(_kIntervalSec, v);
+    await Prefs.setInt(p, _kIntervalSec, v);
     _restart();
     notifyListeners();
   }
@@ -111,7 +130,7 @@ class AutoPublishController extends ChangeNotifier {
     if (v == _minMovementM) return;
     _minMovementM = v;
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setInt(_kMinMovementM, v);
+    await Prefs.setInt(p, _kMinMovementM, v);
     _restart();
     notifyListeners();
   }
@@ -142,11 +161,24 @@ class AutoPublishController extends ChangeNotifier {
 
   /// Take a fix → push to device → re-advert. The stream path
   /// already has a fix in hand; the timer path runs a one-shot
-  /// `currentFix`.
-  Future<void> _publish(String trigger, [PhoneFix? cached]) async {
-    if (!mc.isReady) return;
-    final PhoneFix? fix = cached ?? await _location.currentFix();
-    if (fix == null) return;
+  /// request. Returns the [LocationFailure] when there was no fix to
+  /// publish, so an interactive caller ("Publish now") can say why
+  /// instead of appearing to do nothing. The timer and stream callers
+  /// ignore it and retry on the next tick.
+  Future<LocationFailure?> _publish(String trigger,
+      [PhoneFix? cached]) async {
+    if (!mc.isReady) return null;
+    PhoneFix? fix = cached;
+    if (fix == null) {
+      // `prompt: false` — this runs from a timer and from a position
+      // stream, both with no UI. The permission is asked for at the
+      // settings toggle instead, and a denial comes back as a
+      // `LocationFailure` rather than an unattended dialog.
+      final LocationOutcome outcome =
+          await _location.requestFix(prompt: false);
+      fix = outcome.fix;
+      if (fix == null) return outcome.failure;
+    }
     // R44 follow-up — keep the controller's ownLocation altitude
     // fresh. AutoPublishController is already paying the GPS-read
     // cost; pumping the result back into the controller means the
@@ -168,21 +200,27 @@ class AutoPublishController extends ChangeNotifier {
     } catch (_) {
       // Transport hiccup or device-not-ready race — silent. Next
       // tick will retry.
-      return;
+      return null;
     }
     _lastLat = fix.latitude;
     _lastLon = fix.longitude;
     _lastPublishedAt = DateTime.now();
     _lastTrigger = trigger;
     notifyListeners();
+    return null;
   }
 
   /// Force a one-shot publish right now (used by the "Publish now"
   /// button in settings). Honours the master toggle: no-op when
-  /// off.
-  Future<void> publishNow() async {
-    if (!_enabled) return;
-    await _publish('manual');
+  /// off, and returns null when nothing was wrong to report.
+  ///
+  /// The returned failure is what lets the button explain itself: this
+  /// path used to call `currentFix` with no permission request and
+  /// return silently, so a user who had never granted location pressed
+  /// "Publish now" and saw absolutely nothing happen.
+  Future<LocationFailure?> publishNow() async {
+    if (!_enabled) return null;
+    return _publish('manual');
   }
 
   @override

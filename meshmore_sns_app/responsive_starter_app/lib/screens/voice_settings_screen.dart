@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../ui/mm_scaffold.dart';
 import '../tts/tts_controller.dart';
+import '../ui/mm_shape.dart';
 
 /// R5 / U5 — TTS **quality** picker. Sits below the global SPEECH
 /// switch in App settings. Three knobs, all persisted by the
@@ -30,7 +32,7 @@ class VoiceSettingsScreen extends StatefulWidget {
   /// spinning up the whole widget tree.
   @visibleForTesting
   static String prettyVoiceNameDebug(String raw, String locale) =>
-      _VoiceSettingsScreenState._prettyVoiceName(raw, locale);
+      _VoiceSettingsScreenState.prettyVoiceName(raw, locale);
 }
 
 class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
@@ -69,7 +71,9 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
     // Resolve offline-availability per unique locale in the
     // background. setState as each completes so badges fade in
     // without blocking the initial render.
-    final Set<String> locales = <String>{for (final TtsVoice voice in v) voice.locale};
+    final Set<String> locales = <String>{
+      for (final TtsVoice voice in v) voice.locale
+    };
     for (final String locale in locales) {
       final bool available = await tc.isLanguageAvailable(locale);
       if (!mounted) return;
@@ -95,7 +99,7 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
   /// separately via the OFFLINE badge), title-case what's left.
   /// Falls back to the raw name when nothing parses out — never
   /// returns an empty string.
-  static String _prettyVoiceName(String raw, String locale) {
+  static String prettyVoiceName(String raw, String locale) {
     if (!raw.contains('-') && !raw.contains('#')) return raw;
     String name = raw;
     final String localeLower = locale.toLowerCase().replaceAll('_', '-');
@@ -136,200 +140,239 @@ class _VoiceSettingsScreenState extends State<VoiceSettingsScreen> {
     final List<TtsVoice> allVoices = _voices ?? const <TtsVoice>[];
     final String phoneLang =
         _langOf(Localizations.localeOf(context).toLanguageTag());
-    final List<TtsVoice> voices = _onlyCurrentLanguage
-        ? <TtsVoice>[
-            for (final TtsVoice v in allVoices)
-              if (_langOf(v.locale) == phoneLang) v
-          ]
-        : allVoices;
-
     return Scaffold(
       appBar: AppBar(title: Text(l.voiceSettingsTitle)),
       body: MmScaffold(
         child: ListView(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Text(
-              l.voiceSettingsHint,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 12, height: 1.4),
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Rate.
-          ListTile(
-            title: Text(l.voiceRate),
-            subtitle: Slider(
-              min: TtsController.minRate,
-              max: TtsController.maxRate,
-              value: tc.rate,
-              label: tc.rate.toStringAsFixed(2),
-              onChanged: tc.setRate,
-            ),
-            trailing: Text(tc.rate.toStringAsFixed(2),
-                style: TextStyle(
-                    color: cs.onSurfaceVariant,
-                    fontFamily: 'JetBrains Mono')),
-          ),
-          // Pitch.
-          ListTile(
-            title: Text(l.voicePitch),
-            subtitle: Slider(
-              min: TtsController.minPitch,
-              max: TtsController.maxPitch,
-              value: tc.pitch,
-              label: tc.pitch.toStringAsFixed(2),
-              onChanged: tc.setPitch,
-            ),
-            trailing: Text(tc.pitch.toStringAsFixed(2),
-                style: TextStyle(
-                    color: cs.onSurfaceVariant,
-                    fontFamily: 'JetBrains Mono')),
-          ),
-          const Divider(),
-          // Voice picker.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(l.voicePicker.toUpperCase(),
-                      style: TextStyle(
-                          color: cs.onSurfaceVariant,
-                          fontSize: 11,
-                          letterSpacing: 2)),
-                ),
-                if (allVoices.isNotEmpty)
-                  Text(
-                    _onlyCurrentLanguage
-                        ? l.voicePickerFilteredCount(
-                            voices.length, phoneLang.toUpperCase())
-                        : l.voicePickerAllCount(allVoices.length),
-                    style: TextStyle(
-                        color: cs.onSurfaceVariant,
-                        fontSize: 11,
-                        fontFamily: 'JetBrains Mono'),
-                  ),
-              ],
-            ),
-          ),
-          // R5+1 — language filter toggle. Default on; flipping off
-          // surfaces every voice the platform reports (some Androids
-          // have hundreds — useful only when the user wants a
-          // deliberately non-native voice).
-          SwitchListTile(
-            dense: true,
-            title: Text(l.voicePickerOnlyMyLanguage),
-            subtitle: Text(
-              l.voicePickerOnlyMyLanguageHint(phoneLang.toUpperCase()),
-              style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11),
-            ),
-            value: _onlyCurrentLanguage,
-            onChanged: (bool v) =>
-                setState(() => _onlyCurrentLanguage = v),
-          ),
-          if (_loadingVoices)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 18),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (voices.isEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              child: Text(
-                l.voicePickerEmpty,
-                style: TextStyle(
-                    color: cs.onSurfaceVariant, fontSize: 12),
-              ),
-            )
-          else ...<Widget>[
-            ListTile(
-              dense: true,
-              onTap: () => tc.setVoice(null),
-              leading: Icon(
-                tc.voice == null
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                color: tc.voice == null
-                    ? cs.primary
-                    : cs.onSurfaceVariant,
-              ),
-              title: Text(l.voicePickerSystem),
-            ),
-            for (final TtsVoice v in voices)
-              ListTile(
-                dense: true,
-                onTap: () => tc.setVoice(v),
-                leading: Icon(
-                  tc.voice?.id == v.id
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  color: tc.voice?.id == v.id
-                      ? cs.primary
-                      : cs.onSurfaceVariant,
-                ),
-                title: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(_prettyVoiceName(v.name, v.locale)),
-                    ),
-                    if (_offline[v.locale] == true)
-                      _OfflineBadge(
-                        label: l.voiceOfflineBadge,
-                        color: cs.tertiary,
-                      ),
-                  ],
-                ),
-                subtitle: Text(
-                  v.qualityHint == null
-                      ? v.locale
-                      : '${v.locale} · ${v.qualityHint}',
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: 11),
-                ),
-              ),
-            if (voices.isEmpty && allVoices.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                child: Text(
-                  l.voicePickerNoMatchForLanguage(
-                      phoneLang.toUpperCase()),
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: 12),
-                ),
-              ),
-          ],
-          const Divider(),
-          // Preview.
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: tc.enabled
-                    ? () => tc.previewPhrase(l.voicePreviewPhrase)
-                    : null,
-                icon: const Icon(Icons.play_arrow),
-                label: Text(l.voicePreview),
-              ),
-            ),
-          ),
-          if (!tc.enabled)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Text(
-                l.voicePreviewDisabledHint,
-                style: TextStyle(
-                    color: cs.onSurfaceVariant, fontSize: 12),
-              ),
-            ),
-        ],
-      ),
+            // The page body is one list, built by `voiceSettingsRows` below.
+            children: voiceSettingsRows(
+                context: context,
+                l: l,
+                cs: cs,
+                tc: tc,
+                allVoices: allVoices,
+                onlyCurrent: _onlyCurrentLanguage,
+                phoneLang: phoneLang,
+                langOf: _langOf,
+                onOnlyCurrentChanged: (bool v) =>
+                    setState(() => _onlyCurrentLanguage = v),
+                loadingVoices: _loadingVoices,
+                offline: _offline,
+                prettyName: prettyVoiceName)),
       ),
     );
   }
+}
+
+/// The voice-name formatter, at library level so the row builder can take it as
+/// a parameter and a test can reach it without a widget.
+String prettyVoiceName(String raw, String locale) =>
+    _VoiceSettingsScreenState.prettyVoiceName(raw, locale);
+
+/// The voice settings rows, without a Scaffold.
+///
+/// They were extracted when Settings → Chat & photos embedded them inline. That
+/// page no longer does — spoken voice is a reading preference and lives in App
+/// settings — so this is the only caller, and the split is kept because the list
+/// is long enough to read on its own.
+List<Widget> voiceSettingsRows({
+  required BuildContext context,
+  required AppLocalizations l,
+  required ColorScheme cs,
+  required TtsController tc,
+  required List<TtsVoice> allVoices,
+  required bool onlyCurrent,
+  required String phoneLang,
+  required String Function(String) langOf,
+  required ValueChanged<bool> onOnlyCurrentChanged,
+  required bool loadingVoices,
+  required Map<String, bool> offline,
+  required String Function(String name, String locale) prettyName,
+}) {
+  final List<TtsVoice> voices = onlyCurrent
+      ? <TtsVoice>[
+          for (final TtsVoice v in allVoices)
+            if (langOf(v.locale) == phoneLang) v
+        ]
+      : allVoices;
+  return <Widget>[
+    Padding(
+      padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge,
+          context.skin.space.screenEdge, context.skin.space.screenEdge, 0),
+      child: Text(
+        l.voiceSettingsHint,
+        style: TextStyle(
+            color: cs.onSurfaceVariant,
+            fontSize: context.skin.type.sizeBody,
+            height: 1.4),
+      ),
+    ),
+    const SizedBox(height: 12),
+    // Rate.
+    ListTile(
+      title: Text(l.voiceRate),
+      subtitle: Slider(
+        min: TtsController.minRate,
+        max: TtsController.maxRate,
+        value: tc.rate,
+        label: tc.rate.toStringAsFixed(2),
+        onChanged: tc.setRate,
+      ),
+      trailing: Text(tc.rate.toStringAsFixed(2),
+          style: TextStyle(
+              color: cs.onSurfaceVariant,
+              fontFamily: context.skin.type.monoFamily)),
+    ),
+    // Pitch.
+    ListTile(
+      title: Text(l.voicePitch),
+      subtitle: Slider(
+        min: TtsController.minPitch,
+        max: TtsController.maxPitch,
+        value: tc.pitch,
+        label: tc.pitch.toStringAsFixed(2),
+        onChanged: tc.setPitch,
+      ),
+      trailing: Text(tc.pitch.toStringAsFixed(2),
+          style: TextStyle(
+              color: cs.onSurfaceVariant,
+              fontFamily: context.skin.type.monoFamily)),
+    ),
+    SizedBox(height: context.skin.space.sectionGap),
+    // Voice picker.
+    Padding(
+      padding: EdgeInsets.fromLTRB(
+          context.skin.space.screenEdge,
+          context.skin.space.rowGap,
+          context.skin.space.screenEdge,
+          context.skin.space.labelToControl),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(l.voicePicker.toUpperCase(),
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: context.skin.type.sizeSm,
+                    letterSpacing: 2)),
+          ),
+          if (allVoices.isNotEmpty)
+            Text(
+              onlyCurrent
+                  ? l.voicePickerFilteredCount(
+                      voices.length, phoneLang.toUpperCase())
+                  : l.voicePickerAllCount(allVoices.length),
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: context.skin.type.sizeSm,
+                  fontFamily: context.skin.type.wordsMono),
+            ),
+        ],
+      ),
+    ),
+    // R5+1 — language filter toggle. Default on; flipping off
+    // surfaces every voice the platform reports (some Androids
+    // have hundreds — useful only when the user wants a
+    // deliberately non-native voice).
+    SwitchListTile(
+      dense: true,
+      title: Text(l.voicePickerOnlyMyLanguage),
+      subtitle: Text(
+        l.voicePickerOnlyMyLanguageHint(phoneLang.toUpperCase()),
+        style: TextStyle(
+            color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm),
+      ),
+      value: onlyCurrent,
+      onChanged: onOnlyCurrentChanged,
+    ),
+    if (loadingVoices)
+      Padding(
+        padding: EdgeInsets.symmetric(vertical: context.skin.space.emptyState),
+        child: const Center(child: CircularProgressIndicator()),
+      )
+    else if (voices.isEmpty)
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+        child: Text(
+          l.voicePickerEmpty,
+          style: TextStyle(
+              color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
+        ),
+      )
+    else ...<Widget>[
+      ListTile(
+        dense: true,
+        onTap: () => tc.setVoice(null),
+        title: Text(l.voicePickerSystem),
+        trailing: Icon(
+          tc.voice == null
+              ? Icons.radio_button_checked
+              : Icons.radio_button_unchecked,
+          color: tc.voice == null ? cs.primary : cs.onSurfaceVariant,
+        ),
+      ),
+      for (final TtsVoice v in voices)
+        ListTile(
+          dense: true,
+          onTap: () => tc.setVoice(v),
+          trailing: Icon(
+            tc.voice?.id == v.id
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+            color: tc.voice?.id == v.id ? cs.primary : cs.onSurfaceVariant,
+          ),
+          title: Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(prettyName(v.name, v.locale)),
+              ),
+              if (offline[v.locale] == true)
+                _OfflineBadge(
+                  label: l.voiceOfflineBadge,
+                  color: cs.tertiary,
+                ),
+            ],
+          ),
+          subtitle: Text(
+            v.qualityHint == null ? v.locale : '${v.locale} · ${v.qualityHint}',
+            style: TextStyle(
+                color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm),
+          ),
+        ),
+      if (voices.isEmpty && allVoices.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          child: Text(
+            l.voicePickerNoMatchForLanguage(phoneLang.toUpperCase()),
+            style: TextStyle(
+                color: cs.onSurfaceVariant,
+                fontSize: context.skin.type.sizeBody),
+          ),
+        ),
+    ],
+    SizedBox(height: context.skin.space.sectionGap),
+    // Preview.
+    Padding(
+      padding: const EdgeInsets.all(16),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          onPressed:
+              tc.enabled ? () => tc.previewPhrase(l.voicePreviewPhrase) : null,
+          icon: const Icon(Icons.play_arrow),
+          label: Text(l.voicePreview),
+        ),
+      ),
+    ),
+    if (!tc.enabled)
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Text(
+          l.voicePreviewDisabledHint,
+          style: TextStyle(
+              color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
+        ),
+      ),
+  ];
 }
 
 /// Small "OFFLINE" pill rendered next to a voice's name when the
@@ -347,14 +390,14 @@ class _OfflineBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .15),
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(kRadiusSm),
         border: Border.all(color: color.withValues(alpha: .55)),
       ),
       child: Text(
         label,
         style: TextStyle(
             color: color,
-            fontSize: 9,
+            fontSize: context.skin.type.sizeMicro,
             letterSpacing: 1,
             fontWeight: FontWeight.w600),
       ),

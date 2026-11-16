@@ -3,11 +3,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/cue/cue_bridge.dart';
 import 'package:meshmore_sns_app/cue/cue_service.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/theme/theme_controller.dart';
+import 'package:meshmore_sns_app/tts/tts_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../meshcore/fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// Records dispatched cues without touching platform channels.
 class _RecordingCue extends CueService {
@@ -19,12 +21,249 @@ class _RecordingCue extends CueService {
   }
 }
 
+/// Minimal speaker so the bridge's speech path is observable without
+/// the platform plugin.
+class _RecordingSpeaker implements TtsSpeaker {
+  final List<String> spoken = <String>[];
+  @override
+  Future<void> speak(String text) async => spoken.add(text);
+  @override
+  Future<void> stop() async {}
+  @override
+  Future<void> setRate(double rate) async {}
+  @override
+  Future<void> setPitch(double pitch) async {}
+  @override
+  Future<void> setVoice(TtsVoice? voice) async {}
+  @override
+  Future<List<TtsVoice>> listVoices() async => const <TtsVoice>[];
+  @override
+  Future<bool> isLanguageAvailable(String locale) async => true;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  group('R58 signature replaces dmIn, never stacks with it', () {
+    test('a peer with a signature gets the slot and NOT dmIn', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final TtsController tts = TtsController(speaker: _RecordingSpeaker());
+      await tts.peers.setSignature('010203040506', CueKind.sig3);
+
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue, tts);
+      await ctrl.connect();
+      fake.emit(
+          contactMessageFrame(prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cue.calls, contains(CueKind.sig3));
+      // Playing both would produce mush and destroy both identities.
+      expect(cue.calls, isNot(contains(CueKind.dmIn)));
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('a peer without a signature still gets the ordinary dmIn', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge =
+          CueBridge(ctrl, cue, TtsController(speaker: _RecordingSpeaker()));
+      await ctrl.connect();
+      fake.emit(
+          contactMessageFrame(prefix: <int>[9, 9, 9, 9, 9, 9], text: 'plain'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cue.calls, contains(CueKind.dmIn));
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('a signature set on the full key fires for a prefix-only DM',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final TtsController tts = TtsController(speaker: _RecordingSpeaker());
+      // The sheet knows the full pubkey; the DM may carry only 12 hex.
+      await tts.peers
+          .setSignature('010203040506aabbccddeeff00112233', CueKind.sig5);
+
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue, tts);
+      await ctrl.connect();
+      fake.emit(contactMessageFrame(
+          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'short form'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cue.calls, contains(CueKind.sig5));
+      expect(cue.calls, isNot(contains(CueKind.dmIn)));
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('no TtsController wired -> DMs fall back to dmIn', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue); // no tts
+      await ctrl.connect();
+      fake.emit(
+          contactMessageFrame(prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cue.calls, contains(CueKind.dmIn));
+      bridge.dispose();
+      ctrl.dispose();
+    });
+  });
+
+  group('R5 channel speech is app-scoped, not screen-scoped', () {
+    test('an inbound channel message is spoken with no ChatScreen mounted',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingSpeaker spk = _RecordingSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+      await tts.setEnabled(true);
+
+      final CueBridge bridge =
+          CueBridge(ctrl, _RecordingCue(ThemeController()), tts);
+      await ctrl.connect();
+      fake.emit(channelMsgFrame(idx: 0, text: 'anyone on frequency'));
+      await Future<void>.delayed(Duration.zero);
+
+      // No widget tree at all — this is the whole point of the move.
+      expect(spk.spoken, <String>['anyone on frequency']);
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('the per-channel mute still wins, and only for that channel',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingSpeaker spk = _RecordingSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+      await tts.setEnabled(true);
+      tts.toggleChannelMute(2);
+
+      final CueBridge bridge =
+          CueBridge(ctrl, _RecordingCue(ThemeController()), tts);
+      await ctrl.connect();
+      fake.emit(channelMsgFrame(idx: 2, text: 'muted channel'));
+      await Future<void>.delayed(Duration.zero);
+      fake.emit(channelMsgFrame(idx: 1, text: 'other channel'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(spk.spoken, <String>['other channel']);
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('the audio master silences channel speech', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingSpeaker spk = _RecordingSpeaker();
+      final ThemeController theme = ThemeController();
+      await theme.setAudioMaster(false);
+      final TtsController tts = TtsController(speaker: spk, theme: theme);
+      await tts.setEnabled(true);
+
+      final CueBridge bridge = CueBridge(ctrl, _RecordingCue(theme), tts);
+      await ctrl.connect();
+      fake.emit(channelMsgFrame(text: 'should stay quiet'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(spk.spoken, isEmpty);
+      bridge.dispose();
+      ctrl.dispose();
+    });
+  });
+
+  group('R58 DM speech is app-scoped, not screen-scoped', () {
+    test('an inbound DM from an always-peer is spoken with no DM screen open',
+        () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingSpeaker spk = _RecordingSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+      // Global speech OFF — `always` must still be heard.
+      await tts.setPeerSpeechMode('010203040506', PeerSpeechMode.always);
+
+      final CueBridge bridge =
+          CueBridge(ctrl, _RecordingCue(ThemeController()), tts);
+      await ctrl.connect();
+      fake.emit(contactMessageFrame(
+          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'wake up'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(tts.enabled, isFalse);
+      expect(spk.spoken, <String>['wake up']);
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('a never-peer is not spoken even with global speech on', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingSpeaker spk = _RecordingSpeaker();
+      final TtsController tts = TtsController(speaker: spk);
+      await tts.setEnabled(true);
+      await tts.setPeerSpeechMode('010203040506', PeerSpeechMode.never);
+
+      final CueBridge bridge =
+          CueBridge(ctrl, _RecordingCue(ThemeController()), tts);
+      await ctrl.connect();
+      fake.emit(
+          contactMessageFrame(prefix: <int>[1, 2, 3, 4, 5, 6], text: 'shush'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(spk.spoken, isEmpty);
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    test('no TtsController wired → cues still fire, nothing speaks', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue); // no tts
+
+      await ctrl.connect();
+      fake.emit(
+          contactMessageFrame(prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cue.calls, contains(CueKind.dmIn));
+      bridge.dispose();
+      ctrl.dispose();
+    });
+  });
+
   test('reaching ready fires linkUp', () async {
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl = MeshcoreController(
       transportFactory: () async => fake,
       connection:
@@ -43,16 +282,14 @@ void main() {
   });
 
   test('incoming DM fires dmIn', () async {
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl =
         MeshcoreController(transportFactory: () async => fake);
     final _RecordingCue cue = _RecordingCue(ThemeController());
     final CueBridge bridge = CueBridge(ctrl, cue);
 
     await ctrl.connect();
-    fake.emit(contactMessageFrame(
-        prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
+    fake.emit(contactMessageFrame(prefix: <int>[1, 2, 3, 4, 5, 6], text: 'hi'));
     await Future<void>.delayed(Duration.zero);
 
     expect(cue.calls, contains(CueKind.dmIn));
@@ -61,8 +298,7 @@ void main() {
   });
 
   test('a newly heard node fires discovery (the Geiger tick)', () async {
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl =
         MeshcoreController(transportFactory: () async => fake);
     final _RecordingCue cue = _RecordingCue(ThemeController());
@@ -88,8 +324,7 @@ void main() {
   });
 
   test('incoming channel message fires messageIn', () async {
-    final FakeMeshcoreTransport fake =
-        FakeMeshcoreTransport(connected: true);
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
     final MeshcoreController ctrl =
         MeshcoreController(transportFactory: () async => fake);
     final _RecordingCue cue = _RecordingCue(ThemeController());
@@ -102,5 +337,89 @@ void main() {
     expect(cue.calls, contains(CueKind.messageIn));
     bridge.dispose();
     ctrl.dispose();
+  });
+
+  // Regression: opening the app after being away replayed every queued
+  // message through the SYNC drain, and each one cued — dozens of
+  // overlapping haptic patterns for history that was already old.
+  group('backlog replay is not a burst of arrivals', () {
+    testWidgets(
+        'queued messages do not cue one-by-one, the drain end cues once',
+        (WidgetTester t) async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue);
+
+      await ctrl.connect();
+      fake.emit(selfInfoFrame()); // ready → the BACKLOG drain begins
+      await t.pump();
+      expect(ctrl.isBacklogDrain, isTrue);
+
+      cue.calls.clear();
+      for (int i = 0; i < 6; i++) {
+        fake.emit(channelMsgFrame(idx: 1, text: 'old $i'));
+        await t.pump();
+      }
+      expect(cue.calls.where((CueKind k) => k == CueKind.messageIn), isEmpty,
+          reason: 'replayed history must not fire a cue per message');
+
+      fake.emit(noMoreMessagesFrame());
+      await t.pump();
+      expect(cue.calls.where((CueKind k) => k == CueKind.messageIn).length, 1,
+          reason: 'one summary cue marks the end of the backlog');
+
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    testWidgets('a DM in the backlog is silent too', (WidgetTester t) async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue);
+
+      await ctrl.connect();
+      fake.emit(selfInfoFrame());
+      await t.pump();
+      cue.calls.clear();
+
+      fake.emit(contactMessageFrame(
+          prefix: <int>[1, 2, 3, 4, 5, 6], text: 'queued dm'));
+      await t.pump();
+      expect(cue.calls, isEmpty, reason: 'backlogged DMs are history');
+
+      fake.emit(noMoreMessagesFrame());
+      await t.pump();
+      expect(cue.calls, <CueKind>[CueKind.messageIn]);
+      bridge.dispose();
+      ctrl.dispose();
+    });
+
+    testWidgets('live traffic after the backlog still cues',
+        (WidgetTester t) async {
+      final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl =
+          MeshcoreController(transportFactory: () async => fake);
+      final _RecordingCue cue = _RecordingCue(ThemeController());
+      final CueBridge bridge = CueBridge(ctrl, cue);
+
+      await ctrl.connect();
+      fake.emit(selfInfoFrame());
+      await t.pump();
+      fake.emit(noMoreMessagesFrame());
+      await t.pump();
+      cue.calls.clear();
+
+      // A new message arrives while connected: live, not backlog.
+      fake.emit(channelMsgFrame(idx: 1, text: 'live now'));
+      await t.pump();
+      expect(cue.calls, contains(CueKind.messageIn),
+          reason: 'real arrivals must still cue');
+      bridge.dispose();
+      ctrl.dispose();
+    });
   });
 }

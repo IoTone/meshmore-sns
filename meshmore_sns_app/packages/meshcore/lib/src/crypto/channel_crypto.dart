@@ -61,13 +61,35 @@ abstract final class MeshcoreChannelCrypto {
   static int channelHashFromHashtag(String tag) =>
       channelHashFromPsk(channelPskFromHashtag(tag));
 
+  /// The canonical form of a hashtag channel name: **always `#`-prefixed**.
+  ///
+  /// The key is a hash of the literal name, so the `#` is part of the
+  /// secret, not decoration. `emergency` and `#emergency` would otherwise
+  /// derive two different keys for what one person means as one channel,
+  /// and only the prefixed form matches the key everyone else derives.
+  /// Trimming happens here too, because the derivation is byte-exact and a
+  /// stray space would silently produce a fourth key.
+  /// Case is NOT normalised: the firmware hashes the bytes it is given, so
+  /// `#Emergency` and `#emergency` really are different channels.
+  static String canonicalHashtag(String tag) {
+    final String t = tag.trim();
+    return t.startsWith('#') ? t : '#$t';
+  }
+
   /// Derive a 16-byte channel PSK from a `#hashtag` name:
-  /// `SHA256(utf8(tag))[0..16]`. Confirmed: `#test` →
-  /// `9cd8fcf22a47333b591d96a2b848b73f`
-  /// (docs.meshcore.io + wirehack7 gist).
+  /// `SHA256(utf8("#name"))[0..16]` — the firmware's own definition of a
+  /// hashtag channel is "the first 16 bytes of `sha256("#test")`", with
+  /// `#test` → `9cd8fcf22a47333b591d96a2b848b73f`
+  /// (`docs/companion_protocol.md`, Channel Management).
+  ///
+  /// The name is canonicalised first ([canonicalHashtag]), so a tag typed
+  /// without the `#` derives the same key as the same tag typed with it.
   static Uint8List channelPskFromHashtag(String tag) =>
       Uint8List.sublistView(
-          sha256(Uint8List.fromList(utf8.encode(tag))), 0, kCipherKeySize);
+          sha256(Uint8List.fromList(
+              utf8.encode(canonicalHashtag(tag)))),
+          0,
+          kCipherKeySize);
 
   /// Build the 32-byte channel secret from the 16-byte PSK:
   /// **`psk ‖ 0x00·16`**. Authoritative — the companion protocol only

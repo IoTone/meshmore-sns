@@ -18,10 +18,18 @@ class AppState extends ChangeNotifier {
 
   Future<void> initAppInfo() async {
     packageInfo = await PackageInfo.fromPlatform();
-    final PackageInfo info = packageInfo!;
-    appversion = '${info.version}.${info.buildNumber}';
-    fullappname = '${info.appName}$appversion';
+    appversion = versionWithBuild;
+    fullappname = '${packageInfo!.appName}$appversion';
     notifyListeners();
+  }
+
+  /// `version+build`, the same shape `pubspec.yaml` uses, because the first
+  /// question on any report is which build. Empty before the lookup finishes
+  /// rather than a placeholder that would travel in a User-Agent.
+  static String get versionWithBuild {
+    final PackageInfo? info = packageInfo;
+    if (info == null) return '';
+    return '${info.version}+${info.buildNumber}';
   }
 
   /// Notify listeners that the active screen has changed.

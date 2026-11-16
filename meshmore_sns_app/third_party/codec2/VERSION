@@ -1,0 +1,5 @@
+codec2 1.2.0
+upstream: https://github.com/drowe67/codec2
+tag: 1.2.0
+commit: 06d4c11e699b0351765f10398abb4f663a984f36
+vendored: do not patch; the two-library layout keeps the licence position clean

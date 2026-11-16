@@ -3,6 +3,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../gen/app_localizations.dart';
@@ -14,9 +15,20 @@ import '../../theme/theme_controller.dart';
 import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_scaffold.dart';
 import '../../util/geo.dart';
-import '../device_manager_sheet.dart';
+
 import '../node_detail_sheet.dart';
 import 'dashboard_model.dart';
+import 'my_pubkey_line.dart';
+
+/// The compass and the two readout columns, in pixels.
+///
+/// Instrument geometry: the compass painter draws to its square, and the two
+/// columns are as wide as the widest reading they carry. These are not rhythm
+/// values and must not follow the spacing scale, which is why they are named
+/// rather than written at the call site.
+const double _compassSize = 92;
+const double _bearingColumn = 42;
+const double _labelColumn = 52;
 
 /// Concept F — **Tactical Recon** dashboard: night-ops codec. OLED-black,
 /// single amber phosphor, map/bearing-first. A small sweep compass + a
@@ -25,6 +37,7 @@ import 'dashboard_model.dart';
 /// proximity). All-mono, dark-adapted, low-overdraw. Tap a row → the node
 /// sheet. Same DashboardModel/controller as every skin.
 class ReconDashboard extends StatefulWidget {
+
   const ReconDashboard({super.key});
 
   @override
@@ -85,7 +98,7 @@ class _ReconDashboardState extends State<ReconDashboard>
     final Color amber = skin.color.fg;
     final Color dim = skin.color.fgMuted;
     final TextStyle mono = TextStyle(
-        fontFamily: skin.type.monoFamily, color: amber, fontSize: 13);
+        fontFamily: skin.type.monoFamily, color: amber, fontSize: skin.type.sizeBodyLg);
 
     final List<_Waypoint> waypoints = _waypoints(mc);
     double? bestSnr;
@@ -100,24 +113,17 @@ class _ReconDashboardState extends State<ReconDashboard>
         children: <Widget>[
           // Header.
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 6, 6),
+            padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.labelToControl, skin.space.labelToControl),
             child: Row(
               children: <Widget>[
-                Expanded(
-                  child: Text('MESHMORE · RECON',
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontFamily: skin.type.headingFamily,
-                          color: amber,
-                          fontSize: 15,
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.w700)),
-                ),
+                // The skin's identity is its own typography and colour, not
+                // a second name for a screen the strip already names.
+                const Spacer(),
                 Text(m.statusLabel,
                     style: TextStyle(
                         color: m.alert ? skin.color.alert : dim,
                         fontFamily: skin.type.monoFamily,
-                        fontSize: 11,
+                        fontSize: skin.type.sizeSm,
                         letterSpacing: 1)),
                 const MmAudioToggle(),
                 IconButton(
@@ -125,7 +131,7 @@ class _ReconDashboardState extends State<ReconDashboard>
                   icon: Icon(Icons.bluetooth,
                       size: 20,
                       color: m.alert ? skin.color.alert : amber),
-                  onPressed: () => DeviceManagerSheet.show(context),
+                  onPressed: () => context.push('/settings/connection'),
                 ),
               ],
             ),
@@ -133,12 +139,12 @@ class _ReconDashboardState extends State<ReconDashboard>
           Divider(height: 1, color: skin.color.line),
           // Compass + terse readout.
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            padding: EdgeInsets.fromLTRB(skin.space.rowInset, skin.space.rowInset, skin.space.rowInset, skin.space.rowInset),
             child: Row(
               children: <Widget>[
                 SizedBox(
-                  width: 92,
-                  height: 92,
+                  width: _compassSize,
+                  height: _compassSize,
                   child: AnimatedBuilder(
                     animation: _sweep,
                     builder: (BuildContext _, Widget? __) => CustomPaint(
@@ -151,20 +157,26 @@ class _ReconDashboardState extends State<ReconDashboard>
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: skin.space.screenEdge),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      _kv('PEERS', '${m.peersInRange}/${m.knownCount}', mono, dim),
-                      _kv('CH', m.channelLabel, mono, dim),
+                      _kv(context, 'PEERS', '${m.peersInRange}/${m.knownCount}', mono, dim),
+                      _kv(context, 'CH', m.channelLabel, mono, dim),
                       if (m.contactsLabel != null)
-                        _kv('CON', m.contactsLabel!, mono, dim),
+                        _kv(context, 'CON', m.contactsLabel!, mono, dim),
                       if (m.batteryLine != null)
-                        _kv('BATT', m.batteryLine!, mono, dim),
-                      _kv('SNR',
+                        _kv(context, 'BATT', m.batteryLine!, mono, dim),
+                      _kv(context, 'SNR',
                           bestSnr == null ? '—' : '${bestSnr.toStringAsFixed(0)}dB',
                           mono, dim),
+                      // Own pubkey — needed by anyone who wants to
+                      // add you before their DMs can route.
+                      MyPubkeyLine(
+                          pubKeyHex: m.pubKeyHex,
+                          style: mono.copyWith(color: dim),
+                          shownChars: 12),
                     ],
                   ),
                 ),
@@ -174,12 +186,12 @@ class _ReconDashboardState extends State<ReconDashboard>
           Container(
             width: double.infinity,
             color: skin.color.surface,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            padding: EdgeInsets.symmetric(horizontal: skin.space.rowInset, vertical: skin.space.labelToControl),
             child: Text('CONTACTS // RNG · BRG',
                 style: TextStyle(
                     color: dim,
                     fontFamily: skin.type.monoFamily,
-                    fontSize: 11,
+                    fontSize: skin.type.sizeSm,
                     letterSpacing: 1.5)),
           ),
           // Waypoint readout.
@@ -198,15 +210,14 @@ class _ReconDashboardState extends State<ReconDashboard>
                       return InkWell(
                         onTap: () => _open(mc, w.node),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 11),
+                          padding: EdgeInsets.symmetric(horizontal: skin.space.rowInset, vertical: skin.space.rowInset),
                           child: Row(
                             children: <Widget>[
                               Text(w.inRange ? '▲' : '△',
                                   style: TextStyle(
                                       color: w.inRange ? amber : dim,
-                                      fontSize: 13)),
-                              const SizedBox(width: 10),
+                                      fontSize: skin.type.sizeBodyLg)),
+                              SizedBox(width: skin.space.rowGap),
                               Expanded(
                                 child: Text(
                                     w.node.name.isEmpty
@@ -215,15 +226,15 @@ class _ReconDashboardState extends State<ReconDashboard>
                                     overflow: TextOverflow.ellipsis,
                                     style: mono),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: skin.space.rowGap),
                               Text(w.range,
                                   style: TextStyle(
                                       color: dim,
                                       fontFamily: skin.type.monoFamily,
-                                      fontSize: 12)),
-                              const SizedBox(width: 14),
+                                      fontSize: skin.type.sizeBody)),
+                              SizedBox(width: skin.space.rowInset),
                               SizedBox(
-                                width: 42,
+                                width: _bearingColumn,
                                 child: Text('${w.bearingDeg}°',
                                     textAlign: TextAlign.right,
                                     style: mono),
@@ -240,17 +251,19 @@ class _ReconDashboardState extends State<ReconDashboard>
     );
   }
 
-  Widget _kv(String k, String v, TextStyle mono, Color dim) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+  Widget _kv(BuildContext context, String k, String v, TextStyle mono, Color dim) =>
+      Padding(
+        padding: EdgeInsets.symmetric(
+            vertical: context.skin.space.insideText),
         child: Row(
           children: <Widget>[
             SizedBox(
-                width: 52,
+                width: _labelColumn,
                 child: Text(k,
                     style: TextStyle(
                         color: dim,
                         fontFamily: mono.fontFamily,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         letterSpacing: 1))),
             Text(v, style: mono),
           ],

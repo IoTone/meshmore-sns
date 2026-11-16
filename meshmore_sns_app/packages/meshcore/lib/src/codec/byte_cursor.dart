@@ -56,6 +56,14 @@ class ByteCursor {
     return v;
   }
 
+  /// Signed 16-bit (noise floor, RSSI and scaled SNR in stats frames).
+  int i16(String ctx) {
+    _need(2, ctx);
+    final int v = _data.getInt16(_pos, Endian.little);
+    _pos += 2;
+    return v;
+  }
+
   int u32(String ctx) {
     _need(4, ctx);
     final int v = _data.getUint32(_pos, Endian.little);
@@ -85,6 +93,14 @@ class ByteCursor {
     return utf8.decode(rest, allowMalformed: true);
   }
 
+  /// Consumes whatever is left, for a frame whose payload the firmware
+  /// forwards verbatim and whose length is therefore not fixed. The
+  /// [why] argument is required so every use names the layout that makes
+  /// the tail open-ended.
+  void skipRemaining(String why) {
+    _pos = _bytes.length;
+  }
+
   /// Fixed-width field decoded as UTF-8, trimmed at the first NUL.
   String fixedCString(int n, String ctx) {
     final Uint8List raw = bytes(n, ctx);
@@ -104,6 +120,12 @@ class FrameBuilder {
   void u8(int v) {
     assert(v >= 0 && v <= 0xFF, 'u8 out of range: $v');
     _b.addByte(v & 0xFF);
+  }
+
+  void u16(int v) {
+    assert(v >= 0 && v <= 0xFFFF, 'u16 out of range: $v');
+    final ByteData d = ByteData(2)..setUint16(0, v, Endian.little);
+    _b.add(d.buffer.asUint8List());
   }
 
   void u32(int v) {

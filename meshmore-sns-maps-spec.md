@@ -1,0 +1,507 @@
+# Meshmore SNS — Offline maps (R61): spec
+
+Issue: [IoTone/meshmore-sns#5](https://github.com/IoTone/meshmore-sns/issues/5)
+— "a way to download and cache maps": OpenStreetMap, USGS, event maps;
+choose regions; a storage budget; no licensed maps; setup online only;
+opportunistic downloads; updates and deletion; expiry.
+
+A mesh radio is most useful where the network isn't. Every map view that
+shows tiles (street map, equal grid, fabric survey) has fetched them live
+until now, so the maps were blank in exactly the places the app is for.
+R61 closes R25's deferred "offline-first" decision.
+
+## The constraint that shapes everything: tile policies
+
+| Source | Licence | Bulk / offline download | R61 treatment |
+|---|---|---|---|
+| **OpenStreetMap** (`tile.openstreetmap.org`) | ODbL data, attribution required | **Forbidden.** The tile policy says "offline use is not permitted", and that apps must not "bulk download tiles or offer prefetch features", including any "download for offline" button or background job | **View cache only**: tiles you have looked at are kept, honouring `Cache-Control`/`Expires`/`ETag`, with a 7-day floor when the server says nothing. Never prefetched. Stable User-Agent `MeshmoreSNS/<version> (+repo URL)` |
+| **OpenTopoMap** | CC-BY-SA | Free to embed "provided the server is not overly burdened, e.g. by mass downloads"; it runs on one small vServer | **View cache only** |
+| **USGS The National Map** (USGSTopo, USGSImageryTopo) | US-government public domain | No prohibition found; public-domain data | **Region packs allowed**, inside US coverage only (CONUS, Alaska, Hawaii, PR/USVI). Paced at about 6 tiles/s, one download at a time |
+| **Custom tile server** (user-entered `https://…/{z}/{x}/{y}…`) | Whatever its owner says | The user ticks "this server allows offline download", for their own server or one whose terms permit it | View cache, plus packs when ticked |
+| **Event maps** (GeoJSON by URL) | The publisher's terms | The user fetches one file | Downloaded once, drawn as an overlay. **The app ships no event data and no event URLs.** The add dialog says that the publisher's terms apply |
+
+So the honest answer to "download OpenStreetMap regions" is: **not from
+openstreetmap.org.** You can do it today by pointing a custom source at a
+server that permits offline use (self-hosted, or a provider whose terms
+allow it). OSM data you can legally take offline in bulk comes as **vector
+extracts** (for example Protomaps PMTiles builds), which needs a vector
+renderer. That is phase 2, below.
+
+"No licensed maps" holds: nothing keyed or commercial is built in.
+
+### Event maps: the Burning Man example
+
+Burning Man publishes its city plan as GeoJSON (street lines and outlines,
+plazas, CPNs, toilets, the trash fence) at innovate.burningman.org and in
+`burningmantech/innovate-GIS-data`. Its terms: no commercial use, the app
+must be free, a prominent "not affiliated, endorsed, or verified by Burning
+Man Project" disclaimer, camp locations are embargoed until the Sunday
+before the event, and "Burning Man" may not appear in an app's name. R61
+works with such data because the user brings the URL. We do not bundle
+the data or preset the URL. If we ever add a preset, it must carry the
+disclaimer.
+
+## Model
+
+- **Tile store**: one file per tile under
+  `<app-support>/maps/tiles/<source>/<z>/<x>/<y>`, with one JSON index of
+  bytes, fetched-at, expires-at, last-used, ETag, and the set of packs
+  that hold the tile.
+  - A tile with **no pack** is a *view* tile, the only kind evicted
+    automatically.
+  - A tile in several packs is stored once. Deleting one pack never
+    breaks another.
+- **Region pack**: a source, a box (centre ± radius), a zoom range, and a
+  "delete after" period.
+  - Tiles are fetched lowest zoom first, so a half-done pack is already
+    useful zoomed out.
+  - States: downloading, updating, waiting for network, stopped (over
+    budget), paused, complete.
+  - At most 50,000 tiles per pack. The top zoom is capped at the
+    source's native maximum.
+- **Event layer**: name, https URL, size, feature count, delete-after,
+  and visible.
+  - GeoJSON Point/MultiPoint, (Multi)LineString, (Multi)Polygon (outer
+    rings only) and GeometryCollection are drawn.
+  - At most 10 MB per layer.
+- **Custom source**: name, https template containing `{z}`, `{x}` and
+  `{y}` (`{s}` optional), attribution, and the allows-offline flag.
+
+## Rules
+
+1. **Server rules are not preferences.** A view-only source shows no
+   download control at all. The source list says why, e.g. "Viewed tiles
+   only: the server forbids bulk download".
+2. **Setup is online-only.** Creating a pack fetches its first tile not
+   already held, and if that fails nothing is created ("Can't reach the
+   server. Set up maps while online."). Adding a layer is its download.
+3. **Opportunistic downloads.**
+   - A failed fetch parks the pack as *waiting for network*, and backoff
+     runs from 30 s, doubling to 15 min.
+   - The pack wakes on the backoff timer, or as soon as any map fetch
+     succeeds (for example, the user panning a map).
+   - Packs survive restarts and resume on launch.
+   - No Wi-Fi-only switch yet; that needs a connectivity plugin. Noted
+     as phase 2.
+4. **The budget is one number** (100 MB – 5 GB, default 500 MB), shared by
+   packs, layers and the view cache.
+   - Packs and layers are *pinned*. The view cache gets what they leave,
+     evicted least-recently-used first.
+   - Creating a pack refuses if its estimate won't fit beside the pinned
+     bytes.
+   - A pack that grows past the budget (because the server's tiles are
+     heavier than planned) stops as "over budget". The check uses the
+     larger of the plan and the observed tile size. Raising the budget
+     resumes it.
+5. **Updates are conditional.** "Update" re-asks the server about every
+   tile with `If-None-Match`/`If-Modified-Since`: a 304 is cheap, and gaps
+   are filled. Pack tiles are never re-fetched merely because someone
+   looked at them. Stale *view* tiles are revalidated when online, and
+   shown as they are when offline.
+6. **Expiry deletes.** Packs and layers have "delete after" settings of
+   never, 7, 30, 90 or 365 days, counted from the last finished download
+   or update. View tiles unused past "keep viewed" (7–365 days, default
+   30) are dropped. The sweep runs at launch and hourly.
+7. **Attribution is always on the map** for the visible basemap.
+8. **Every refusal is a sentence** (house rule from R60): no name,
+   offline, view-only source, outside coverage, too many tiles, over
+   budget, not https, not GeoJSON, over 10 MB.
+
+## UI
+
+**Map tab** (the viewer): the street map is a primary swipe page, right
+after the Hyperlocal grid, in every skin. It is the same `StreetMapView`
+that the grid offers as a view mode, promoted so it is one swipe away
+rather than three picks deep. It is the *viewer*; pack and source
+management stay in Settings → Offline maps, one tap from a corner button
+on the map. Because a pan/zoom map owns horizontal drags, the shell's
+swipe is locked on this tab, the same rule the grid applies to its
+panning views. Unlike the grid, the Map tab keeps a way out by gesture:
+a 24dp band at each screen edge (R67, `MmEdgeSwipe`) is hit-tested
+before the map, so an inward fling there goes to the previous (left) or
+next (right) view and the map never sees those touches; the middle
+pans and zooms. Back and the view strip also leave. **R117 — the camera
+follows one ladder, and the map is centred on the user wherever it can be.**
+In order: the phone's position, then the radio's own reported position,
+then the view the user left last time, then the area of the largest
+downloaded offline region on the device (zoomed to frame its box), and only
+then the world view (centre 20N 0E, zoom 2). The rung that decided the
+camera is carried in the resolved value, so a rebuild cannot silently swap
+one for another. A position that arrives after the user has panned or
+zoomed does not move the camera; only the locate control does, and it also
+asks for a position when there is none. The last view is persisted
+(`mm.mapview.v1`, written on a settled gesture) so reopening the map puts
+the user back where they were, which is the "centred on them" that matters
+most in practice. When no position is known the map still draws, and one
+hairline row at the bottom says which of the two situations it is and
+offers the one action that helps: location not allowed for the app
+("Allow location"), location blocked (opens the OS settings page),
+location off on the phone (opens the OS settings page), or no position yet
+(the "Find me" action). Self and range markers are omitted until a
+position arrives, at which point the map takes the personal rung at zoom
+14 unless the user has moved it. The copy says "position", never "fix".
+(R70) The OSM credit line sits in the same bottom column as that row so it
+is never covered; the five map controls are 48dp and the right edge band
+starts below the column (derived from it). The edge bands start just
+inside the Android system-gesture zone (`systemGestureInsets`): a swipe
+from the very edge is the OS's Back. Under the Studio skin the basemap is
+**rendered from a vector style** (R80, resourced in R82), not shown as
+pictures and not filtered: `assets/maps/studio_dark.json` (written for
+this app, 28 layers, Shortbread v1 schema) is drawn by `vector_map_tiles`
+onto Flutter's canvas, so land, water, roads and parks carry their own
+colour and the result is sharp at every zoom instead of an upscaled PNG.
+Tiles come from `kOsmVector` - the OpenStreetMap Foundation's own vector
+service, `vector.openstreetmap.org/shortbread_v1/{z}/{x}/{y}.mvt`, live
+since July 2025 - through `MmVectorTileProvider`, which calls the same
+`MapsController.loadTile` bytes path the raster layer used, so the R61
+view cache, ETag revalidation, budget and expiry all still apply. No
+third-party tile company sits in the middle: one credit,
+`(c) OpenStreetMap contributors`, covers the data and the tiles. Labels
+need no glyph server: the renderer draws `text-font` with Flutter's text
+engine.
+
+**R115 — one vector map, seven skins.** The same style file and the same
+source serve every preset; what changes per skin is paint. `VectorSkinPalette`
+derives ground, water, waterway, forest, grass, sand, rock, building, boundary,
+the eight-step road ramp and the label colours from that skin's own tokens, and
+`themedVectorStyleJson` applies them to the style's existing layers - layer
+order, widths, filters and label fields stay the style's, so a themed map is
+the same map. A guard test asserts no two presets paint the same document, and
+that a label's halo is always its skin's ground. The map's underlay colour is
+the skin's ground too, so an unloaded tile reads as land in that skin rather
+than as Studio's charcoal in all seven.
+
+**R114 — level of detail, so a zoom out is never a black hole.** A tile that is
+not on disk falls back to the nearest coarser tile that is: the raster provider
+takes the child's slice out of the nearest ancestor (up to six levels) and
+emits it at the tile edge, and the vector provider serves the ancestor's
+geometry (two levels, matching the layer's `maximumTileSubstitutionDifference`)
+so the renderer scales it sharp rather than upscaling pixels. The ancestor
+lookup is a store read, never a fetch: a stand-in is a drawing decision. Parents
+are warmed ahead of a miss, and a downloaded pack whose zoom range excludes the
+current view says so once instead of looking broken.
+
+The dimmed raster path remains as the fallback for a skin that has not
+opted in, and for a build where the style asset fails to load (R79:
+`out = 0.70 * in`, a pure RGB scale, so hue survives - land 169, sea
+119/148/156, label 36, 6.7:1). R70-R73's luminance invert plus 0.15
+desaturation is gone: it flipped hue (OSM water read orange) and, being
+per-tile and global, destroyed the USGS aerial-imagery source, which has
+no luminance structure to invert. The grid's street-map mode keeps its
+"awaiting fix" text (`StreetMapView.browseWithoutFix`, default off; only
+`MapScreen` opts in).
+
+**Settings → Offline maps** (new hub row, after Tools):
+
+- **Storage**: "X of Y used" bar, then the breakdown (regions · event
+  maps · viewed tiles), Budget, Keep viewed, and Clear viewed tiles.
+- **Region downloads**: one row per pack.
+  - Row text: name; source and zoom; state, tiles done/total, size, and
+    "N not on server"; then "Deletes in N d" or "Kept until deleted";
+    plus a progress bar while incomplete.
+  - Menu: Pause/Resume, Update, Delete after…, Delete (confirmed).
+  - Button: **Download a region**.
+- **Event maps**: one row per layer, with a visibility switch, host,
+  feature count and size, and expiry.
+  - Menu: Download again, Delete after…, Delete.
+  - Button: **Add event map** (name, URL, delete-after, and the
+    publisher-terms note).
+- **Map sources**: each source, with whether it can be downloaded.
+  Custom sources can be deleted, which deletes their packs. Button:
+  **Add tile server**.
+
+**Download a region** has these fields: name, source (only sources that
+allow packs), centre (my location, or typed lat, lon), radius (1–50 km),
+zoom from / to, and delete after. A live line shows "N tiles · about X",
+and a refusal sentence appears whenever the plan would be refused. The
+Download button stays off until the plan is acceptable, and an empty
+name just keeps it off without a scolding.
+
+**Street map** (grid tab): the street/topo toggle becomes a **basemap
+picker** listing every source (built-in and custom). Visible event layers
+draw over the basemap and under the nodes. An attribution line sits
+bottom-left. Equal-grid and fabric survey use the cached OSM layer.
+
+## Self-test (validation)
+
+**Offline maps → Self-test** (the app-bar check icon) validates the
+whole path on the phone, against the real servers and the phone's own
+storage. It runs in a sandbox: a `maps-selftest` folder beside the real
+maps folder, and its own settings key. The sandbox is deleted
+afterwards, so the user's packs and budget are never touched. A run
+takes about 40 s and about 0.9 MB of data. **Copy report** gives
+plain text for an issue comment.
+
+| Check | Passes when |
+|---|---|
+| Map servers reachable | OSM and USGS Topo return an image at z12 (OpenTopoMap and USGS Imagery are reported, not required); latency and max-age shown |
+| Viewed tiles are kept | Two loads of one tile cause one fetch |
+| Stale tiles re-checked politely | 8 days later (clock skew), a conditional request is sent; 304 or re-send reported |
+| Region download | A USGS pack of about 1 km, z12–14, completes; tiles held = total − missing; rate shown |
+| Region update | Every tile is re-asked; the 304 vs re-sent counts are shown |
+| Event map | A public GeoJSON (BRC street centrelines) parses to features |
+| Offline behaviour | With the network cut, a cached tile shows, an unseen tile is blank, and a new pack and a new layer are refused as offline |
+| Pause and resume | The network is cut mid-pack; the pack parks, then finishes **by itself** when the backoff timer fires (about 30 s) |
+| Refusals | A huge area gives too-many-tiles, a 100 MB budget gives over-budget, OSM is view-only, Tokyo is outside coverage |
+| Delete-after expiry | 8 days later, packs and the layer are gone and the bytes are freed |
+| Storage matches the books | Tile bytes on disk equal the index's count |
+
+The test point is the user's own location when USGS covers it, or else
+Black Rock City.
+
+For developers, `tool/maps_selftest_device.dart` is the same self-test
+as a headless APK entrypoint. It writes the report to logcat between
+`MAPS-SELFTEST BEGIN/END` markers; the usage is in the file header.
+First device run (SH-53D, 2026-10-15): **all 11 pass**, 38 s.
+
+## Phase 2 (not built)
+
+- **Vector OSM offline**: built in R81 (region files, below). Still open:
+  a hosted list of regions, range reads of a remote archive for online
+  use, and the Protomaps schema.
+- **Wi-Fi-only / charging-only** download conditions (connectivity
+  plugin).
+- **Pick the area on a map** (drag a box) instead of centre + radius.
+- **Event layer styling** by property (street names on lines, POI icons)
+  and a Burning Man preset with the required disclaimer.
+- **Auto-update** packs every N days.
+- **Bundled starter basemap**: a world overview at z0–5 from public-domain
+  data, so a fresh install has something under the pins.
+
+## R93: what "download a region" should be (decision)
+
+Asked directly: should offline regions be USGS topo packs, should OSM vector
+be downloaded, and does this need a server with a queue that tells the user
+to keep the app open?
+
+**The queue is the wrong place to look.** It already exists, client side:
+one download at a time, 150 ms pacing (~6.7 tiles/s), pause/resume/update,
+over-budget parking, waiting-for-network backoff that resumes on any
+successful fetch and on launch, one shared budget, and an expiry sweep
+(`maps_controller.dart`). Nothing in the design needs a broker, an auth
+service or a "keep the app open" push: the foreground task keeps working and
+the next launch resumes. A remote server would only ever have to *produce or
+host the artifact*, never to serve tiles to the app.
+
+**What may be downloaded at all is a server rule, not a preference**
+(`map_source.dart`): OSM raster forbids prefetch, OpenTopoMap forbids mass
+download, OSM vector forbids bulk download (7-day cache floor, interactive
+use only), and only the USGS National Map (public domain, CONUS/AK/HI/PR)
+permits packs. So:
+
+1. **Automatic packs stay USGS Topo / USGS Imagery.** They are the only
+   built-ins that are both permitted and public domain, and they cover the
+   task (topo + imagery) without a hosting requirement.
+2. **OSM vector is never crawled.** No client-side "download the vector
+   region" is legitimate against `vector.openstreetmap.org`, and the app has
+   no PMTiles writer, so on-device assembly is out too.
+3. **A vector region is a PMTiles file produced off-device** (Planetiler
+   Shortbread build + `pmtiles extract`) and either hosted on a static
+   byte-range host or handed to the app. The reader (resume, hash verify,
+   range reads) is already shipped behind `kRegionFilesEnabled = false`; it
+   is hidden because no file is published, not because the code is missing.
+4. **Outside the US the honest default is empty.** The pack picker must say
+   so rather than refusing at the end (`PackRefusal.outsideCoverage` today).
+   The two honest routes for a non-US user are a tile server they have the
+   right to download from (custom source, `allowsPacks` is their assertion)
+   or an imported/hosted region file.
+
+**Open, needs the owner:** the URL route for region files already works
+behind the flag; a *file import* needs a picker dependency the project has
+not allowed (no `file_picker` in `pubspec.yaml`). Until that is decided, the
+honest state is: USGS packs for the US, region files by URL when hosted, and
+no pretence of vector downloads.
+
+## R83: region files deferred; the live map made responsive
+
+### Region files are deferred, not removed
+The owner deferred "download a region". The machinery works and is tested
+(`MapArchive`, `MapsController.addArchive`, the PMTiles reader, resume,
+hashing, read-in-place), but a region file is useless until one is
+published, and publishing needs a host the project does not have. So the
+Settings entry is hidden behind `kRegionFilesEnabled = false`
+(`lib/maps/map_archive.dart`) rather than shown as an empty, inert
+section. The UI test now asserts the section is absent while the archives
+still exist in the controller; the mechanics stay covered by
+`map_archive_test.dart`. Turning it on is one constant.
+
+### The live map
+- **One request per tile at a time.** `MapsController._inflight` keys
+  in-flight network fetches by tile; a pan that returns before the first
+  response lands reuses that future instead of opening a second request.
+  Measured: two concurrent reads of one tile produce exactly one fetch.
+- **Warm ring.** After the camera settles for 500 ms,
+  `StreetMapView._warmAround` computes the visible tile range, expands it
+  by one tile, caps it at 24, and calls `MapsController.prefetch`. Prefetch
+  runs **only when the gate is idle** (`viewIdle`), sequentially, through
+  `loadTileDetailed`, so it obeys the same gate, backoff, budget and expiry
+  as a visible tile and stops the moment a real request arrives. It skips
+  tiles already held, tiles already known missing, offline, over-budget and
+  gated states. Result: the next pan paints from storage.
+  The warmed tiles are ordinary tiles - the map reads them with no extra
+  code path.
+- **More parsed tiles in memory.** `memoryTileCacheMaxSize` is 24 MB, not
+  the library's 10 MB default, so a pan back revisits parsed layers instead
+  of re-parsing. Disk remains owned by `TileStore`.
+- **Honest zoom ceiling.** Shortbread stops at z14, so the Studio map caps
+  at z17 (8x linear upscale) instead of 18.5 (24x); the raster presets keep
+  18.5 because they have native detail there.
+- The skin is read during `build` and cached in `_vectorSkin`; the warm-up
+  timer must never touch `context.skin`, which watches a provider
+  ("Tried to listen to a value exposed with provider, from outside of the
+  widget tree" - proven by `home_shell_test`).
+
+## R82: the basemap is OSM's own vector service
+
+### Why this replaced OpenFreeMap
+The owner's question was why a third party was needed at all. It was not.
+The OSMF has run a public vector tile service since 2025-07-22
+(`blog.openstreetmap.org/2025/07/22/vector-tiles-are-deployed-on-openstreetmap-org`),
+serving the Shortbread v1 schema at
+`https://vector.openstreetmap.org/shortbread_v1/{z}/{x}/{y}.mvt`
+(TileJSON confirms `maxzoom` 14, 26 layers, `application/vnd.mapbox-vector-tile`).
+Apps may use it interactively: the vector policy permits third-party
+applications, requires a unique User-Agent, 7-day-minimum tile caching, a
+corner credit, and forbids bulk download. All four hold here -
+`MeshmoreSNS/<version>` is sent, the store honours server expiry **with a
+seven-day floor** (`MapSource.minCacheAge`; the service itself advertises
+`max-age=300`, so following the header alone would re-fetch every five
+minutes and break the very policy it is trying to follow), the credit is
+drawn, and `kOsmVector` is view-only and kept out of the raster picker's
+pack sources.
+
+`tile.openstreetmap.org` remains raster-only, so "just use OSM" was never
+possible before vector tiles existed. That is the whole reason a service
+like OpenFreeMap had a role.
+
+### What changed
+- `kOsmVector` (`lib/maps/map_source.dart`) replaces `kOpenFreeMapVector`:
+  id `osm-vec`, `.mvt`, `maxNativeZoom` 14, `bytesPerTile` 40000 (a dense
+  z13 Denver tile measured 84 KB), `allowsPacks: false`,
+  `minCacheAge: 7 days`.
+- `assets/maps/studio_dark.json` was rewritten against Shortbread. 28
+  layers, 14.9 KB, down from 47 layers and 36 KB. Shortbread layer names
+  (`ocean`, `water_polygons`, `land`, `streets`, `street_labels`,
+  `place_labels`, ...) replace the OpenMapTiles ones; a test asserts every
+  `source-layer` in the style is one the schema publishes.
+- `kArchiveRequiredLayers` is now `{water_polygons, streets}`: a region
+  archive must carry Shortbread, and anything else is refused on arrival
+  with a reason.
+- The credit line is `(c) OpenStreetMap contributors` on both the tiles and
+  the data, so nothing but OSM needs naming.
+
+### What did not change
+Rendering (`vector_map_tiles`), the tile store, the view cache, packs,
+ETag revalidation, budget, expiry, the per-source backoff and the request
+gate all stay. The archive reader and pack-by-file path are untouched.
+
+### Legibility
+Land `#141414`, water `#1b2a36` (blue), parks `#202e21` and woods `#1d291e`
+(green), minor roads `#474747`, motorway `#6a6a6a` (3.5:1 on land), labels
+`#e2e2e2` / `#c0c0c0` with a 1.2 px `#141414` halo, water names `#7fa3bd`.
+Colour stays in the content, the chrome stays monochrome.
+
+### Backup exclusion (found while doing this)
+Android Auto Backup includes `files/` by default with a 25 MB quota, and
+`getApplicationSupportDirectory()` is `files/` - a region archive lives
+there. Without rules, an archive would either fail the backup or upload
+hundreds of megabytes to the user's drive. `backup_rules.xml` (Android 11
+and below) and `data_extraction_rules.xml` (12+, where the old attribute is
+ignored) exclude `maps/` from cloud backup and device transfer, and the
+manifest points at both. Guarded by `test/maps/map_backup_exclusion_test.dart`.
+iOS needs `isExcludedFromBackup` on the archive URL; that needs a platform
+channel and is **not done**.
+
+## R81: region files (PMTiles) and the map network path
+
+### Why one file per region
+A `MapPack` fetches a box tile by tile. That is the wrong primitive for
+vector OSM: OpenFreeMap's terms allow an app's offline download only if it
+is "at most 3,000 tiles or 50 MB, made with at most 4 parallel requests,
+sent with a unique User-Agent" (openfreemap.org/tos, checked 2026-10-20),
+and OSM's own tile servers forbid bulk download. Tile counts for a modest
+region (computed with the app's tile maths, exact):
+
+| Region (bbox) | z0-12 | z0-14 | z14 only |
+|---|---|---|---|
+| Front Range, 38.2,-105.4 to 40.8,-104.5 | 657 | 8,883 | 6,510 |
+| Cascadia, 42.0,-125.0 to 50.0,-117.0 | 16,423 | 257,090 | 192,355 |
+
+Front Range at z14 is three times the cap, Cascadia is 86 times it (and
+over `MapsController.maxPackTiles`, 50,000). So a region must come as a
+file from a host that permits it. Size in bytes is an **estimate from
+published ranges, not measured here**: Colorado at z0-14 is 50-150 MB, so
+a Front Range corridor is roughly 30-80 MB; Cascadia 150-450 MB at z14
+and about 50 MB at z12. The app's planning figure of 12 kB a tile would
+say 107 MB and 3.1 GB, which shows how much dedupe and empty ocean tiles
+matter; that figure has never been measured against real tiles.
+
+### Model
+`MapArchive` (`lib/maps/map_archive.dart`): id, name, https url, optional
+declared size and SHA-256, keep-for days, state (downloading, waiting for
+network, over budget, paused, complete, failed) and, once accepted, the
+file's zoom range and extent from its header. Files live in
+`<maps root>/archives/<id>.pmtiles` (`.part` while downloading). They count
+in `usedBytes`/`pinnedBytes`, so the view-tile cache gives way to them.
+
+### Download, resume, accept
+Streamed to disk, never buffered. Resume sends `Range: bytes=N-` with
+`If-Range: <etag>`: a 206 whose `Content-Range` starts at N continues; a
+200 restarts at zero (range ignored, or the file was replaced, so a file is
+never stitched from two versions); a 416 whose total equals N means the
+part is already the file. A lost connection parks the archive as waiting
+and the existing retry and wake-on-success machinery resumes it, as does
+an app restart. A file is only used after: size (declared, else the
+server's), SHA-256 when given, `PmTilesArchive.open`, tile type MVT, and
+the layers `water` and `transportation` (OpenMapTiles). Anything else is
+deleted and the row says why. The budget stops the download at the real
+byte that would break it; raising the budget and resuming finishes it.
+
+### Reading
+For the vector basemap, a tile inside a complete archive's extent and zoom
+range is read by seek with no network; an empty cell inside it is final;
+outside every archive the view cache and network answer. A damaged file
+falls through to the network instead of blanking the map.
+
+### How the owner makes a region file
+The accepted schema is Shortbread v1 (R82), the schema the bundled style
+and the online service both use, so the file must carry that schema.
+Shortbread publishes a Planetiler recipe (`shortbread-tiles.org/make-vectortiles/planetiler`),
+and Planetiler writes PMTiles directly, so one command produces a region
+file from an OSM extract:
+
+```
+docker run --rm --user=$UID -v $PWD/data:/data \
+  ghcr.io/onthegomap/planetiler shortbread.yml \
+  --download --area=colorado --output=/data/shortbread.pmtiles
+```
+
+Then `sha256sum` it and host it on any static HTTPS host that serves byte
+ranges (Cloudflare Pages was the owner's pick; R2 and nginx also work).
+`pmtiles extract --bbox ... --maxzoom 14` carves a region out of a larger
+Shortbread PMTiles archive without regenerating, because extract reads any
+PMTiles v3 archive. **Unverified**: the exact command is taken from the
+Shortbread documentation, and neither it nor extract was run here.
+
+### R81 decisions (why Protomaps was not adopted)
+- Protomaps public builds are dated (`maps.protomaps.com/builds`), kept
+  for about a week, and their docs say "hotlinking to these downloads are
+  discouraged ... copy the tileset to your own Cloud Storage"
+  (docs.protomaps.com/basemaps/downloads). They are an input to extract
+  from, not a runtime URL.
+- The only stable public vector endpoint is OpenFreeMap (OpenMapTiles).
+  Keeping one schema end to end means one style, and an archive is a
+  drop-in for the same tiles. Switching schema means a second style plus
+  schema detection, or dropping online vector. That is the owner's call.
+- The data is ODbL: a produced work (tiles) may be distributed with
+  attribution (docs.protomaps.com: "Open Database License Produced Work,
+  OpenStreetMap attribution required"), so self-hosting a region file is
+  permitted. Attribution on the map names OpenStreetMap.
+
+### Network path (R81)
+Viewing fetches go through `TileFetchGate` (4 concurrent, newest first,
+queue 32, oldest dropped). Backoff is per source after three consecutive
+failures. A server "no such tile" is remembered for the run. The vector
+layer's own tile file cache is capped to 1 MB / 1 h because `TileStore` is
+the cache of record. The library cannot cancel a provider call and has no
+prefetch ring, so neither is implemented.

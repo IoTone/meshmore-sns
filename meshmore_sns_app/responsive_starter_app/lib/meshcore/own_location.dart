@@ -1,5 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
+import '../gen/app_localizations.dart';
+
 /// Where our own latitude/longitude came from for distance/bearing
 /// math (Nodes screen distances, R18 grid GPS positioning, R22
 /// "Set advert location" workflow).
@@ -24,6 +26,7 @@ class OwnLocation {
     required this.longitude,
     required this.source,
     this.altitudeMeters,
+    this.fixAt,
   });
 
   final double latitude;
@@ -37,11 +40,27 @@ class OwnLocation {
   /// reported locations always have this null.
   final double? altitudeMeters;
 
+  /// When the platform measured this fix, for a phone fix; null for a
+  /// device-reported position, whose age the protocol does not carry.
+  ///
+  /// It is what lets a surface say "your last position was 14 hours ago"
+  /// instead of drawing a two-day-old point as if it were where the reader
+  /// stands.
+  final DateTime? fixAt;
+
   /// A short human-readable source label for status chips/tiles.
   String get sourceLabel => switch (source) {
         OwnLocationSource.deviceReported => 'device',
         OwnLocationSource.phoneFix => 'phone GPS',
         OwnLocationSource.none => 'none',
+      };
+
+  /// R69 — the same label in the app's language. [sourceLabel] stays
+  /// English for logs and `toString`; UI must use this.
+  String localizedSourceLabel(AppLocalizations l) => switch (source) {
+        OwnLocationSource.deviceReported => l.locationSourceDevice,
+        OwnLocationSource.phoneFix => l.locationSourcePhone,
+        OwnLocationSource.none => l.locationSourceNone,
       };
 
   @override

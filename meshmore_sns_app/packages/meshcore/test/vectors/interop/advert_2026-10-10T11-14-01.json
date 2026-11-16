@@ -1,0 +1,22 @@
+{
+  "kind": "ota_advert_capture",
+  "captured_at": "2026-10-10T11:14:01.675",
+  "capture": "2026-10-10 bench run, second site",
+  "capture_path": "a companion radio on USB, its PUSH_CODE_LOG_RX_DATA (0x88) event as recorded by the bench serial listener; request_snr_db and request_rssi_dbm are the listener's own report for the same event",
+  "note": "rf_log_payload_hex is the 0x88 payload without its opcode byte: [SNR x4][RSSI][OTA packet]. Prepend 0x88 to get the notification exactly as the radio sent it.",
+  "snr_db": 2.5,
+  "rssi_dbm": -83,
+  "route": "DIRECT",
+  "route_code": 2,
+  "payload_type": "ADVERT",
+  "sender_key_hex": "26f6071f4650b4737f47c88d7cec89a45b706fbb90841d5f1ebf1650e6f0e6cf",
+  "sender_name": "WIOld",
+  "advert_lat": 45.685159,
+  "advert_lon": -111.093553,
+  "rf_log_payload_hex": "0aad120026f6071f4650b4737f47c88d7cec89a45b706fbb90841d5f1ebf1650e6f0e6cf5672ca6a8fd17c771e3d7141ef54546e26485876e2ce639f94ee432129707ac35a5367742f192f6637219558719c69ac44fb50ca06725723123f91462791977c1a864f0d91a719b902cfd860f957494f6c64",
+  "decode": {
+    "lat": 45.685159,
+    "lon": -111.093553,
+    "name": "WIOld"
+  }
+}

@@ -261,4 +261,56 @@ void main() {
           greaterThanOrEqualTo(200.0));
     });
   });
+  group('a radio that has not been configured yet is not a NaN radius', () {
+    // `flutter_map`'s circle painter groups points by radius, and a NaN key
+    // never matches itself, so a NaN radius crashes the paint outright. It got
+    // there from a SelfInfo read before the radio's config landed: bandwidth
+    // 0 made the range infinite. The survey view crashed on exactly that.
+    test('bandwidth 0 falls back to the reference channel, finite', () {
+      final double r = estimatedLoraRangeMeters(
+          spreadingFactor: 7, bandwidthKhz: 0, txPowerDbm: 14);
+      expect(r.isFinite, isTrue);
+      expect(r, closeTo(1500.0, 1.0));
+    });
+
+    test('a non-finite reading is dropped, not clamped into the answer', () {
+      final double r = estimatedPeerReachMeters(
+        rssiDbm: double.nan,
+        distanceMeters: double.infinity,
+        ourSpreadingFactor: 7,
+        ourBandwidthKhz: 125,
+        ourTxPowerDbm: 14,
+      );
+      expect(r.isFinite, isTrue);
+      expect(r, inInclusiveRange(200.0, 20000.0));
+    });
+  });
+
+  test('a peer reach ring needs a measurement to exist', () {
+    // The map's rule, stated where the arithmetic lives: with neither RSSI nor
+    // a distance, the estimate is the radio's own link budget — tens of km for
+    // the USA/Canada preset — which is a claim about the radio, not the peer.
+    // The default estimate is still available (the self ring uses it); what
+    // changed is that the map no longer draws it per peer.
+    final double linkBudget = estimatedPeerReachMeters(
+      rssiDbm: null,
+      distanceMeters: null,
+      ourSpreadingFactor: 7,
+      ourBandwidthKhz: 125,
+      ourTxPowerDbm: 22,
+      peerType: 2,
+    );
+    expect(linkBudget, greaterThan(5000),
+        reason: 'this is why an unmeasured ring was unusable on a map');
+    // With a measurement, the same call is a peer-sized number.
+    final double measured = estimatedPeerReachMeters(
+      rssiDbm: -105,
+      distanceMeters: 1200,
+      ourSpreadingFactor: 7,
+      ourBandwidthKhz: 125,
+      ourTxPowerDbm: 22,
+      peerType: 2,
+    );
+    expect(measured, lessThanOrEqualTo(20000));
+  });
 }

@@ -38,8 +38,7 @@ void main() {
     expect(h.calls, <CueKind>[CueKind.messageIn]);
   });
 
-  test('audioMaster on (and not visualHapticOnly): audio + haptic',
-      () async {
+  test('audioMaster on (and not visualHapticOnly): audio + haptic', () async {
     final ThemeController tc = ThemeController();
     await tc.setAudioMaster(true);
     final _FakeAudio a = _FakeAudio();
@@ -51,8 +50,7 @@ void main() {
     expect(h.calls, <CueKind>[CueKind.alert]);
   });
 
-  test('visualHapticOnly suppresses audio even when master is set',
-      () async {
+  test('visualHapticOnly suppresses audio even when master is set', () async {
     final ThemeController tc = ThemeController();
     await tc.setAudioMaster(true);
     await tc.setVisualHapticOnly(true);
@@ -108,8 +106,8 @@ void main() {
     });
 
     test('null preset falls back to the neutral default', () {
-      expect(hapticPatternFor(null, CueKind.alert),
-          <HapticHit>[HapticHit.heavy]);
+      expect(
+          hapticPatternFor(null, CueKind.alert), <HapticHit>[HapticHit.heavy]);
     });
 
     test('themes feel different for the same cue (alert)', () {

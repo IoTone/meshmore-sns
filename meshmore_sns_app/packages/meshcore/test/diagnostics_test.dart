@@ -124,6 +124,39 @@ void main() {
       expect(p.hopCount, 2);
       expect(p.hashSize, 2);
       expect(p.payload, <int>[0xAA, 0xBB]);
+      // The path is what a reception report has to name, so it is kept rather
+      // than skipped over: two 2-byte hashes, upper-cased like the ecosystem
+      // writes them.
+      expect(p.pathHashes, <String>['0909', '0909']);
+      expect(p.path, <int>[9, 9, 9, 9]);
+    });
+
+    test('path hashes follow the hash size the header claims', () {
+      // 3 hops of 1-byte hashes: the shortest (and most collision-prone) mode,
+      // which is why the count and the size both have to come from the packet.
+      final int header =
+          (kPayloadTypeGrpTxt << kPktPayloadTypeShift) | kRouteFlood;
+      final Uint8List raw = Uint8List.fromList(<int>[
+        header,
+        3, // 3 hops, 1-byte hashes
+        0x44, 0x90, 0x7F, // path
+        0x01, 0x02, // payload
+      ]);
+      final OtaPacket? p = OtaPacket.parse(raw);
+      expect(p, isNotNull);
+      expect(p!.hopCount, 3);
+      expect(p.hashSize, 1);
+      expect(p.pathHashes, <String>['44', '90', '7F']);
+      // A capture that ends inside the path is truncated, not a packet with a
+      // padded hash: the parser refuses it rather than reporting a hop it did
+      // not receive.
+      expect(
+          OtaPacket.parse(Uint8List.fromList(<int>[
+            header,
+            3,
+            0x44, 0x90, // one path byte short of the three the header claims
+          ])),
+          isNull);
     });
 
     test('truncated OTA packet → null (never throws)', () {

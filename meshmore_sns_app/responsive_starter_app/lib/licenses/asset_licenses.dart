@@ -14,7 +14,6 @@ import 'package:flutter/foundation.dart';
 ///   wiki) baked into `assets/docs/` — MIT, © MeshCore contributors.
 /// - GeoNames `cities15000` dataset (`assets/data/cities15000.bin`) —
 ///   **CC-BY 4.0, which requires attribution.**
-/// - Natural Earth 110m land polygons (`assets/data/world-110m.geojson`)
 ///   — public domain.
 /// - OpenStreetMap raster tiles (R25 map view, fetched at runtime) —
 ///   map data © OpenStreetMap contributors, ODbL.
@@ -53,44 +52,66 @@ void registerAssetLicenses() {
     );
 
     yield const LicenseEntryWithLineBreaks(
-      <String>['Meshmore SNS — GeoNames cities'],
-      'The offline city dataset (cities15000) is derived from GeoNames '
-      '(https://www.geonames.org) and is licensed under the Creative '
-      'Commons Attribution 4.0 License (CC BY 4.0).\n'
-      '\n'
-      '© GeoNames (https://www.geonames.org).\n'
-      'See https://creativecommons.org/licenses/by/4.0/ for the full '
-      'license text.',
-    );
-
-    yield const LicenseEntryWithLineBreaks(
-      <String>['Meshmore SNS — Natural Earth'],
-      'The world land outline (110m land polygons) is from Natural Earth '
-      '(https://www.naturalearthdata.com) and is in the public domain. '
-      'No attribution is required; credit is given here as a courtesy.',
-    );
-
-    yield const LicenseEntryWithLineBreaks(
       <String>['Meshmore SNS — OpenStreetMap'],
       'The map view renders raster tiles whose underlying map data is '
       '© OpenStreetMap contributors, available under the Open Database '
       'License (ODbL). See https://www.openstreetmap.org/copyright.',
     );
 
+    // Every preset is set in its own monospace face (D11.8), so the list is
+    // longer than the two faces the app shipped with. One entry, because a
+    // user reading About is reading "what is in this build", not "which file
+    // came from which repository".
     yield const LicenseEntryWithLineBreaks(
-      <String>['Meshmore SNS — Bundled fonts (Saira, JetBrains Mono)'],
-      'The bundled type faces — Saira and JetBrains Mono — are used under '
-      'the SIL Open Font License, Version 1.1.\n'
+      <String>['Meshmore SNS — Bundled fonts (Saira, JetBrains Mono, Fira Mono, '
+          'Source Code Pro, Geist Mono, Cascadia Code)'],
+      'The bundled type faces — Saira, JetBrains Mono, Fira Mono, Source Code '
+      'Pro, Geist Mono and Cascadia Code — are used under the SIL Open Font '
+      'License, Version 1.1.\n'
       '\n'
       'Saira © The Saira Project Authors '
       '(https://github.com/Omnibus-Type/Saira).\n'
       'JetBrains Mono © 2020 The JetBrains Mono Project Authors '
       '(https://github.com/JetBrains/JetBrainsMono).\n'
+      'Fira Mono © 2012-2015 The Mozilla Foundation and Telefonica S.A. '
+      '(https://github.com/mozilla/Fira).\n'
+      'Source Code Pro © Adobe (https://github.com/adobe-fonts/source-code-pro), '
+      'from the Google Fonts repository at ofl/sourcecodepro.\n'
+      'Geist Mono © Vercel (https://github.com/vercel/geist-font), from the '
+      'Google Fonts repository at ofl/geistmono.\n'
+      'Cascadia Code © Microsoft (https://github.com/microsoft/cascadia-code), '
+      'from the Google Fonts repository at ofl/cascadiacode.\n'
       '\n'
       'This Font Software is licensed under the SIL Open Font License, '
       'Version 1.1. This license is available with a FAQ at '
       'https://scripts.sil.org/OFL. The fonts and derivatives, however, '
       'cannot be released under any other type of license.',
+    );
+
+    // The image codec rides a prebuilt native library that bundles three
+    // third-party projects. Their notices are reproduced here because the
+    // library ships as an asset the package licence page cannot enumerate.
+    yield const LicenseEntryWithLineBreaks(
+      <String>['Meshmore SNS — libavif'],
+      'The AVIF container and encoder/decoder library is libavif, used under '
+      'the BSD 2-Clause License.\n'
+      '\n'
+      'Copyright 2019 Joe Drago. All rights reserved.',
+    );
+
+    yield const LicenseEntryWithLineBreaks(
+      <String>['Meshmore SNS — dav1d'],
+      'The AV1 decoder is dav1d, used under the BSD 2-Clause License.\n'
+      '\n'
+      'Copyright © 2018-2025, VideoLAN and dav1d authors. All rights '
+      'reserved.',
+    );
+
+    yield const LicenseEntryWithLineBreaks(
+      <String>['Meshmore SNS — libaom'],
+      'The AV1 encoder is libaom, used under the BSD 3-Clause License.\n'
+      '\n'
+      'Copyright (c) 2016, Alliance for Open Media. All rights reserved.',
     );
   });
 }

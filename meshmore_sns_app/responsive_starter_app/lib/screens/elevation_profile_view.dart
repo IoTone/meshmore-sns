@@ -7,17 +7,32 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import 'grid_notice.dart';
+import '../theme/mm_skin.dart';
+import '../util/mm_format.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../ui/mm_components.dart';
+import '../ui/mm_shape.dart';
 
-/// R45 — exploratory altitude-profile view. **Not** meant to be
-/// useful (most peers plot in the "?" band until each one's
-/// telemetry has been queried). Meant to be *interesting*: a NERV-
-/// style targeting HUD with iconic real-world references drawn at
-/// their true heights and our node pinned at the altitude reported
-/// by the paired device's GPS (via the CMD_SEND_TELEMETRY_REQ /
-/// 0x8B path, populated automatically on every ready transition).
-/// Phone-GPS altitude is used only as a last-resort fallback.
+/// R45 — the altitude profile: every node we hold an altitude for, drawn
+/// against real-world references at their true heights.
+///
+/// Where each altitude comes from, because the chart is only as honest as its
+/// sources:
+///
+///   - a peer's altitude is that node's own telemetry (`0x8B`), read from the
+///     controller's cache. The advert has no altitude slot in this firmware, so
+///     a peer that has never answered a telemetry request has no altitude and
+///     is drawn on the unknown band rather than guessed at;
+///   - our own line is the phone's GPS fix, which is the only altitude source
+///     the app has for itself: the MeshCore `SelfInfo` carries lat/lon and
+///     never altitude, and a device's self-telemetry often omits the GPS
+///     triplet. It is a last resort and it is labelled as ours, not as the
+///     radio's.
+///
+/// The horizontal axis is a stagger so the dots do not overlap. It is not a
+/// distance and the view says so on screen.
 ///
 /// Reference set (handpicked for an order-of-magnitude spread):
 ///   - Person ........... 1.7 m
@@ -33,13 +48,18 @@ class ElevationProfileView extends StatefulWidget {
   const ElevationProfileView({
     super.key,
     this.filteredNodes,
+    this.reduceMotion = false,
   });
 
   final List<DiscoveredNode>? filteredNodes;
 
+  /// Whether the decorative scan line should stand still. Passed in rather than
+  /// read from a provider so the view stays mountable on its own — the grid
+  /// already has the setting.
+  final bool reduceMotion;
+
   @override
-  State<ElevationProfileView> createState() =>
-      _ElevationProfileViewState();
+  State<ElevationProfileView> createState() => _ElevationProfileViewState();
 }
 
 class _ElevationProfileViewState extends State<ElevationProfileView>
@@ -47,7 +67,7 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
   late final AnimationController _scan = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 4),
-  )..repeat();
+  );
 
   /// Transient "request in flight" flag, just for the chip's spinner —
   /// the telemetry response lands asynchronously via the controller.
@@ -56,6 +76,10 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
   @override
   void initState() {
     super.initState();
+    // The scan line is decoration, and a decoration that repeats forever costs a
+    // full repaint sixty times a second for a reader who asked the system to stop
+    // animating things. It still runs for everyone else.
+    if (!widget.reduceMotion) _scan.repeat();
     // Poll our OWN telemetry once when the view opens so the ME line
     // reflects a fresh altitude. Gathering other nodes' telemetry is
     // deferred until lobospeak lands; press UPDATE to re-poll self.
@@ -65,7 +89,33 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
   }
 
   @override
+  void didUpdateWidget(ElevationProfileView old) {
+    super.didUpdateWidget(old);
+    // The shell keeps this view alive across a tab switch, so `initState` does
+    // not run again: a reader who turns "Remove animations" on while the grid
+    // is open kept the scan line running under a setting that promises it
+    // stops, and one who turns it off kept a frozen line.
+    if (old.reduceMotion == widget.reduceMotion) return;
+    if (widget.reduceMotion) {
+      _scan.stop();
+    } else if (!_scan.isAnimating) {
+      _scan.repeat();
+    }
+  }
+
+  /// The polling indicator's reset. Held so a view that is closed before it
+  /// fires cannot leave a timer behind: a delayed future that touches
+  /// `setState` after disposal is a leak the harness (and a real device) sees.
+  Timer? _pollReset;
+
+  /// How many peers one tap asks. Every request is one unicast over the air,
+  /// so a view full of nodes must not turn one tap into twenty transmissions.
+  /// The controller's own cache, in-flight and attempt rules do the rest.
+  static const int _askBatch = 8;
+
+  @override
   void dispose() {
+    _pollReset?.cancel();
     _scan.dispose();
     super.dispose();
   }
@@ -82,10 +132,39 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
     // Always flash the polling indicator so the tap has visible
     // feedback even when the altitude comes back unchanged.
     setState(() => _polling = true);
-    Future<void>.delayed(const Duration(seconds: 2), () {
+    _pollReset?.cancel();
+    _pollReset = Timer(const Duration(seconds: 2), () {
       if (mounted) setState(() => _polling = false);
     });
   }
+
+  /// Ask the peers that have no altitude yet, up to [_askBatch] of them.
+  ///
+  /// Until this existed the view's own legend promised that dots are "plotted
+  /// at their altitude once asked", and nothing ever asked: the only way a
+  /// peer left the unknown band was telemetry arriving for some other reason.
+  /// A view that waits for data no surface requests is the unfinished case the
+  /// owner reported.
+  Future<void> _askNodesElevation(MeshcoreController mc) async {
+    final List<DiscoveredNode> missing = <DiscoveredNode>[
+      for (final DiscoveredNode n in mc.nodes)
+        if (n.pubKeyHex != mc.ownPubKeyHex &&
+            n.altitudeMeters == null &&
+            mc.telemetryFor(n.pubKeyHex)?.altitudeMeters == null &&
+            !mc.isQueryingTelemetry(n.pubKeyHex))
+          n,
+    ].take(_askBatch).toList();
+    if (missing.isEmpty) return;
+    setState(() => _asking = true);
+    for (final DiscoveredNode n in missing) {
+      await mc.requestPeerTelemetry(n.pubKeyHex,
+          cacheFor: const Duration(minutes: 5), maxAttempts: 3);
+    }
+    if (!mounted) return;
+    setState(() => _asking = false);
+  }
+
+  bool _asking = false;
 
   @override
   Widget build(BuildContext context) {
@@ -93,8 +172,7 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
 
-    final List<DiscoveredNode> source =
-        widget.filteredNodes ?? mc.nodes;
+    final List<DiscoveredNode> source = widget.filteredNodes ?? mc.nodes;
     // No more hasLocation filter — altitude can come from telemetry
     // independent of an advert lat/lon, so a peer without GPS in its
     // advert can still plot vertically if telemetry told us its
@@ -111,117 +189,237 @@ class _ElevationProfileViewState extends State<ElevationProfileView>
     // then this is the only way peers get above the ground band.
     final Map<String, double> peerAlt = <String, double>{};
     for (final DiscoveredNode n in peers) {
-      final double? resolved = n.altitudeMeters ??
-          mc.telemetryFor(n.pubKeyHex)?.altitudeMeters;
+      final double? resolved =
+          n.altitudeMeters ?? mc.telemetryFor(n.pubKeyHex)?.altitudeMeters;
       if (resolved != null) peerAlt[n.pubKeyHex] = resolved;
     }
 
     final double? selfAlt = mc.ownLocation?.altitudeMeters;
     final double? selfTemp = mc.selfTelemetry?.temperatureC;
 
-    return Stack(
+    // No altitude from anyone (peers nor us): the chart would draw only the
+    // reference objects and our own band, which reads as a broken chart rather
+    // than as "nothing has reported an altitude". Say which it is, with the
+    // action that can ask the peers that could answer.
+    // The same action the chart offers, because this is the state where it is
+    // most useful and it would otherwise be unreachable: with no altitude
+    // anywhere the chart does not draw, and its button with it.
+    final bool canAsk = peers.any((DiscoveredNode n) =>
+        n.pubKeyHex != mc.ownPubKeyHex && peerAlt[n.pubKeyHex] == null);
+    if (peerAlt.isEmpty && selfAlt == null) {
+      return GridNotice(
+        message: l.elevationEmpty,
+        icon: Icons.terrain_outlined,
+        actionLabel: canAsk ? l.elevationAskNodes : null,
+        onAction: canAsk ? () => _askNodesElevation(mc) : null,
+      );
+    }
+
+    // The chart, then its two caption lines *below* it.
+    //
+    // The captions used to be the last thing in the Stack, positioned 8 px from
+    // the bottom, which put them on top of the chart's own frame and of each
+    // other at a large type scale — the owner read it as overlapping text. A
+    // Column gives them their own height, so a scale change moves the chart
+    // instead of colliding with the words.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        AnimatedBuilder(
-          animation: _scan,
-          builder: (BuildContext _, Widget? __) {
-            // CustomPaint without a child collapses to Size.zero,
-            // leaving only the parent Scaffold's banner visible.
-            // SizedBox.expand gives it the body's full constraints
-            // so the painter has somewhere to draw.
-            return SizedBox.expand(
-              child: CustomPaint(
-                painter: _ElevationProfilePainter(
-                  selfAltMeters: selfAlt,
-                  peers: peers,
-                  peerAltOverrides: peerAlt,
-                  knownPubKeys: mc.known,
-                  favPubKeys: mc.favorites,
-                  accent: cs.primary,
-                  accentDim: cs.primary.withValues(alpha: .40),
-                  accentFaint: cs.primary.withValues(alpha: .18),
-                  warn: cs.tertiary,
-                  fg: cs.onSurface,
-                  bg: cs.surface,
-                  scanT: _scan.value,
-                  header: l.elevationProfileTitle,
-                  altLabel: l.elevationProfileAltLabel,
-                  meLabel: l.elevationProfileMeLabel,
-                  unknownLabel: l.elevationProfileUnknownLabel,
-                  peerCountLabel:
-                      l.elevationProfilePeers(peers.length),
-                  referenceLabels: <_RefId, String>{
-                    _RefId.person: l.elevationRefPerson,
-                    _RefId.house: l.elevationRefHouse,
-                    _RefId.redwood: l.elevationRefRedwood,
-                    _RefId.empireState: l.elevationRefEmpireState,
-                    _RefId.burj: l.elevationRefBurj,
-                    _RefId.mtFuji: l.elevationRefMtFuji,
-                  },
-                ),
-              ),
-            );
-          },
-        ),
-        // Self-telemetry chip — polled once when the view opens; tap
-        // to re-poll our own altitude. Other-node telemetry is
-        // deferred until lobospeak.
-        Positioned(
-          left: 12,
-          top: 56,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _refreshSelfTelemetry,
-              borderRadius: BorderRadius.circular(6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: cs.surface.withValues(alpha: .85),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                      color: cs.outline.withValues(alpha: .55)),
-                ),
-                child: DefaultTextStyle(
-                  style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 10,
-                    fontFamily: 'JetBrains Mono',
-                    letterSpacing: 1,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const Text('SELF TELEMETRY'),
-                          const SizedBox(width: 4),
-                          if (_polling)
-                            SizedBox(
-                              width: 11,
-                              height: 11,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 1.5, color: cs.primary),
-                            )
-                          else
-                            Icon(Icons.refresh,
-                                size: 11, color: cs.onSurfaceVariant),
-                        ],
+        Expanded(
+          child: Stack(
+            children: <Widget>[
+              AnimatedBuilder(
+                animation: _scan,
+                builder: (BuildContext _, Widget? __) {
+                  // CustomPaint without a child collapses to Size.zero,
+                  // leaving only the parent Scaffold's banner visible.
+                  // SizedBox.expand gives it the body's full constraints
+                  // so the painter has somewhere to draw.
+                  // The chart is a painted picture with no text of its own,
+                  // and it is the only place the per-peer altitude spread is
+                  // drawn. One sentence states the range and the count.
+                  final List<double> alts = <double>[
+                    for (final DiscoveredNode n in peers)
+                      if (peerAlt[n.pubKeyHex] case final double a) a,
+                  ]..sort();
+                  return Semantics(
+                    label: alts.isEmpty
+                        ? l.elevationProfileTitle
+                        : l.elevationProfileSemantics(
+                            alts.first.round(), alts.last.round(), alts.length),
+                    child: SizedBox.expand(
+                    child: CustomPaint(
+                      painter: _ElevationProfilePainter(
+                        type: context.skin.type,
+                        textScale: MediaQuery.textScalerOf(context).scale(1),
+                        selfAltMeters: selfAlt,
+                        peers: peers,
+                        peerAltOverrides: peerAlt,
+                        knownPubKeys: mc.known,
+                        favPubKeys: mc.favorites,
+                        accent: cs.primary,
+                        accentDim: cs.primary.withValues(alpha: .40),
+                        accentFaint: cs.primary.withValues(alpha: .18),
+                        warn: cs.tertiary,
+                        fg: cs.onSurface,
+                        bg: cs.surface,
+                        scanT: _scan.value,
+                        header: l.elevationProfileTitle,
+                        altLabel: l.elevationProfileAltLabel,
+                        meLabel: l.elevationProfileMeLabel,
+                        unknownLabel: l.elevationProfileUnknownLabel,
+                        peerCountLabel: l.elevationProfilePeers(peers.length),
+                        referenceLabels: <_RefId, String>{
+                          _RefId.person: l.elevationRefPerson,
+                          _RefId.house: l.elevationRefHouse,
+                          _RefId.redwood: l.elevationRefRedwood,
+                          _RefId.empireState: l.elevationRefEmpireState,
+                          _RefId.burj: l.elevationRefBurj,
+                          _RefId.mtFuji: l.elevationRefMtFuji,
+                        },
+                        format: context.formatPrefs,
                       ),
-                      const SizedBox(height: 2),
-                      Text(selfAlt != null
-                          ? 'alt: ${selfAlt.toStringAsFixed(0)} m'
-                          : 'alt: —'),
-                      if (selfTemp != null)
-                        Text('temp: ${selfTemp.toStringAsFixed(1)} °C'),
-                      Text(_polling ? 'polling…' : 'tap to update'),
-                    ],
+                    ),
                   ),
+                  );
+                },
+              ),
+              // The two controls sit in one column that flows, instead of at
+              // hardcoded `top: 56` and `top: 132`. Those offsets were measured at
+              // one text size: at 1.3x the chip already grows past 132, so the ask
+              // action was drawn over it, and at 200 % both were over the chart.
+              // A column cannot overlap itself at any size.
+              Positioned(
+                left: 12,
+                top: 56,
+                right: 12,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _refreshSelfTelemetry,
+                          borderRadius: mmRadius(context, 6),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: context.skin.space.rowGap,
+                                vertical: context.skin.space.step(3)),
+                            decoration: BoxDecoration(
+                              // Solid and the control-border tier: this chip sits on
+                              // the chart's own grid and profile line, and at 85 %
+                              // both showed through the words.
+                              color: cs.surface,
+                              borderRadius: mmRadius(context, 6),
+                              border: Border.all(color: cs.outline),
+                            ),
+                            child: DefaultTextStyle(
+                              style: TextStyle(
+                                color: cs.onSurface,
+                                fontSize: context.skin.type.sizeMicro,
+                                fontFamily: context.skin.type.monoFamily,
+                                letterSpacing: 1,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Text(l.elevationSelfTelemetry),
+                                      const SizedBox(width: 4),
+                                      if (_polling)
+                                        SizedBox(
+                                          width: context.skin.space.step(5),
+                                          height: context.skin.space.step(5),
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 1.5,
+                                              color: cs.primary),
+                                        )
+                                      else
+                                        Icon(Icons.refresh,
+                                            size: 11,
+                                            color: cs.onSurfaceVariant),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(selfAlt != null
+                                      ? l.elevationSelfAlt(
+                                          selfAlt.toStringAsFixed(0))
+                                      : l.elevationSelfAltUnknown),
+                                  if (selfTemp != null)
+                                    Text(l.elevationSelfTemp(
+                                        selfTemp.toStringAsFixed(1))),
+                                  Text(_polling
+                                      ? l.elevationPolling
+                                      : l.elevationTapToUpdate),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // The one action this view owed: ask the peers that have no
+                    // altitude. It follows the chip in the same column, so it can
+                    // never be drawn on top of it, and it disappears when there is
+                    // nothing to ask.
+                    if (peers.any((DiscoveredNode n) =>
+                        n.pubKeyHex != mc.ownPubKeyHex &&
+                        peerAlt[n.pubKeyHex] == null))
+                      Padding(
+                        padding:
+                            EdgeInsets.only(top: context.skin.space.step(2)),
+                        child: MmAction(
+                          key: const ValueKey<String>('elevation-ask-nodes'),
+                          icon: Icons.height,
+                          label:
+                              _asking ? l.elevationAsking : l.elevationAskNodes,
+                          dense: true,
+                          onPressed:
+                              _asking ? null : () => _askNodesElevation(mc),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            ),
+            ],
+          ),
+        ),
+        // What this chart is not: the horizontal axis is a stagger so the dots
+        // do not overlap, not a distance. The legend says the dots are nodes;
+        // only this says the x-position means nothing. The second line says
+        // where the heights came from, because a chart of altitudes is only as
+        // good as its sources and the two sources are different.
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+              12, context.skin.space.step(1), 12, context.skin.space.step(2)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                l.elevationNotADistance,
+                key: const ValueKey<String>('elevation-caption-x'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: context.skin.type.sizeMicro,
+                    height: 1.35),
+              ),
+              Text(
+                l.elevationAltitudesFrom,
+                key: const ValueKey<String>('elevation-caption-source'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: context.skin.type.sizeMicro,
+                    height: 1.35),
+              ),
+            ],
           ),
         ),
       ],
@@ -237,9 +435,8 @@ class _Ref {
   const _Ref(this.id, this.altMeters, this.draw);
   final _RefId id;
   final double altMeters;
-  final void Function(
-      Canvas c, Offset baseCentre, double pxPerMeter, Color stroke,
-      Color fill) draw;
+  final void Function(Canvas c, Offset baseCentre, double pxPerMeter,
+      Color stroke, Color fill) draw;
 }
 
 /// All references, sorted bottom → top by altitude.
@@ -261,7 +458,17 @@ double _altToYOffset(double altMeters, double pxPerSqrtMeter) {
 }
 
 class _ElevationProfilePainter extends CustomPainter {
+  /// The skin's type roles, passed in because a painter has no [BuildContext].
+  final MmType type;
+
+  /// The user's text scale, multiplied into every label this painter draws.
+  /// `MmType` carries the skin's scale only, so a painted label otherwise
+  /// ignores the font setting while the widgets around it honour it.
+  final double textScale;
+
   _ElevationProfilePainter({
+    required this.type,
+    required this.textScale,
     required this.selfAltMeters,
     required this.peers,
     required this.peerAltOverrides,
@@ -280,10 +487,21 @@ class _ElevationProfilePainter extends CustomPainter {
     required this.unknownLabel,
     required this.peerCountLabel,
     required this.referenceLabels,
+    required this.format,
   });
 
   final double? selfAltMeters;
   final List<DiscoveredNode> peers;
+
+  /// One Paint per job, reused across the peer loop. The scan line animates, so
+  /// this painter repaints every frame while it runs, and a Paint per marker per
+  /// frame is three allocations per peer per frame on a mesh with hundreds.
+  final Paint _markerFill = Paint();
+  final Paint _markerRope = Paint()..strokeWidth = 1.0;
+  final Paint _pipFill = Paint();
+  final Paint _pipRing = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.8;
 
   /// R45+1 — resolved altitude per peer (keyed by pubKeyHex). Falls
   /// back through advert → telemetry cache → null in the caller; the
@@ -310,13 +528,24 @@ class _ElevationProfilePainter extends CustomPainter {
   final String peerCountLabel;
   final Map<_RefId, String> referenceLabels;
 
+  /// The reader's units, for the altitude axis.
+  final FormatPrefs? format;
+
   /// Max altitude shown on the axis — slightly above Mt Fuji.
   static const double _altMax = 4500.0;
 
   /// Ticks at decadal-ish stops. The painter draws each as a dashed
   /// horizontal line + numeric label on the axis strip.
   static const List<double> _ticks = <double>[
-    0, 10, 50, 100, 500, 1000, 2000, 3000, 4000
+    0,
+    10,
+    50,
+    100,
+    500,
+    1000,
+    2000,
+    3000,
+    4000
   ];
 
   @override
@@ -332,10 +561,8 @@ class _ElevationProfilePainter extends CustomPainter {
     final double availableY = groundY - topY;
 
     // pxPerSqrtMeter: 0 m at ground line, sqrt(_altMax) m at topY.
-    final double pxPerSqrtMeter =
-        availableY / math.sqrt(_altMax);
-    final Rect canvasRect =
-        Rect.fromLTWH(0, 0, size.width, size.height);
+    final double pxPerSqrtMeter = availableY / math.sqrt(_altMax);
+    final Rect canvasRect = Rect.fromLTWH(0, 0, size.width, size.height);
     canvas.drawRect(canvasRect, Paint()..color = bg);
 
     _drawHudFrame(canvas, size);
@@ -358,8 +585,7 @@ class _ElevationProfilePainter extends CustomPainter {
     final Paint groundLine = Paint()
       ..color = accent
       ..strokeWidth = 1.5;
-    canvas.drawLine(
-        Offset(0, groundY), Offset(size.width - axisWidth, groundY),
+    canvas.drawLine(Offset(0, groundY), Offset(size.width - axisWidth, groundY),
         groundLine);
 
     // Self (ME) line — ALWAYS drawn so the user sees themselves on
@@ -372,14 +598,14 @@ class _ElevationProfilePainter extends CustomPainter {
       final bool known = selfAltMeters != null;
       final double y = known
           ? groundY -
-              _altToYOffset(
-                  selfAltMeters!.clamp(0.0, _altMax), pxPerSqrtMeter)
+              _altToYOffset(selfAltMeters!.clamp(0.0, _altMax), pxPerSqrtMeter)
           : groundY;
       final Paint mePaint = Paint()
         ..color = warn
         ..strokeWidth = 2.0;
-      _dashedLine(canvas, Offset(0, y),
-          Offset(size.width - axisWidth, y), mePaint, dash: 6, gap: 5);
+      _dashedLine(
+          canvas, Offset(0, y), Offset(size.width - axisWidth, y), mePaint,
+          dash: 6, gap: 5);
       final TextPainter tp = TextPainter(
         text: TextSpan(
           text: known
@@ -388,9 +614,9 @@ class _ElevationProfilePainter extends CustomPainter {
               : '${meLabel.toUpperCase()} ALT?',
           style: TextStyle(
               color: warn,
-              fontSize: 10,
+              fontSize: type.sizeMicro * textScale,
               letterSpacing: 1,
-              fontFamily: 'JetBrains Mono',
+              fontFamily: type.monoFamily,
               fontWeight: FontWeight.w700),
         ),
         textDirection: TextDirection.ltr,
@@ -432,6 +658,26 @@ class _ElevationProfilePainter extends CustomPainter {
     // advert field → telemetry cache → null. Peers absent from
     // peerAltOverrides land in the unknown band; peers present
     // plot at their resolved height.
+    // A profile is read left to right, so the peers that have an altitude are
+    // sorted by it and spread evenly across the plot. They used to be placed by
+    // `(i * 53) % width` over the *unsorted* list, which at 250 peers in a 250 px
+    // work area put every marker within a pixel of its neighbour — the view was
+    // least readable exactly when it had the most to say.
+    final List<DiscoveredNode> placed = <DiscoveredNode>[
+      for (final DiscoveredNode n in peers)
+        if (peerAltOverrides[n.pubKeyHex] != null) n,
+    ]..sort((DiscoveredNode a, DiscoveredNode b) =>
+        peerAltOverrides[a.pubKeyHex]!
+            .compareTo(peerAltOverrides[b.pubKeyHex]!));
+    final double plotLeft = 40;
+    final double plotRight = math.max(plotLeft, size.width - axisWidth - 24);
+    final double step =
+        placed.length <= 1 ? 0 : (plotRight - plotLeft) / (placed.length - 1);
+    final Map<String, double> placedX = <String, double>{
+      for (int i = 0; i < placed.length; i++)
+        placed[i].pubKeyHex: plotLeft + step * i,
+    };
+
     int unknownCount = 0;
     for (int i = 0; i < peers.length; i++) {
       final DiscoveredNode n = peers[i];
@@ -443,15 +689,15 @@ class _ElevationProfilePainter extends CustomPainter {
             16 -
             (unknownCount * 14.0) % (size.width - axisWidth - 32);
         final double y = groundY + 12.0;
-        _drawPeerMarker(canvas, Offset(x, y), n, isUnknownAlt: true);
+        _drawPeerMarker(canvas, Offset(x, y), n,
+            isUnknownAlt: true, groundY: groundY);
         unknownCount++;
       } else {
-        final double y = groundY -
-            _altToYOffset(alt.clamp(0.0, _altMax), pxPerSqrtMeter);
-        final double x = 40 +
-            ((i * 53) % ((size.width - axisWidth - 80).toInt()))
-                .toDouble();
-        _drawPeerMarker(canvas, Offset(x, y), n, isUnknownAlt: false);
+        final double y =
+            groundY - _altToYOffset(alt.clamp(0.0, _altMax), pxPerSqrtMeter);
+        final double x = placedX[n.pubKeyHex] ?? plotLeft;
+        _drawPeerMarker(canvas, Offset(x, y), n,
+            isUnknownAlt: false, groundY: groundY);
       }
     }
 
@@ -462,9 +708,9 @@ class _ElevationProfilePainter extends CustomPainter {
             '$unknownCount $unknownLabel',
         style: TextStyle(
             color: accentDim,
-            fontSize: 9,
+            fontSize: type.size(9) * textScale,
             letterSpacing: 2,
-            fontFamily: 'JetBrains Mono'),
+            fontFamily: type.monoFamily),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -476,8 +722,7 @@ class _ElevationProfilePainter extends CustomPainter {
       ..color = accentFaint
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
-    canvas.drawRect(
-        Rect.fromLTRB(4, 4, size.width - 4, size.height - 4), p);
+    canvas.drawRect(Rect.fromLTRB(4, 4, size.width - 4, size.height - 4), p);
     // Corner brackets.
     const double len = 14.0;
     final Paint c = Paint()
@@ -487,6 +732,7 @@ class _ElevationProfilePainter extends CustomPainter {
       canvas.drawLine(o, o.translate(len * dx, 0), c);
       canvas.drawLine(o, o.translate(0, len * dy), c);
     }
+
     corner(const Offset(8, 8), 1, 1);
     corner(Offset(size.width - 8, 8), -1, 1);
     corner(Offset(8, size.height - 8), 1, -1);
@@ -499,9 +745,9 @@ class _ElevationProfilePainter extends CustomPainter {
         text: '[ $header ]',
         style: TextStyle(
             color: accent,
-            fontSize: 11,
+            fontSize: type.sizeSm * textScale,
             letterSpacing: 3,
-            fontFamily: 'JetBrains Mono',
+            fontFamily: type.monoFamily,
             fontWeight: FontWeight.w700),
       ),
       textDirection: TextDirection.ltr,
@@ -517,8 +763,8 @@ class _ElevationProfilePainter extends CustomPainter {
     }
   }
 
-  void _drawAxis(Canvas canvas, Size size, double axisWidth,
-      double groundY, double topY, double pxPerSqrtMeter) {
+  void _drawAxis(Canvas canvas, Size size, double axisWidth, double groundY,
+      double topY, double pxPerSqrtMeter) {
     final double xAxis = size.width - axisWidth;
     final Paint axisLine = Paint()
       ..color = accent
@@ -532,9 +778,9 @@ class _ElevationProfilePainter extends CustomPainter {
         text: altLabel.toUpperCase(),
         style: TextStyle(
             color: accentDim,
-            fontSize: 9,
+            fontSize: type.size(9) * textScale,
             letterSpacing: 2,
-            fontFamily: 'JetBrains Mono'),
+            fontFamily: type.monoFamily),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -545,8 +791,7 @@ class _ElevationProfilePainter extends CustomPainter {
       final double y = groundY - _altToYOffset(a, pxPerSqrtMeter);
       // Short tick + dashed extension into the workspace for the
       // top of the scale.
-      canvas.drawLine(
-          Offset(xAxis - 4, y), Offset(xAxis + 4, y), axisLine);
+      canvas.drawLine(Offset(xAxis - 4, y), Offset(xAxis + 4, y), axisLine);
       _dashedLine(
           canvas,
           Offset(0, y),
@@ -558,12 +803,12 @@ class _ElevationProfilePainter extends CustomPainter {
           gap: 6);
       final TextPainter tp = TextPainter(
         text: TextSpan(
-          text: a < 1000 ? '${a.round()} m' : '${(a / 1000).toStringAsFixed(1)} km',
+          text: MmFormat.step(a, prefs: format),
           style: TextStyle(
               color: accent,
-              fontSize: 9,
+              fontSize: type.size(9) * textScale,
               letterSpacing: 1,
-              fontFamily: 'JetBrains Mono'),
+              fontFamily: type.monoFamily),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -577,14 +822,13 @@ class _ElevationProfilePainter extends CustomPainter {
     final String name = referenceLabels[r.id] ?? r.id.name;
     final TextPainter tp = TextPainter(
       text: TextSpan(
-        text: '$name · ${r.altMeters < 1000
-            ? '${r.altMeters.round()}m'
-            : '${(r.altMeters / 1000).toStringAsFixed(1)}km'}',
+        text:
+            '$name · ${r.altMeters < 1000 ? '${r.altMeters.round()}m' : '${(r.altMeters / 1000).toStringAsFixed(1)}km'}',
         style: TextStyle(
             color: accent,
-            fontSize: 9,
+            fontSize: type.size(9) * textScale,
             letterSpacing: 1,
-            fontFamily: 'JetBrains Mono'),
+            fontFamily: type.monoFamily),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -596,8 +840,8 @@ class _ElevationProfilePainter extends CustomPainter {
     tp.paint(canvas, at);
   }
 
-  void _drawUnknownBand(Canvas canvas, Size size, double axisWidth,
-      double groundY) {
+  void _drawUnknownBand(
+      Canvas canvas, Size size, double axisWidth, double groundY) {
     final double bandTop = groundY + 4;
     final double bandBottom = groundY + 22;
     final Rect r =
@@ -624,9 +868,9 @@ class _ElevationProfilePainter extends CustomPainter {
         text: '/ ${unknownLabel.toUpperCase()}',
         style: TextStyle(
             color: accentDim,
-            fontSize: 8,
+            fontSize: type.size(8) * textScale,
             letterSpacing: 2,
-            fontFamily: 'JetBrains Mono'),
+            fontFamily: type.monoFamily),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -634,9 +878,9 @@ class _ElevationProfilePainter extends CustomPainter {
   }
 
   void _drawPeerMarker(Canvas canvas, Offset at, DiscoveredNode n,
-      {required bool isUnknownAlt}) {
+      {required bool isUnknownAlt, double groundY = 0}) {
     final Color base = n.type == 2 ? accent : warn;
-    final Paint fill = Paint()..color = base;
+    final Paint fill = _markerFill..color = base;
     if (n.type == 2) {
       // Repeater = triangle.
       const double s = 5.0;
@@ -652,23 +896,20 @@ class _ElevationProfilePainter extends CustomPainter {
     // Faint vertical "rope" from the marker to the ground for
     // known-altitude peers, so the height-above-horizon reads.
     if (!isUnknownAlt) {
-      final Paint rope = Paint()
-        ..color = base.withValues(alpha: .3)
-        ..strokeWidth = 1.0;
-      canvas.drawLine(at, Offset(at.dx, at.dy + 200), rope);
+      final Paint rope = _markerRope..color = base.withValues(alpha: .3);
+      // To the ground, not to a fixed 200 px below the marker: on a short
+      // viewport the rope hung in mid-air and on a tall one it stopped short of
+      // the axis it is meant to reach.
+      canvas.drawLine(
+          at, Offset(at.dx, groundY > at.dy ? groundY : at.dy), rope);
     }
     // Star pip for favourite, dot for known.
     if (favPubKeys.contains(n.pubKeyHex)) {
-      canvas.drawCircle(at + const Offset(0, -8), 1.6,
-          Paint()..color = warn);
+      canvas.drawCircle(
+          at + const Offset(0, -8), 1.6, _pipFill..color = warn);
     } else if (knownPubKeys.contains(n.pubKeyHex)) {
       canvas.drawCircle(
-          at + const Offset(0, -8),
-          1.6,
-          Paint()
-            ..color = accent
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 0.8);
+          at + const Offset(0, -8), 1.6, _pipRing..color = accent);
     }
   }
 
@@ -695,13 +936,17 @@ class _ElevationProfilePainter extends CustomPainter {
       peers != old.peers ||
       knownPubKeys != old.knownPubKeys ||
       favPubKeys != old.favPubKeys ||
+      // The axis labels are drawn from the reader's units: without this a change
+      // of unit repainted every widget around the chart and left the chart
+      // saying metres.
+      format != old.format ||
       scanT != old.scanT;
 }
 
 // ---------- Reference silhouettes ----------------------------------
 
-void _drawPerson(Canvas c, Offset base, double pxPerSqrtMeter,
-    Color stroke, Color fill) {
+void _drawPerson(
+    Canvas c, Offset base, double pxPerSqrtMeter, Color stroke, Color fill) {
   final double h = math.sqrt(1.7) * pxPerSqrtMeter;
   // Person is tiny at this scale — draw a stylised stick figure.
   final double cx = base.dx;
@@ -715,16 +960,14 @@ void _drawPerson(Canvas c, Offset base, double pxPerSqrtMeter,
   // Body.
   c.drawLine(Offset(cx, top + 6), Offset(cx, base.dy), p);
   // Arms.
-  c.drawLine(
-      Offset(cx - 4, base.dy - h * 0.55),
-      Offset(cx + 4, base.dy - h * 0.55),
-      p);
+  c.drawLine(Offset(cx - 4, base.dy - h * 0.55),
+      Offset(cx + 4, base.dy - h * 0.55), p);
   // Legs.
   c.drawLine(Offset(cx, base.dy), Offset(cx - 3, base.dy + 0.1), p);
 }
 
-void _drawHouse(Canvas c, Offset base, double pxPerSqrtMeter,
-    Color stroke, Color fill) {
+void _drawHouse(
+    Canvas c, Offset base, double pxPerSqrtMeter, Color stroke, Color fill) {
   final double h = math.sqrt(10.0) * pxPerSqrtMeter;
   final double w = h * 1.1;
   final Paint outline = Paint()
@@ -745,13 +988,13 @@ void _drawHouse(Canvas c, Offset base, double pxPerSqrtMeter,
   c.drawPath(roof, f);
   c.drawPath(roof, outline);
   // Door.
-  final Rect door = Rect.fromLTWH(
-      base.dx - w * 0.10, base.dy - h * 0.3, w * 0.20, h * 0.30);
+  final Rect door =
+      Rect.fromLTWH(base.dx - w * 0.10, base.dy - h * 0.3, w * 0.20, h * 0.30);
   c.drawRect(door, outline);
 }
 
-void _drawRedwood(Canvas c, Offset base, double pxPerSqrtMeter,
-    Color stroke, Color fill) {
+void _drawRedwood(
+    Canvas c, Offset base, double pxPerSqrtMeter, Color stroke, Color fill) {
   final double h = math.sqrt(115.0) * pxPerSqrtMeter;
   final double w = h * 0.18;
   final Paint outline = Paint()
@@ -760,8 +1003,8 @@ void _drawRedwood(Canvas c, Offset base, double pxPerSqrtMeter,
     ..style = PaintingStyle.stroke;
   final Paint f = Paint()..color = fill;
   // Trunk.
-  final Rect trunk = Rect.fromLTWH(
-      base.dx - w * 0.15, base.dy - h * 0.30, w * 0.30, h * 0.30);
+  final Rect trunk =
+      Rect.fromLTWH(base.dx - w * 0.15, base.dy - h * 0.30, w * 0.30, h * 0.30);
   c.drawRect(trunk, f);
   c.drawRect(trunk, outline);
   // Conical canopy — two stacked triangles for a redwood vibe.
@@ -782,8 +1025,8 @@ void _drawRedwood(Canvas c, Offset base, double pxPerSqrtMeter,
   c.drawPath(canopy2, outline);
 }
 
-void _drawEmpireState(Canvas c, Offset base, double pxPerSqrtMeter,
-    Color stroke, Color fill) {
+void _drawEmpireState(
+    Canvas c, Offset base, double pxPerSqrtMeter, Color stroke, Color fill) {
   final double h = math.sqrt(381.0) * pxPerSqrtMeter;
   final double baseW = h * 0.45;
   final Paint outline = Paint()
@@ -794,21 +1037,21 @@ void _drawEmpireState(Canvas c, Offset base, double pxPerSqrtMeter,
   // Stepped silhouette: three rectangles narrowing upward, plus a
   // spire on top.
   void step(double cx, double bottomY, double topY, double width) {
-    final Rect r = Rect.fromLTWH(
-        cx - width / 2, topY, width, bottomY - topY);
+    final Rect r = Rect.fromLTWH(cx - width / 2, topY, width, bottomY - topY);
     c.drawRect(r, f);
     c.drawRect(r, outline);
   }
+
   step(base.dx, base.dy, base.dy - h * 0.55, baseW);
   step(base.dx, base.dy - h * 0.55, base.dy - h * 0.80, baseW * 0.70);
   step(base.dx, base.dy - h * 0.80, base.dy - h * 0.92, baseW * 0.45);
   // Spire.
-  c.drawLine(Offset(base.dx, base.dy - h * 0.92),
-      Offset(base.dx, base.dy - h), outline);
+  c.drawLine(Offset(base.dx, base.dy - h * 0.92), Offset(base.dx, base.dy - h),
+      outline);
 }
 
-void _drawBurj(Canvas c, Offset base, double pxPerSqrtMeter,
-    Color stroke, Color fill) {
+void _drawBurj(
+    Canvas c, Offset base, double pxPerSqrtMeter, Color stroke, Color fill) {
   final double h = math.sqrt(828.0) * pxPerSqrtMeter;
   final double w = h * 0.18;
   final Paint outline = Paint()
@@ -826,12 +1069,12 @@ void _drawBurj(Canvas c, Offset base, double pxPerSqrtMeter,
   c.drawPath(body, f);
   c.drawPath(body, outline);
   // Pointy spire.
-  c.drawLine(Offset(base.dx, base.dy - h * 0.80),
-      Offset(base.dx, base.dy - h), outline);
+  c.drawLine(Offset(base.dx, base.dy - h * 0.80), Offset(base.dx, base.dy - h),
+      outline);
 }
 
-void _drawMtFuji(Canvas c, Offset base, double pxPerSqrtMeter,
-    Color stroke, Color fill) {
+void _drawMtFuji(
+    Canvas c, Offset base, double pxPerSqrtMeter, Color stroke, Color fill) {
   final double h = math.sqrt(3776.0) * pxPerSqrtMeter;
   final double w = h * 1.3;
   final Paint outline = Paint()

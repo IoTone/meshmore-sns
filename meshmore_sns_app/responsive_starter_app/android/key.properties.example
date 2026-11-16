@@ -1,0 +1,15 @@
+# Release signing for Meshmore SNS.
+#
+# Copy this file to `android/key.properties` (git-ignored) and fill it in, then
+# a release build is signed with your key. Without it the release variant is
+# left unsigned and `flutter build appbundle --release` stops with a message
+# naming this file, because signing a release with the public debug key
+# produces an artifact Play rejects on its first check.
+#
+# storeFile is a path relative to android/app/, so `../upload.jks` sits beside
+# the app module. Keep the keystore itself out of the repository: both
+# `*.jks` and `*.keystore` are ignored.
+storeFile=../upload.jks
+storePassword=
+keyAlias=upload
+keyPassword=

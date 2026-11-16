@@ -135,7 +135,12 @@ BatteryEstimate estimateBattery({
     ..sort((a, b) => a.atUnix.compareTo(b.atUnix));
   final BatterySample latest = sorted.last;
   final double volts = latest.millivolts / 1000.0;
-  final double soc = spec.socForVolts(volts).clamp(0.0, 100.0);
+  // `socForVolts` answers NaN for a spec with no curve, and `NaN.clamp(0, 100)`
+  // returns 100: an unknown battery would have read as full. No estimate is the
+  // honest answer.
+  final double rawSoc = spec.socForVolts(volts);
+  if (!rawSoc.isFinite) return BatteryEstimate.empty;
+  final double soc = rawSoc.clamp(0.0, 100.0);
   final int now = nowUnix ?? latest.atUnix;
 
   // Charging → SoC only.
@@ -165,8 +170,10 @@ BatteryEstimate estimateBattery({
     final List<double> xs = <double>[];
     final List<double> ys = <double>[];
     for (final BatterySample s in window) {
+      final double y = spec.socForVolts(s.millivolts / 1000.0);
+      if (!y.isFinite) continue;
       xs.add((s.atUnix - t0) / 3600.0); // hours since window start
-      ys.add(spec.socForVolts(s.millivolts / 1000.0).clamp(0.0, 100.0));
+      ys.add(y.clamp(0.0, 100.0));
     }
     span = Duration(seconds: window.last.atUnix - window.first.atUnix);
     socDelta = (ys.first - ys.last).abs();

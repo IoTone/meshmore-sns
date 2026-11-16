@@ -5,47 +5,112 @@ import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_compass/flutter_compass.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../theme/mm_skin.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../meshcore/own_location.dart';
 import '../theme/theme_controller.dart';
+import '../shell/horizontal_drag_claim.dart';
+import '../ui/mm_components.dart';
+import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
 import 'elevation_profile_view.dart';
-import 'equal_grid_view.dart';
-import 'fabric_survey_view.dart';
-import 'globe_view.dart';
 import 'mesh_tree_view.dart';
 import 'node_detail_sheet.dart';
 import 'sns_cells_view.dart';
-import 'street_map_view.dart';
+import 'grid_notice.dart';
 import 'grid_prefs_store.dart';
-import 'meshbook_view.dart';
+import '../maps/compass.dart';
+import '../maps/radar_scale.dart';
+import '../theme/viz_palette.dart';
+import '../util/mm_format.dart';
 import 'weather_view.dart';
+import '../ui/mm_shape.dart';
+import 'package:meshcore/meshcore.dart';
 
-/// R27 — three map views in the /grid picker:
-/// `radial` (R18, default) + `globe` (R27) + `equalGrid` (R25) +
-/// `streetMap` (R25+2). Selected via a [PopupMenuButton] in the
-/// AppBar — swipe nav was tried in R25+2 but conflicted with the
-/// outer HomeShell PageView (left-swipe-from-radial would leave the
-/// grid tab instead of staying inside it). The dropdown is
-/// unambiguous and matches Material conventions.
+/// R117 — the mesh survey: one tab for the views that answer "what does the
+/// mesh look like from here, and where has it been heard?". `radial` (R18) is
+/// the default and the tab's identity; `fabric` (persisted coverage) and
+/// `weather` (environment telemetry) complete the primary set. The rest are
+/// all in one list in the view picker: `tree` (topology, works with no GPS),
+/// `elevation` (altitude against landmarks) and `snsCells` (chatter heat)
+/// answer narrower questions than the first three, but a view nobody can find
+/// is a view the app does not have.
+/// The view picker is the only way between them: a left/right swipe belongs
+/// to the shell's tabs (R109).
 enum _GridViewMode {
   radial,
-  globe,
-  equalGrid,
-  streetMap,
-  fabric,
-  elevation,
+  weather,
   tree,
   snsCells,
-  weather,
-  meshbook,
+  elevation,
 }
+
+/// Every view this tab ships, in the order they answer a question: what is
+/// around me (radial), what we have heard where (coverage), what the air is
+/// doing (weather), then topology (tree) and the two reports (altitude,
+/// chatter heat).
+///
+/// One list, no second level. A "More views…" row hid four working views
+/// behind a menu nobody opens; a view the user cannot see the name of is a
+/// view they do not have.
+const List<_GridViewMode> _allViews = <_GridViewMode>[
+  _GridViewMode.radial,
+  _GridViewMode.weather,
+  _GridViewMode.tree,
+  _GridViewMode.elevation,
+  _GridViewMode.snsCells,
+];
+
+extension on _GridViewMode {
+  /// Views whose body pans or zooms with a drag. These offer the Swipe ⇄ Pan
+  /// toggle: in swipe mode the view is a still picture and a horizontal drag
+  /// changes tab; in pan mode it takes every drag and the shell stops paging
+  /// (R109).
+  ///
+  /// The equal grid is not one of them even though it looks like a map: its
+  /// tiles are pinned to us (`InteractiveFlag.none`) and its zoom is the cell
+  /// stepper, so a toggle there would lock the shell's swipe and hand the drag
+  /// to nothing. The views that draw to fit never need the toggle either.
+  bool get pansHorizontally => switch (this) {
+        _GridViewMode.tree || _GridViewMode.snsCells => true,
+        _GridViewMode.radial ||
+        _GridViewMode.elevation ||
+        _GridViewMode.weather =>
+          false,
+      };
+
+  /// Whether this view keeps a horizontal drag for itself, even if it does not
+  /// pan.
+  ///
+  /// The altitude profile is a diagram: a drag across it does nothing, and
+  /// paging the app sideways while the reader is tracing a summit is the worst
+  /// of both. Claiming the drag makes the gesture inert instead of changing the
+  /// view under their finger.
+  bool get holdsDrags => this == _GridViewMode.elevation;
+}
+
+/// What a radar marker can honestly be drawn from.
+///
+/// A node with a reported position is placed by bearing and distance. A node
+/// without one is placed on the ring its signal strength implies, at an angle
+/// that is a stable placeholder — the app does not know which way it lies. The
+/// marker says so: the glyph is hollow, and the legend states that the angle is
+/// not a direction. Drawing both as the same solid dot was the lie.
+enum GridMarkerSource { position, signal }
+
+GridMarkerSource gridMarkerSourceFor({
+  required bool nodeHasLocation,
+  required bool selfHasLocation,
+}) =>
+    nodeHasLocation && selfHasLocation
+        ? GridMarkerSource.position
+        : GridMarkerSource.signal;
 
 /// R18 / U9 — the hyperlocal grid: a radial range-ring view of the
 /// mesh **fabric** relative to us. Brightness = recency (100 % at
@@ -62,8 +127,40 @@ enum _GridViewMode {
 ///
 /// Audio/haptic parity (R12) is left for the R12 CueService (U6);
 /// the grid currently carries the visual+positional cue only.
+///
+/// Lives in the HomeShell as the tab after Nodes (issue #4). The shell
+/// supplies the title; this widget brings its own toolbar.
 class GridScreen extends StatefulWidget {
-  const GridScreen({super.key});
+  const GridScreen({super.key, this.isCurrent});
+
+  /// Whether this tab is the one on screen.
+  ///
+  /// The shell builds the neighbouring pages, so a listener here runs whether or
+  /// not the reader is looking at it. A haptic click from a tab you are not on is
+  /// a buzz with no explanation — the same reason `ChatScreen` takes this flag
+  /// for its read marks.
+  final bool? isCurrent;
+
+  /// The selected view, held for the life of the process so it survives
+  /// leaving and re-entering the tab (the PageView disposes the state), and
+  /// written to [GridPrefsStore] so it also survives a restart.
+  ///
+  /// It used to be session-only, on the reasoning that every launch should open
+  /// on the radar. The owner asked for the opposite on 2026-11-14: a reader who
+  /// works in the mesh tree or the heat map should come back to it. A fresh
+  /// install still opens on the radar, because that is what an absent
+  /// preference means.
+  static _GridViewMode _sessionMode = _GridViewMode.radial;
+
+  /// R109 — the name this tab takes in [shellDragClaim] while its Swipe ⇄ Pan
+  /// toggle is in pan mode, so the shell knows to stop paging.
+  static const String dragHolder = 'grid';
+
+  /// Test seam: back to the launch state (radar).
+  @visibleForTesting
+  static void resetSession() {
+    _sessionMode = _GridViewMode.radial;
+  }
 
   /// Default outer-range scale (km) when the user hasn't moved the
   /// **Range** slider yet. Beyond this distance a GPS-positioned
@@ -76,17 +173,92 @@ class GridScreen extends StatefulWidget {
   /// **Region** stop is special: its scale is computed at runtime to
   /// frame the farthest known node (see `_effectiveScaleKm`); the km
   /// here is only a fallback when no located nodes are visible.
-  static const List<({String label, double km})> rangeStops =
-      <({String label, double km})>[
-    (label: 'Room', km: 0.025),
-    (label: 'Home', km: 0.10),
-    (label: 'Block', km: 0.5),
-    (label: 'Neighborhood', km: 1.0),
-    (label: 'Area', km: 2.0),
-    (label: 'Wide', km: 5.0),
-    (label: 'City', km: 25.0),
-    (label: 'Region', km: 300.0),
+  static const List<({double km})> rangeStops = <({double km})>[
+    (km: 0.025),
+    (km: 0.10),
+    (km: 0.5),
+    (km: 1.0),
+    (km: 2.0),
+    (km: 5.0),
+    (km: 25.0),
+    (km: 300.0),
+    // Auto frames whatever is actually in hand instead of a fixed window:
+    // the bulk of the located nodes sit just inside the rim and the outliers
+    // clamp to it. Appended rather than inserted, because `scaleIndex` is
+    // persisted and an index that changes meaning would silently re-scale
+    // every stored preference.
+    (km: 0),
   ];
+
+  /// The index of the [rangeStops] entry that frames the mesh automatically.
+  static int get autoScaleIndex => rangeStops.length - 1;
+
+  /// What share of the located nodes Auto keeps inside the rim.
+  ///
+  /// Nine in ten, so the furthest tenth clamps to the edge — which is what an
+  /// edge is for — while the rest are spread across the body rather than
+  /// huddled at the centre. A percentile rather than the maximum, because one
+  /// node at 40 km would otherwise squash forty nodes into a dot.
+  static const double autoPercentile = 0.9;
+
+  /// Where the percentile lands inside the radius. Reads as "just inside the
+  /// rim" with the ring labels still legible.
+  static const double autoAnchor = 0.86;
+
+  /// The size of a group, as a multiple of the next distance inward.
+  ///
+  /// A gap this wide between two sorted distances is a break in the mesh rather
+  /// than a spacing: the nodes inside it are one local group and the ones
+  /// outside belong to the wider net. 1.6 was picked against the fleet on this
+  /// handset, where the neighbourhood sits within 3 km and the rest of the
+  /// region starts at 9 km, so the break reads at about 3x.
+  static const double autoClusterGap = 1.6;
+
+  /// The outer radius, in km, that frames [distancesKm].
+  ///
+  /// The group first, the region second. Nodes are sorted by distance and the
+  /// widest relative break inside the first nine tenths wins: everything closer
+  /// than the break is the local group, and the radar frames that group instead
+  /// of averaging it against a handful of far peers. With no break worth the
+  /// name the 90th percentile frames the mesh as before, so a flat distribution
+  /// behaves exactly as it did.
+  ///
+  /// Pure and static so the arithmetic is testable without a canvas or a
+  /// controller: everything else about the radar is drawing.
+  @visibleForTesting
+  static double? autoRangeKm(List<double> distancesKm) {
+    if (distancesKm.isEmpty) return null;
+    final List<double> sorted = List<double>.of(distancesKm)..sort();
+    // Below five nodes a percentile is just noise, so frame the furthest one.
+    final int at = sorted.length >= 5
+        ? ((sorted.length - 1) * autoPercentile).round()
+        : sorted.length - 1;
+    double anchor = sorted[at];
+    // Look for a break in the sorted distances, but never below the third node:
+    // one node at 200 m and the rest at 4 km is not a group of one.
+    if (sorted.length >= 5) {
+      int best = -1;
+      double bestRatio = autoClusterGap;
+      for (int i = 2; i < at; i++) {
+        if (sorted[i] <= 0) continue;
+        final double ratio = sorted[i + 1] / sorted[i];
+        if (ratio > bestRatio) {
+          bestRatio = ratio;
+          best = i;
+        }
+      }
+      // A break found means the group is the nearer side of it, framed so the
+      // group's own furthest node still lands inside the rim.
+      if (best >= 0) anchor = sorted[best];
+    }
+    if (anchor <= 0) return null; // every node is on top of us
+    // An exact radius rather than a rounded one. Rounding to a "nice" number
+    // was tried and is worse than it sounds: the ladder's own steps are up to
+    // a third wide, so a frame aimed at 86 % lands anywhere from 65 % to 100 %
+    // — sometimes with nothing near the rim at all. The ring labels carry one
+    // decimal instead, which is cheaper than a radius nobody asked for.
+    return (anchor / autoAnchor).clamp(0.01, 2000.0);
+  }
 
   /// Selectable cadences for the **Play** refresh timer. Pause is
   /// the default; Play with the smallest interval is effectively
@@ -111,6 +283,12 @@ class _GridScreenState extends State<GridScreen>
   late final AnimationController _tick;
   StreamSubscription<ChatMessage>? _msgSub;
 
+  /// Which way the phone is pointing. Started with the screen and disposed with
+  /// it; null until the first sample, and every consumer falls back to north-up
+  /// while it is null.
+  late final CompassHeading _compass;
+  late final bool _ownsCompass;
+
   /// R18's anonymous-channel ripple: anchors a transient centre-out
   /// wave on every incoming channel message. The painter reads this
   /// each frame and decays it over `_rippleDuration`.
@@ -120,91 +298,121 @@ class _GridScreenState extends State<GridScreen>
   /// Whether the inline legend overlay is shown (info button in app bar).
   bool _legendVisible = false;
 
-  /// R27 — which of the available map views is showing.
-  _GridViewMode _viewMode = _GridViewMode.radial;
+  /// R27 — which of the available map views is showing. Seeded from,
+  /// and written back to, [GridScreen._sessionMode].
+  _GridViewMode _viewMode = GridScreen._sessionMode;
+
+  /// A view that pans always owns its horizontal drags.
+  ///
+  /// There used to be a Swipe ⇄ Pan toggle (R109): in "swipe" the graph was
+  /// held still so a drag changed tab. The owner's ruling removed it — a drag
+  /// on a graph or a map is a drag, and a page change is a tap on the strip at
+  /// the top. So the claim follows the view, not a mode.
+  bool get _mapOwnsDrags => _viewMode.pansHorizontally;
 
   /// Maximum hit-test radius (logical px) for tap-to-select on the grid.
   static const double _tapRadius = 28.0;
 
-  /// Pause / play state. Default is **paused** — the painter renders
-  /// from a snapshot captured at screen-open / pause-tap rather than
-  /// from `mc.nodes` live. Tapping play starts a periodic refresh of
-  /// the snapshot at `_interval`. **Until the user touches any of
-  /// the controls** (`_userInteracted`), the snapshot follows
-  /// `mc.nodes` automatically so a freshly-connected user sees
-  /// arriving adverts populate the view. As soon as they tap Pause,
-  /// Play, or move the scale slider, the snapshot freezes per the
-  /// pause semantics.
-  bool _live = false;
+  /// Pause / play state. Starts **live**: the view follows `mc.nodes`
+  /// and the transport button says so, which is what the screen was
+  /// already doing (`_userInteracted` was false) while the old status
+  /// line printed "paused". Tapping pause freezes the snapshot; play
+  /// restarts the periodic refresh at `_interval`.
+  bool _live = true;
   bool _userInteracted = false;
   Duration _interval = const Duration(seconds: 15);
   List<DiscoveredNode>? _snapshot;
   Timer? _refreshTimer;
 
   /// Index into [GridScreen.rangeStops] for the outer-ring scale.
-  /// Default stays at **Wide** (5 km) even though City/Region sit
-  /// beyond it on the slider.
-  int _scaleIndex =
-      GridScreen.rangeStops.indexWhere((s) => s.label == 'Wide');
+  ///
+  /// The default is **Auto**, which frames whatever nodes are in hand; the
+  /// fixed stops stay for a user who wants a ring that means the same distance
+  /// twice in a row.
+  int _scaleIndex = GridScreen.autoScaleIndex;
 
-  /// Live phone compass heading in degrees from magnetic north
-  /// (0=N, 90=E, 180=S, 270=W). Null when no sensor data has
-  /// arrived yet. Drives the radar's heading needle + heading-up mode.
-  double? _headingDeg;
+  /// Run the ticker only while something it drives is actually drawn.
+  ///
+  /// The sweep and the pulse are the ticker's whole job, and reduce-motion
+  /// removes both. The ticker used to repeat forever regardless, rebuilding a
+  /// full-screen dial sixty times a second to paint a frame the user could not
+  /// see — the one accessibility setting in this app that cost more battery than
+  /// the animation it replaces.
+  /// Whether this tab is the one on screen.
+  ///
+  /// The shell builds the neighbouring pages, so a hidden grid kept its sweep
+  /// running at sixty frames a second and kept polling the radio every interval
+  /// — airtime spent on a dial nobody was looking at.
+  bool get _visible => widget.isCurrent ?? true;
 
-  /// Radar orientation. True (default) = north-up: north is always at
-  /// the top, with a heading needle showing which way you face. False
-  /// = heading-up: the whole radar rotates so your facing direction is
-  /// at the top and the cardinal rose rotates to show where north is.
-  bool _northUp = true;
-
-  /// Reported accuracy (degrees, lower = better). When > 25 we
-  /// surface a small "calibrate phone (figure-8 wave)" hint.
-  double? _headingAccuracyDeg;
-
-  StreamSubscription<CompassEvent>? _compassSub;
+  void _syncTickToMotion(bool still) {
+    // Three reasons to stand still: reduce-motion removes the animation, a
+    // paused dial is not polling, and a hidden tab is neither.
+    final bool standStill = still || !_live || !_visible;
+    if (standStill && _tick.isAnimating) {
+      _tick.stop();
+    } else if (!standStill && !_tick.isAnimating) {
+      _tick.repeat();
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _tick = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4), // arbitrary; we read .value
-    )..repeat();
+    // One revolution per refresh interval: at 15 s the line takes 15 s to come
+    // round, so the sweep *is* the polling cadence rather than a decoration that
+    // happens to move. The controller is retimed whenever the interval changes.
+    _tick = AnimationController(vsync: this, duration: _interval)..repeat();
+    final CompassHeading? shared = context.sharedCompass;
+    _ownsCompass = shared == null;
+    _compass = shared ?? CompassHeading();
+    _compass.start();
     final MeshcoreController mc = context.read<MeshcoreController>();
     _snapshot = List<DiscoveredNode>.of(mc.nodes); // initial paused frame
-    _msgSub =
-        mc.incomingChannelMessages.listen((_) {
+    _msgSub = mc.incomingChannelMessages.listen((_) {
       if (mounted) _rippleAt = DateTime.now();
     });
-    // Compass subscription — platform-fused heading. Stream may be
-    // null on devices without a magnetometer; in that case the
-    // overlay is just skipped. We subscribe at screen-mount time
-    // (cheap ~5-10 mA while open) and cancel on dispose.
-    final Stream<CompassEvent>? src = FlutterCompass.events;
-    if (src != null) {
-      _compassSub = src.listen((CompassEvent e) {
-        if (!mounted) return;
-        setState(() {
-          _headingDeg = e.heading;
-          _headingAccuracyDeg = e.accuracy;
-        });
-      }, onError: (_) {});
-    }
-    // Restore last-used grid preferences (view / scale / orientation /
-    // refresh) so they don't reset when re-opening the grid.
+    // The screen opens in its "live" state and the sweep says "I am polling this
+    // often", but nothing started the timer: the only two places that created it
+    // were the pause button and the interval picker. A live-looking screen with a
+    // frozen picture is worse than a paused one, so the timer starts here.
+    if (_live) _startRefresh();
+    // The view mode is remembered for the session, the drag claim is not: it
+    // is published from the mode that is showing.
+    _publishDragClaim();
+    // The sensors are not free: a report view that draws no bearing does not
+    // need the magnetometer running behind it.
+    _syncCompassToView();
+    // Restore last-used grid preferences (scale / orientation / refresh)
+    // so they don't reset when re-opening the grid. The view itself is
+    // session state — see [GridScreen._sessionMode].
     GridPrefsStore.load().then((GridPrefs? p) {
       if (p == null || !mounted) return;
       setState(() {
-        if (p.modeIndex >= 0 && p.modeIndex < _GridViewMode.values.length) {
-          _viewMode = _GridViewMode.values[p.modeIndex];
-        }
-        if (p.scaleIndex >= 0 &&
-            p.scaleIndex < GridScreen.rangeStops.length) {
+        if (p.scaleIndex >= 0 && p.scaleIndex < GridScreen.rangeStops.length) {
           _scaleIndex = p.scaleIndex;
         }
-        _northUp = p.northUp;
         _interval = Duration(seconds: p.intervalSec.clamp(1, 600));
+        // The view and the legend come back with the scale and the cadence.
+        // An unknown name (a view that was removed) falls back to the radar
+        // rather than to a blank screen.
+        final _GridViewMode? saved = _GridViewMode.values
+            .where((_GridViewMode m) => m.name == p.mode)
+            .firstOrNull;
+        if (saved != null) {
+          _viewMode = saved;
+          GridScreen._sessionMode = saved;
+        }
+        _legendVisible = p.legendVisible;
+        // The dial's revolution follows the interval that was just restored,
+        // and the poll timer is retimed with it so the two cannot disagree.
+        _tick
+          ..stop()
+          ..duration = _interval;
+        if (_live) {
+          _tick.repeat();
+          _startRefresh();
+        }
         // Don't auto-restore `live` — the screen intentionally opens paused
         // (a fresh snapshot), and live restore is handled by the existing
         // follow-mc-until-interacted behaviour.
@@ -214,76 +422,281 @@ class _GridScreenState extends State<GridScreen>
 
   void _savePrefs() {
     GridPrefsStore.save(GridPrefs(
-      modeIndex: _viewMode.index,
       scaleIndex: _scaleIndex,
-      northUp: _northUp,
-      live: _live,
       intervalSec: _interval.inSeconds,
+      mode: _viewMode.name,
+      legendVisible: _legendVisible,
     ));
+  }
+
+  void _selectMode(_GridViewMode m) {
+    setState(() => _viewMode = m);
+    GridScreen._sessionMode = m;
+    _publishDragClaim();
+    _syncCompassToView();
+    _savePrefs();
+  }
+
+  /// Run the magnetometer (and the quarter-turn click) only while a view that
+  /// draws a bearing is showing. The compass is app-scoped and shared, so this
+  /// only ever stops an instance this screen owns.
+  void _syncCompassToView() {
+    if (!_ownsCompass) return;
+    if (_usesHeading) {
+      _compass.start();
+    } else {
+      _compass.stop();
+    }
+  }
+
+  /// Tells the shell whether this tab owns horizontal drags right now.
+  void _publishDragClaim() {
+    if (_mapOwnsDrags || _viewMode.holdsDrags) {
+      shellDragClaim.hold(GridScreen.dragHolder);
+    } else {
+      shellDragClaim.release(GridScreen.dragHolder);
+    }
+  }
+
+  @override
+  void didUpdateWidget(GridScreen old) {
+    super.didUpdateWidget(old);
+    if (old.isCurrent == widget.isCurrent) return;
+    if (_visible) {
+      if (_live) {
+        _refreshSnapshot();
+        _startRefresh();
+      }
+      _syncTickToMotion(false);
+    } else {
+      _refreshTimer?.cancel();
+      _syncTickToMotion(true);
+    }
   }
 
   @override
   void dispose() {
+    // The shell must page again as soon as this tab is gone, even if it was
+    // left in pan mode.
+    shellDragClaim.release(GridScreen.dragHolder);
     _refreshTimer?.cancel();
     _msgSub?.cancel();
-    _compassSub?.cancel();
     _tick.dispose();
+    if (_ownsCompass) _compass.dispose();
     super.dispose();
   }
 
   void _refreshSnapshot() {
     if (!mounted) return;
-    setState(() => _snapshot = List<DiscoveredNode>.of(
-        context.read<MeshcoreController>().nodes));
+    setState(() => _snapshot =
+        List<DiscoveredNode>.of(context.read<MeshcoreController>().nodes));
   }
 
   /// Icon for the AppBar picker entry / button. Each mode has a
   /// distinctive Material symbol so the dropdown reads as glanceable
   /// regardless of language.
+  /// Views that read a time-ordered snapshot, so the transport bar means
+  /// something. The three report views (altitude, weather, activity) are
+  /// always current and have no transport.
+  /// The bar carries a refresh cadence on the radar (the one view that shows a
+  /// snapshot in time) and the range scale on the two views that use it.
+  /// "Play" over a map meant "freeze the picture", which is not transport.
+  bool get _hasTransport => _viewMode == _GridViewMode.radial;
+
+  /// Views that draw a bearing, and therefore the only ones a compass line
+  /// belongs on. The radar and the mesh tree both place peers by heading; the
+  /// reports (altitude, weather) and the cell grid do not.
+  bool get _usesHeading =>
+      _viewMode == _GridViewMode.radial || _viewMode == _GridViewMode.tree;
+
+  /// What the compass has to say about itself, or null when it has nothing to
+  /// add to the view's own purpose line.
+  ///
+  /// A dial that cannot point says why, because a phone near a magnet otherwise
+  /// simply does nothing when it is turned. A dial that points but has never
+  /// been turned is right about which way it moved and not yet about which way
+  /// is north, and the model has always known that (`calibratedCircle` plus the
+  /// platform's own accuracy verdict) while nothing said it.
+  String? _compassLine(AppLocalizations l) {
+    if (!_usesHeading) return null;
+    if (_compass.disturbed && !_compass.hasHeading) return l.gridCompassDisturbed;
+    if (_compass.hasHeading && !_compass.calibratedCircle) {
+      return l.gridCompassCalibrating;
+    }
+    if (_compass.hasHeading && _compass.needsCalibration) {
+      return l.gridCompassLowAccuracy;
+    }
+    return null;
+  }
+
+  /// Whether the view plots nodes, and therefore whether a node count means
+  /// anything above it. A weather report over "3 in mesh · 2 known" was three
+  /// counts about something the view does not show.
+  bool get _plotsNodes => switch (_viewMode) {
+        _GridViewMode.radial ||
+        _GridViewMode.tree ||
+        _GridViewMode.snsCells =>
+          true,
+        _GridViewMode.weather || _GridViewMode.elevation => false,
+      };
+
+  /// Views that render a legend, so the info button exists only there.
+  bool get _hasLegend => switch (_viewMode) {
+        _GridViewMode.radial ||
+        _GridViewMode.elevation ||
+        _GridViewMode.tree ||
+        _GridViewMode.snsCells =>
+          true,
+        _ => false,
+      };
+
+  /// The range scale is the radar's ring scale, and only the radar draws
+  /// rings. It used to be editable only inside the radar branch, so the cell
+  /// grid inherited a value it could not change; that view is gone.
+  bool get _hasRange => _viewMode == _GridViewMode.radial;
+
+  /// Bottom bar: transport (play/pause + interval) and, in the two views
+  /// that consume it, the range scale. Kept off the header so switching
+  /// views is one control, and so play/pause is not a per-view toggle
+  /// sitting next to the view's own name.
+  Widget _transportBar(AppLocalizations l, ColorScheme cs, String scaleLabel,
+      String scaleValue) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border:
+            Border(top: BorderSide(color: cs.outline.withValues(alpha: .2))),
+      ),
+      // Wrap, not Row: on a 320 dp phone the transport and the range chip
+      // together overflowed the bar by 26 px. Wrap lays them out at their
+      // own width and drops the range chip to a second line when it must.
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(4, 0, 8, 0),
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: <Widget>[
+            if (_viewMode == _GridViewMode.radial)
+              IconButton(
+                tooltip: _live ? l.gridPauseTooltip : l.gridPlayTooltip,
+                icon: Icon(_live ? Icons.pause : Icons.play_arrow),
+                onPressed: _togglePlay,
+              ),
+            if (_viewMode != _GridViewMode.radial) const SizedBox.shrink(),
+            if (_viewMode == _GridViewMode.radial)
+              Tooltip(
+                message: l.gridIntervalTooltip,
+                child: InkWell(
+                  onTap: () async {
+                    final Duration? d = await showMmPicker<Duration>(
+                      context: context,
+                      title: l.gridIntervalTooltip,
+                      current: _interval,
+                      items: <MmPickerItem<Duration>>[
+                        for (final Duration d in GridScreen.playIntervals)
+                          MmPickerItem<Duration>.option(d, _intervalLabel(d)),
+                      ],
+                    );
+                    if (d != null) _changeInterval(d);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(_intervalLabel(_interval),
+                            style: TextStyle(color: cs.onSurfaceVariant)),
+                        const Icon(Icons.arrow_drop_down, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            if (_hasRange)
+              Tooltip(
+                message: l.gridRange,
+                child: InkWell(
+                  onTap: () async {
+                    final int? i = await showMmPicker<int>(
+                      context: context,
+                      title: l.gridRange,
+                      current: _scaleIndex,
+                      items: <MmPickerItem<int>>[
+                        for (int k = 0; k < GridScreen.rangeStops.length; k++)
+                          // The stop's own name, and the distance the dial
+                          // actually draws for it. A picker entry reading "1 km"
+                          // beside a chip reading "1.5 km" was two scales on one
+                          // screen; the rounded rim is the one that is true.
+                          MmPickerItem<int>.option(
+                              k, _rangePickerLabel(l, k)),
+                      ],
+                    );
+                    if (i != null) {
+                      setState(() {
+                        _userInteracted = true;
+                        _scaleIndex = i;
+                      });
+                      _savePrefs();
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        // Icon + value, not "Range · value": at 2.0x text the
+                        // prefix alone was 65 px wider than the bar. The
+                        // tooltip carries the word.
+                        Icon(Icons.straighten,
+                            size: 16, color: cs.onSurfaceVariant),
+                        const SizedBox(width: 4),
+                        Text(scaleLabel,
+                            style: TextStyle(color: cs.onSurfaceVariant)),
+                        const Icon(Icons.arrow_drop_down, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   static IconData _iconForMode(_GridViewMode m) => switch (m) {
         _GridViewMode.radial => Icons.radar,
-        _GridViewMode.globe => Icons.public,
-        _GridViewMode.equalGrid => Icons.grid_on,
-        _GridViewMode.streetMap => Icons.map_outlined,
-        _GridViewMode.fabric => Icons.view_quilt,
         _GridViewMode.elevation => Icons.terrain,
         _GridViewMode.tree => Icons.account_tree,
         _GridViewMode.snsCells => Icons.local_fire_department,
         _GridViewMode.weather => Icons.thermostat,
-        _GridViewMode.meshbook => Icons.menu_book_outlined,
       };
 
-  /// 4–5 character all-caps label for the picker button + menu. Keep
-  /// short so the AppBar isn't dominated. Long names live in the
-  /// row's trailing subtitle.
-  static String _shortLabel(_GridViewMode m, AppLocalizations l) =>
-      switch (m) {
-        _GridViewMode.radial => l.gridViewRadialShort,
-        _GridViewMode.globe => l.gridViewGlobeShort,
-        _GridViewMode.equalGrid => l.gridViewEqualGridShort,
-        _GridViewMode.streetMap => l.gridViewStreetMapShort,
-        _GridViewMode.fabric => l.gridViewFabricShort,
-        _GridViewMode.elevation => l.gridViewElevationShort,
-        _GridViewMode.tree => l.gridViewTreeShort,
-        _GridViewMode.snsCells => l.gridViewSnsCellsShort,
-        _GridViewMode.weather => l.gridViewWeatherShort,
-        _GridViewMode.meshbook => l.gridViewMeshbookShort,
-      };
-
-  static String _longLabel(_GridViewMode m, AppLocalizations l) =>
-      switch (m) {
+  static String _longLabel(_GridViewMode m, AppLocalizations l) => switch (m) {
         _GridViewMode.radial => l.gridViewRadial,
-        _GridViewMode.globe => l.gridViewGlobe,
-        _GridViewMode.equalGrid => l.gridViewEqualGrid,
-        _GridViewMode.streetMap => l.gridViewStreetMap,
-        _GridViewMode.fabric => l.gridViewFabric,
         _GridViewMode.elevation => l.gridViewElevation,
         _GridViewMode.tree => l.gridViewTree,
         _GridViewMode.snsCells => l.gridViewSnsCells,
         _GridViewMode.weather => l.gridViewWeather,
-        _GridViewMode.meshbook => l.gridViewMeshbook,
       };
 
+  /// One line under the header saying what this view answers, so a view is
+  /// not a name the user has to decode. Kept to one line on purpose: a view
+  /// that needs a paragraph to explain itself is the wrong view.
+  static String _purposeFor(_GridViewMode m, AppLocalizations l) => switch (m) {
+        _GridViewMode.radial => l.gridPurposeRadial,
+        _GridViewMode.weather => l.gridPurposeWeather,
+        _GridViewMode.tree => l.gridPurposeTree,
+        _GridViewMode.snsCells => l.gridPurposeSnsCells,
+        _GridViewMode.elevation => l.gridPurposeElevation,
+      };
+
+  /// Start the periodic refresh the "live" state promises. Idempotent, because
+  /// three callers start it (init, the pause button, the interval picker).
+  void _startRefresh() {
+    _refreshTimer?.cancel();
+    if (!_visible) return;
+    _refreshTimer = Timer.periodic(_interval, (_) => _refreshSnapshot());
+  }
 
   void _togglePlay() {
     setState(() {
@@ -293,9 +706,19 @@ class _GridScreenState extends State<GridScreen>
     _refreshTimer?.cancel();
     if (_live) {
       _refreshSnapshot(); // immediate snap on Play
-      _refreshTimer =
-          Timer.periodic(_interval, (_) => _refreshSnapshot());
+      _startRefresh();
+      // The sweep is the poll made visible: one revolution per interval. Play
+      // puts it back on the clock, unless reduce-motion removed it entirely.
+      if (!context.read<ThemeController>().reduceMotion && !_tick.isAnimating) {
+        _tick
+          ..duration = _interval
+          ..repeat();
+      }
     } else {
+      // Pause stops the timer AND the sweep. It used to stop only the timer, so
+      // the line kept coming round every interval with a frozen picture behind
+      // it, which reads as a refresh spinner that ignores the pause button.
+      _tick.stop();
       // Pause taps: re-capture current state so the frozen view
       // matches what the user sees at the moment of pause.
       _refreshSnapshot();
@@ -306,6 +729,11 @@ class _GridScreenState extends State<GridScreen>
     setState(() {
       _userInteracted = true;
       _interval = d;
+      // The dial keeps time with the radio: one revolution per poll.
+      _tick
+        ..stop()
+        ..duration = d
+        ..repeat();
     });
     _savePrefs();
     if (_live) {
@@ -331,45 +759,85 @@ class _GridScreenState extends State<GridScreen>
       4 => l.gridRangeArea,
       5 => l.gridRangeWide,
       6 => l.gridRangeCity,
-      _ => l.gridRangeRegion,
+      7 => l.gridRangeRegion,
+      _ => l.gridRangeAuto,
     };
   }
 
-  /// The outer-ring scale in km for the current stop. Most stops use
-  /// their fixed km; the **Region** stop (the last) instead frames the
-  /// farthest located node so it shows the whole known mesh extent,
-  /// falling back to the stop's km when no node has a location.
+  /// A stop's name with the rim the dial draws for it, so the picker and the
+  /// chip cannot state two different scales.
+  String _rangePickerLabel(AppLocalizations l, int idx) {
+    final String name = _rangeLabel(l, idx);
+    if (idx == GridScreen.autoScaleIndex ||
+        idx == GridScreen.rangeStops.length - 2) {
+      return name;
+    }
+    return '$name · ${_rangeValue(_roundRimKm(GridScreen.rangeStops[idx].km))}';
+  }
+
+  /// The outer-ring scale in km for the current stop.
+  ///
+  /// **Auto** (the default) frames the mesh in hand: the ninth decile of the
+  /// located distances lands at 86 % of the radius, so the bulk of the nodes
+  /// spread across the body and the furthest tenth clamps to the rim.
+  /// **Region** frames the single furthest node. Every other stop is a fixed
+  /// window, so the ring means the same distance twice in a row.
   double _effectiveScaleKm(
       double? selfLat, double? selfLon, List<DiscoveredNode> visible) {
-    final double base = GridScreen.rangeStops[_scaleIndex].km;
-    final bool isRegion = _scaleIndex == GridScreen.rangeStops.length - 1;
-    if (!isRegion || selfLat == null || selfLon == null) return base;
+    final bool isAuto = _scaleIndex == GridScreen.autoScaleIndex;
+    final double base = isAuto
+        ? GridScreen.defaultRangeKm
+        : GridScreen.rangeStops[_scaleIndex].km;
+    if (isAuto) {
+      if (selfLat == null || selfLon == null) return base;
+      final double? framed =
+          GridScreen.autoRangeKm(<double>[for (final DiscoveredNode n in visible)
+            if (n.hasLocation)
+              geo.haversineMeters(selfLat, selfLon, n.latitude!, n.longitude!) /
+                  1000.0]);
+      // Nothing located to frame: the rings fall back to a stated fixed
+      // window rather than inventing a scale from signal-strength guesses.
+      return _roundRimKm(framed ?? base);
+    }
+    // A fixed stop's rim is rounded up to whole ring steps, so its labels are
+    // round numbers. The *picker* prints the rounded rim rather than the raw
+    // stop, because a dial whose chip reads 1.5 km while its picker says 1 km is
+    // two scales on one screen — the owner's report.
+    final bool isRegion = _scaleIndex == GridScreen.rangeStops.length - 2;
+    if (!isRegion || selfLat == null || selfLon == null) {
+      return _roundRimKm(base);
+    }
     double maxKm = 0;
     for (final DiscoveredNode n in visible) {
       if (!n.hasLocation) continue;
-      final double km = geo.haversineMeters(
-              selfLat, selfLon, n.latitude!, n.longitude!) /
-          1000.0;
+      final double km =
+          geo.haversineMeters(selfLat, selfLon, n.latitude!, n.longitude!) /
+              1000.0;
       if (km > maxKm) maxKm = km;
     }
-    if (maxKm <= 0) return base;
+    if (maxKm <= 0) return _roundRimKm(base);
     // Pad 10% so the farthest node sits just inside the rim; clamp to
-    // a sane window.
-    return (maxKm * 1.1).clamp(50.0, 2000.0);
+    // a sane window, then round the rim so the labels are round too.
+    return _roundRimKm((maxKm * 1.1).clamp(50.0, 2000.0));
   }
 
-  /// Pretty distance label for a scale stop (e.g. "25 m" / "5 km").
-  String _rangeValue(double km) {
-    if (km < 1) return '${(km * 1000).round()} m';
-    return '${km.toStringAsFixed(0)} km';
+  /// A rim distance rounded up to three whole steps, so the dial's labels are
+  /// round numbers: 25 / 50 / 75 km rather than 66 / 132 / 198.
+  static double _roundRimKm(double km) {
+    if (!km.isFinite || km <= 0) return km;
+    return radarRingStepMeters(km * 1000) * 3 / 1000;
   }
+
+  /// Pretty distance label for a scale stop (e.g. "25 m" / "5 km"), in the
+  /// reader's units.
+  String _rangeValue(double km) =>
+      MmFormat.step(km * 1000, prefs: context.formatPrefs);
 
   /// Cheap "did the live node list change" check for the
   /// auto-track-until-interaction path. We compare by length first
   /// (the cheap case) then identity per index — both nodes lists
   /// are managed by the controller which doesn't mutate in place.
-  bool _listEquals(
-      List<DiscoveredNode>? a, List<DiscoveredNode> b) {
+  bool _listEquals(List<DiscoveredNode>? a, List<DiscoveredNode> b) {
     if (a == null) return false;
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++) {
@@ -386,7 +854,6 @@ class _GridScreenState extends State<GridScreen>
     required List<DiscoveredNode> visible,
     required double? selfLat,
     required double? selfLon,
-    double rotationRad = 0,
   }) {
     final Offset center = Offset(area.width / 2, area.height / 2);
     final double maxR = math.min(area.width, area.height) / 2 - 24;
@@ -402,7 +869,7 @@ class _GridScreenState extends State<GridScreen>
         selfLat: selfLat,
         selfLon: selfLon,
         scaleKm: scaleKm,
-        rotationRad: rotationRad,
+        headingDegrees: _compass.heading,
       );
       final double d = (p - tap).distance;
       if (d <= _tapRadius && d < bestDist) {
@@ -441,6 +908,10 @@ class _GridScreenState extends State<GridScreen>
   Widget build(BuildContext context) {
     final MeshcoreController mc = context.watch<MeshcoreController>();
     final ThemeController tc = context.watch<ThemeController>();
+    // The ticker is the sweep's and the pulse's engine, and reduce-motion removes
+    // both. It used to repeat forever regardless, rebuilding this whole dial
+    // sixty times a second for a frame nothing draws.
+    _syncTickToMotion(tc.reduceMotion);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final bool ready = mc.state == MeshcoreConnectionState.ready;
 
@@ -452,8 +923,7 @@ class _GridScreenState extends State<GridScreen>
     if (!_userInteracted && !_listEquals(_snapshot, mc.nodes)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_userInteracted) {
-          setState(() => _snapshot =
-              List<DiscoveredNode>.of(mc.nodes));
+          setState(() => _snapshot = List<DiscoveredNode>.of(mc.nodes));
         }
       });
     }
@@ -466,469 +936,344 @@ class _GridScreenState extends State<GridScreen>
     final int nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final int windowSec = GridScreen.recencyWindow.inSeconds;
     final String? selfPk = mc.ownPubKeyHex;
+    // Not connected → no nodes at all (issue #4): whatever the cache
+    // holds is not what the mesh around us is doing right now.
     final List<DiscoveredNode> visible = <DiscoveredNode>[
-      for (final DiscoveredNode n in source)
-        if (nowUnix - n.lastHeardUnix < windowSec &&
-            n.pubKeyHex != selfPk)
-          n
+      if (ready)
+        for (final DiscoveredNode n in source)
+          if (nowUnix - n.lastHeardUnix < windowSec && n.pubKeyHex != selfPk) n
     ];
 
-    final double scaleKm = _effectiveScaleKm(
-        mc.selfInfo?.latitude, mc.selfInfo?.longitude, visible);
+    // R22 — own location must be a single source of truth. Reading
+    // `selfInfo` directly skipped the device-first / phone-fallback rule in
+    // `MeshcoreController.ownLocation`, so whenever the radio reported
+    // (0,0) — GPS off, no lock, or a hidden position — every node fell
+    // through to the arbitrary RSSI-ring / hash-bearing placement even
+    // though a good phone fix was cached.
+    final OwnLocation? self = mc.ownLocation;
+    final double scaleKm =
+        _effectiveScaleKm(self?.latitude, self?.longitude, visible);
     final AppLocalizations l = AppLocalizations.of(context);
     final String scaleLabel = _rangeLabel(l, _scaleIndex);
     final String scaleValue = _rangeValue(scaleKm);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l.gridTitle),
-        actions: <Widget>[
-          // R27 + R25 + R25+4 — view-mode picker. PopupMenuButton
-          // shows icon + short label per mode. Swipe nav was tried
-          // in R25+2 but conflicted with the outer HomeShell
-          // PageView at the boundary (left-swipe-from-radial would
-          // leave the grid tab instead of staying inside it). The
-          // dropdown is unambiguous and one tap shorter than a
-          // cycle for mid-list modes.
-          PopupMenuButton<_GridViewMode>(
-            tooltip: l.gridViewPicker,
-            initialValue: _viewMode,
-            onSelected: (_GridViewMode m) {
-              setState(() => _viewMode = m);
-              _savePrefs();
-            },
-            // Icon + dropdown arrow only — the inline 5-char label
-            // was pushing the AppBar title ("Hyperlocal grid") into
-            // ellipsis. Long label still shows on each row inside
-            // the menu, so users still see what they're picking.
-            icon: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(_iconForMode(_viewMode)),
-                const Icon(Icons.arrow_drop_down, size: 18),
-              ],
-            ),
-            itemBuilder: (BuildContext _) =>
-                <PopupMenuEntry<_GridViewMode>>[
-              for (final _GridViewMode m in _GridViewMode.values)
-                CheckedPopupMenuItem<_GridViewMode>(
-                  value: m,
-                  checked: _viewMode == m,
-                  child: Row(
-                    children: <Widget>[
-                      Icon(_iconForMode(m),
-                          size: 18, color: cs.onSurfaceVariant),
-                      const SizedBox(width: 10),
-                      Text(_shortLabel(m, l),
-                          style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1)),
-                      const SizedBox(width: 8),
-                      Text(_longLabel(m, l),
-                          style: TextStyle(
-                              color: cs.onSurfaceVariant,
-                              fontSize: 11)),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-          IconButton(
-            tooltip: _live ? l.gridPauseTooltip : l.gridPlayTooltip,
-            icon: Icon(_live ? Icons.pause : Icons.play_arrow),
-            onPressed: _togglePlay,
-          ),
-          PopupMenuButton<Duration>(
-            tooltip: l.gridIntervalTooltip,
-            initialValue: _interval,
-            onSelected: _changeInterval,
-            itemBuilder: (BuildContext _) => <PopupMenuEntry<Duration>>[
-              for (final Duration d in GridScreen.playIntervals)
-                CheckedPopupMenuItem<Duration>(
-                  value: d,
-                  checked: _interval == d,
-                  child: Text(_intervalLabel(d)),
-                ),
-            ],
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(_intervalLabel(_interval),
-                      style: TextStyle(
-                          color: _live
-                              ? cs.onPrimary
-                              : cs.onSurfaceVariant)),
-                  const Icon(Icons.arrow_drop_down, size: 18),
-                ],
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: _legendVisible
-                ? l.gridHideLegend
-                : l.gridShowLegend,
-            icon: Icon(_legendVisible
-                ? Icons.info
-                : Icons.info_outline),
-            onPressed: () =>
-                setState(() => _legendVisible = !_legendVisible),
-          ),
-        ],
-      ),
-      // R25+4 — dropdown picker drives mode (was PageView in R25+2;
-      // swiping conflicted with the outer HomeShell tab swipe). The
-      // body just renders the chosen mode's widget.
-      body: switch (_viewMode) {
-        _GridViewMode.globe => GlobeView(
-            filteredNodes: visible,
-            frozen: !_live && _userInteracted,
-          ),
-        _GridViewMode.equalGrid => EqualGridView(
-            cellSizeMeters: EqualGridView.cellSizeForRangeKm(
-                GridScreen.rangeStops[_scaleIndex].km),
-            filteredNodes: visible,
-            frozen: !_live && _userInteracted,
-          ),
-        _GridViewMode.streetMap => StreetMapView(
-            filteredNodes: visible,
-            frozen: !_live && _userInteracted,
-          ),
-        _GridViewMode.fabric => Stack(
-            children: <Widget>[
-              FabricSurveyView(
-                filteredNodes: visible,
-                frozen: !_live && _userInteracted,
-              ),
-              if (_legendVisible)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  child: _FabricLegend(cs: cs, l: l),
-                ),
-            ],
-          ),
-        _GridViewMode.elevation => Stack(
-            children: <Widget>[
-              ElevationProfileView(filteredNodes: visible),
-              if (_legendVisible)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: _FujiLegend(cs: cs, l: l),
-                ),
-            ],
-          ),
-        // Tree mode overlays the legend strip on top of the canvas
-        // so the info button does something here (the radial branch
-        // is the only other place that hosts a legend). Stack lets
-        // the legend dismiss without restructuring the layout.
-        _GridViewMode.tree => Stack(
-            children: <Widget>[
-              MeshTreeView(
-                filteredNodes: visible,
-                frozen: !_live && _userInteracted,
-              ),
-              if (_legendVisible)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  child: _TreeLegend(cs: cs, l: l),
-                ),
-            ],
-          ),
-        _GridViewMode.snsCells => Stack(
-            children: <Widget>[
-              SnsCellsView(
-                filteredNodes: visible,
-                frozen: !_live && _userInteracted,
-              ),
-              if (_legendVisible)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  child: _SnsCellsLegend(cs: cs, l: l),
-                ),
-            ],
-          ),
-        _GridViewMode.weather => WeatherView(filteredNodes: visible),
-        _GridViewMode.meshbook => const MeshbookView(),
-        _GridViewMode.radial => Column(
+    return MmScaffold(
+      child: Column(
         children: <Widget>[
+          // The app bar says which view this is; here the view says what it
+          // shows, one muted line: a name is not an explanation and a paragraph
+          // is not a header.
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
             child: Text(
-              ready
-                  ? l.gridStatusReady(
-                      visible.length,
-                      mc.known.length,
-                      mc.favorites.length,
-                      _live
-                          ? l.gridPlayStateLive(_intervalLabel(_interval))
-                          : l.gridPlayStatePaused,
-                    )
-                  : l.gridStatusOffline,
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+              _purposeFor(_viewMode, l),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: context.skin.type.sizeSm),
             ),
           ),
-          // Range scale slider — six discrete stops from Room (25 m)
-          // out to Wide (5 km, default). Affects how the GPS-distance
-          // branch projects onto the outer ring (RSSI-only nodes still
-          // use their fractional rings as before, but the legend label
-          // tracks the selected scale so the user knows what the rings
-          // mean at a glance).
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 4, 4, 0),
+            // The picker takes the width it needs and gives back what it does not,
+            // so the view name ellipsises instead of pushing the toggles off the
+            // edge at 200 % text on a 320 dp phone (found by the floor test).
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Text(l.gridRange,
-                    style: TextStyle(
-                        color: cs.onSurfaceVariant,
-                        fontSize: 11,
-                        letterSpacing: 1)),
-                Expanded(
-                  child: Slider(
-                    value: _scaleIndex.toDouble(),
-                    min: 0,
-                    max: (GridScreen.rangeStops.length - 1).toDouble(),
-                    divisions: GridScreen.rangeStops.length - 1,
-                    label: scaleLabel,
-                    onChanged: (double v) => setState(() {
-                      _userInteracted = true;
-                      _scaleIndex = v.round();
-                    }),
-                    onChangeEnd: (_) => _savePrefs(),
-                  ),
-                ),
-                SizedBox(
-                  width: 96,
-                  child: Text(
-                    '$scaleLabel · $scaleValue',
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                        color: cs.onSurface, fontSize: 11),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (_legendVisible)
-            _GridLegend(cs: cs, scaleKm: scaleKm, l: l),
-          const Divider(height: 1),
-          Expanded(
-            child: Stack(
-              children: <Widget>[
-                Positioned.fill(
-                  child: visible.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(28),
-                      child: Text(
-                        l.gridEmpty,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: cs.onSurfaceVariant),
+                // R88 — one control on the left: the current view's own icon,
+                // short name and a chevron. The separate caption that used to
+                // sit above it said the same thing in the same toolbar. The
+                // menu groups the ten views by what they show (peers, surveys,
+                // reports) instead of listing them as ten peers.
+                // R104 — a labelled sheet, not a menu: ten views in three groups
+                // with a check state is a list, and a menu cannot scroll, cannot
+                // say "Peers" as a group, and opens away from its own button.
+                Flexible(
+                  child: Tooltip(
+                    message: l.gridViewPicker,
+                    child: InkWell(
+                      onTap: () async {
+                        final _GridViewMode? m =
+                            await showMmPicker<_GridViewMode>(
+                          context: context,
+                          title: l.gridViewPicker,
+                          current: _viewMode,
+                          items: <MmPickerItem<_GridViewMode>>[
+                            for (final _GridViewMode v in _allViews)
+                              MmPickerItem<_GridViewMode>.option(
+                                  v, _longLabel(v, l),
+                                  icon: _iconForMode(v)),
+                          ],
+                        );
+                        if (m != null) _selectMode(m);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(_iconForMode(_viewMode), size: 20),
+                            const SizedBox(width: 8),
+                            // The long name, not the four-letter code: "Weather
+                            // (environment)" tells you where you are, "WX" does not.
+                            Flexible(
+                              child: Text(_longLabel(_viewMode, l),
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: context.skin.type.sizeBodyLg,
+                                      fontWeight: FontWeight.w600)),
+                            ),
+                            const Icon(Icons.arrow_drop_down, size: 18),
+                          ],
+                        ),
                       ),
                     ),
-                  )
-                : LayoutBuilder(
-                    builder: (BuildContext _, BoxConstraints c) {
-                      final Size area =
-                          Size(c.maxWidth, c.maxHeight);
-                      // Heading-up rotates the whole plot so the facing
-                      // direction is at the top. North-up (default) or
-                      // no compass data → no rotation.
-                      final double headingRot =
-                          (_northUp || _headingDeg == null)
-                              ? 0.0
-                              : -(_headingDeg! * math.pi / 180);
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTapDown: (TapDownDetails d) {
-                          final DiscoveredNode? hit = _hitTest(
-                            tap: d.localPosition,
-                            area: area,
-                            visible: visible,
-                            selfLat: mc.selfInfo?.latitude,
-                            selfLon: mc.selfInfo?.longitude,
-                            rotationRad: headingRot,
-                          );
-                          if (hit != null) {
-                            _showDetail(context, mc, hit);
-                          }
-                        },
-                        child: AnimatedBuilder(
-                          animation: _tick,
-                          builder: (BuildContext _, Widget? __) =>
-                              CustomPaint(
-                            size: area,
-                            painter: _GridPainter(
-                              nodes: visible,
-                              favorites: mc.favorites,
-                              known: mc.known,
-                              selfLat: mc.selfInfo?.latitude,
-                              selfLon: mc.selfInfo?.longitude,
-                              nowUnix: nowUnix,
-                              windowSec: windowSec,
-                              tick: _tick.value,
-                              reduceMotion: tc.reduceMotion,
-                              accent: cs.primary,
-                              subtle: cs.onSurface.withValues(alpha: .12),
-                              ringStroke:
-                                  cs.outline.withValues(alpha: .35),
-                              base: cs.onSurfaceVariant,
-                              rippleAt: _rippleAt,
-                              rippleDuration: _rippleDuration,
-                              headingDeg: _headingDeg,
-                              scaleKm: scaleKm,
-                              rotationRad: headingRot,
-                            ),
-                          ),
-                        ),
-                      );
+                  ),
+                ),
+                // Only the five views that draw a legend get the button, so it
+                // can no longer be a silent no-op in the other five.
+                if (_hasLegend)
+                  IconButton(
+                    tooltip:
+                        _legendVisible ? l.gridHideLegend : l.gridShowLegend,
+                    // A legend glyph, not an info one. `info` is this app's
+                    // "about this screen" mark everywhere else (About, SOS's
+                    // notes, the mesh tree's explainer), so a legend toggle
+                    // wearing it read as a link to documentation.
+                    icon: Icon(_legendVisible
+                        ? Icons.legend_toggle
+                        : Icons.legend_toggle_outlined),
+                    onPressed: () {
+                      setState(() => _legendVisible = !_legendVisible);
+                      _savePrefs();
                     },
                   ),
-                ),
-                if (_headingDeg != null && visible.isNotEmpty)
-                  Positioned(
-                    top: 10,
-                    left: 0,
-                    right: 0,
-                    child: Center(child: _headingHud(cs, l)),
-                  ),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    l.gridFooter(scaleLabel.toLowerCase(), scaleValue),
-                    style: TextStyle(
-                        color: cs.onSurfaceVariant, fontSize: 11),
-                  ),
+          // The compass line belongs to the views that draw a bearing, and it
+          // belongs under the header rather than above it: the header says which
+          // view this is, and this says what the view's own instrument is doing.
+          // It used to sit above the picker and to appear on every view, so a
+          // weather report could open with "Turn the phone right round once to
+          // calibrate" about a dial that view does not draw.
+          if (_usesHeading && _compassLine(l) != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _compassLine(l)!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeSm),
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      },
-    );
-  }
-
-  /// Map a compass heading (degrees, 0 = N) to a one- or two-letter
-  /// cardinal direction. 16-wind compass.
-  String _cardinal(double headingDeg) {
-    final double n = ((headingDeg % 360) + 360) % 360;
-    const List<String> winds = <String>[
-      'N', 'NNE', 'NE', 'ENE',
-      'E', 'ESE', 'SE', 'SSE',
-      'S', 'SSW', 'SW', 'WSW',
-      'W', 'WNW', 'NW', 'NNW',
-    ];
-    final int idx = ((n + 11.25) ~/ 22.5) % 16;
-    return winds[idx];
-  }
-
-  /// Prominent heading HUD pinned to the top of the radar — a large,
-  /// monospace, HUD-style readout of the compass heading with the
-  /// north-up / heading-up toggle. Replaces the tiny footer text.
-  Widget _headingHud(ColorScheme cs, AppLocalizations l) {
-    final int deg = _headingDeg!.round();
-    final String card = _cardinal(_headingDeg!);
-    final bool poorAccuracy =
-        _headingAccuracyDeg != null && _headingAccuracyDeg! > 25;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 6, 8, 8),
-      decoration: BoxDecoration(
-        color: cs.surface.withValues(alpha: .55),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.primary.withValues(alpha: .35)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                '◊ ${l.gridHeadingHud}',
-                style: TextStyle(
-                    color: cs.primary.withValues(alpha: .7),
-                    fontSize: 9,
-                    letterSpacing: 5,
-                    fontFamily: 'JetBrains Mono'),
               ),
-              const SizedBox(height: 1),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
+            ),
+          // Counts for every view. They used to be printed inside the radar
+          // branch only, and the play state rode along in the same sentence
+          // even though the transport now says it.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                // Offline is the strip's sentence below, with its action on it.
+                // Printing it twice on one screen — once muted here and once in
+                // the strip — was two ways of saying the same thing in the same
+                // column.
+                !ready
+                    ? ''
+                    : _plotsNodes
+                        ? l.gridStatusCounts(
+                            visible.length, mc.known.length, mc.favorites.length)
+                        : '',
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: context.skin.type.sizeBody),
+              ),
+            ),
+          ),
+          // The radar says it in its own centre; every other view gets
+          // the strip.
+          if (!ready && _viewMode != _GridViewMode.radial)
+            _NotConnectedStrip(
+              cs: cs,
+              label: l.gridNotConnected,
+              action: l.chatConnectRadio,
+              onAction: () => context.push('/connect'),
+            ),
+          // The picker drives mode; the body renders the chosen mode's widget
+          // under its Swipe ⇄ Pan state (R109).
+          Expanded(
+              child: switch (_viewMode) {
+            _GridViewMode.elevation => Stack(
                 children: <Widget>[
-                  Text(
-                    deg.toString().padLeft(3, '0'),
-                    style: TextStyle(
-                        color: cs.primary,
-                        fontSize: 38,
-                        height: 1,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'JetBrains Mono',
-                        letterSpacing: 2),
-                  ),
-                  Text('°',
-                      style: TextStyle(
-                          color: cs.primary.withValues(alpha: .7),
-                          fontSize: 22,
-                          fontFamily: 'JetBrains Mono')),
-                  const SizedBox(width: 10),
-                  Text(card,
-                      style: TextStyle(
-                          color: cs.tertiary,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'JetBrains Mono',
-                          letterSpacing: 3)),
+                  ElevationProfileView(
+                      filteredNodes: visible,
+                      reduceMotion: tc.reduceMotion,
+                    ),
+                  if (_legendVisible)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: _FujiLegend(cs: cs, l: l),
+                    ),
                 ],
               ),
-              if (poorAccuracy)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(Icons.explore_off, size: 11, color: cs.tertiary),
-                      const SizedBox(width: 4),
-                      Text(l.gridHeadingCalibrate,
-                          style:
-                              TextStyle(color: cs.tertiary, fontSize: 9)),
-                    ],
+            // Tree mode overlays the legend strip on top of the canvas
+            // so the info button does something here (the radial branch
+            // is the only other place that hosts a legend). Stack lets
+            // the legend dismiss without restructuring the layout.
+            _GridViewMode.tree => Stack(
+                children: <Widget>[
+                  MeshTreeView(
+                    filteredNodes: visible,
+                    frozen: !_live && _userInteracted,
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 6),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            iconSize: 22,
-            tooltip:
-                _northUp ? l.gridOrientHeadingUp : l.gridOrientNorthUp,
-            icon: Icon(
-              _northUp ? Icons.explore_outlined : Icons.navigation,
-              color: cs.primary,
-            ),
-            onPressed: () {
-              setState(() => _northUp = !_northUp);
-              _savePrefs();
-            },
-          ),
+                  if (_legendVisible)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      child: _TreeLegend(cs: cs, l: l),
+                    ),
+                ],
+              ),
+            _GridViewMode.snsCells => Stack(
+                children: <Widget>[
+                  SnsCellsView(
+                    filteredNodes: visible,
+                    frozen: !_live && _userInteracted,
+                    interactive: true,
+                  ),
+                  if (_legendVisible)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      child: _SnsCellsLegend(cs: cs, l: l),
+                    ),
+                ],
+              ),
+            _GridViewMode.weather => WeatherView(filteredNodes: visible),
+            _GridViewMode.radial => Column(
+                // R109 — the radar never pans, so it is always the shell's drag;
+                // no toggle, no hold-still wrapper.
+                children: <Widget>[
+                  // The range control lives in the bottom bar now, where the
+                  // cells view can reach it too.
+                  if (_legendVisible)
+                    _GridLegend(cs: cs, scaleKm: scaleKm, l: l),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: Stack(
+                      children: <Widget>[
+                        Positioned.fill(
+                          // Offline still paints the rings — an empty radar with
+                          // the message over it, not a blank page (issue #4).
+                          child: visible.isEmpty && ready
+                              ? GridNotice(
+                                  message: l.gridEmpty,
+                                  icon: Icons.radar,
+                                )
+                              : LayoutBuilder(
+                                  builder: (BuildContext _, BoxConstraints c) {
+                                    final Size area =
+                                        Size(c.maxWidth, c.maxHeight);
+                                    return GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTapDown: (TapDownDetails d) {
+                                        final DiscoveredNode? hit = _hitTest(
+                                          tap: d.localPosition,
+                                          area: area,
+                                          visible: visible,
+                                          selfLat: self?.latitude,
+                                          selfLon: self?.longitude,
+                                        );
+                                        if (hit != null) {
+                                          _showDetail(context, mc, hit);
+                                        }
+                                      },
+                                      child: AnimatedBuilder(
+                                        // Both, not just the ticker: with
+                                        // reduce-motion on, the ticker is
+                                        // stopped and the dial would freeze
+                                        // while the phone turned.
+                                        animation:
+                                            Listenable.merge(<Listenable>[
+                                          _tick,
+                                          _compass,
+                                        ]),
+                                        builder: (BuildContext _, Widget? __) =>
+                                            CustomPaint(
+                                          size: area,
+                                          painter: _GridPainter(
+                                            nodes: visible,
+                                            favorites: mc.favorites,
+                                            known: mc.known,
+                                            selfLat: self?.latitude,
+                                            selfLon: self?.longitude,
+                                            nowUnix: nowUnix,
+                                            windowSec: windowSec,
+                                            tick: _tick.value,
+                                            sweep: _viewMode ==
+                                                    _GridViewMode.radial
+                                                ? _tick.value
+                                                : null,
+                                            reduceMotion: tc.reduceMotion,
+                                            accent: cs.primary,
+                                            // The hand of the clock, in the
+                                            // colour opposite this skin: a
+                                            // burnt red on the forest dials, a
+                                            // cyan on NERV. It must not read as
+                                            // one of the marks it sweeps over.
+                                            sweepColor: VizPalette.sweepFor(
+                                                context.skin),
+                                            format:
+                                                context.formatPrefs,
+                                            subtle: cs.onSurface
+                                                .withValues(alpha: .12),
+                                            ringStroke: cs.outline
+                                                .withValues(alpha: .35),
+                                            base: cs.onSurfaceVariant,
+                                            type: context.skin.type,
+                                            textScale:
+                                                MediaQuery.textScalerOf(context)
+                                                    .scale(1),
+                                            rippleAt: _rippleAt,
+                                            rippleDuration: _rippleDuration,
+                                            scaleKm: scaleKm,
+                                            northMarker: VizPalette.north,
+                                            headingDegrees: _compass.heading,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                        if (!ready)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: Center(
+                                child: _NotConnectedStrip(
+                                    cs: cs, label: l.gridNotConnected),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+          }),
+          if (_hasTransport) _transportBar(l, cs, scaleLabel, scaleValue),
         ],
       ),
     );
@@ -938,9 +1283,39 @@ class _GridScreenState extends State<GridScreen>
 /// Toggleable legend overlay strip. Explains what the rings, the
 /// node glyphs, the animations, and the ripple mean — every cue is
 /// in here so a new user can decode the grid at a glance.
+/// The rest of a legend, behind one tap. A legend explains glyphs; the
+/// sentences that explain the animations belong in a dialog, not on the canvas.
+/// The legend's own prose, printed in full wherever the legend is shown.
+///
+/// Every legend used to print a shorthand row and hide the explanation behind a
+/// "More" button. A legend you have to open twice is two legends, and the owner
+/// asked for the whole thing whenever the legend is on.
+class _LegendLines extends StatelessWidget {
+  const _LegendLines({required this.lines});
+
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        for (final String line in lines)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(line,
+                style: TextStyle(
+                    color: cs.onSurface, fontSize: context.skin.type.sizeBody)),
+          ),
+      ],
+    );
+  }
+}
+
 class _GridLegend extends StatelessWidget {
-  const _GridLegend(
-      {required this.cs, required this.scaleKm, required this.l});
+  const _GridLegend({required this.cs, required this.scaleKm, required this.l});
   final ColorScheme cs;
   final double scaleKm;
   final AppLocalizations l;
@@ -958,45 +1333,109 @@ class _GridLegend extends StatelessWidget {
                 child: Text(text,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.35)),
               ),
             ],
           ),
         );
-    final String scaleValueDisplay = scaleKm < 1
-        ? '${(scaleKm * 1000).round()} m'
-        : '${scaleKm.toStringAsFixed(0)} km';
+    final String scaleValueDisplay =
+        MmFormat.step(scaleKm * 1000, prefs: context.formatPrefs);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(l.gridLegend,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 11,
-                  letterSpacing: 3)),
+          row(Icons.adjust, l.gridLegendRingsShort),
+          row(Icons.my_location, l.gridLegendSelfShort),
+          row(Icons.circle, l.gridLegendDotShort),
+          row(Icons.blur_circular, l.gridLegendSignalOnly),
+          row(Icons.radio_button_checked, l.gridLegendKnownShort),
+          row(Icons.star, l.gridLegendFavShort),
+          row(Icons.waves, l.gridLegendRippleShort),
+          row(Icons.touch_app, l.gridLegendTapShort),
+          _LegendLines(lines: <String>[
+            l.gridLegendRings(scaleValueDisplay),
+          ]),
           const SizedBox(height: 6),
-          row(Icons.adjust, l.gridLegendRings(scaleValueDisplay)),
-          row(Icons.my_location, l.gridLegendSelf),
-          row(Icons.circle, l.gridLegendDot),
-          row(Icons.radio_button_checked, l.gridLegendKnown),
-          row(Icons.star, l.gridLegendFavourite),
-          row(Icons.waves, l.gridLegendRipple),
-          row(Icons.touch_app, l.gridLegendTap),
-          const SizedBox(height: 6),
-          // Heading semantics — what the wedge actually means + how
-          // to fix it when it points the wrong way.
-          row(Icons.explore, l.gridLegendHeading),
-          row(Icons.threesixty, l.gridLegendCalibration),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Not Connected to Mesh" — centred on the empty radar, a strip atop
+/// every other view. Text + icon, never colour alone (R13).
+class _NotConnectedStrip extends StatelessWidget {
+  const _NotConnectedStrip({
+    required this.cs,
+    required this.label,
+    this.action,
+    this.onAction,
+  });
+
+  final ColorScheme cs;
+  final String label;
+
+  /// The way out, on the strip. A state that says "not connected" and offers
+  /// nothing is a dead end in the middle of a screen.
+  final String? action;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      // Solid, not 85 % of the surface: this strip sits over the radar's own
+      // ring labels, and at 0.85 the "3.3 km" under it showed through the
+      // banner on the device. A state banner has to be readable before the
+      // canvas behind it is.
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: mmRadius(context, 8),
+        border: Border.all(color: cs.error.withValues(alpha: .6)),
+      ),
+      // The action sits on its own line rather than beside the label: at 320 dp
+      // with the text at 200 % the two together overflowed by 214 px, and a
+      // banner that clips its own way out is worse than a taller one.
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(Icons.link_off, size: 18, color: cs.error),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                      color: cs.onSurface,
+                      fontSize: context.skin.type.sizeBodyLg,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1),
+                ),
+              ),
+            ],
+          ),
+          if (action != null && onAction != null)
+            Align(
+              alignment: Alignment.centerRight,
+              child: MmAction(
+                key: const ValueKey<String>('grid-not-connected-connect'),
+                onPressed: onAction,
+                label: action!,
+                dense: true,
+              ),
+            ),
         ],
       ),
     );
@@ -1005,6 +1444,7 @@ class _GridLegend extends StatelessWidget {
 
 class _GridPainter extends CustomPainter {
   _GridPainter({
+    required this.textScale,
     required this.nodes,
     required this.favorites,
     required this.known,
@@ -1013,16 +1453,20 @@ class _GridPainter extends CustomPainter {
     required this.nowUnix,
     required this.windowSec,
     required this.tick,
+    required this.sweep,
     required this.reduceMotion,
+    required this.sweepColor,
+    required this.format,
     required this.accent,
     required this.subtle,
     required this.ringStroke,
     required this.base,
+    required this.type,
     required this.rippleAt,
     required this.rippleDuration,
     required this.scaleKm,
-    this.headingDeg,
-    this.rotationRad = 0,
+    required this.northMarker,
+    this.headingDegrees,
   });
 
   final List<DiscoveredNode> nodes;
@@ -1033,29 +1477,59 @@ class _GridPainter extends CustomPainter {
   final int nowUnix;
   final int windowSec;
   final double tick; // 0..1, repeating
+
+  /// The radar sweep phase (0..1) or null in a view that is not a dial.
+  ///
+  /// One revolution per refresh interval, set by the screen, so the line that
+  /// sweeps the dial is also the thing that says how stale the picture is.
+  final double? sweep;
   final bool reduceMotion;
+
+  /// The sweep's own colour: the hue opposite this skin's accent, so the hand of
+  /// the clock is never mistaken for a node.
+  final Color sweepColor;
+
+  /// The reader's units, so a ring label says miles where the reader reads miles.
+  final FormatPrefs? format;
+
   final Color accent;
   final Color subtle;
   final Color ringStroke;
   final Color base;
+
+  /// The active skin's type system: the ring labels are painted, not built,
+  /// so the ladder reaches them through this.
+  final MmType type;
+
+  /// The user's text scale, multiplied into every label this painter draws.
+  /// `MmType` carries the skin's scale only, so a painted label otherwise
+  /// ignores the font setting while the widgets around it honour it.
+  final double textScale;
   final DateTime? rippleAt;
   final Duration rippleDuration;
   final double scaleKm;
 
-  /// Live phone compass heading (degrees from magnetic north,
-  /// 0=N / 90=E / 180=S / 270=W). When non-null, the painter draws a
-  /// heading needle from the centre showing which way the user is
-  /// facing, paired with the cardinal rose.
-  final double? headingDeg;
+  /// Which way the phone is pointing, or null when nothing knows.
+  ///
+  /// The radar plots peers by real bearing, which is only honest while the
+  /// phone faces north. With a heading the whole dial turns so its top is the
+  /// phone's own facing, and the red marker on the rim says where north went.
+  final double? headingDegrees;
 
-  /// Plot rotation in radians. 0 = north-up (north at the top).
-  /// `-headingRad` rotates the whole scene so the facing direction is
-  /// at the top (heading-up mode). Applied to nodes, the cardinal
-  /// rose, and the heading needle so they stay mutually consistent.
-  final double rotationRad;
+  /// The red the north marker is drawn in. Passed in rather than written here,
+  /// so it is the scheme's own red on every skin and the colour ratchet keeps
+  /// its meaning.
+  final Color northMarker;
 
   static bool _selfHasGpsStatic(double? lat, double? lon) =>
       lat != null && lon != null && !(lat == 0 && lon == 0);
+
+  /// Whether this node is placed by a reported position or only by signal.
+  static GridMarkerSource _sourceFor(
+          DiscoveredNode node, double? selfLat, double? selfLon) =>
+      gridMarkerSourceFor(
+          nodeHasLocation: node.hasLocation,
+          selfHasLocation: _selfHasGpsStatic(selfLat, selfLon));
 
   /// Stable arbitrary angle from pubkey (so a node doesn't jump).
   static double _hashAngle(String pubKeyHex) {
@@ -1085,7 +1559,7 @@ class _GridPainter extends CustomPainter {
     required double? selfLat,
     required double? selfLon,
     required double scaleKm,
-    double rotationRad = 0,
+    double? headingDegrees,
   }) {
     final bool selfGps = _selfHasGpsStatic(selfLat, selfLon);
     final double angle;
@@ -1095,8 +1569,8 @@ class _GridPainter extends CustomPainter {
               selfLat!, selfLon!, node.latitude!, node.longitude!) /
           1000.0;
       radius = (dKm / scaleKm).clamp(0.05, 1.0) * maxR;
-      angle = geo.bearingRadians(
-          selfLat, selfLon, node.latitude!, node.longitude!);
+      angle =
+          geo.bearingRadians(selfLat, selfLon, node.latitude!, node.longitude!);
     } else if (node.rssi != null) {
       final int ringIdx = _ringFromRssi(node.rssi);
       radius = maxR * <double>[1 / 3, 2 / 3, 1.0][ringIdx];
@@ -1105,10 +1579,8 @@ class _GridPainter extends CustomPainter {
       radius = maxR;
       angle = _hashAngle(node.pubKeyHex);
     }
-    // rotationRad rotates the whole plot (heading-up mode); 0 = north-up.
-    final double a = angle + rotationRad;
-    return center +
-        Offset(radius * math.sin(a), -radius * math.cos(a));
+    final double shown = angle - (headingDegrees ?? 0) * math.pi / 180;
+    return center + Offset(radius * math.sin(shown), -radius * math.cos(shown));
   }
 
   @override
@@ -1128,28 +1600,82 @@ class _GridPainter extends CustomPainter {
     for (final double f in ringFracs) {
       canvas.drawCircle(center, maxR * f, ring);
     }
+    // The sweep: a leading line and a faint wedge behind it, one revolution
+    // per refresh interval. Drawn over the rings and under the markers so a
+    // blip is never hidden by the line.
+    // No hand at all when motion is reduced. It was first frozen at one angle on
+    // the theory that a dial without a sweep reads as broken, and a stationary
+    // hand reads worse: it is indistinguishable from a sweep caught mid-turn, so
+    // the screen looks stuck rather than still. The rings, the bearings, the
+    // labels and the markers are the instrument; the hand is only the clock.
+    final double? sweepPhase = sweep;
+    if (sweepPhase != null && !reduceMotion) {
+      final double a = sweepPhase * 2 * math.pi;
+      const double trail = math.pi / 3;
+      final Rect rect = Rect.fromCircle(center: center, radius: maxR);
+      canvas.drawArc(
+        rect,
+        a - trail,
+        trail,
+        true,
+        Paint()
+          ..shader = SweepGradient(
+            startAngle: 0,
+            endAngle: trail,
+            colors: <Color>[
+              sweepColor.withValues(alpha: 0.0),
+              sweepColor.withValues(alpha: 0.18),
+            ],
+            transform: GradientRotation(a - trail),
+          ).createShader(rect),
+      );
+      canvas.drawLine(
+        center,
+        Offset(center.dx + maxR * math.cos(a),
+            center.dy + maxR * math.sin(a)),
+        Paint()
+          ..strokeWidth = 1.4
+          ..color = sweepColor.withValues(alpha: 0.55),
+      );
+    }
+
     // Ring labels. Position each label just inside the ring on the
     // right (+X) axis so they don't collide with node markers in
     // typical fleets.
     for (final double f in ringFracs) {
-      final double meters = scaleKm * f * 1000;
-      final String label = meters < 1000
-          ? '${meters.round()} m'
-          : '${(meters / 1000).toStringAsFixed(meters < 10000 ? 1 : 0)} km';
+      // The rim is three whole steps, so each label lands on one.
+      final String label =
+          radarDistanceLabel(scaleKm * f * 1000, prefs: format);
       final TextPainter tp = TextPainter(
         text: TextSpan(
           text: label,
           style: TextStyle(
-              color: base, fontSize: 10, fontFamily: 'JetBrains Mono'),
+              color: base,
+              fontSize: type.sizeMicro * textScale,
+              fontFamily: type.monoFamily),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(
         canvas,
-        Offset(center.dx + maxR * f - tp.width - 4,
-            center.dy - tp.height - 2),
+        Offset(center.dx + maxR * f - tp.width - 4, center.dy - tp.height - 2),
       );
     }
+    // North, as a red marker that moves with the dial — the arrow alone.
+    //
+    // The radar plots every peer by *real* bearing, so with a heading the dial
+    // turns and north is no longer the top. The triangle is drawn at the bearing
+    // north actually sits at, and stays at the top only in the north-up
+    // fallback, where it is telling the truth.
+    //
+    // It carried an "N" outside the rim, and that letter was doing harm twice:
+    // it sat on the same bearing as the arrow and collided with it at most
+    // headings, and because it was painted upright it read as a label lying on
+    // the rim rather than a direction. A triangle is unmistakable in every
+    // rotation, and the dial's ticks already say which way is which.
+    final double northAt = CompassHeading.northMarkerDegrees(headingDegrees);
+    paintNorthMarker(canvas, center, maxR,
+        markerDegrees: northAt, color: northMarker);
     // Cross-hair guides (faint).
     final Paint cross = Paint()
       ..style = PaintingStyle.stroke
@@ -1160,33 +1686,21 @@ class _GridPainter extends CustomPainter {
     canvas.drawLine(Offset(center.dx, center.dy - maxR),
         Offset(center.dx, center.dy + maxR), cross);
 
-    // Compass rose — north-up cardinal markers + a tick ring so the
-    // radar reads like a real compass. North is always up (the grid
-    // frame is north-up); the needle below shows which way you face.
-    _drawCompassRose(canvas, center, maxR);
-
     // Self marker.
     canvas.drawCircle(center, 5, Paint()..color = accent);
-    canvas.drawCircle(center, 9,
+    canvas.drawCircle(
+        center,
+        9,
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5
           ..color = accent.withValues(alpha: .6));
 
-    // Heading needle — points in the user's compass heading (the way
-    // they're facing). The north-up frame stays the stable reference;
-    // needle + rose together read as a real compass.
-    final double? hd = headingDeg;
-    if (hd != null) {
-      _drawHeadingNeedle(canvas, center, maxR, hd);
-    }
-
     // R18 anonymous-channel ripple: an incoming channel message is
     // not attributable to a node, so draw a transient centre-out
     // wave instead of a node marker. Honours reduce-motion: skipped.
     if (!reduceMotion && rippleAt != null) {
-      final int ageMs =
-          DateTime.now().difference(rippleAt!).inMilliseconds;
+      final int ageMs = DateTime.now().difference(rippleAt!).inMilliseconds;
       final double t = ageMs / rippleDuration.inMilliseconds;
       if (t >= 0 && t < 1) {
         canvas.drawCircle(
@@ -1199,6 +1713,18 @@ class _GridPainter extends CustomPainter {
         );
       }
     }
+
+    // One Paint per job, reused across the loop. A Paint per blip per frame is
+    // an allocation per node per frame, and this dial repaints on every tick
+    // because the sweep moves: on a mesh with hundreds of nodes that is tens of
+    // thousands of short-lived objects a second for a picture that changes only
+    // in colour.
+    final Paint blip = Paint();
+    final Paint blipHalo = Paint();
+    final Paint blipRing = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    final Paint affinityRing = Paint()..style = PaintingStyle.stroke;
 
     for (final DiscoveredNode n in nodes) {
       // Recency → brightness (linear 24h decay).
@@ -1213,7 +1739,11 @@ class _GridPainter extends CustomPainter {
         selfLat: selfLat,
         selfLon: selfLon,
         scaleKm: scaleKm,
-        rotationRad: rotationRad,
+        // The dial turns with the phone, and the *markers* have to turn with
+        // it. Omitting this drew every peer at its true bearing while the red
+        // north marker rotated — so the marker said where north was and the dots
+        // did not follow it, which is exactly what the owner reported.
+        headingDegrees: headingDegrees,
       );
 
       final bool isFav = favorites.contains(n.pubKeyHex);
@@ -1229,15 +1759,23 @@ class _GridPainter extends CustomPainter {
           opacityMul = phase < 0.5 ? 1.0 : 0.35;
         } else if (isKnown) {
           // Pulse ~0.7 Hz: gentle sine.
-          final double s =
-              0.5 + 0.5 * math.sin(tick * 2 * math.pi * 2.8);
+          final double s = 0.5 + 0.5 * math.sin(tick * 2 * math.pi * 2.8);
           scale = 0.9 + 0.4 * s;
         }
       }
 
       final double r0 = (isFav || isKnown ? 6.0 : 4.0) * scale;
       final Color c = accent.withValues(alpha: bright * opacityMul);
-      canvas.drawCircle(p, r0, Paint()..color = c);
+      final GridMarkerSource source = _sourceFor(n, selfLat, selfLon);
+      if (source == GridMarkerSource.position) {
+        canvas.drawCircle(p, r0, blip..color = c);
+      } else {
+        // Hollow: a position we do not have is not a position. The ring sits
+        // on the band its signal implies; the angle is a placeholder.
+        canvas.drawCircle(
+            p, r0 + 1, blipHalo..color = c.withValues(alpha: .18));
+        canvas.drawCircle(p, r0 + 1, blipRing..color = c);
+      }
 
       // Reduce-motion accessibility ring: known = thin ring; fav =
       // thicker ring (info preserved without animation).
@@ -1245,8 +1783,7 @@ class _GridPainter extends CustomPainter {
         canvas.drawCircle(
           p,
           r0 + (isFav ? 5 : 3),
-          Paint()
-            ..style = PaintingStyle.stroke
+          affinityRing
             ..strokeWidth = isFav ? 2 : 1.2
             ..color = accent.withValues(alpha: bright * .8),
         );
@@ -1254,89 +1791,41 @@ class _GridPainter extends CustomPainter {
     }
   }
 
-  /// Screen direction unit vector for a compass bearing (radians,
-  /// 0 = N) under the current [rotationRad]. north-up → N points up.
-  Offset _bearingDir(double bearingRad) {
-    final double a = bearingRad + rotationRad;
-    return Offset(math.sin(a), -math.cos(a));
-  }
-
-  /// Compass rose: an 8-point tick ring + N/E/S/W letters just outside
-  /// the outer range ring. Rotates with [rotationRad] so in heading-up
-  /// mode the cardinals show where north actually is.
-  void _drawCompassRose(Canvas canvas, Offset center, double maxR) {
-    final Paint tick = Paint()
-      ..color = base.withValues(alpha: .6)
-      ..strokeWidth = 1.2;
-    for (int i = 0; i < 8; i++) {
-      final Offset dir = _bearingDir(i * math.pi / 4);
-      final double inner = maxR - (i.isEven ? 10 : 6);
-      canvas.drawLine(center + dir * inner, center + dir * maxR, tick);
-    }
-    final List<({String s, double bearing, bool n})> marks =
-        <({String s, double bearing, bool n})>[
-      (s: 'N', bearing: 0, n: true),
-      (s: 'E', bearing: math.pi / 2, n: false),
-      (s: 'S', bearing: math.pi, n: false),
-      (s: 'W', bearing: 3 * math.pi / 2, n: false),
-    ];
-    final double lr = maxR + 12;
-    for (final ({String s, double bearing, bool n}) m in marks) {
-      final TextPainter tp = TextPainter(
-        text: TextSpan(
-          text: m.s,
-          style: TextStyle(
-            color: m.n ? accent : base,
-            fontSize: m.n ? 13 : 11,
-            fontFamily: 'JetBrains Mono',
-            fontWeight: m.n ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final Offset c = center + _bearingDir(m.bearing) * lr;
-      tp.paint(canvas, c - Offset(tp.width / 2, tp.height / 2));
-    }
-  }
-
-  /// Heading needle pointing in the user's facing direction. In
-  /// north-up it points toward the heading bearing; in heading-up it
-  /// points straight up (the facing direction is the top). A short
-  /// muted tail gives it a magnetic-needle feel.
-  void _drawHeadingNeedle(
-      Canvas canvas, Offset center, double maxR, double headingDeg) {
-    final Offset dir = _bearingDir(headingDeg * math.pi / 180);
-    final Offset perp = Offset(-dir.dy, dir.dx);
-    final double len = (maxR * 0.34).clamp(28.0, 80.0);
-    const double halfW = 6.0;
-    final Offset tip = center + dir * len;
-    final Offset baseC = center + dir * 12;
-    final Path needle = Path()
-      ..moveTo(tip.dx, tip.dy)
-      ..lineTo((baseC + perp * halfW).dx, (baseC + perp * halfW).dy)
-      ..lineTo((baseC - perp * halfW).dx, (baseC - perp * halfW).dy)
-      ..close();
-    canvas.drawPath(needle, Paint()..color = accent);
-    canvas.drawLine(
-      center,
-      center - dir * (len * 0.4),
-      Paint()
-        ..color = base.withValues(alpha: .5)
-        ..strokeWidth = 2,
-    );
-  }
-
   @override
   bool shouldRepaint(covariant _GridPainter old) =>
       old.nodes != nodes ||
       old.favorites != favorites ||
       old.known != known ||
+      // The painted text and the north glyph are laid out from these two. They
+      // were missing, and the omission was invisible only because `tick` moves
+      // on every frame, so this painter had no gate at all. With the ticker
+      // stopped under reduce-motion, a missing input would freeze a font-size
+      // change into the dial while every widget around it resized.
+      old.textScale != textScale ||
+      old.northMarker != northMarker ||
       old.tick != tick ||
       old.reduceMotion != reduceMotion ||
+      old.sweepColor != sweepColor ||
+      old.format != format ||
       old.rippleAt != rippleAt ||
       old.scaleKm != scaleKm ||
-      old.headingDeg != headingDeg ||
-      old.rotationRad != rotationRad;
+      old.type != type ||
+      // The self fix, the clock and the recency window all move markers: a
+      // "refresh location from device" that lands while the node list is
+      // unchanged (the common case — the nodes did not move, we did) used to
+      // leave every marker where the old fix put it, because none of the
+      // three was compared. The colours are here for the same reason: a
+      // preset switch repaints the ring, and a stale accent is a wrong mark.
+      old.selfLat != selfLat ||
+      old.selfLon != selfLon ||
+      // The dial turns with the phone, so a heading change moves every marker.
+      old.headingDegrees != headingDegrees ||
+      old.nowUnix != nowUnix ||
+      old.windowSec != windowSec ||
+      old.accent != accent ||
+      old.subtle != subtle ||
+      old.ringStroke != ringStroke ||
+      old.base != base;
 }
 
 /// R50 — info-button legend specifically for the Mesh Tree view.
@@ -1361,7 +1850,7 @@ class _TreeLegend extends StatelessWidget {
                 child: Text(text,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.35)),
               ),
             ],
@@ -1370,10 +1859,10 @@ class _TreeLegend extends StatelessWidget {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(
@@ -1382,7 +1871,7 @@ class _TreeLegend extends StatelessWidget {
           Text(l.meshTreeLegendTitle,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
           Padding(
@@ -1390,22 +1879,23 @@ class _TreeLegend extends StatelessWidget {
             child: Text(l.meshTreeLegendDesc,
                 style: TextStyle(
                     color: cs.onSurface,
-                    fontSize: 12,
+                    fontSize: context.skin.type.sizeBody,
                     height: 1.35)),
           ),
-          row(Icons.my_location, l.meshTreeLegendSelf, colour: cs.primary),
-          row(Icons.crop_square, l.meshTreeLegendRepeater,
-              colour: cs.tertiary),
-          row(Icons.diamond, l.meshTreeLegendRoom, colour: cs.tertiary),
-          row(Icons.circle, l.meshTreeLegendChat, colour: cs.primary),
-          row(Icons.sensors, l.meshTreeLegendSensor,
+          row(Icons.my_location, l.treeSelfShort, colour: cs.primary),
+          row(Icons.crop_square, l.treeRepeaterShort, colour: cs.tertiary),
+          row(Icons.diamond, l.treeRoomShort, colour: cs.tertiary),
+          row(Icons.circle, l.treeChatShort, colour: cs.primary),
+          row(Icons.sensors, l.treeSensorShort,
               colour: cs.primary.withValues(alpha: .55)),
-          row(Icons.more_horiz, l.meshTreeLegendFlood,
-              colour: cs.onSurfaceVariant),
-          row(Icons.help_outline, l.meshTreeLegendFloat,
-              colour: cs.onSurfaceVariant),
-          row(Icons.arrow_forward, l.meshTreeLegendArrow),
-          row(Icons.touch_app, l.meshTreeLegendInteract),
+          row(Icons.more_horiz, l.treeFloodShort, colour: cs.onSurfaceVariant),
+          row(Icons.arrow_forward, l.treeArrowShort),
+          _LegendLines(lines: <String>[
+            // The two that add a consequence; "You — pinned at the centre"
+            // restated the row above it and is gone.
+            l.meshTreeLegendFlood,
+            l.meshTreeLegendFloat,
+          ]),
         ],
       ),
     );
@@ -1416,68 +1906,6 @@ class _TreeLegend extends StatelessWidget {
 /// Different from the radial legend ([_GridLegend]) and the tree
 /// legend ([_TreeLegend]) — explains the coverage quilt cells,
 /// recency tiers, and the peer markers.
-class _FabricLegend extends StatelessWidget {
-  const _FabricLegend({required this.cs, required this.l});
-  final ColorScheme cs;
-  final AppLocalizations l;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget row(IconData icon, String text, {Color? colour}) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Icon(icon, size: 14, color: colour ?? cs.primary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(text,
-                    style: TextStyle(
-                        color: cs.onSurface,
-                        fontSize: 12,
-                        height: 1.35)),
-              ),
-            ],
-          ),
-        );
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: cs.outline.withValues(alpha: .35)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(l.fabricLegendTitle,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant,
-                  fontSize: 11,
-                  letterSpacing: 3)),
-          const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(l.fabricLegendDesc,
-                style: TextStyle(
-                    color: cs.onSurface,
-                    fontSize: 12,
-                    height: 1.35)),
-          ),
-          row(Icons.grid_view, l.fabricLegendCell, colour: cs.secondary),
-          row(Icons.gradient, l.fabricLegendRecency, colour: cs.secondary),
-          row(Icons.place, l.fabricLegendMarker, colour: cs.tertiary),
-          row(Icons.my_location, l.fabricLegendSelf, colour: cs.primary),
-          row(Icons.delete_sweep, l.fabricLegendReset),
-        ],
-      ),
-    );
-  }
-}
-
-/// Info-button legend for the Fujiさん elevation view.
 class _FujiLegend extends StatelessWidget {
   const _FujiLegend({required this.cs, required this.l});
   final ColorScheme cs;
@@ -1496,7 +1924,7 @@ class _FujiLegend extends StatelessWidget {
                 child: Text(text,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.35)),
               ),
             ],
@@ -1505,10 +1933,10 @@ class _FujiLegend extends StatelessWidget {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(
@@ -1517,22 +1945,20 @@ class _FujiLegend extends StatelessWidget {
           Text(l.fujiLegendTitle,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(l.fujiLegendDesc,
-                style: TextStyle(
-                    color: cs.onSurface, fontSize: 12, height: 1.35)),
-          ),
-          row(Icons.my_location, l.fujiLegendMe, colour: cs.tertiary),
-          row(Icons.terrain, l.fujiLegendRefs, colour: cs.primary),
-          row(Icons.circle, l.fujiLegendPeers,
+          row(Icons.my_location, l.fujiMeShort, colour: cs.tertiary),
+          row(Icons.terrain, l.fujiRefsShort, colour: cs.primary),
+          row(Icons.circle, l.fujiPeersShort,
               colour: cs.primary.withValues(alpha: .7)),
-          row(Icons.help_outline, l.fujiLegendUnknown,
+          row(Icons.help_outline, l.fujiUnknownShort,
               colour: cs.onSurfaceVariant),
-          row(Icons.touch_app, l.fujiLegendAutoQuery),
+          _LegendLines(lines: <String>[
+            // The rows above already name every mark; only the one rule a
+            // reader cannot infer survives here.
+            l.fujiLegendAutoQuery,
+          ]),
         ],
       ),
     );
@@ -1558,7 +1984,7 @@ class _SnsCellsLegend extends StatelessWidget {
                 child: Text(text,
                     style: TextStyle(
                         color: cs.onSurface,
-                        fontSize: 12,
+                        fontSize: context.skin.type.sizeBody,
                         height: 1.35)),
               ),
             ],
@@ -1567,10 +1993,10 @@ class _SnsCellsLegend extends StatelessWidget {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: mmRadius(context, 8),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Column(
@@ -1579,25 +2005,21 @@ class _SnsCellsLegend extends StatelessWidget {
           Text(l.snsCellsLegendTitle,
               style: TextStyle(
                   color: cs.onSurfaceVariant,
-                  fontSize: 11,
+                  fontSize: context.skin.type.sizeSm,
                   letterSpacing: 3)),
           const SizedBox(height: 6),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(l.snsCellsLegendDesc,
-                style: TextStyle(
-                    color: cs.onSurface, fontSize: 12, height: 1.35)),
-          ),
-          row(Icons.local_fire_department, l.snsCellsLegendHot,
-              colour: cs.error),
-          row(Icons.ac_unit, l.snsCellsLegendCool),
-          row(Icons.chat_bubble_outline, l.snsCellsLegendToast,
-              colour: cs.tertiary),
-          row(Icons.lock_outline, l.snsCellsLegendChannel,
-              colour: cs.primary),
-          row(Icons.place_outlined, l.snsCellsLegendInferred,
-              colour: cs.primary),
-          row(Icons.timelapse, l.snsCellsLegendDecay),
+          row(Icons.local_fire_department, l.snsHotShort, colour: cs.error),
+          row(Icons.ac_unit, l.snsCoolShort),
+          row(Icons.chat_bubble_outline, l.snsToastShort, colour: cs.tertiary),
+          row(Icons.timelapse, l.snsDecayShort),
+          _LegendLines(lines: <String>[
+            l.snsCellsLegendDesc,
+            l.snsCellsLegendHot,
+            l.snsCellsLegendCool,
+            l.snsCellsLegendToast,
+            l.snsCellsLegendChannel,
+            l.snsCellsLegendDecay,
+          ]),
         ],
       ),
     );

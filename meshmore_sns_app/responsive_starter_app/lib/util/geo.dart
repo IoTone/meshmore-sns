@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 import 'dart:math' as math;
 
+import 'mm_format.dart';
+
 /// Great-circle distance (haversine) in **metres** between two
 /// WGS-84 points. Inputs are degrees.
 double haversineMeters(
@@ -14,7 +16,9 @@ double haversineMeters(
           math.cos(_toRad(lat2)) *
           math.sin(dLon / 2) *
           math.sin(dLon / 2);
-  return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+  // `1 - a` can go a hair negative for near-antipodal points, and the square
+  // root of that is NaN, which then reaches every geometry path.
+  return r * 2 * math.atan2(math.sqrt(a), math.sqrt(math.max(0.0, 1 - a)));
 }
 
 double _toRad(double d) => d * (math.pi / 180.0);
@@ -36,14 +40,13 @@ double bearingRadians(
 /// Pretty-print a metre distance for chat / nodes lists. Sub-km is
 /// rounded to the nearest 10 m; ≥ 1 km uses one decimal of km.
 /// Returns `null` for null input so callers can chain `?.`.
-String? formatDistance(double? meters) {
+String? formatDistance(double? meters, {FormatPrefs? prefs}) {
   if (meters == null) return null;
   if (meters.isNaN || meters.isInfinite) return null;
-  if (meters < 1000) {
-    final int rounded = (meters / 10).round() * 10;
-    return '≈ $rounded m';
-  }
-  final double km = meters / 1000.0;
-  if (km < 10) return '≈ ${km.toStringAsFixed(1)} km';
-  return '≈ ${km.round()} km';
+  // One formatter for the whole app: the reader's units, or the metric default
+  // when there is no store above the caller.
+  // One formatter for the whole app, with or without a store above the caller.
+  // The fallback used to re-implement the metric branch, so a dashboard with no
+  // `FormatPrefs` was on a copy of the rule.
+  return '≈ ${MmFormat.distance(meters, prefs: prefs)}';
 }

@@ -1,0 +1,281 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'package:flutter/material.dart';
+import 'package:meshcore/meshcore.dart';
+import 'package:provider/provider.dart';
+
+import '../../gen/app_localizations.dart';
+import '../../meshcore/discovered_node.dart';
+import '../../meshcore/meshcore_controller.dart';
+import '../../theme/mm_skin.dart';
+import '../../tools/tools_controller.dart';
+import '../../tools/trace_tool.dart';
+import '../../ui/mm_components.dart';
+import 'tool_pickers.dart';
+import 'tool_widgets.dart';
+import '../../peer/hop_names.dart';
+import '../../ui/mm_shape.dart';
+
+/// R60 T3 — per-hop SNR along a repeater chain.
+class TraceScreen extends StatefulWidget {
+  const TraceScreen({super.key});
+
+  @override
+  State<TraceScreen> createState() => _TraceScreenState();
+}
+
+class _TraceScreenState extends State<TraceScreen> {
+  bool _manual = false;
+  bool _roundTrip = true;
+  DiscoveredNode? _node;
+  final TextEditingController _manualCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _manualCtrl.dispose();
+    super.dispose();
+  }
+
+  /// The radio's bytes-per-hop (`DEVICE_INFO` `path_hash_mode + 1`), so the
+  /// hash this screen appends is the width the mesh is actually using.
+  int _hashSize(MeshcoreController mc) =>
+      ((mc.deviceInfo?.pathHashMode ?? 0) + 1).clamp(1, 3);
+
+  List<int>? _pathFor(MeshcoreController mc) => _manual
+      ? parseManualPath(_manualCtrl.text)
+      : (_node == null
+          ? null
+          : tracePathFor(_node!,
+              roundTrip: _roundTrip, hashSize: _hashSize(mc)));
+
+  static String _hex(List<int> p) =>
+      p.map((int b) => b.toRadixString(16).padLeft(2, '0')).join(',');
+
+  /// A hop's label: the repeater or room server whose key starts with it.
+  ///
+  /// Only those two types are asked, because a trace passes through nothing
+  /// else; [nodes] is read once by the caller rather than per hop.
+  static String _hopName(List<DiscoveredNode> nodes, int hash) {
+    final String h = hash.toRadixString(16).padLeft(2, '0');
+    return hopLabel(
+      h,
+      hopNodeName(nodes, h, types: const <int>{kAdvTypeRepeater, kAdvTypeRoom}),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MeshcoreController mc = context.watch<MeshcoreController>();
+    final TraceTool t = context.read<ToolsController>().trace;
+    final List<DiscoveredNode> nodes = mc.nodes;
+    final List<int>? path = _pathFor(mc);
+    return ToolPage(
+      title: l.toolTraceName,
+      tool: t,
+      body: (BuildContext context) => <Widget>[
+        SegmentedButton<bool>(
+          segments: <ButtonSegment<bool>>[
+            ButtonSegment<bool>(value: false, label: Text(l.traceToNode)),
+            ButtonSegment<bool>(value: true, label: Text(l.traceManual)),
+          ],
+          selected: <bool>{_manual},
+          onSelectionChanged: t.running
+              ? null
+              : (Set<bool> s) => setState(() => _manual = s.first),
+        ),
+        const SizedBox(height: 8),
+        if (!_manual) ...<Widget>[
+          ToolField(
+            label: l.pingTarget,
+            child: ToolPickerButton(
+              text: _node?.name ?? l.toolsChoose,
+              onTap: t.running
+                  ? null
+                  : () async {
+                      final DiscoveredNode? n = await pickContact(
+                        context,
+                        mc,
+                        enabled: (DiscoveredNode n) =>
+                            tracePathFor(n, hashSize: _hashSize(mc)) != null,
+                        reason: l.traceNoRoute,
+                      );
+                      if (n != null && mounted) setState(() => _node = n);
+                    },
+            ),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l.traceRoundTrip),
+            value: _roundTrip,
+            onChanged: t.running
+                ? null
+                : (bool v) => setState(() => _roundTrip = v),
+          ),
+        ] else
+          TextField(
+            controller: _manualCtrl,
+            enabled: !t.running,
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: l.traceManualHint,
+              errorText: _manualCtrl.text.isNotEmpty && path == null
+                  ? l.traceInvalid
+                  : null,
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+        if (path != null) ToolLine(l.tracePath(_hex(path)), muted: true),
+        if (!_manual && _node == null)
+          ToolLine(l.traceNoRepeaters, muted: true),
+        const SizedBox(height: 12),
+        ToolActionRow(
+          tool: t,
+          startLabel: l.traceRun,
+          onStart: path == null
+              ? null
+              : () => t.trace(path,
+                  label: _manual ? _hex(path) : (_node?.name ?? '')),
+        ),
+        if (!_manual && _node != null && !t.running)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: MmAction(
+              icon: Icons.restart_alt,
+              label: l.traceReset,
+              dense: true,
+              onPressed: mc.isReady
+                  ? () async {
+                      final ScaffoldMessengerState sm =
+                          ScaffoldMessenger.of(context);
+                      if (await t.resetPath(_node!.pubKeyHex)) {
+                        sm.showSnackBar(
+                            SnackBar(content: Text(l.traceResetDone)));
+                      }
+                    }
+                  : null,
+            ),
+          ),
+        ToolFailureLine(t),
+        for (final TraceRun r in t.runs) ...<Widget>[
+          const SizedBox(height: 12),
+          _RunPanel(run: r, hopName: (int h) => _hopName(nodes, h)),
+        ],
+      ],
+    );
+  }
+}
+
+class _RunPanel extends StatelessWidget {
+  const _RunPanel({required this.run, required this.hopName});
+  final TraceRun run;
+  final String Function(int hash) hopName;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final MmSkin skin = context.skin;
+    final TraceResult? r = run.result;
+    final String time =
+        '${run.at.hour.toString().padLeft(2, '0')}:${run.at.minute.toString().padLeft(2, '0')}:${run.at.second.toString().padLeft(2, '0')}';
+    final List<Widget> rows = <Widget>[];
+    if (r != null) {
+      final int hs = r.hashSize;
+      final (int, double)? weak = run.weakest;
+      for (int i = 0; i < r.hopSnrsDb.length; i++) {
+        final int hash = r.pathHashes[i * hs];
+        rows.add(_HopRow(
+          label: hopName(hash),
+          snr: r.hopSnrsDb[i],
+          weakest: weak?.$1 == i,
+        ));
+      }
+      rows.add(_HopRow(
+        label: l.traceToUs,
+        snr: r.finalSnrDb,
+        weakest: weak?.$1 == r.hopSnrsDb.length,
+      ));
+      if (weak != null) {
+        final String who = weak.$1 == r.hopSnrsDb.length
+            ? l.traceToUs
+            : hopName(r.pathHashes[weak.$1 * hs]);
+        rows.add(ToolLine(l.traceWeakest(who, fmtDb(weak.$2)), muted: true));
+      }
+    }
+    return MmPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          ToolLine(
+            '$time  ${run.label}${run.rttMs == null ? '' : '  · ${l.toolsMs(run.rttMs!)}'}',
+            leading: outcomeIcon(
+                context, run.done ? (r != null) : null),
+          ),
+          if (run.lost) ToolLine(l.traceNoAnswer, muted: true),
+          if (run.failure != null)
+            ToolLine(toolFailureText(l, run.failure!), muted: true),
+          ...rows,
+          if (r == null && !run.done)
+            LinearProgressIndicator(
+                color: skin.color.accent, backgroundColor: skin.color.line),
+        ],
+      ),
+    );
+  }
+}
+
+/// Hash · name · bar · SNR. The bar spans −20…+15 dB.
+class _HopRow extends StatelessWidget {
+  const _HopRow({
+    required this.label,
+    required this.snr,
+    required this.weakest,
+  });
+  final String label;
+  final double snr;
+  final bool weakest;
+
+  @override
+  Widget build(BuildContext context) {
+    final MmSkin skin = context.skin;
+    final double frac = ((snr + 20) / 35).clamp(0.02, 1.0);
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: skin.space.labelToControl),
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: skin.space.step(8) * 5,
+            child: Text(label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontFamily: skin.type.monoFamily,
+                    fontSize: skin.type.sizeBody,
+                    color: skin.color.fg)),
+          ),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(kRadiusXs),
+              child: LinearProgressIndicator(
+                value: frac,
+                minHeight: 6,
+                color: weakest ? skin.color.alert : skin.color.accent,
+                backgroundColor: skin.color.line,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: skin.space.step(9) * 2 + skin.space.step(4),
+            child: Text(
+              '${weakest ? '▼ ' : ''}${fmtDb(snr)} dB',
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                  fontFamily: skin.type.monoFamily,
+                  fontSize: skin.type.sizeBody,
+                  color: skin.color.fg),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

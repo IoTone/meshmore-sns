@@ -1,12 +1,12 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 
-/// R53 — the three documentation sections surfaced under the Docs tab.
+/// R53 — the documentation sections surfaced under the Docs tab.
 ///
 /// Each section has a baked-in offline snapshot (an asset) and, except
-/// for [app] (which we self-author and ship), an upstream source on
-/// GitHub that we refresh from opportunistically when online.
-enum DocSection { protocol, firmware, app }
+/// for [app] and [devices] (which we self-author and ship), an upstream
+/// source on GitHub that we refresh from opportunistically when online.
+enum DocSection { protocol, firmware, app, devices }
 
 /// Where the markdown a reader is showing came from.
 enum DocOrigin {
@@ -51,6 +51,7 @@ class DocSpec {
               'meshcore-dev/MeshCore/main/README.md'),
         ];
       case DocSection.app:
+      case DocSection.devices:
         return const <Uri>[];
     }
   }
@@ -69,6 +70,8 @@ class DocSpec {
     DocSection.protocol: DocSpec(DocSection.protocol, 'assets/docs/protocol.md'),
     DocSection.firmware: DocSpec(DocSection.firmware, 'assets/docs/firmware.md'),
     DocSection.app: DocSpec(DocSection.app, 'assets/docs/app.md'),
+    DocSection.devices:
+        DocSpec(DocSection.devices, 'assets/docs/devices.md'),
   };
 
   static DocSpec of(DocSection s) => all[s]!;

@@ -4,11 +4,11 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/meshcore/chat_message.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// RESP_CODE_SENT (0x06): [06][flood][ack u32 LE][timeout u32 LE].
 Uint8List msgSentFrame({
@@ -67,15 +67,19 @@ void main() {
       expect(back.expectedAck, 0x12345678);
     });
 
-    test('a persisted "sending" resolves to "failed" on restore', () {
+    test('a persisted "sending" resolves to "unknown" on restore', () {
+      // APP-C3: the in-flight tracking does not survive a restart, so
+      // whether the radio transmitted the row cannot be known. `failed`
+      // asserted an outcome the app had no evidence for.
       final ChatMessage m = ChatMessage(
         channelIdx: 0,
         text: 'hi',
         outgoing: true,
         delivery: MessageDelivery.sending,
       );
-      expect(ChatMessage.fromJson(m.toJson()).delivery,
-          MessageDelivery.failed);
+      final ChatMessage back = ChatMessage.fromJson(m.toJson());
+      expect(back.delivery, MessageDelivery.unknown);
+      expect(back.failReason, isNotNull);
     });
 
     test('incoming messages carry no delivery state', () {
@@ -117,10 +121,13 @@ void main() {
         '(out-of-order firmware) — not a false timeout', () async {
       final FakeMeshcoreTransport fake =
           FakeMeshcoreTransport(connected: true);
-      // Short ack-timeout: if the out-of-order ACK weren't reconciled,
-      // the message would flip to `failed` within 30 ms.
+      // Short ack-timeout: if the out-of-order ACK were not reconciled, the
+      // message would flip to `failed` inside the window below. The window is
+      // 300 ms rather than 30 because this case drives real timers: on a loaded
+      // machine a 30 ms window can expire between two pumps, which fails the
+      // test without disproving the behaviour.
       final MeshcoreController ctrl = await readyController(fake,
-          deliveryTimeoutOverride: const Duration(milliseconds: 30));
+          deliveryTimeoutOverride: const Duration(milliseconds: 300));
 
       await ctrl.sendDirectText(peer, 'ping');
       // ACK lands first (before the device's send confirmation).
@@ -137,7 +144,7 @@ void main() {
           MessageDelivery.delivered);
 
       // Past the timeout window: must stay delivered, never failed.
-      await Future<void>.delayed(const Duration(milliseconds: 80));
+      await Future<void>.delayed(const Duration(milliseconds: 400));
       expect(ctrl.dmHistoryFor(peer).single.delivery,
           MessageDelivery.delivered);
       ctrl.dispose();
@@ -152,7 +159,8 @@ void main() {
           deliveryTimeoutOverride: const Duration(milliseconds: 30));
 
       await ctrl.sendChannelText('hello');
-      fake.emit(msgSentFrame(ack: 0x1, flood: true));
+      // Firmware replies RESP_CODE_OK (not SENT) to a channel send.
+      fake.emit(Uint8List.fromList(<int>[0x00]));
       await Future<void>.delayed(Duration.zero);
       expect(ctrl.messagesFor(0).single.delivery, MessageDelivery.sent);
 
@@ -162,7 +170,10 @@ void main() {
       ctrl.dispose();
     });
 
-    test('DM with no ack within timeout → failed', () async {
+    test('DM ack timeout → unknown inside the grace, then failed', () async {
+      // APP-C2 rule 4: the device's estimate running out is not the end of
+      // the story — a late ACK still resolves to delivered, so the row
+      // reads `unknown` for the grace and only then fails.
       final FakeMeshcoreTransport fake =
           FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl = await readyController(fake,
@@ -173,13 +184,46 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(ctrl.dmHistoryFor(peer).single.delivery, MessageDelivery.sent);
 
+      // Est timeout elapsed (30 ms), the grace (30 ms more) has not.
+      await Future<void>.delayed(const Duration(milliseconds: 45));
+      expect(ctrl.dmHistoryFor(peer).single.delivery,
+          MessageDelivery.unknown);
+
+      // Grace elapsed too.
       await Future<void>.delayed(const Duration(milliseconds: 80));
       expect(ctrl.dmHistoryFor(peer).single.delivery,
           MessageDelivery.failed);
       ctrl.dispose();
     });
 
-    test('confirm watchdog: no MsgSent → failed', () async {
+    test('a late ACK inside the grace still resolves to delivered', () async {
+      final FakeMeshcoreTransport fake =
+          FakeMeshcoreTransport(connected: true);
+      final MeshcoreController ctrl = await readyController(fake,
+          deliveryTimeoutOverride: const Duration(milliseconds: 40));
+
+      await ctrl.sendDirectText(peer, 'ping');
+      fake.emit(msgSentFrame(ack: 0xFEED, flood: false));
+      await Future<void>.delayed(Duration.zero);
+      expect(ctrl.dmHistoryFor(peer).single.delivery, MessageDelivery.sent);
+
+      // Past the device estimate, inside the grace: the row reads unknown.
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(ctrl.dmHistoryFor(peer).single.delivery,
+          MessageDelivery.unknown);
+
+      // The ACK arrives late — rule 4 says that is still a delivery.
+      fake.emit(ackFrame(0xFEED));
+      await Future<void>.delayed(Duration.zero);
+      expect(ctrl.dmHistoryFor(peer).single.delivery,
+          MessageDelivery.delivered);
+      ctrl.dispose();
+    });
+
+    test('confirm watchdog: no MsgSent → unknown, not failed', () async {
+      // APP-C2 rule 3: a DM is failed only from an explicit rejection or
+      // past the grace. A missing confirmation is not evidence the radio
+      // refused it, so the row cannot be vouched for.
       final FakeMeshcoreTransport fake =
           FakeMeshcoreTransport(connected: true);
       final MeshcoreController ctrl = await readyController(fake,
@@ -190,7 +234,7 @@ void main() {
           MessageDelivery.sending);
       await Future<void>.delayed(const Duration(milliseconds: 80));
       expect(ctrl.dmHistoryFor(peer).single.delivery,
-          MessageDelivery.failed);
+          MessageDelivery.unknown);
       ctrl.dispose();
     });
 

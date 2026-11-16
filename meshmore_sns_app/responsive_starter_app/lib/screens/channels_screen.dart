@@ -6,14 +6,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:meshcore/meshcore.dart';
 import 'package:provider/provider.dart';
+
+import '../bot/bot_scope.dart';
+import '../bot/bot_section.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../cryptokit/dice_roll_entropy.dart';
 import '../gen/app_localizations.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../notifications/channel_notification_prefs.dart';
 import '../ui/mm_scaffold.dart';
-import '../theme/theme_controller.dart';
+import '../theme/mm_skin.dart';
+import '../ui/mm_components.dart';
+import '../ui/mm_shape.dart';
+import '../cue/cue_service.dart';
+import '../ui/mm_confirm.dart';
+import 'channel_create_sheet.dart';
 
 /// Channel management (R6): list the device's channel slots, set the
 /// active one, and create/overwrite a slot's name + PSK. A channel is
@@ -24,8 +31,16 @@ import '../theme/theme_controller.dart';
 class ChannelsScreen extends StatelessWidget {
   const ChannelsScreen({super.key});
 
-  /// Slots to expose (matches the controller's probe range).
-  static const int _slots = 4;
+  /// How many slots to expose: what the radio says it has.
+  ///
+  /// This was a hardcoded 4, which is what the smallest boards hold — so a
+  /// radio with 8 or 40 slots showed four and the rest were unreachable from
+  /// the only screen that writes them. `DEVICE_INFO` reports the count
+  /// (`max_group_channels`), and the controller's own probe walks exactly that
+  /// many, so the screen follows the same number instead of guessing. Before
+  /// the radio has answered, four is the honest floor: a board that reports
+  /// fewer than that still gets its own count back from the probe.
+  static const int _slotsBeforeDeviceInfo = 4;
 
   @override
   Widget build(BuildContext context) {
@@ -36,15 +51,34 @@ class ChannelsScreen extends StatelessWidget {
     final Map<int, String> known = <int, String>{
       for (final MapEntry<int, String> e in mc.channels) e.key: e.value,
     };
+    // The radio's own slot count, falling back to the smallest board's four
+    // until it has answered. Never fewer than the channels already known: a
+    // channel that exists must stay reachable even if the count disagrees.
+    final int reportedSlots =
+        mc.deviceInfo?.maxGroupChannels ?? _slotsBeforeDeviceInfo;
+    // The highest slot the radio has named, plus one: a channel that exists
+    // must stay reachable even when the reported count is smaller than the
+    // index it lives at.
+    final int knownExtent = known.isEmpty
+        ? 0
+        : known.keys.reduce((int a, int b) => a > b ? a : b) + 1;
+    final int slots = reportedSlots < knownExtent ? knownExtent : reportedSlots;
 
     Future<void> edit(int idx) async {
-      final _ChannelEdit? r = await showDialog<_ChannelEdit>(
+      // A sheet, not a dialog: every other editor and picker in this app is a
+      // bottom sheet with a drag handle, a scrolling body and one action row at
+      // the bottom. The dialog put Save in the system button slot, ran the body
+      // off the screen behind a nested scroll view, and hid the key-source
+      // choice behind a segmented control that wrapped at 320 dp.
+      final _ChannelEdit? r = await showModalBottomSheet<_ChannelEdit>(
         context: context,
-        builder: (BuildContext _) =>
-            _EditChannelDialog(
-                idx: idx,
-                initialName: known[idx] ?? '',
-                currentPsk: mc.channelPsk(idx)),
+        isScrollControlled: true,
+        useSafeArea: true,
+        showDragHandle: true,
+        builder: (BuildContext _) => _EditChannelDialog(
+            idx: idx,
+            initialName: known[idx] ?? '',
+            currentPsk: mc.channelPsk(idx)),
       );
       if (r == null) return;
       if (!context.mounted) return;
@@ -55,8 +89,7 @@ class ChannelsScreen extends StatelessWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context)
             ..clearSnackBars()
-            ..showSnackBar(SnackBar(
-                content: Text(l.channelsClearSnack(idx))));
+            ..showSnackBar(SnackBar(content: Text(l.channelsClearSnack(idx))));
         }
         return;
       }
@@ -64,176 +97,218 @@ class ChannelsScreen extends StatelessWidget {
       // means we lose the shared Public channel — surface that as an
       // explicit confirm rather than letting it happen silently.
       if (idx == 0 && !_pskMatchesPublic(r.psk)) {
-        final bool? proceed = await showDialog<bool>(
-          context: context,
-          builder: (BuildContext ctx) => AlertDialog(
-            title: Text(l.channelsSlot0WarnTitle),
-            content: Text(l.channelsSlot0WarnBody),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(l.channelsSlot0WarnCancel),
-              ),
-              FilledButton.tonal(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: FilledButton.styleFrom(
-                  backgroundColor: cs.errorContainer,
-                  foregroundColor: cs.onErrorContainer,
-                ),
-                child: Text(l.channelsSlot0WarnContinue),
-              ),
-            ],
-          ),
+        final bool proceed = await mmConfirm(
+          context,
+          title: l.channelsSlot0WarnTitle,
+          body: l.channelsSlot0WarnBody,
+          cancelLabel: l.channelsSlot0WarnCancel,
+          confirmLabel: l.channelsSlot0WarnContinue,
+          // Overwriting slot 0 changes what every node on the public channel
+          // hears, and the old key is not recoverable from the radio.
+          destructive: true,
         );
-        if (proceed != true) return;
+        if (!proceed) return;
       }
       await mc.setChannel(idx: r.idx, name: r.name, psk: r.psk);
       if (context.mounted) {
         ScaffoldMessenger.of(context)
           ..clearSnackBars()
-          ..showSnackBar(SnackBar(
-              content: Text(l.channelsSetSnack(idx, r.name))));
+          ..showSnackBar(SnackBar(content: Text(l.channelsSetSnack(idx))));
       }
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.channelsTitle)),
-      body: MmScaffold(
-        child: ListView(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-            child: Text(
-              l.channelsHelp,
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-            ),
+      appBar: AppBar(
+        title: Text(l.channelsTitle),
+        actions: <Widget>[
+          // A verb for what the screen is for. Every other door here is a slot
+          // row with "Set" on it, which asks a reader to first understand what a
+          // slot is; this one asks for a name.
+          IconButton(
+            key: const ValueKey<String>('channels-new'),
+            tooltip: l.channelCreateTitle,
+            icon: const Icon(Icons.add),
+            onPressed: ready
+                ? () async {
+                    final bool? made = await ChannelCreateSheet.show(context,
+                        controller: mc);
+                    if (made == true && context.mounted) {
+                      ScaffoldMessenger.of(context)
+                        ..clearSnackBars()
+                        ..showSnackBar(
+                            SnackBar(content: Text(l.channelCreateCreated)));
+                      context.cue?.play(CueKind.taskOk);
+                    }
+                  }
+                : null,
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: cs.outline.withValues(alpha: .35)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Icon(Icons.lock_outline,
-                      size: 16, color: cs.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      l.channelsHelpEncryption,
-                      style: TextStyle(
-                          color: cs.onSurface,
-                          fontSize: 12,
-                          height: 1.35),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (!ready)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 8),
-              child: Text(l.channelsOfflineHint,
-                  style: TextStyle(color: cs.error)),
-            ),
-          const Divider(height: 1),
-          for (int idx = 0; idx < _slots; idx++)
-            ListTile(
-              leading: Icon(
-                idx == mc.activeChannel
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                color: idx == mc.activeChannel
-                    ? cs.primary
-                    : cs.onSurfaceVariant,
-              ),
-              title: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(known[idx] ?? l.channelsEmpty,
+          IconButton(
+            key: const ValueKey<String>('channels-info'),
+            tooltip: l.channelsInfoTooltip,
+            icon: const Icon(Icons.help_outline),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (BuildContext ctx) => AlertDialog(
+                title: Text(l.channelsTitle),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(l.channelsHelp,
                         style: TextStyle(
-                            color: known.containsKey(idx)
-                                ? cs.onSurface
-                                : cs.onSurfaceVariant)),
-                  ),
-                  if (mc.isDefaultChannel(idx))
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: cs.tertiary.withValues(alpha: .15),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                            color: cs.tertiary.withValues(alpha: .55)),
-                      ),
-                      child: Text(l.channelsDefaultBadge,
-                          style: TextStyle(
-                              color: cs.tertiary,
-                              fontSize: 10,
-                              letterSpacing: 1.5)),
-                    ),
-                ],
-              ),
-              subtitle: Text(idx == mc.activeChannel
-                  ? l.channelsSlotActive(idx)
-                  : l.channelsSlotLabel(idx)),
-              onTap: known.containsKey(idx)
-                  ? () => mc.setActiveChannel(idx)
-                  : null,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  if (known.containsKey(idx))
-                    IconButton(
-                      tooltip: mc.isDefaultChannel(idx)
-                          ? l.channelsClearDefaultTooltip
-                          : l.channelsSetDefaultTooltip,
-                      icon: Icon(
-                          mc.isDefaultChannel(idx)
-                              ? Icons.star
-                              : Icons.star_border,
-                          size: 20,
-                          color: mc.isDefaultChannel(idx)
-                              ? cs.tertiary
-                              : cs.onSurfaceVariant),
-                      onPressed: () async {
-                        if (mc.isDefaultChannel(idx)) {
-                          await mc.setDefaultChannelIdx(null);
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context)
-                            ..clearSnackBars()
-                            ..showSnackBar(SnackBar(
-                                content: Text(
-                                    l.channelsClearedDefaultSnack)));
-                        } else {
-                          await mc.setDefaultChannelIdx(idx);
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context)
-                            ..clearSnackBars()
-                            ..showSnackBar(SnackBar(
-                                content: Text(
-                                    l.channelsSetDefaultSnack(idx))));
-                        }
-                      },
-                    ),
+                            fontSize: context.skin.type.sizeBody,
+                            height: 1.35)),
+                    const SizedBox(height: 8),
+                    Text(l.channelsHelpEncryption,
+                        style: TextStyle(
+                            fontSize: context.skin.type.sizeBody,
+                            height: 1.35)),
+                  ],
+                ),
+                actions: <Widget>[
                   TextButton(
-                    onPressed: ready ? () => edit(idx) : null,
-                    child: Text(known.containsKey(idx)
-                        ? l.channelsEdit
-                        : l.channelsSet),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(l.actionCancel),
                   ),
                 ],
               ),
             ),
+          ),
         ],
       ),
+      body: MmScaffold(
+        child: ListView(
+          children: <Widget>[
+            // One sentence, then the slots. This page carried two intro lines —
+            // `channelsRadioSettings` and `channelsIntro` — saying the same thing
+            // in different words, which is the "different header" the owner saw:
+            // one page, two openings. The section label below is the only heading
+            // the body has.
+            // Channels and Networks are the two halves of "who else is in this
+            // conversation", and they are not the same question: a channel is a
+            // shared key (who can *read* a thread), a network is the radio tuple
+            // (who can *hear* the radio at all). One line each, because the two
+            // screens otherwise look like two lists of the same thing.
+            Padding(
+              padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge,
+                  context.skin.space.rowGap, context.skin.space.screenEdge, 0),
+              child: Text(l.channelsIntro,
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeSm)),
+            ),
+            if (!ready)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(l.channelsOfflineHint,
+                    style: TextStyle(color: cs.error)),
+              ),
+            for (int idx = 0; idx < slots; idx++)
+              ListTile(
+                leading: Icon(
+                  idx == mc.activeChannel
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: idx == mc.activeChannel
+                      ? cs.primary
+                      : cs.onSurfaceVariant,
+                ),
+                title: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(known[idx] ?? l.channelsEmpty,
+                          style: TextStyle(
+                              color: known.containsKey(idx)
+                                  ? cs.onSurface
+                                  : cs.onSurfaceVariant)),
+                    ),
+                    if (mc.isDefaultChannel(idx))
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          // A badge's border is a shape, so it is drawn at
+                          // full strength: at 55 % it is 1.9:1 on paper and the
+                          // badge loses its edge exactly where the ground is
+                          // lightest.
+                          color: cs.tertiary.withValues(alpha: .15),
+                          borderRadius: BorderRadius.circular(kRadiusMd),
+                          border: Border.all(color: cs.tertiary),
+                        ),
+                        child: Text(l.channelsDefaultBadge,
+                            style: TextStyle(
+                                color: cs.tertiary,
+                                fontSize: context.skin.type.sizeMicro,
+                                letterSpacing: 1.5)),
+                      ),
+                  ],
+                ),
+                subtitle: Text(idx == mc.activeChannel
+                    ? l.channelsSlotActive(idx)
+                    : l.channelsSlotLabel(idx)),
+                onTap: known.containsKey(idx)
+                    ? () => mc.setActiveChannel(idx)
+                    : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (known.containsKey(idx))
+                      IconButton(
+                        tooltip: mc.isDefaultChannel(idx)
+                            ? l.channelsClearDefaultTooltip
+                            : l.channelsSetDefaultTooltip,
+                        icon: Icon(
+                            mc.isDefaultChannel(idx)
+                                ? Icons.star
+                                : Icons.star_border,
+                            size: 20,
+                            color: mc.isDefaultChannel(idx)
+                                ? cs.tertiary
+                                : cs.onSurfaceVariant),
+                        onPressed: () async {
+                          if (mc.isDefaultChannel(idx)) {
+                            await mc.setDefaultChannelIdx(null);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context)
+                              ..clearSnackBars()
+                              ..showSnackBar(SnackBar(
+                                  content:
+                                      Text(l.channelsClearedDefaultSnack)));
+                          } else {
+                            await mc.setDefaultChannelIdx(idx);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context)
+                              ..clearSnackBars()
+                              ..showSnackBar(SnackBar(
+                                  content:
+                                      Text(l.channelsSetDefaultSnack(idx))));
+                          }
+                        },
+                      ),
+                    if (known.containsKey(idx))
+                      IconButton(
+                        key: ValueKey<String>('channel-options-$idx'),
+                        tooltip: l.channelsOptionsTooltip,
+                        icon: const Icon(Icons.tune, size: 20),
+                        onPressed: () => showModalBottomSheet<void>(
+                          context: context,
+                          showDragHandle: true,
+                          isScrollControlled: true,
+                          builder: (BuildContext _) => _ChannelOptionsSheet(
+                              idx: idx, name: known[idx] ?? l.channelsEmpty),
+                        ),
+                      ),
+                    MmAction(
+                      dense: true,
+                      onPressed: ready ? () => edit(idx) : null,
+                      label: l.channelsEdit,
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -258,7 +333,16 @@ class _ChannelEdit {
   final List<int> psk;
 }
 
-enum _PskSource { public, hashtag, hex, shake }
+/// How a slot's key is supplied.
+///
+/// There were four, and the fourth was "shake the phone": accelerometer samples
+/// hashed into a key, on the theory that motion is entropy. It is not — an
+/// accelerometer is a low-bandwidth, partly predictable source, and asking a
+/// reader to provide it is theatre next to the pool the operating system already
+/// keeps. Dart's `Random.secure()` is that pool (`getrandom(2)` on Linux and
+/// Android), so the generate button below is the whole story and the
+/// accelerometer path is gone.
+enum _PskSource { public, hashtag, hex }
 
 class _EditChannelDialog extends StatefulWidget {
   const _EditChannelDialog({
@@ -288,23 +372,26 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
     // already set and the key isn't the well-known Public PSK).
     // Lets the user see what's there and tweak it instead of
     // re-typing 32 hex chars from scratch.
-    text: widget.currentPsk != null &&
-            !_pskMatchesPublic(widget.currentPsk!)
+    text: widget.currentPsk != null && !_pskMatchesPublic(widget.currentPsk!)
         ? widget.currentPsk!
             .map((int b) => b.toRadixString(16).padLeft(2, '0'))
             .join()
         : '',
   );
-  // Default the key-source segmented button by inspecting the
-  // current PSK: Public if it matches the well-known key (or no
-  // slot data), Hex otherwise. We can't distinguish hashtag-derived
-  // from random-hex keys after the fact (both are opaque bytes), so
-  // any non-Public slot reads as Hex on re-open. The user can
-  // switch modes manually if they prefer to re-derive from a tag.
-  late _PskSource _src = widget.currentPsk == null ||
-          _pskMatchesPublic(widget.currentPsk!)
-      ? _PskSource.public
-      : _PskSource.hex;
+  // Default the key-source segmented button by inspecting the current PSK.
+  //
+  // An **empty slot defaults to the name-derived key**, not to Public. It used
+  // to default to Public, which meant naming a slot and pressing save produced a
+  // channel keyed with the well-known public key: everyone in range could read
+  // it, and nothing on the screen said so. A default that can only be wrong by
+  // being too open is the wrong default. A slot that already holds the public
+  // key still reads as Public, and any other opaque key reads as Hex, because a
+  // hashtag-derived key cannot be told from a random one after the fact.
+  late _PskSource _src = widget.currentPsk == null
+      ? (widget.initialName.isEmpty ? _PskSource.hashtag : _PskSource.public)
+      : (_pskMatchesPublic(widget.currentPsk!)
+          ? _PskSource.public
+          : _PskSource.hex);
   String? _error;
 
   /// "Show current key" reveal state. Latched per-dialog session;
@@ -314,14 +401,14 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
   /// R32 — dice-roll entropy collector. Lazily constructed when
   /// the user picks the Shake mode so we don't subscribe to the
   /// accelerometer in the common cases. Disposed on dialog close.
-  DiceRollEntropy? _dice;
+  // Nothing to hold: the key comes from the platform CSPRNG, not from the
+  // reader shaking a phone.
 
   @override
   void dispose() {
     _name.dispose();
     _tag.dispose();
     _hex.dispose();
-    _dice?.dispose();
     super.dispose();
   }
 
@@ -332,16 +419,45 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
   /// SHA-256 of the literal string — a tag that looks weak in EN
   /// is just as weak in JA.
   static const Set<String> _weakTagDeny = <String>{
-    'public', 'private', 'group', 'channel', 'mesh', 'meshcore',
-    'meshmore', 'chat', 'test', 'hello', 'home', 'work', 'family',
-    'friends', 'main', 'general', 'team', 'crew', 'fleet',
-    'パブリック', 'プライベート', 'グループ', 'チャンネル', 'メッシュ',
-    'チャット', 'テスト', '家', '家族', '仲間', 'チーム',
+    'public',
+    'private',
+    'group',
+    'channel',
+    'mesh',
+    'meshcore',
+    'meshmore',
+    'chat',
+    'test',
+    'hello',
+    'home',
+    'work',
+    'family',
+    'friends',
+    'main',
+    'general',
+    'team',
+    'crew',
+    'fleet',
+    'パブリック',
+    'プライベート',
+    'グループ',
+    'チャンネル',
+    'メッシュ',
+    'チャット',
+    'テスト',
+    '家',
+    '家族',
+    '仲間',
+    'チーム',
   };
 
   String? _tagWeakHint(AppLocalizations l) {
-    final String raw =
-        _tag.text.trim().toLowerCase().replaceAll(RegExp(r'^#'), '');
+    // The denylist matches the bare word, but the form it is stripped from
+    // is the canonical one — the same normaliser the key derivation uses, so
+    // the warning and the key can never disagree about what the tag is.
+    final String canonical =
+        MeshcoreChannelCrypto.canonicalHashtag(_tag.text).toLowerCase();
+    final String raw = canonical.substring(1);
     if (raw.isEmpty) return null;
     if (raw.length < 8) return l.channelsTagWeakShort;
     if (_weakTagDeny.contains(raw)) return l.channelsTagWeakCommon;
@@ -356,9 +472,8 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
       for (int i = 0; i < 16; i++) r.nextInt(256),
     ];
     setState(() {
-      _hex.text = bytes
-          .map((int b) => b.toRadixString(16).padLeft(2, '0'))
-          .join();
+      _hex.text =
+          bytes.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
     });
   }
 
@@ -374,8 +489,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
         }
         return MeshcoreChannelCrypto.channelPskFromHashtag(t);
       case _PskSource.hex:
-        final String h =
-            _hex.text.trim().replaceAll(RegExp(r'\s'), '');
+        final String h = _hex.text.trim().replaceAll(RegExp(r'\s'), '');
         if (h.length != 32 || !RegExp(r'^[0-9a-fA-F]+$').hasMatch(h)) {
           _error = l.channelsErrorHex;
           return null;
@@ -384,17 +498,6 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
           for (int i = 0; i < 32; i += 2)
             int.parse(h.substring(i, i + 2), radix: 16),
         ];
-      case _PskSource.shake:
-        // The dice-roll widget hands the user a derived key once
-        // entropy reaches `complete`. The Save button is disabled
-        // while incomplete (see build), so this branch only ever
-        // sees a finished digest.
-        final DiceRollEntropy? d = _dice;
-        if (d == null || !d.complete) {
-          _error = l.channelsErrorHex; // generic — UI gates this
-          return null;
-        }
-        return d.psk;
     }
   }
 
@@ -408,7 +511,10 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
     String name = _name.text.trim();
     if (name.isEmpty && _src == _PskSource.public) name = 'Public';
     if (name.isEmpty && _src == _PskSource.hashtag) {
-      name = _tag.text.trim();
+      // Store the canonical name too: the radio echoes this string back as
+      // the channel's name, and a slot whose name reads `emergency` while
+      // its key is sha256("#emergency") is a channel nobody can find again.
+      name = MeshcoreChannelCrypto.canonicalHashtag(_tag.text);
     }
     if (name.isEmpty) {
       setState(() => _error = l.channelsErrorName);
@@ -420,61 +526,56 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(l.channelsDialogTitle(widget.idx)),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.85,
+        maxChildSize: 0.95,
+        minChildSize: 0.5,
+        builder: (BuildContext _, ScrollController scroll) => ListView(
+          controller: scroll,
+          padding: context.skin.space.padScreen,
           children: <Widget>[
+            Text(l.channelsDialogTitle(widget.idx),
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
             TextField(
               controller: _name,
-              decoration: InputDecoration(
-                  labelText: l.channelsName, isDense: true),
+              decoration:
+                  InputDecoration(labelText: l.channelsName, isDense: true),
             ),
-            const SizedBox(height: 14),
-            Text(l.channelsKeySource),
+            SizedBox(height: context.skin.space.rowInset),
             SegmentedButton<_PskSource>(
               segments: <ButtonSegment<_PskSource>>[
                 ButtonSegment<_PskSource>(
-                    value: _PskSource.public,
-                    label: Text(l.channelsKeyPublic)),
+                    value: _PskSource.public, label: Text(l.channelsKeyPublic)),
                 ButtonSegment<_PskSource>(
                     value: _PskSource.hashtag,
                     label: Text(l.channelsKeyHashtag)),
                 ButtonSegment<_PskSource>(
-                    value: _PskSource.hex,
-                    label: Text(l.channelsKeyHex)),
-                ButtonSegment<_PskSource>(
-                    value: _PskSource.shake,
-                    label: Text(l.channelsKeyShake)),
+                    value: _PskSource.hex, label: Text(l.channelsKeyHex)),
               ],
               selected: <_PskSource>{_src},
               onSelectionChanged: (Set<_PskSource> s) {
                 final _PskSource next = s.first;
-                setState(() {
-                  // Tearing down the entropy collector when the user
-                  // leaves Shake mode avoids surprise background
-                  // accelerometer sampling.
-                  if (_src == _PskSource.shake &&
-                      next != _PskSource.shake) {
-                    _dice?.freeze();
-                  }
-                  _src = next;
-                });
+                setState(() => _src = next);
               },
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: context.skin.space.rowGap),
             if (_src == _PskSource.public)
               Text(l.channelsKeyPublicBody,
-                  style: const TextStyle(fontSize: 12))
+                  style: TextStyle(fontSize: context.skin.type.sizeBody))
             else if (_src == _PskSource.hashtag) ...<Widget>[
               TextField(
                 controller: _tag,
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                     labelText: l.channelsKeyHashtagHint,
-                    helperText: l.channelsKeyHashtagHelper,
+                    suffixIcon: Tooltip(
+                      message: l.channelsKeyHashtagHelper,
+                      child: const Icon(Icons.info_outline, size: 18),
+                    ),
                     isDense: true),
               ),
               if (_tagWeakHint(l) != null) ...<Widget>[
@@ -489,10 +590,8 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                     Expanded(
                       child: Text(_tagWeakHint(l)!,
                           style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .tertiary,
-                              fontSize: 11)),
+                              color: Theme.of(context).colorScheme.tertiary,
+                              fontSize: context.skin.type.sizeSm)),
                     ),
                   ],
                 ),
@@ -501,8 +600,7 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
               TextField(
                 controller: _hex,
                 inputFormatters: <TextInputFormatter>[
-                  FilteringTextInputFormatter.allow(
-                      RegExp(r'[0-9a-fA-F]')),
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9a-fA-F]')),
                 ],
                 decoration: InputDecoration(
                     labelText: l.channelsKeyHexHint, isDense: true),
@@ -529,48 +627,15 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                         await Clipboard.setData(ClipboardData(
                             text: _hex.text.trim().toLowerCase()));
                         if (!context.mounted) return;
-                        ScaffoldMessenger.maybeOf(context)
-                          ?.showSnackBar(SnackBar(
-                              content: Text(l.channelsHexCopied),
-                              duration:
-                                  const Duration(seconds: 2)));
+                        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                            SnackBar(
+                                content: Text(l.channelsHexCopied),
+                                duration: const Duration(seconds: 2)));
                       },
                     ),
                 ],
               ),
-            ] else if (_src == _PskSource.shake)
-              _DiceRollPanel(
-                getOrInit: () {
-                  // Lazy-init the entropy collector + start
-                  // sampling. Latched: subsequent rebuilds reuse
-                  // the same instance.
-                  if (_dice == null) {
-                    _dice = DiceRollEntropy();
-                    // If the user has reduceMotion on, prime the
-                    // digest from Random.secure once instead of
-                    // listening to the accelerometer. We still
-                    // present a Reroll button, which re-seeds.
-                    final ThemeController tc =
-                        context.read<ThemeController>();
-                    if (tc.reduceMotion) {
-                      _dice!.seedFromSecureRandom();
-                    } else {
-                      _dice!.start();
-                    }
-                  }
-                  return _dice!;
-                },
-                reroll: () {
-                  _dice?.reset();
-                  final ThemeController tc =
-                      context.read<ThemeController>();
-                  if (tc.reduceMotion) {
-                    _dice!.seedFromSecureRandom();
-                  } else {
-                    _dice!.start();
-                  }
-                },
-              ),
+            ],
             // Reveal-current-key block (R6 follow-on). Only shown
             // when the controller has actually cached a PSK for
             // this slot. Latched behind a Reveal tap so the key
@@ -582,35 +647,34 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
               Row(
                 children: <Widget>[
                   Icon(Icons.vpn_key,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.primary),
+                      size: 16, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 6),
                   Text(l.channelsCurrentKey,
-                      style: const TextStyle(
-                          fontSize: 12, letterSpacing: 1)),
+                      style: TextStyle(
+                          fontSize: context.skin.type.sizeBody,
+                          letterSpacing: 1)),
                   const Spacer(),
-                  TextButton.icon(
-                    icon: Icon(
-                        _revealCurrent
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        size: 16),
-                    label: Text(_revealCurrent
+                  MmAction(
+                    icon: _revealCurrent
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    label: _revealCurrent
                         ? l.channelsHideKey
-                        : l.channelsRevealKey),
-                    onPressed: () => setState(
-                        () => _revealCurrent = !_revealCurrent),
+                        : l.channelsRevealKey,
+                    dense: true,
+                    onPressed: () =>
+                        setState(() => _revealCurrent = !_revealCurrent),
                   ),
                 ],
               ),
               if (_revealCurrent)
                 SelectableText(
                   widget.currentPsk!
-                      .map((int b) =>
-                          b.toRadixString(16).padLeft(2, '0'))
+                      .map((int b) => b.toRadixString(16).padLeft(2, '0'))
                       .join(),
-                  style: const TextStyle(
-                      fontFamily: 'JetBrains Mono', fontSize: 11),
+                  style: TextStyle(
+                      fontFamily: context.skin.type.monoFamily,
+                      fontSize: context.skin.type.sizeSm),
                 ),
               // QR-share — only meaningful for non-Public slots
               // (Public's key is world-known, no point sharing).
@@ -621,121 +685,80 @@ class _EditChannelDialogState extends State<_EditChannelDialog> {
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.qr_code_2, size: 16),
                     label: Text(l.channelsShareQr),
-                    onPressed: () => _showQrShare(
-                        context, widget.idx, widget.initialName,
-                        widget.currentPsk!),
+                    onPressed: () => _showQrShare(context, widget.idx,
+                        widget.initialName, widget.currentPsk!),
                   ),
                 ),
               ],
             ],
-            // R54 — per-channel place inference. Applied immediately
-            // (independent of the name/PSK save), default on for the
-            // public channel.
-            const Divider(height: 20),
-            Builder(builder: (BuildContext ctx) {
-              final MeshcoreController mc = ctx.watch<MeshcoreController>();
-              return SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                title: Text(l.channelsInferPlaces),
-                subtitle: Text(l.channelsInferPlacesSub),
-                value: mc.placeInferenceEnabled(widget.idx),
-                onChanged: (bool v) =>
-                    mc.setPlaceInferenceEnabled(widget.idx, v),
-              );
-            }),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 8),
               Text(_error!,
                   style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
-                      fontSize: 12)),
+                      fontSize: context.skin.type.sizeBody)),
             ],
+            const SizedBox(height: 16),
+            MmActionRow(
+              children: <Widget>[
+                // Clear slot: only offered when the slot has actually been
+                // configured (currentPsk known). Slot 0 is also clearable —
+                // clearChannel(0) is a no-op (already Public).
+                if (widget.currentPsk != null)
+                  MmAction(
+                    icon: Icons.delete_outline,
+                    label: l.channelsClear,
+                    onPressed: () async {
+                      final bool ok = await mmConfirm(
+                        context,
+                        title: l.channelsClearConfirmTitle(widget.idx),
+                        body: l.channelsClearConfirmBody,
+                        cancelLabel: l.channelsCancel,
+                        confirmLabel: l.channelsClear,
+                        destructive: true,
+                      );
+                      if (!ok) return;
+                      if (!context.mounted) return;
+                      // The outer screen owns the confirm snack and the provider
+                      // lookup, so the sheet delegates with a marker.
+                      Navigator.pop(context,
+                          _ChannelEdit(widget.idx, '__clear__', const <int>[]));
+                    },
+                  ),
+                MmAction(
+                  icon: Icons.close,
+                  label: l.channelsCancel,
+                  onPressed: () => Navigator.pop(context),
+                ),
+                MmAction(
+                  key: const ValueKey<String>('channel-save'),
+                  primary: true,
+                  icon: Icons.check,
+                  label: l.channelsSave,
+                  onPressed: () => _save(l),
+                ),
+              ],
+            ),
           ],
         ),
       ),
-      actions: <Widget>[
-        // Clear slot: only offered when the slot has actually been
-        // configured (currentPsk known). Slot 0 is also clearable —
-        // clearChannel(0) is a no-op (already Public).
-        if (widget.currentPsk != null)
-          TextButton.icon(
-            icon: const Icon(Icons.delete_outline, size: 16),
-            label: Text(l.channelsClear),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            onPressed: () async {
-              final bool? ok = await showDialog<bool>(
-                context: context,
-                builder: (BuildContext ctx) => AlertDialog(
-                  title: Text(
-                      l.channelsClearConfirmTitle(widget.idx)),
-                  content: Text(l.channelsClearConfirmBody),
-                  actions: <Widget>[
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: Text(l.channelsCancel),
-                    ),
-                    FilledButton.tonal(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Theme.of(ctx)
-                            .colorScheme
-                            .errorContainer,
-                        foregroundColor: Theme.of(ctx)
-                            .colorScheme
-                            .onErrorContainer,
-                      ),
-                      child: Text(l.channelsClearConfirmAction),
-                    ),
-                  ],
-                ),
-              );
-              if (ok != true) return;
-              if (!context.mounted) return;
-              // Pop with a special marker the outer screen reads
-              // as "the user wants to clear this slot." We could
-              // call mc.clearChannel here directly, but the outer
-              // screen owns the snack + provider lookup, so it's
-              // cleaner to delegate.
-              Navigator.pop(
-                  context, _ChannelEdit(widget.idx, '__clear__', const <int>[]));
-            },
-          ),
-        TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l.channelsCancel)),
-        FilledButton(
-            onPressed: () => _save(l),
-            child: Text(l.channelsSave)),
-      ],
     );
   }
 }
 
-/// R32 — UI surface for the dice-roll PSK derivation.
-///
-/// Hands the parent dialog a [DiceRollEntropy] via `getOrInit`
-/// and re-renders as that collector accumulates motion samples.
-/// Shows a circular progress ring + a 32-char hex preview that
-/// fills in as the underlying SHA-256 digest stabilises + a
-/// "Reroll" affordance that wipes the buffer and re-starts.
 /// Encode a channel slot + name + 16-byte PSK as a compact URI
 /// the matching `decodeChannelShareUri` can parse back. Format:
 /// `meshmore://channel?idx=N&name=URL-ENC&psk=HEX`. Kept small
 /// on purpose (fits inside NTAG213 user memory for R34 NFC).
 String encodeChannelShareUri(int idx, String name, List<int> psk) {
-  final String hex = psk
-      .map((int b) => b.toRadixString(16).padLeft(2, '0'))
-      .join();
+  final String hex =
+      psk.map((int b) => b.toRadixString(16).padLeft(2, '0')).join();
   return 'meshmore://channel?idx=$idx'
       '&name=${Uri.encodeQueryComponent(name)}'
       '&psk=$hex';
 }
 
-void _showQrShare(BuildContext outer, int idx, String name,
-    List<int> psk) {
+void _showQrShare(BuildContext outer, int idx, String name, List<int> psk) {
   final AppLocalizations l = AppLocalizations.of(outer);
   final String payload = encodeChannelShareUri(idx, name, psk);
   showDialog<void>(
@@ -753,14 +776,20 @@ void _showQrShare(BuildContext outer, int idx, String name,
               children: <Widget>[
                 Text(l.channelsQrBody,
                     style: TextStyle(
-                        color: cs.onSurfaceVariant, fontSize: 12)),
-                const SizedBox(height: 14),
+                        color: cs.onSurfaceVariant,
+                        fontSize: ctx.skin.type.sizeBody)),
+                SizedBox(height: ctx.skin.space.rowInset),
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(ctx.skin.space.rowInset),
                     decoration: BoxDecoration(
+                      // White is the QR format's own requirement — a camera
+                      // expects dark modules on a light field — so this one
+                      // surface does not follow the skin's ground. Its shape
+                      // does: the corner comes from the skin's radius family
+                      // rather than a decorative 8.
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: mmRadius(ctx, kRadiusSm),
                     ),
                     child: QrImageView(
                       data: payload,
@@ -770,18 +799,18 @@ void _showQrShare(BuildContext outer, int idx, String name,
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: ctx.skin.space.rowInset),
                 Text(l.channelsQrPayload,
                     style: TextStyle(
                         color: cs.onSurfaceVariant,
-                        fontSize: 11,
+                        fontSize: ctx.skin.type.sizeSm,
                         letterSpacing: 1)),
                 const SizedBox(height: 4),
                 SelectableText(
                   payload,
-                  style: const TextStyle(
-                      fontFamily: 'JetBrains Mono',
-                      fontSize: 11,
+                  style: TextStyle(
+                      fontFamily: ctx.skin.type.monoFamily,
+                      fontSize: ctx.skin.type.sizeSm,
                       height: 1.4),
                 ),
               ],
@@ -799,83 +828,141 @@ void _showQrShare(BuildContext outer, int idx, String name,
   );
 }
 
-class _DiceRollPanel extends StatelessWidget {
-  const _DiceRollPanel({
-    required this.getOrInit,
-    required this.reroll,
-  });
 
-  final DiceRollEntropy Function() getOrInit;
-  final VoidCallback reroll;
+
+/// R54, D8.13, R59 — everything about a channel that is not its name or its
+/// key. These used to live inside the edit dialog, which then did six jobs at
+/// once: naming, key choice, key reveal, sharing, inference and the
+/// notification bundle. They apply immediately and independently of a save, so
+/// they belong to the channel, not to the act of editing it.
+class _ChannelOptionsSheet extends StatelessWidget {
+  const _ChannelOptionsSheet({required this.idx, required this.name});
+
+  final int idx;
+  final String name;
 
   @override
   Widget build(BuildContext context) {
-    final DiceRollEntropy d = getOrInit();
     final AppLocalizations l = AppLocalizations.of(context);
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    final ThemeController tc = context.watch<ThemeController>();
-    return AnimatedBuilder(
-      animation: d,
-      builder: (BuildContext _, Widget? __) {
-        final String hex = d.psk
-            .map((int b) => b.toRadixString(16).padLeft(2, '0'))
-            .join();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(l.channelsShakeTitle,
-                style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 6),
-            Text(
-              tc.reduceMotion
-                  ? l.channelsShakeTapFallback
-                  : l.channelsShakeBody,
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-            ),
-            const SizedBox(height: 12),
-            Row(
+    return SafeArea(
+      top: false,
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        children: <Widget>[
+          Text(name, style: Theme.of(context).textTheme.titleMedium),
+          // R54 — per-channel place inference. Applied immediately
+          // (independent of the name/PSK save), default on for the
+          // public channel.
+          const Divider(height: 20),
+          Builder(builder: (BuildContext ctx) {
+            final MeshcoreController mc = ctx.watch<MeshcoreController>();
+            return SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: Text(l.channelsInferPlaces),
+              subtitle: Text(l.channelsInferPlacesSub),
+              value: mc.placeInferenceEnabled(idx),
+              onChanged: (bool v) => mc.setPlaceInferenceEnabled(idx, v),
+            );
+          }),
+          // D8.13 — the per-channel notification bundle. Every toggle is
+          // per slot: silencing the busy channel must not silence the
+          // emergency one, and mentions-only is off unless asked for.
+          const Divider(height: 20),
+          Builder(builder: (BuildContext ctx) {
+            final NotificationPrefs? np = ctx.watch<NotificationPrefs?>();
+            if (np == null) return const SizedBox.shrink();
+            final ChannelNotificationPrefs p = np.prefsFor(idx);
+            void save(ChannelNotificationPrefs next) => np.setFor(idx, next);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                SizedBox(
-                  width: 56,
-                  height: 56,
-                  child: CircularProgressIndicator(
-                    value: d.progress,
-                    strokeWidth: 4,
-                    color: d.complete ? cs.tertiary : cs.primary,
-                  ),
+                Text(l.notifSectionTitle,
+                    style: Theme.of(ctx).textTheme.titleSmall),
+                // Silence, on the channel's own sheet. It used to be a single
+                // row in App settings for the *public* channel only, so channels
+                // 1..n could not be silenced at all — and the notice here pointed
+                // at a switch three screens away that would not have silenced
+                // this channel even if found.
+                SwitchListTile(
+                  key: ValueKey<String>('notif-muted-$idx'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifMuted),
+                  subtitle: Text(l.notifMutedSub),
+                  value: p.muted,
+                  onChanged: (bool v) => save(p.copyWith(muted: v)),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: SelectableText(
-                    hex,
-                    style: TextStyle(
-                        color: d.complete ? cs.onSurface : cs.onSurfaceVariant,
-                        fontFamily: 'JetBrains Mono',
-                        fontSize: 12,
-                        height: 1.4),
+                // A silenced channel's remaining switches do nothing, so say so
+                // where they are rather than leaving a user toggling them and
+                // hearing nothing.
+                if (p.muted)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      l.notifMutedNoticeHere,
+                      key: const ValueKey<String>('notif-muted-notice'),
+                      style: Theme.of(ctx)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: Theme.of(ctx).colorScheme.error),
+                    ),
                   ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifOs),
+                  value: p.os,
+                  onChanged: (bool v) => save(p.copyWith(os: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifAudio),
+                  value: p.audio,
+                  onChanged: (bool v) => save(p.copyWith(audio: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifHaptic),
+                  value: p.haptic,
+                  onChanged: (bool v) => save(p.copyWith(haptic: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifTts),
+                  value: p.tts,
+                  onChanged: (bool v) => save(p.copyWith(tts: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifMentionsOnly),
+                  subtitle: Text(l.notifMentionsOnlySub),
+                  value: p.mentionsOnly,
+                  onChanged: (bool v) => save(p.copyWith(mentionsOnly: v)),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(l.notifKeySuffix),
+                  subtitle: Text(l.notifKeySuffixSub),
+                  value: p.keySuffixMentions,
+                  onChanged: (bool v) => save(p.copyWith(keySuffixMentions: v)),
                 ),
               ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              l.channelsShakeProgress(
-                d.acceptedSamples,
-                (d.targetBits / d.bitsPerSample).round(),
-                (d.progress * 100).round(),
-              ),
-              style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11),
-            ),
-            const SizedBox(height: 6),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.refresh, size: 16),
-              label: Text(l.channelsShakeReroll),
-              onPressed: reroll,
-            ),
-          ],
-        );
-      },
+            );
+          }),
+          // R59 — the bot binds per channel. The section renders on
+          // every slot, including Public, because a refusal that
+          // explains itself teaches more than a missing control.
+          const Divider(height: 20),
+          BotSection(scope: ChannelScope(idx)),
+        ],
+      ),
     );
   }
 }

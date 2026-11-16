@@ -61,7 +61,9 @@ class FuzzTest {
             if (out instanceof DecodeFailure df) {
                 // The only failure kinds are structural.
                 assertTrue(df.error().kind() == DecodeErrorKind.EMPTY
-                        || df.error().kind() == DecodeErrorKind.TRUNCATED);
+                        || df.error().kind() == DecodeErrorKind.TRUNCATED
+                        || df.error().kind()
+                                == DecodeErrorKind.TRAILING_BYTES);
             }
         }
     }

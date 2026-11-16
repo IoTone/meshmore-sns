@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meshmore_sns_app/meshcore/auto_publish_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/perms/location_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// R36 — AutoPublishController.
 ///
@@ -137,5 +137,95 @@ void main() {
     expect(b.minMovementMeters, 500);
     b.dispose();
     r.mc.dispose();
+  });
+
+  test('the publish path never asks for the location permission itself',
+      () async {
+    // Both triggers (the periodic Timer and the position stream) run
+    // with no UI. If the fix request prompted, the OS dialog would
+    // appear unattended — Android suppresses it, or shows it again on
+    // every tick. The permission is asked for at the settings toggle
+    // (`LocationSettingsScreen._toggleEnabled`) instead, so this path
+    // must report the denial and carry on.
+    final r = await bringControllerReady();
+    final NoopLocationService loc =
+        NoopLocationService(failure: LocationFailure.permissionDenied);
+    final AutoPublishController ap =
+        AutoPublishController(mc: r.mc, location: loc);
+    await ap.load();
+    await ap.setEnabled(true);
+    await ap.publishNow();
+
+    expect(loc.callCount, greaterThan(0),
+        reason: 'the publish must have tried to get a fix');
+    expect(loc.promptCount, 0,
+        reason: 'a timer-driven publish must never prompt');
+    expect(has0E(r.fake), isFalse,
+        reason: 'with no fix there is no position to advertise');
+    ap.dispose();
+    r.mc.dispose();
+  });
+
+  test('publishNow hands the failure back so the button is not dead',
+      () async {
+    final r = await bringControllerReady();
+    final NoopLocationService loc =
+        NoopLocationService(failure: LocationFailure.permissionDenied);
+    final AutoPublishController ap =
+        AutoPublishController(mc: r.mc, location: loc);
+    await ap.load();
+    await ap.setEnabled(true);
+
+    expect(await ap.publishNow(), LocationFailure.permissionDenied,
+        reason: 'the manual button must be able to say why it did nothing');
+    expect(loc.promptCount, 0,
+        reason: 'the background path still must not prompt');
+    expect(has0E(r.fake), isFalse);
+    ap.dispose();
+    r.mc.dispose();
+  });
+
+  test('publishNow reports no failure when it published', () async {
+    final r = await bringControllerReady();
+    final NoopLocationService loc = NoopLocationService(
+        next: const PhoneFix(latitude: 35.681, longitude: 139.767));
+    final AutoPublishController ap =
+        AutoPublishController(mc: r.mc, location: loc);
+    await ap.load();
+    await ap.setEnabled(true);
+
+    expect(await ap.publishNow(), isNull);
+    expect(has0E(r.fake), isTrue);
+    expect(has07Flood0(r.fake), isTrue);
+    ap.dispose();
+    r.mc.dispose();
+  });
+
+  test('a stored five-minute interval loads as fifteen, not as off', () async {
+    // Five minutes was removed from the options because it is 564 times the
+    // community's advert cadence and a repeater drops an advert past eight hops
+    // anyway. A build that simply dropped the value would leave the feature on
+    // with an interval nothing armed, or off without saying so.
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'mm.autoPublish.minMovementM': 0,
+      'mm.autoPublish.intervalSec': 300,
+      'mm.autoPublish.enabled': true,
+    });
+    final FakeMeshcoreTransport fake = FakeMeshcoreTransport(connected: true);
+    final MeshcoreController mc = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    final AutoPublishController auto = AutoPublishController(
+      mc: mc,
+      location: NoopLocationService(),
+    );
+    await auto.load();
+    expect(auto.intervalSec, 900);
+    expect(AutoPublishController.intervalOptions.contains(300), isFalse);
+    expect(AutoPublishController.intervalOptions, <int>[0, 900, 1800, 3600]);
+    mc.dispose();
+    auto.dispose();
   });
 }

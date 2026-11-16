@@ -1,6 +1,8 @@
 # Meshbook (MBk) — design (earmark)
 
-**Status:** design only — earmarked, not built. Captured 2026-06-07.
+**Status:** design only — earmarked, not built. Captured 2026-06-07. It has no
+row in `meshmore-feature-register.md`, which is why it is invisible to the plan;
+that is the thing to fix before any of it is built.
 **Owner concept:** a Hyperlocal-grid analysis view, sibling to **wx**
 (microclimate). Where **wx** mines *weather* from channel chat, **MBk**
 mines the *social shape* of a channel's day.

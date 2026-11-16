@@ -17,6 +17,11 @@ class FakeBackgroundKeepalive implements BackgroundKeepalive {
   Future<void> stop() async => stops++;
   @override
   Future<bool> get isRunning async => starts > stops;
+
+  /// A fake stands in for a platform that has a service, so the controller's
+  /// watchdog runs in the tests that exercise it.
+  @override
+  bool get supported => true;
 }
 
 /// Programmable in-memory [MeshcoreTransport] for hardware-free tests.
@@ -34,6 +39,13 @@ class FakeMeshcoreTransport implements MeshcoreTransport {
   bool _isConnected;
   bool failSend = false;
   bool closed = false;
+
+  /// What the fake link reports as its negotiated ATT MTU. `null` by
+  /// default, which is what a transport with no MTU concept reports.
+  int? mtuValue;
+
+  @override
+  int? get mtu => mtuValue;
 
   @override
   Stream<Uint8List> get incoming => _incoming.stream;
@@ -107,6 +119,7 @@ Uint8List contactMessageFrame({
   required List<int> prefix,
   String text = 'hi',
   int pathLen = 0,
+  int ts = 0,
 }) {
   assert(prefix.length == 6, 'DM prefix is exactly 6 bytes');
   return Uint8List.fromList(<int>[
@@ -114,7 +127,7 @@ Uint8List contactMessageFrame({
     ...prefix,
     pathLen,
     0x00, // txt_type plain
-    0x00, 0x00, 0x00, 0x00, // ts u32 LE
+    ts & 0xFF, (ts >> 8) & 0xFF, (ts >> 16) & 0xFF, (ts >> 24) & 0xFF,
     ...utf8.encode(text),
   ]);
 }
@@ -125,9 +138,11 @@ Uint8List channelMsgFrame({
   int idx = 0,
   String text = 'hi',
   int pathLen = 0x03,
+  int ts = 0,
 }) =>
     Uint8List.fromList(<int>[
-      0x08, idx, pathLen, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x08, idx, pathLen, 0x00,
+      ts & 0xFF, (ts >> 8) & 0xFF, (ts >> 16) & 0xFF, (ts >> 24) & 0xFF,
       ...utf8.encode(text),
     ]);
 
@@ -138,14 +153,17 @@ Uint8List contactFrame({
   int firstPubByte = 70,
   int lastAdvertTs = 1700000000,
   int flags = 0,
+  int outPathLen = 0,
+  List<int> path = const <int>[],
 }) {
+  final Uint8List outPath = Uint8List(64)..setRange(0, path.length, path);
   final Contact c = Contact(
     publicKey: Uint8List.fromList(
         List<int>.generate(32, (int i) => (firstPubByte + i) & 0xFF)),
     type: 1,
     flags: flags,
-    outPathLen: 0,
-    outPath: Uint8List(64),
+    outPathLen: outPathLen,
+    outPath: outPath,
     name: name,
     lastAdvertTimestamp: lastAdvertTs,
     latitudeMicros: 0,
@@ -168,6 +186,8 @@ Uint8List deviceInfoFrame({
   String build = '2026-05-01',
   String mfr = 'Seeed',
   String fw = 'v1.15.0',
+  int clientRepeat = 0,
+  int pathHashMode = 0,
 }) {
   List<int> cstr(String s, int n) {
     final List<int> b = List<int>.filled(n, 0);
@@ -186,8 +206,8 @@ Uint8List deviceInfoFrame({
     ...cstr(build, 12),
     ...cstr(mfr, 40),
     ...cstr(fw, 20),
-    0, // client_repeat
-    0, // path_hash_mode
+    clientRepeat & 0xFF,
+    pathHashMode & 0xFF,
   ]);
 }
 
@@ -202,6 +222,33 @@ Uint8List batteryFrame(int mv, {int usedKb = 0, int totalKb = 0}) =>
       totalKb & 0xFF, (totalKb >> 8) & 0xFF,
       (totalKb >> 16) & 0xFF, (totalKb >> 24) & 0xFF,
     ]);
+
+/// `PUSH_CODE_ADVERTISEMENT` (0x80) whose app-data carries a position.
+///
+/// App-data order (MeshCore `AdvertDataHelpers`): `[flags]`, then
+/// `[lat i32 LE][lon i32 LE]` when `ADV_LATLON` (0x10) is set, then the
+/// name when `ADV_NAME` (0x80) is set.
+Uint8List advertFrameAt({
+  required double lat,
+  required double lon,
+  String name = 'NodeAt',
+  int firstPubByte = 9,
+  int ts = 1,
+}) {
+  int b(int v, int shift) => (v >> shift) & 0xFF;
+  final int latMicros = (lat * 1e6).round();
+  final int lonMicros = (lon * 1e6).round();
+  return Uint8List.fromList(<int>[
+    0x80,
+    ...List<int>.generate(32, (int i) => firstPubByte + i),
+    ts & 0xFF, (ts >> 8) & 0xFF, (ts >> 16) & 0xFF, (ts >> 24) & 0xFF,
+    ...List<int>.filled(64, 0x55),
+    kAdvTypeChat | kAdvLatLonMask | kAdvNameMask,
+    b(latMicros, 0), b(latMicros, 8), b(latMicros, 16), b(latMicros, 24),
+    b(lonMicros, 0), b(lonMicros, 8), b(lonMicros, 16), b(lonMicros, 24),
+    ...utf8.encode(name),
+  ]);
+}
 
 /// `RESP_CODE_ERR` (0x01) with a 1-byte reason code.
 Uint8List errorFrame(int code) => Uint8List.fromList(<int>[0x01, code]);

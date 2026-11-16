@@ -47,6 +47,8 @@ class DiscoveredNode {
     this.deviceAdvertUnix,
     required this.viaAdvert,
     this.outPathHashes,
+    this.outPathHopCount,
+    this.outPathHashSize,
     this.viaFlood = false,
   });
 
@@ -106,15 +108,36 @@ class DiscoveredNode {
 
   /// Number of repeater hops to this peer when known (`null` when
   /// [outPathHashes] is `null` — i.e. flood-routed or advert-only).
-  int? get hopCount => outPathHashes?.length;
+  /// Hops on the learned route, decoded from `out_path_len`.
+  ///
+  /// [outPathHashes] is the raw path *bytes*: `out_path_len` packs the hop count
+  /// in its low six bits and the hash width minus one in its top two, so the
+  /// byte list is `hops × width` long. Reading its length as a hop count made a
+  /// two-byte mesh report twice the depth and a three-byte mesh three times it.
+  /// Both numbers are decoded by the controller from `PathLen`
+  /// (`packages/meshcore/lib/src/model/admin.dart:14-18`) and carried here.
+  final int? outPathHopCount;
+
+  /// Bytes per hop on this route: 1, 2 or 3.
+  final int? outPathHashSize;
+
+  int? get hopCount =>
+      outPathHashes == null ? null : (outPathHopCount ?? outPathHashes!.length);
 
   /// True if we've heard from this node in the last 5 minutes.
   /// Purely temporal — does NOT imply spatial proximity (a node 300
   /// km away heard 30 s ago is still "recent"). For the UX-facing
   /// "in range" badge, use `MeshcoreController.proximityFor(node)`,
   /// which factors in actual distance when we have GPS on both ends.
-  bool get recentlyHeard =>
-      DateTime.now().millisecondsSinceEpoch ~/ 1000 - lastHeardUnix < 300;
+  ///
+  /// A stamp in the future is the phone and the radio disagreeing about the
+  /// clock, not a hearing. It used to pass this test because a negative
+  /// difference is less than five minutes, which put a node nobody had heard
+  /// into the "recent" tier of the proximity badge.
+  bool get recentlyHeard {
+    final int age = DateTime.now().millisecondsSinceEpoch ~/ 1000 - lastHeardUnix;
+    return age >= 0 && age < 300;
+  }
 
   /// Deprecated alias kept temporarily for any external callers; same
   /// semantics as [recentlyHeard]. Internal call sites must use

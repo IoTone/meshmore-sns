@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'mm_skin.dart';
 import 'mm_tokens.dart';
+import '../util/prefs.dart';
 
 /// User-customizable appearance & accessibility (R14 / R12 / R13).
 ///
@@ -19,8 +20,12 @@ class ThemeController extends ChangeNotifier {
   static const String _kReduceMotion = 'mm.reduceMotion';
   static const String _kAudioMaster = 'mm.audioMaster';
   static const String _kVisualHapticOnly = 'mm.visualHapticOnly';
+  static const String _kCueVolume = 'mm.cueVolume';
 
-  MmThemePreset _preset = MmThemePreset.seele; // D — default
+  // STUDIO is the default a fresh install opens on: the quiet, sans-face,
+  // square-control skin. The technical presets (SEELE, NERV, AG-HUD, RECON,
+  // Dr Pop, Hyperlocal) are a deliberate choice in Personalisation.
+  MmThemePreset _preset = MmThemePreset.studio;
   double _fontScale = 1.0;
   bool _highContrast = false;
   bool _reduceMotion = false;
@@ -28,12 +33,55 @@ class ThemeController extends ChangeNotifier {
   // available from the dashboard (was off by default pre-R12 revision).
   bool _visualHapticOnly = false;
 
+  /// How loud a cue plays, 0-1, on top of the phone's own media volume. One
+  /// on a fresh install: the packs are normalised to a -1.5 dBFS peak, and a
+  /// cue is worth hearing without the owner hunting for a slider. It exists
+  /// because the media volume is not ours to set — the phone's own 3/15 is a
+  /// choice about *everything* that plays, so the app needs its own trim.
+  double _cueVolume = 1.0;
+
+  /// The operating system's own accessibility switches, mirrored in here.
+  ///
+  /// The app has a switch for each, and so does Android. Honouring only the app's
+  /// meant a reader who turned on "Remove animations" in system settings still
+  /// got a sweeping radar, a rising toast and pulsing markers, and one who turned
+  /// on high contrast still got the quiet skin. Set from `MediaQuery` at the root
+  /// (`main.dart`), never persisted: they are the platform's, not ours.
+  bool _osReduceMotion = false;
+
+  /// True when either the app's switch or the platform's is on.
+  ///
+  /// Reduce motion is a request to *stop moving*, which the app can honour
+  /// without changing what anything looks like, so the platform's answer is
+  /// ORed in.
+  bool get reduceMotion => _reduceMotion || _osReduceMotion;
+
+  /// The app's own switch, and only that.
+  ///
+  /// The platform's high-contrast request used to be ORed in here too, and that
+  /// made it a second, invisible switch: this getter feeds `context.skin`, while
+  /// `ThemeData` was built from the **raw field**. With the platform flag on and
+  /// the app's switch off, the ground came from the high-contrast skin and the
+  /// text from the chosen one — a black page with near-black text on Air, and the
+  /// same split on every other theme, with the switch unable to turn it off.
+  /// High contrast is an app decision about colours, so it is read from the app's
+  /// own field in both places.
+  bool get highContrast => _highContrast;
+
+  /// The platform's reduce-motion setting changed. No-op when it did not
+  /// change, so a rebuild per frame cannot notify in a loop.
+  void setOsReduceMotion(bool v) {
+    if (v == _osReduceMotion) return;
+    _osReduceMotion = v;
+    notifyListeners();
+  }
+
+
   MmThemePreset get preset => _preset;
   double get fontScale => _fontScale;
-  bool get highContrast => _highContrast;
-  bool get reduceMotion => _reduceMotion;
   bool get audioMaster => _audioMaster;
   bool get visualHapticOnly => _visualHapticOnly;
+  double get cueVolume => _cueVolume;
 
   MmTokens get tokens => kMmPresets[_preset]!;
 
@@ -43,31 +91,52 @@ class ThemeController extends ChangeNotifier {
   ThemeData get theme {
     final MmSkin skin =
         mmSkinFor(_highContrast ? MmThemePreset.seele : _preset);
-    return buildMmTheme(skin.color, fontFamily: skin.type.displayFamily);
+    final ThemeData base = buildMmTheme(skin.color,
+        fontFamily: skin.type.displayFamily, shape: skin.shape);
+    if (!reduceMotion) return base;
+    // Reduce motion is about the whole app, not the two views that remembered to
+    // ask: a ripple that spreads across a control and a page that slides in are
+    // both motion. No ink, and a page transition that draws nothing.
+    return base.copyWith(
+      splashFactory: NoSplash.splashFactory,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: _NoTransitionBuilder(),
+          TargetPlatform.iOS: _NoTransitionBuilder(),
+          TargetPlatform.linux: _NoTransitionBuilder(),
+          TargetPlatform.macOS: _NoTransitionBuilder(),
+          TargetPlatform.windows: _NoTransitionBuilder(),
+          TargetPlatform.fuchsia: _NoTransitionBuilder(),
+        },
+      ),
+    );
   }
 
   /// Load persisted preferences. Safe to call once at startup.
   Future<void> load() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
     _preset = presetFromId(p.getString(_kPreset));
-    _fontScale = (p.getDouble(_kFontScale) ?? 1.0).clamp(0.8, 1.6);
-    _highContrast = p.getBool(_kHighContrast) ?? false;
-    _reduceMotion = p.getBool(_kReduceMotion) ?? false;
-    _audioMaster = p.getBool(_kAudioMaster) ?? true;
-    _visualHapticOnly = p.getBool(_kVisualHapticOnly) ?? false;
+    _fontScale = Prefs.readDouble(p, _kFontScale, fallback: 1.0).clamp(0.8, 1.6);
+    _highContrast = Prefs.readBool(p, _kHighContrast);
+    _reduceMotion = Prefs.readBool(p, _kReduceMotion);
+    _audioMaster = Prefs.readBool(p, _kAudioMaster, fallback: true);
+    _visualHapticOnly = Prefs.readBool(p, _kVisualHapticOnly);
+    _cueVolume = Prefs.readDouble(p, _kCueVolume, fallback: 1.0).clamp(0.0, 1.0);
     notifyListeners();
   }
 
-  Future<void> _save(void Function(SharedPreferences p) write) async {
+  Future<void> _save(Future<void> Function(SharedPreferences p) write) async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    write(p);
+    await write(p);
   }
 
   Future<void> setPreset(MmThemePreset v) async {
     if (v == _preset) return;
     _preset = v;
     notifyListeners();
-    await _save((SharedPreferences p) => p.setString(_kPreset, v.name));
+    await _save((SharedPreferences p) async {
+      await Prefs.setString(p, _kPreset, v.name);
+    });
   }
 
   Future<void> setFontScale(double v) async {
@@ -75,25 +144,25 @@ class ThemeController extends ChangeNotifier {
     if (c == _fontScale) return;
     _fontScale = c;
     notifyListeners();
-    await _save((SharedPreferences p) => p.setDouble(_kFontScale, c));
+    await _save((SharedPreferences p) => Prefs.setDouble(p, _kFontScale, c));
   }
 
   Future<void> setHighContrast(bool v) async {
     _highContrast = v;
     notifyListeners();
-    await _save((SharedPreferences p) => p.setBool(_kHighContrast, v));
+    await _save((SharedPreferences p) => Prefs.setBool(p, _kHighContrast, v));
   }
 
   Future<void> setReduceMotion(bool v) async {
     _reduceMotion = v;
     notifyListeners();
-    await _save((SharedPreferences p) => p.setBool(_kReduceMotion, v));
+    await _save((SharedPreferences p) => Prefs.setBool(p, _kReduceMotion, v));
   }
 
   Future<void> setAudioMaster(bool v) async {
     _audioMaster = v;
     notifyListeners();
-    await _save((SharedPreferences p) => p.setBool(_kAudioMaster, v));
+    await _save((SharedPreferences p) => Prefs.setBool(p, _kAudioMaster, v));
   }
 
   Future<void> setVisualHapticOnly(bool v) async {
@@ -101,9 +170,35 @@ class ThemeController extends ChangeNotifier {
     // Mutually reinforcing: visual+haptic-only implies audio off.
     if (v) _audioMaster = false;
     notifyListeners();
-    await _save((SharedPreferences p) {
-      p.setBool(_kVisualHapticOnly, v);
-      if (v) p.setBool(_kAudioMaster, false);
+    await _save((SharedPreferences p) async {
+      await Prefs.setBool(p, _kVisualHapticOnly, v);
+      if (v) await Prefs.setBool(p, _kAudioMaster, false);
     });
   }
+
+  Future<void> setCueVolume(double v) async {
+    final double c = v.clamp(0.0, 1.0);
+    if (c == _cueVolume) return;
+    _cueVolume = c;
+    notifyListeners();
+    await _save((SharedPreferences p) => Prefs.setDouble(p, _kCueVolume, c));
+  }
+}
+
+/// A page transition that draws the new page and nothing else.
+///
+/// The route still takes its own transition duration, but nothing moves and
+/// nothing fades, so the page appears at once. Used only when motion is reduced.
+class _NoTransitionBuilder extends PageTransitionsBuilder {
+  const _NoTransitionBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) =>
+      child;
 }

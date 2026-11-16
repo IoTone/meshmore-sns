@@ -5,7 +5,6 @@ import 'package:meshcore/meshcore.dart';
 import '../../gen/app_localizations.dart';
 import '../../meshcore/discovered_node.dart';
 import '../../meshcore/mesh_event.dart';
-import '../../meshcore/meshcore_connection.dart';
 import '../../meshcore/meshcore_controller.dart';
 import '../../meshcore/region_presets.dart';
 
@@ -18,10 +17,12 @@ class DashboardModel {
     required this.statusLabel,
     required this.alert,
     required this.busy,
+    required this.linked,
     required this.peersInRange,
     required this.knownCount,
     required this.nodeName,
-    required this.radioLine,
+    required this.pubKeyHex,
+    required this.radioFields,
     required this.channelLabel,
     required this.region,
     required this.batteryLine,
@@ -31,8 +32,22 @@ class DashboardModel {
 
   final String statusLabel;
   final bool alert;
+
+  /// R97 — the link is up. Distinct from "not alert": a handshake is
+  /// neither. Skins that tint the status use [MmTokens.link] for it.
+  final bool linked;
   final bool busy;
   final int peersInRange;
+
+  /// What the count above may be called.
+  ///
+  /// `proximityFor` answers "near" from a *stored position* within 10 km and
+  /// "recent" from a hearing inside five minutes, so with the link down the
+  /// count is a fact about the last positions the app heard, not about what the
+  /// radio can reach now. Measured on the handset: LINK LOST beside "NODES IN
+  /// RANGE 52", which is a claim no dead link can support.
+  String peersLabel(AppLocalizations l) =>
+      linked ? l.dashboardPeersInRange : l.dashboardPeersInRangeStale;
   final int knownCount;
 
   /// Radio (MeshCore firmware) contact-list level — `"12/350"` or `"12"`
@@ -44,16 +59,41 @@ class DashboardModel {
   /// Device advertised name, or null when SelfInfo isn't in yet.
   final String? nodeName;
 
+  /// Our own 64-hex public key, or null awaiting SelfInfo. This is
+  /// the identifier another operator needs before their DMs can route
+  /// to us, so every skin should surface it somewhere — see
+  /// [MyPubkeyLine], which renders it consistently.
+  final String? pubKeyHex;
+
   /// `915.0MHz SF7 CR5 22dBm`, or null awaiting SelfInfo.
-  final String? radioLine;
+  /// The radio's own settings, one field each.
+  ///
+  /// A joined string was rendered as a bare `Text` and broke wherever the width
+  /// ran out, so "910.525MHz  SF7" ended a line and "CR5  22dBm" began the next
+  /// — a config readout split mid-tuple. The fields are kept apart so
+  /// [MmValueFields] can decide where a line may break.
+  final List<String>? radioFields;
+
+  /// The same facts on one line, for a caller that has its own sentence to
+  /// build around them.
+  String? get radioLine => radioFields?.join('  ');
   final String channelLabel;
   final String region;
   final String? batteryLine;
 
   final List<({String time, String text})> events;
 
-  static DashboardModel gather(MeshcoreController mc, AppLocalizations l) {
-    final ({String label, bool alert, bool busy}) st = switch (mc.state) {
+  /// The link's own words, without gathering the rest of the model.
+  ///
+  /// The dashboard host announces this as a live region, so a screen-reader
+  /// user is told the radio dropped; every layout draws it as plain text, and
+  /// nothing announced it before.
+  static String statusFor(MeshcoreController mc, AppLocalizations l) =>
+      _status(mc, l).label;
+
+  static ({String label, bool alert, bool busy}) _status(
+      MeshcoreController mc, AppLocalizations l) {
+    return switch (mc.state) {
       MeshcoreConnectionState.ready =>
         (label: l.statusLinked, alert: false, busy: false),
       MeshcoreConnectionState.handshaking =>
@@ -68,11 +108,18 @@ class DashboardModel {
           busy: mc.isConnecting,
         ),
     };
+  }
 
-    final int inRange = mc.nodes.where((DiscoveredNode n) {
-      final NodeProximity p = mc.proximityFor(n);
-      return p == NodeProximity.near || p == NodeProximity.recent;
-    }).length;
+  static DashboardModel gather(MeshcoreController mc, AppLocalizations l) {
+    final ({String label, bool alert, bool busy}) st = _status(mc, l);
+
+    // Our own node can be in the fabric, and the Nodes screen excludes it, so
+    // the two counts differed by one for the same moment.
+    final String? selfPk = mc.ownPubKeyHex;
+    final int inRange = mc.nodes
+        .where((DiscoveredNode n) =>
+            n.pubKeyHex != selfPk && mc.inRangeNow(n))
+        .length;
 
     final SelfInfo? si = mc.selfInfo;
     final RegionPreset? rp = si == null
@@ -90,22 +137,28 @@ class DashboardModel {
           ? (mc.batteryPercent ?? 0)
           : mc.batteryEstimate.socPercent.round();
       battery = '${mc.batteryVolts!.toStringAsFixed(2)}V  $pct%'
-          '${mc.charging == true ? '  CHG' : ''}';
+          '${mc.charging == true ? '  ${l.batteryChargingShort}' : ''}';
     }
 
     return DashboardModel(
       statusLabel: st.label,
       alert: st.alert,
+      linked: mc.state == MeshcoreConnectionState.ready,
       busy: st.busy,
       peersInRange: inRange,
       knownCount: mc.nodes.length,
       nodeName: si == null
           ? null
           : (si.name.isEmpty ? l.dashboardUnnamed : si.name),
-      radioLine: si == null
+      pubKeyHex: mc.ownPubKeyHex,
+      radioFields: si == null
           ? null
-          : '${si.frequencyMhz}MHz  SF${si.spreadingFactor}  '
-              'CR${si.codingRate}  ${si.txPowerDbm}dBm',
+          : <String>[
+              '${si.frequencyMhz}MHz',
+              'SF${si.spreadingFactor}',
+              'CR${si.codingRate}',
+              '${si.txPowerDbm}dBm',
+            ],
       channelLabel: 'CH${mc.activeChannel}',
       region: rp == null ? l.deviceRegionCustom : localizedPresetLabel(l, rp.id),
       batteryLine: battery,
@@ -114,8 +167,14 @@ class DashboardModel {
           : (mc.maxContacts == null
               ? '${mc.deviceContactCount}'
               : '${mc.deviceContactCount}/${mc.maxContacts}'),
+      // Sorted by the stamp each row prints, not by arrival. A queued message
+      // is logged when it is drained, so its event can arrive after a newer
+      // one: the list read 17:32:43, 17:32:38, 17:32:23, 17:32:40, which is a
+      // clock that goes backwards on the one screen that is a log.
       events: <({String time, String text})>[
-        for (final MeshEvent e in mc.recentEvents.take(8))
+        for (final MeshEvent e in (mc.recentEvents.toList()
+          ..sort((MeshEvent a, MeshEvent b) => b.at.compareTo(a.at)))
+            .take(8))
           (
             time: '${e.at.hour.toString().padLeft(2, '0')}:'
                 '${e.at.minute.toString().padLeft(2, '0')}:'
@@ -135,17 +194,21 @@ String _eventLine(AppLocalizations l, MeshEvent e) {
       l.eventChannelMsg(a['channel'] ?? '?', a['text'] ?? ''),
     MeshEventKind.dm => l.eventDm(a['text'] ?? ''),
     MeshEventKind.contact => l.eventContact(a['name'] ?? '?'),
+    MeshEventKind.contactBatch =>
+      l.eventContactBatch(int.tryParse(a['count'] ?? '') ?? 0),
     MeshEventKind.battery => l.eventBattery(a['volts'] ?? '?'),
     MeshEventKind.deviceError =>
       l.eventDeviceError(a['reason'] ?? a['code'] ?? '?'),
     MeshEventKind.deviceClockSynced => l.eventDeviceClockSynced,
     MeshEventKind.deviceClockSkew =>
       l.eventDeviceClockSkew(a['seconds'] ?? '?'),
-    MeshEventKind.msgSent => l.eventMsgSent(a['ack'] ?? '?'),
+    MeshEventKind.msgSent => l.eventMsgSent,
     MeshEventKind.deviceInfo => l.eventDeviceInfo(a['version'] ?? '?'),
     MeshEventKind.selfInfo => l.eventSelfInfo(a['name'] ?? '?'),
     MeshEventKind.queuedWaiting => a.containsKey('count')
-        ? l.eventQueuedWaitingN(a['count']!)
+        ? l.eventQueuedWaitingN(int.tryParse(a['count'] ?? '') ?? 0)
         : l.eventQueuedWaiting,
+    MeshEventKind.oneKeyRejected => l.eventOneKeyRejected(a['key'] ?? '?'),
+    MeshEventKind.radioRefused => l.eventRadioRefused,
   };
 }

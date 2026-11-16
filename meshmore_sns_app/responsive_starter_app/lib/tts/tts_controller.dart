@@ -4,6 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../peer/peer_profiles.dart';
+import '../theme/theme_controller.dart';
+import '../util/prefs.dart';
+
+export '../peer/peer_profiles.dart' show PeerSpeechMode;
+
 /// A voice the platform TTS engine can synthesize with. The pair
 /// `(name, locale)` is the unique identifier flutter_tts expects on
 /// `setVoice`; the optional `qualityHint` lets us bubble up a
@@ -144,8 +150,37 @@ class FlutterTtsSpeaker implements TtsSpeaker {
 /// also push the new value down into the speaker so the next
 /// `speak` reflects it immediately.
 class TtsController extends ChangeNotifier {
-  TtsController({TtsSpeaker? speaker})
-      : _speaker = speaker ?? FlutterTtsSpeaker();
+  TtsController({TtsSpeaker? speaker, this.theme, PeerProfiles? peers})
+      : _speaker = speaker ?? FlutterTtsSpeaker(),
+        _peers = peers ?? PeerProfiles() {
+    _lastAudible = speechAudible;
+    theme?.addListener(_onThemeChanged);
+    _peers.addListener(notifyListeners);
+  }
+
+  /// Re-notify only when audibility actually flips. The theme fires
+  /// for font scale, preset and contrast too; rebuilding every
+  /// speech-related widget on those would be churn for nothing.
+  void _onThemeChanged() {
+    final bool now = speechAudible;
+    if (now == _lastAudible) return;
+    _lastAudible = now;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    theme?.removeListener(_onThemeChanged);
+    _peers.removeListener(notifyListeners);
+    super.dispose();
+  }
+
+  /// The audio master this controller answers to. Speech is alert
+  /// audio like any cue, so it obeys the same quick-mute the chimes
+  /// do — see [speechAudible]. Null (tests, and any call site that
+  /// hasn't wired one) means "no master", i.e. permissive, matching
+  /// how [SystemHapticBackend] treats a null theme.
+  final ThemeController? theme;
 
   static const String _kEnabled = 'mm.tts';
   static const String _kRate = 'mm.tts.rate';
@@ -168,15 +203,38 @@ class TtsController extends ChangeNotifier {
   TtsVoice? _voice;
   final Set<int> _mutedChannels = <int>{};
 
+  /// The per-peer record owner (R58). Speech is only one of its
+  /// fields, so it lives outside this controller — see [PeerProfiles].
+  /// Constructing one here when none is injected keeps every existing
+  /// call site and test working unchanged.
+  final PeerProfiles _peers;
+  late bool _lastAudible;
+
+  /// The shared per-peer record store, for call sites that need the
+  /// non-speech fields (a signature slot, say).
+  PeerProfiles get peers => _peers;
+
   /// Global TTS on/off.
   bool get enabled => _enabled;
   double get rate => _rate;
   double get pitch => _pitch;
   TtsVoice? get voice => _voice;
 
-  /// True when [channelIdx] would be spoken: global on AND not muted.
+  /// Whether the audio master currently permits *any* speech.
+  ///
+  /// `CueService` gates its chimes on exactly this expression. Speech
+  /// is the loudest thing the app emits, so leaving it outside the
+  /// quick-mute made "audio off" untrue — a message still spoke aloud
+  /// while every cue stayed silent.
+  bool get speechAudible {
+    final ThemeController? t = theme;
+    return t == null || (t.audioMaster && !t.visualHapticOnly);
+  }
+
+  /// True when [channelIdx] would be spoken: audio master permits it
+  /// AND global on AND not muted.
   bool channelSpeaks(int channelIdx) =>
-      _enabled && !_mutedChannels.contains(channelIdx);
+      speechAudible && _enabled && !_mutedChannels.contains(channelIdx);
 
   bool isChannelMuted(int channelIdx) =>
       _mutedChannels.contains(channelIdx);
@@ -185,12 +243,13 @@ class TtsController extends ChangeNotifier {
   /// once at startup. Applies the loaded values to the speaker.
   Future<void> load() async {
     final SharedPreferences p = await SharedPreferences.getInstance();
-    _enabled = p.getBool(_kEnabled) ?? false;
-    _rate = (p.getDouble(_kRate) ?? defaultRate).clamp(minRate, maxRate);
+    _enabled = Prefs.readBool(p, _kEnabled);
+    _rate = (Prefs.readDouble(p, _kRate, fallback: defaultRate)).clamp(minRate, maxRate);
     _pitch =
-        (p.getDouble(_kPitch) ?? defaultPitch).clamp(minPitch, maxPitch);
-    final String? vid = p.getString(_kVoiceId);
+        (Prefs.readDouble(p, _kPitch, fallback: defaultPitch)).clamp(minPitch, maxPitch);
+    final String? vid = Prefs.readString(p, _kVoiceId);
     _voice = vid == null ? null : TtsVoice.parseId(vid);
+    await _peers.load();
     // Push to speaker so the very first speak() reflects loaded prefs.
     await _speaker.setRate(_rate);
     await _speaker.setPitch(_pitch);
@@ -204,7 +263,7 @@ class TtsController extends ChangeNotifier {
     if (!v) await _speaker.stop();
     notifyListeners();
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setBool(_kEnabled, v);
+    await Prefs.setBool(p, _kEnabled, v);
   }
 
   Future<void> setRate(double v) async {
@@ -214,7 +273,7 @@ class TtsController extends ChangeNotifier {
     await _speaker.setRate(c);
     notifyListeners();
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setDouble(_kRate, c);
+    await Prefs.setDouble(p, _kRate, c);
   }
 
   Future<void> setPitch(double v) async {
@@ -224,7 +283,7 @@ class TtsController extends ChangeNotifier {
     await _speaker.setPitch(c);
     notifyListeners();
     final SharedPreferences p = await SharedPreferences.getInstance();
-    await p.setDouble(_kPitch, c);
+    await Prefs.setDouble(p, _kPitch, c);
   }
 
   Future<void> setVoice(TtsVoice? v) async {
@@ -236,7 +295,7 @@ class TtsController extends ChangeNotifier {
     if (v == null) {
       await p.remove(_kVoiceId);
     } else {
-      await p.setString(_kVoiceId, v.id);
+      await Prefs.setString(p, _kVoiceId, v.id);
     }
   }
 
@@ -254,6 +313,10 @@ class TtsController extends ChangeNotifier {
   /// a phrase" button). Bypasses the per-channel mute since the user
   /// is auditioning the *quality* knobs, not the channel routing.
   /// Still respects the global enable.
+  /// Deliberately **not** gated on [speechAudible]: this is an
+  /// explicit, momentary request to hear a voice while choosing one,
+  /// the same way a ringtone preview plays on a silenced handset.
+  /// Only the automatic inbound-message path answers to the master.
   Future<void> previewPhrase(String phrase) async {
     if (!_enabled) return;
     await _speaker.speak(phrase);
@@ -265,6 +328,43 @@ class TtsController extends ChangeNotifier {
       _mutedChannels.add(channelIdx);
     }
     notifyListeners();
+  }
+
+  // --- R58: per-peer DM speech ---------------------------------
+  //
+  // The record itself lives in [PeerProfiles]; these are thin
+  // delegations so existing call sites (the DM header, the tests)
+  // keep one obvious place to ask "will this peer be spoken?".
+
+  /// The peer's explicit mode, or [PeerSpeechMode.inherit] when the
+  /// user has never expressed one.
+  PeerSpeechMode peerSpeechMode(String pubKeyHex) =>
+      _peers.speechMode(pubKeyHex);
+
+  /// True when a DM from [pubKeyHex] would be spoken.
+  ///
+  /// Precedence, matching R24: the audio master outranks everything;
+  /// an explicit per-peer mode then outranks the global switch in
+  /// both directions; `inherit` follows it.
+  bool peerSpeaks(String pubKeyHex) {
+    if (!speechAudible) return false;
+    return switch (peerSpeechMode(pubKeyHex)) {
+      PeerSpeechMode.always => true,
+      PeerSpeechMode.never => false,
+      PeerSpeechMode.inherit => _enabled,
+    };
+  }
+
+  /// Set (or clear, with [PeerSpeechMode.inherit]) a peer's override.
+  /// Writing `inherit` drops the field — absence *is* inherit.
+  Future<void> setPeerSpeechMode(String pubKeyHex, PeerSpeechMode mode) =>
+      _peers.setSpeechMode(pubKeyHex, mode);
+
+  /// Speak an inbound DM from [pubKeyHex] iff [peerSpeaks]. A no-op
+  /// otherwise — the single gate, as with [speakForChannel].
+  Future<void> speakForPeer(String pubKeyHex, String text) async {
+    if (!peerSpeaks(pubKeyHex)) return;
+    await _speaker.speak(text);
   }
 
   /// Speak [text] for [channelIdx] iff that channel is currently

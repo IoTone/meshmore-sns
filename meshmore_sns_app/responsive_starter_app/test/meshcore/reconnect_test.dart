@@ -1,11 +1,11 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter_test/flutter_test.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/meshcore/reconnect_policy.dart';
 
 import 'fake_transport.dart';
+import 'package:meshcore/meshcore.dart';
 
 Future<void> _pump([int n = 8]) async {
   for (int i = 0; i < n; i++) {

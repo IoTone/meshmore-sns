@@ -64,7 +64,7 @@ byte[] plain = ChannelCrypto.macThenDecrypt(secret, macAndCiphertext);
 ## Building
 
 ```sh
-./gradlew build        # compiles, runs the 98-test suite, packages
+./gradlew build        # compiles, runs the 143-test suite, packages
 ./gradlew javadoc      # full javadocs (doclint-clean, -Xwerror)
 ./gradlew publishToMavenLocal
 ```
@@ -101,6 +101,14 @@ present on every Android API level.
   every telemetry response with a voltage entry (0x74) — a base-table
   decoder stalls at entry #1 and silently drops all telemetry (found
   the hard way against a T1000-E; regression-tested here).
+- **Decode contract:** `decode` is total, and a parsed frame must end
+  where the frame ends — a leftover is reported as `TRAILING_BYTES`
+  rather than dropped (two frames in one notification used to lose the
+  second one silently). `CMD_DEVICE_QUERY` asks for protocol version 3,
+  the version whose receive frames carry per-message SNR; the channel
+  datagram (0x1B) surfaces the receive-profile byte instead of discarding
+  it; `CHANNEL_INFO` accepts the 16- and 32-byte secret widths; the CLI
+  reply (0x1D) and the send confirmation's round-trip time are decoded.
 
 ## License
 

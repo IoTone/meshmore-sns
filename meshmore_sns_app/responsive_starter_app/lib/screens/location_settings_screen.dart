@@ -2,11 +2,20 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 import '../gen/app_localizations.dart';
+import '../ui/mm_collapse_controller.dart';
+import '../ui/mm_collapsible.dart';
+import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../meshcore/auto_publish_controller.dart';
 import '../meshcore/meshcore_controller.dart';
+import '../perms/location_service.dart';
+import '../perms/permissions_service.dart';
+import '../theme/mm_skin.dart';
+import '../ui/mm_shape.dart';
+import '../../util/mm_format.dart';
 
 /// R36 — App settings → Auto-publish location.
 ///
@@ -28,178 +37,289 @@ class LocationSettingsScreen extends StatelessWidget {
     return l.locMovementKm(m ~/ 1000);
   }
 
+  /// R36 — auto-publish is a GPS feature: every publish needs a fix, and
+  /// the periodic path runs from a timer with no UI, so it cannot ask
+  /// for the permission itself (it reports a denial instead). Ask here,
+  /// at the moment the user turns the feature on, so that enabling it
+  /// cannot silently produce nothing. Declining leaves the switch off.
+  Future<void> _toggleEnabled(
+    BuildContext context,
+    AutoPublishController ap,
+    AppLocalizations l,
+    bool value,
+  ) async {
+    if (!value) {
+      await ap.setEnabled(false);
+      return;
+    }
+    final PermissionsService perms = context.read<PermissionsService>();
+    final PermissionResult r = await perms.requestLocation();
+    if (!context.mounted) return;
+    if (r != PermissionResult.granted && r != PermissionResult.notApplicable) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(
+          content: Text(r == PermissionResult.permanentlyDenied
+              ? l.deviceLocPermDeniedPerm
+              : l.deviceLocPermDenied),
+          action: SnackBarAction(
+            label: l.deviceOpenSettings,
+            onPressed: () => perms.openAppSettingsPage(),
+          ),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+      return;
+    }
+    await ap.setEnabled(true);
+  }
+
+  /// R36 — "Publish now": explain a failure instead of doing nothing.
+  ///
+  /// `publishNow` never prompts (the loop behind it is a timer), so with
+  /// the permission denied it simply has no fix. Silently returning left
+  /// the button looking broken, so report the reason it hands back.
+  Future<void> _publishNow(
+    BuildContext context,
+    AutoPublishController ap,
+    AppLocalizations l,
+  ) async {
+    final LocationFailure? failure = await ap.publishNow();
+    if (failure == null || !context.mounted) return;
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(
+        content: Text(switch (failure) {
+          LocationFailure.permissionDeniedForever => l.deviceLocPermDeniedPerm,
+          LocationFailure.permissionDenied => l.deviceLocPermDenied,
+          _ => l.deviceRegionSuggestNoFix,
+        }),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final AutoPublishController ap =
-        context.watch<AutoPublishController>();
+    final AutoPublishController ap = context.watch<AutoPublishController>();
     final AppLocalizations l = AppLocalizations.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final MmSkin skin = context.skin;
     final MeshcoreController mc = context.read<MeshcoreController>();
 
     return Scaffold(
       appBar: AppBar(title: Text(l.locTitle)),
       body: MmScaffold(
         child: ListView(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-            child: Text(
-              l.locHelp,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 12),
+          children: <Widget>[
+            // Fences are a location feature and live beside the publish
+            // controls, not under Tools: a fence is drawn from where you are.
+            ListTile(
+              leading: const Icon(Icons.cell_tower),
+              title: Text(l.coverageTitle),
+              subtitle: Text(l.coverageExplainerShort),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/coverage'),
             ),
-          ),
-          // Master toggle.
-          SwitchListTile(
-            title: Text(l.locMaster),
-            subtitle: Text(
-              ap.enabled ? l.locMasterOn : l.locMasterOff,
-              style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: .6)),
+            ListTile(
+              leading: const Icon(Icons.fence_outlined),
+              title: Text(l.geofenceTitle),
+              subtitle: Text(l.geofenceExplainerShort),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/settings/geofences'),
             ),
-            secondary: Icon(
-                ap.enabled ? Icons.satellite_alt : Icons.satellite,
-                color: ap.enabled ? cs.primary : cs.onSurfaceVariant),
-            value: ap.enabled,
-            onChanged: (bool v) => ap.setEnabled(v),
-          ),
-          const Divider(height: 1),
-          // Periodic interval.
-          ListTile(
-            enabled: ap.enabled,
-            leading: const Icon(Icons.timer_outlined),
-            title: Text(l.locInterval),
-            subtitle: Text(
-              _intervalLabel(l, ap.intervalSec),
-              style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: .6)),
-            ),
-            onTap: !ap.enabled
-                ? null
-                : () => _pickInterval(context, ap, l),
-          ),
-          // Smart-broadcast distance.
-          ListTile(
-            enabled: ap.enabled,
-            leading: const Icon(Icons.straighten),
-            title: Text(l.locMovement),
-            subtitle: Text(
-              _movementLabel(l, ap.minMovementMeters),
-              style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: .6)),
-            ),
-            onTap: !ap.enabled
-                ? null
-                : () => _pickMovement(context, ap, l),
-          ),
-          const Divider(height: 1),
-          // "Publish now" — manual trigger so the user can verify.
-          ListTile(
-            leading: const Icon(Icons.upload),
-            title: Text(l.locPublishNow),
-            subtitle: Text(l.locPublishNowSub),
-            enabled: ap.enabled && mc.isReady,
-            onTap: !(ap.enabled && mc.isReady)
-                ? null
-                : () => ap.publishNow(),
-          ),
-          // Last-published readout.
-          if (ap.lastPublishedAt != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                      color: cs.outline.withValues(alpha: .35)),
-                ),
-                child: Text(
-                  l.locLastPublished(
-                    ap.lastLat!.toStringAsFixed(5),
-                    ap.lastLon!.toStringAsFixed(5),
-                    _hms(ap.lastPublishedAt!),
-                    ap.lastTrigger,
+            MmCollapsibleSection(
+              id: MmGroupIds.locAutoPublish,
+              title: l.locGroupAutoPublish,
+              children: <Widget>[
+                // Master toggle.
+                SwitchListTile(
+                  title: Text(l.locMaster),
+                  subtitle: Text(
+                    ap.enabled ? l.locMasterOn : l.locMasterOff,
+                    style: TextStyle(color: cs.onSurfaceVariant),
                   ),
-                  style: TextStyle(
-                      color: cs.onSurface,
-                      fontFamily: 'JetBrains Mono',
-                      fontSize: 12),
+                  secondary: Icon(
+                      ap.enabled ? Icons.satellite_alt : Icons.satellite,
+                      color: ap.enabled ? cs.primary : cs.onSurfaceVariant),
+                  value: ap.enabled,
+                  onChanged: (bool v) => _toggleEnabled(context, ap, l, v),
                 ),
+                const Divider(height: 1),
+                // Periodic interval.
+                MmPickerTile(
+                  enabled: ap.enabled,
+                  leading: const Icon(Icons.timer_outlined),
+                  title: l.locInterval,
+                  value: _intervalLabel(l, ap.intervalSec),
+                  onTap: () => _pickInterval(context, ap, l),
+                ),
+                // Smart-broadcast distance.
+                MmPickerTile(
+                  enabled: ap.enabled,
+                  leading: const Icon(Icons.straighten),
+                  title: l.locMovement,
+                  value: _movementLabel(l, ap.minMovementMeters),
+                  onTap: () => _pickMovement(context, ap, l),
+                ),
+              ],
+            ),
+            // R62 — the 60 s self-advert beacon is a separate, opt-in
+            // choice from auto-publish: it needs no GPS permission and
+            // works with the master toggle off.
+            MmCollapsibleSection(
+              id: MmGroupIds.locBeacon,
+              title: l.locGroupBeacon,
+              children: <Widget>[
+                Consumer<MeshcoreController>(
+                  builder: (BuildContext context, MeshcoreController m, _) =>
+                      SwitchListTile(
+                    secondary: const Icon(Icons.cell_tower),
+                    title: Text(l.locBeacon),
+                    subtitle: Text(
+                      l.locBeaconSub,
+                      style:
+                          TextStyle(color: cs.onSurfaceVariant),
+                    ),
+                    value: m.periodicAdvertEnabled,
+                    onChanged: (bool v) => m.setPeriodicAdvertEnabled(v),
+                  ),
+                ),
+              ],
+            ),
+            MmCollapsibleSection(
+              id: MmGroupIds.locManual,
+              title: l.locGroupManual,
+              children: <Widget>[
+                // "Publish now" — manual trigger so the user can verify. It is
+                // an action, not a row that opens something, so it is the
+                // action family rather than a list row with no affordance.
+                MmAction(
+                  key: const ValueKey<String>('loc-publish-now'),
+                  icon: Icons.upload,
+                  label: l.locPublishNow,
+                  onPressed: !(ap.enabled && mc.isReady)
+                      ? null
+                      : () => _publishNow(context, ap, l),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: context.skin.space.insideText),
+                  child: Text(
+                    l.locPublishNowSub,
+                    style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: context.skin.type.sizeSm),
+                  ),
+                ),
+                // Last-published readout.
+                if (ap.lastPublishedAt != null)
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(skin.space.screenEdge,
+                        skin.space.rowGap, skin.space.screenEdge,
+                        skin.space.labelToControl),
+                    child: Container(
+                      padding: EdgeInsets.all(skin.space.rowInset),
+                      decoration: BoxDecoration(
+                        color: skin.color.surface,
+                        borderRadius: mmRadius(context, kRadiusSm),
+                        // On paper a fill and a 35 % outline both vanish, which
+                        // left the readout floating with no edge; the rule is
+                        // what draws a panel there.
+                        border: Border.all(
+                            color: skin.color.line,
+                            width: skin.shape.borderWidth),
+                      ),
+                      // Three facts and a label, laid out where the
+                      // separators are. As one sentence the coordinates, the
+                      // time and the trigger wrapped wherever the width ran out
+                      // — a coordinate split after its decimal point is a
+                      // number the reader has to reassemble.
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(
+                            skin.type.upperHeadings
+                                ? l.locLastPublishedLabel.toUpperCase()
+                                : l.locLastPublishedLabel,
+                            style: TextStyle(
+                                color: skin.color.fgMuted,
+                                fontFamily: skin.type.wordsMono,
+                                fontSize: skin.type.sizeSm,
+                                letterSpacing: 1),
+                          ),
+                          const SizedBox(height: 2),
+                          MmValueFields(
+                            fields: <String>[
+                              MmFormat.coordinate(ap.lastLat!, ap.lastLon!),
+                              _hms(ap.lastPublishedAt!),
+                              _triggerLabel(l, ap.lastTrigger),
+                            ],
+                            color: cs.onSurface,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            // Battery transparency footer.
+            Padding(
+              padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge),
+              child: Text(
+                l.locBatteryHint,
+                style: TextStyle(
+                    color: cs.onSurfaceVariant,
+                    fontSize: skin.type.sizeSm),
               ),
             ),
-          // Battery transparency footer.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            child: Text(
-              l.locBatteryHint,
-              style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11),
-            ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
+
+  /// What fired the last publish, in words. The controller records the
+  /// internal token (`manual`, `periodic`, `movement`) because that is what
+  /// the code branches on; showing it verbatim put a code word in a sentence a
+  /// user reads.
+  static String _triggerLabel(AppLocalizations l, String trigger) =>
+      switch (trigger) {
+        'manual' => l.locTriggerManual,
+        'periodic' => l.locTriggerPeriodic,
+        'movement' => l.locTriggerMovement,
+        _ => trigger,
+      };
 
   static String _hms(DateTime t) {
     String two(int n) => n.toString().padLeft(2, '0');
     return '${two(t.hour)}:${two(t.minute)}:${two(t.second)}';
   }
 
-  Future<void> _pickInterval(BuildContext ctx,
-      AutoPublishController ap, AppLocalizations l) async {
-    final int? picked = await showModalBottomSheet<int>(
+  Future<void> _pickInterval(
+      BuildContext ctx, AutoPublishController ap, AppLocalizations l) async {
+    // R106 — the same pick-one-of-N sheet as the grid: drag handle, tick on
+    // the current value, and a name for the list being chosen from.
+    final int? picked = await showMmPicker<int>(
       context: ctx,
-      builder: (BuildContext _) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (final int s in AutoPublishController.intervalOptions)
-              ListTile(
-                dense: true,
-                leading: Icon(
-                  ap.intervalSec == s
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                ),
-                title: Text(_intervalLabel(l, s)),
-                onTap: () => Navigator.pop(ctx, s),
-              ),
-          ],
-        ),
-      ),
+      title: l.locInterval,
+      current: ap.intervalSec,
+      items: <MmPickerItem<int>>[
+        for (final int s in AutoPublishController.intervalOptions)
+          MmPickerItem<int>.option(s, _intervalLabel(l, s)),
+      ],
     );
     if (picked != null) await ap.setIntervalSec(picked);
   }
 
-  Future<void> _pickMovement(BuildContext ctx,
-      AutoPublishController ap, AppLocalizations l) async {
-    final int? picked = await showModalBottomSheet<int>(
+  Future<void> _pickMovement(
+      BuildContext ctx, AutoPublishController ap, AppLocalizations l) async {
+    final int? picked = await showMmPicker<int>(
       context: ctx,
-      builder: (BuildContext _) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (final int m
-                in AutoPublishController.movementOptions)
-              ListTile(
-                dense: true,
-                leading: Icon(
-                  ap.minMovementMeters == m
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                ),
-                title: Text(_movementLabel(l, m)),
-                onTap: () => Navigator.pop(ctx, m),
-              ),
-          ],
-        ),
-      ),
+      title: l.locMovement,
+      current: ap.minMovementMeters,
+      items: <MmPickerItem<int>>[
+        for (final int m in AutoPublishController.movementOptions)
+          MmPickerItem<int>.option(m, _movementLabel(l, m)),
+      ],
     );
     if (picked != null) await ap.setMinMovementMeters(picked);
   }

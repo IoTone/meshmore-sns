@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: MIT
 import 'dart:typed_data';
 
+import '../codec/constants.dart';
+import 'admin.dart';
+
 /// Decoded `RESP_CODE_CONTACT` (0x03).
 ///
 /// Fixed 148-byte frame, layout transcribed from
@@ -60,9 +63,42 @@ class Contact {
   /// Server-side modification counter used for incremental contact sync.
   final int lastMod;
 
-  /// The hops actually in use (`outPath[0..outPathLen)`).
-  Uint8List get activePath =>
-      Uint8List.sublistView(outPath, 0, outPathLen.clamp(0, outPath.length));
+  /// The path bytes to draw: the valid prefix of [outPath].
+  ///
+  /// For a *send decision* use [directPath], which also distinguishes "flood,
+  /// no route" from "direct, zero hops". This getter returns an empty list for
+  /// both, which is right for a map line and wrong for a bind.
+  ///
+  /// `out_path_len` is not a byte count: the top two bits are the hash size
+  /// minus one and the low six the hop count (`Packet.cpp:20-30`), so the
+  /// bytes are `hops * size`. 0xFF (`OUT_PATH_UNKNOWN`) means no path and
+  /// yields an empty list. Reading the raw byte as a length returned a bogus
+  /// 64-byte chain for 0xFF and the wrong span for any hash size above 1.
+  Uint8List get activePath {
+    if (outPathLen == kPathLenFlood) return Uint8List(0);
+    final int bytes = PathLen(outPathLen).byteLength;
+    return Uint8List.sublistView(outPath, 0, bytes.clamp(0, outPath.length));
+  }
+
+  /// The path a direct send would use, or null when there is no direct route.
+  ///
+  /// This is the rule the send path addresses with, kept on the model so a
+  /// caller cannot invent its own:
+  ///
+  ///   * `out_path_len == 0xFF` (`OUT_PATH_UNKNOWN`) means the contact is known
+  ///     only by flood, so there is no route to address directly: null.
+  ///   * `out_path_len == 0` is a *valid* direct route with zero repeater hops,
+  ///     i.e. a neighbour in radio range. It yields an EMPTY path, which
+  ///     `CMD_SEND_RAW_DATA` accepts (`path_len = 0`).
+  ///   * anything else must decode to a hash count and size that fit the
+  ///     buffer, or it is a path we cannot trust: null.
+  Uint8List? get directPath {
+    if (outPathLen == kPathLenFlood) return null;
+    final PathLen packed = PathLen(outPathLen);
+    if (!packed.isValid) return null;
+    if (packed.byteLength > outPath.length) return null;
+    return Uint8List.fromList(outPath.sublist(0, packed.byteLength));
+  }
 
   // --- `flags` bit layout (MeshCore companion firmware) ---------------
   // The firmware reads telemetry permission as `cp = flags >> 1`, then

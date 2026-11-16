@@ -12,6 +12,13 @@ enum MeshEventKind {
   channelMsg,
   dm,
   contact,
+
+  /// A run of contacts, collapsed into one line.
+  ///
+  /// The radio streams its whole table on connect, one frame per contact, so a
+  /// 350-entry table wrote 350 rows into the feed in the same second and buried
+  /// every message. The table loading is one event.
+  contactBatch,
   battery,
   deviceError,
   deviceClockSynced,
@@ -20,6 +27,8 @@ enum MeshEventKind {
   deviceInfo,
   selfInfo,
   queuedWaiting,
+  oneKeyRejected,
+  radioRefused,
 }
 
 /// A single line in the Dashboard's recent-activity feed, derived

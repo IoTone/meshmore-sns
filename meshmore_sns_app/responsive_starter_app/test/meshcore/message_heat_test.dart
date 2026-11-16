@@ -139,4 +139,24 @@ void main() {
       expect(parseChannelSenderName(': orphaned'), isNull);
     });
   });
+
+  test('the newest pings are kept, bounded, so a view can draw what it missed',
+      () {
+    // The heat view is disposed whenever another grid view is showing, so
+    // `lastPing` alone meant one toast however many messages arrived meanwhile.
+    final MessageHeatTracker t = MessageHeatTracker();
+    for (int i = 0; i < MessageHeatTracker.pingLogLength + 3; i++) {
+      t.record(text: 'm$i', atUnix: 1794300000 + i, lat: 38.9, lon: -104.7);
+    }
+    expect(t.recentPings.length, MessageHeatTracker.pingLogLength);
+    expect(t.recentPings.first.text, 'm3', reason: 'oldest kept');
+    expect(t.recentPings.last.text, 'm10', reason: 'newest last');
+    // Sequence numbers increase, which is what the view filters on.
+    for (int i = 1; i < t.recentPings.length; i++) {
+      expect(t.recentPings[i].seq, greaterThan(t.recentPings[i - 1].seq));
+    }
+    t.clear();
+    expect(t.recentPings, isEmpty);
+    expect(t.lastPing, isNull);
+  });
 }

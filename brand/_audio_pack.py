@@ -343,6 +343,127 @@ THEMES = {
                 vib_rate=11.0, attack=0.02, release=0.06, amp=0.18),
         },
     ),
+    # ---------------------------------------------------------------
+    # The five presets that used to borrow Hyperlocal's pack.
+    #
+    # R63 aliased them because no audio existed for them, which left the
+    # promise half-kept: the theme changed colour and kept somebody else's
+    # sounds. Each has a signature now, written to the same rules the six
+    # older packs follow — a base note, a waveshape and an envelope that
+    # match what the theme looks like, with cue overrides only where the
+    # shared motif would say the wrong thing.
+    # ---------------------------------------------------------------
+    "studio": dict(  # clean, square, monochrome — nothing decorative
+        base=392.00,                      # G4
+        timbre=lambda f, t: 0.96 * _sine(f, t),
+        decay=9.0,
+        cues={
+            "messageIn": dict(score=[(1.0, 0.06)], amp=0.30),
+            "dmIn": dict(score=[(1.0, 0.05), (1.0, 0.06)], amp=0.36),
+            "discovery": dict(score=[(1.5, 0.04)], amp=0.26),
+            "advert": dict(score=[(1.0, 0.03)], amp=0.16),
+            "send": dict(score=[(1.5, 0.03)], amp=0.22),
+            "boot": dict(score=[(1.0, 0.06), (1.0, 0.09)], amp=0.34),
+            "navNext": dict(score=[(1.5, 0.03)], amp=0.20),
+            "navPrev": dict(score=[(1.0, 0.03)], amp=0.20),
+            "linkUp": dict(score=[(1.0, 0.05), (1.5, 0.07)], amp=0.36),
+            "linkDown": dict(score=[(1.5, 0.05), (1.0, 0.08)], amp=0.36),
+            "alert": dict(score=[(1.0, 0.10), (1.0, 0.10), (1.0, 0.14)],
+                          amp=0.55),
+            "taskOk": dict(score=[(1.5, 0.05)], amp=0.32),
+            "taskError": dict(score=[(0.75, 0.09)], amp=0.36),
+        },
+    ),
+    "forest": dict(  # dark pine, one green — woody, low, unhurried
+        base=196.00,                      # G3
+        timbre=lambda f, t: 0.80 * _sine(f, t) + 0.20 * _sine(f * 1.5, t),
+        decay=4.2,
+        cues={
+            "messageIn": dict(score=[(1.0, 0.20)], amp=0.34),
+            "dmIn": dict(score=[(1.0, 0.16), (1.5, 0.24)], amp=0.44),
+            "discovery": dict(score=[(1.5, 0.12), (2.0, 0.18)], amp=0.38),
+            "advert": dict(score=[(0.75, 0.22)], amp=0.20),
+            "send": dict(score=[(1.5, 0.10)], amp=0.30),
+            "boot": dict(score=[(0.5, 0.22), (0.75, 0.22), (1.0, 0.30)],
+                         amp=0.46),
+            "navNext": dict(score=[(1.0, 0.10)], amp=0.24),
+            "navPrev": dict(score=[(0.75, 0.10)], amp=0.24),
+            "linkUp": dict(score=[(0.75, 0.18), (1.0, 0.26)], amp=0.46),
+            "linkDown": dict(score=[(1.0, 0.18), (0.75, 0.30)], amp=0.46),
+            "alert": dict(score=[(1.0, 0.30), (0.5, 0.36)], amp=0.66),
+            "taskOk": dict(score=[(1.0, 0.16), (1.5, 0.22)], amp=0.42),
+            "taskError": dict(score=[(1.0, 0.18), (0.75, 0.26)], amp=0.46),
+        },
+    ),
+    "air": dict(  # white page, blue — bright, glassy, very short
+        base=659.25,                      # E5
+        timbre=lambda f, t: 0.88 * _sine(f, t) + 0.12 * _sine(f * 2, t),
+        decay=11.0,
+        cues={
+            "messageIn": dict(score=[(1.0, 0.07)], amp=0.30),
+            "dmIn": dict(score=[(1.0, 0.05), (1.5, 0.07)], amp=0.36),
+            "discovery": dict(score=[(1.5, 0.04), (2.0, 0.06)], amp=0.30),
+            "advert": dict(score=[(2.0, 0.05)], amp=0.18),
+            "send": dict(score=[(1.5, 0.04)], amp=0.24),
+            "boot": dict(score=[(1.0, 0.05), (1.5, 0.05), (2.0, 0.10)],
+                         amp=0.34),
+            "navNext": dict(score=[(2.0, 0.03)], amp=0.20),
+            "navPrev": dict(score=[(1.5, 0.03)], amp=0.20),
+            "linkUp": dict(score=[(1.5, 0.05), (2.0, 0.09)], amp=0.38),
+            "linkDown": dict(score=[(2.0, 0.05), (1.5, 0.09)], amp=0.38),
+            "alert": dict(score=[(1.5, 0.09), (2.0, 0.09), (3.0, 0.14)],
+                          amp=0.56),
+            "taskOk": dict(score=[(2.0, 0.06)], amp=0.32),
+            "taskError": dict(score=[(1.0, 0.09)], amp=0.36),
+        },
+    ),
+    "daybreak": dict(  # white page, vermilion — warm, rising, unhurried
+        base=329.63,                      # E4
+        timbre=lambda f, t: 0.72 * _triangle(f, t) + 0.28 * _sine(f, t),
+        decay=6.0,
+        cues={
+            "messageIn": dict(score=[(1.0, 0.11)], amp=0.34),
+            "dmIn": dict(score=[(1.0, 0.09), (4 / 3, 0.13)], amp=0.42),
+            "discovery": dict(score=[(1.0, 0.07), (1.5, 0.10)], amp=0.36),
+            "advert": dict(score=[(1.5, 0.09)], amp=0.20),
+            "send": dict(score=[(4 / 3, 0.06)], amp=0.28),
+            "boot": dict(score=[(0.75, 0.10), (1.0, 0.10), (4 / 3, 0.16)],
+                         amp=0.44),
+            "navNext": dict(score=[(1.0, 0.05), (4 / 3, 0.06)], amp=0.24),
+            "navPrev": dict(score=[(4 / 3, 0.05), (1.0, 0.06)], amp=0.24),
+            "linkUp": dict(score=[(1.0, 0.09), (1.5, 0.09), (2.0, 0.13)],
+                           amp=0.46),
+            "linkDown": dict(score=[(1.5, 0.09), (1.0, 0.13)], amp=0.46),
+            "alert": dict(score=[(1.0, 0.14), (4 / 3, 0.18),
+                                 (1.0, 0.14), (4 / 3, 0.20)], amp=0.60),
+            "taskOk": dict(score=[(1.5, 0.09), (2.0, 0.12)], amp=0.40),
+            "taskError": dict(score=[(0.75, 0.12), (0.5, 0.16)], amp=0.44),
+        },
+    ),
+    "umber": dict(  # gruvbox browns — warm, rounded, relaxed
+        base=261.63,                      # C4
+        timbre=lambda f, t: 0.55 * _saw(f, t, harmonics=3)
+                            + 0.45 * _sine(f, t),
+        decay=5.0,
+        cues={
+            "messageIn": dict(score=[(1.0, 0.13)], amp=0.34),
+            "dmIn": dict(score=[(1.0, 0.10), (1.5, 0.15)], amp=0.44),
+            "discovery": dict(score=[(1.0, 0.08), (4 / 3, 0.12)], amp=0.36),
+            "advert": dict(score=[(0.75, 0.12)], amp=0.20),
+            "send": dict(score=[(1.5, 0.06)], amp=0.28),
+            "boot": dict(score=[(0.5, 0.12), (0.75, 0.12), (1.0, 0.18)],
+                         amp=0.44),
+            "navNext": dict(score=[(1.0, 0.05), (1.5, 0.06)], amp=0.24),
+            "navPrev": dict(score=[(1.5, 0.05), (1.0, 0.06)], amp=0.24),
+            "linkUp": dict(score=[(0.75, 0.11), (1.0, 0.11), (1.5, 0.15)],
+                           amp=0.46),
+            "linkDown": dict(score=[(1.5, 0.11), (1.0, 0.15)], amp=0.46),
+            "alert": dict(score=[(1.0, 0.16), (9 / 8, 0.20),
+                                 (1.0, 0.16), (9 / 8, 0.22)], amp=0.62),
+            "taskOk": dict(score=[(1.5, 0.10), (2.0, 0.14)], amp=0.40),
+            "taskError": dict(score=[(1.0, 0.12), (0.75, 0.18)], amp=0.44),
+        },
+    ),
 }
 
 # ---------------------------------------------------------------- envelopes
@@ -444,25 +565,206 @@ CUES = {
         score=[(1.0, 0.10), (5 / 6, 0.16)],
         amp=0.60,
     ),
+
+    # Walking into a fence and walking out of one are two different facts. A
+    # reader who hears the same cue for both cannot tell which happened, so
+    # enter rises and exit falls, in the same two notes: the pair is learned once.
+    "geofenceEnter": dict(
+        score=[(1.0, 0.12), (1.5, 0.22)],
+        amp=0.52,
+    ),
+    "geofenceExit": dict(
+        score=[(1.5, 0.12), (1.0, 0.22)],
+        amp=0.52,
+    ),
+
+    # ---- R58 signature slots -------------------------------------
+    # A *signature* is the arrival sound for one specific peer: it
+    # REPLACES `dmIn` for a peer the user has given an identity to.
+    # Slots are deliberately generic here so every theme renders them
+    # in its own base note, timbre and decay -- a signature keeps its
+    # identity across a theme switch while its expression changes,
+    # which is what the skin system promises for everything else.
+    #
+    # Five slots, and the ceiling is set by the HAPTIC channel, not
+    # this one: through a pocket a person tells apart far fewer
+    # rhythms than tones (see `_sigContours` in cue_service.dart).
+    # Adding a sixth tone here would be easy and useless.
+    #
+    # The five differ by CONTOUR, not just pitch, so they survive a
+    # cheap phone speaker: flat / small rise / fall / triple / big
+    # rise. Pitched above `dmIn` so a signature reads as "someone
+    # specific" against the ordinary DM tone.
+    "sig1": dict(  # flat -- two clear octave-up pings, same note
+        # A double rather than a single, to stay coherent with the
+        # haptic: no signature may be one beat long, because several
+        # themes already spend their single-beat patterns on `ambient`
+        # and `dm`. See `_sigContours` in cue_service.dart.
+        score=[(2.0, 0.07), (2.0, 0.09)],
+        amp=0.55,
+    ),
+    "sig2": dict(  # small rise -- major third up
+        score=[(1.0, 0.08), (1.25, 0.11)],
+        amp=0.55,
+    ),
+    "sig3": dict(  # fall -- fifth down
+        score=[(1.5, 0.08), (1.0, 0.12)],
+        amp=0.55,
+    ),
+    "sig4": dict(  # triple -- same note three times, rhythmic not melodic
+        score=[(1.25, 0.06), (1.25, 0.06), (1.25, 0.10)],
+        amp=0.52,
+    ),
+    "sig5": dict(  # big rise -- octave up, the widest leap in the set
+        score=[(1.0, 0.07), (2.0, 0.13)],
+        amp=0.55,
+    ),
 }
 
 # ---------------------------------------------------------------- synth
 
 _GEIGER_GAPS = [0.03, 0.075, 0.04, 0.095, 0.05, 0.065, 0.085]
 
+# ---------------------------------------------------------------- loudness
+#
+# Audibility floor. Measured on the handset 2026-11-14: a cue was 30-150 ms
+# long and peaked at -10 to -15 dBFS, so at a media volume of 3/15 (about
+# -14 dB) the effective peak was -24 dBFS and nobody heard it. The owner's
+# report was "the themes have no sound", and the files were the reason, not
+# the wiring: `AssetAudioPack` was reaching them and the player was running.
+#
+# Every cue is now held to two floors:
+#   * a minimum duration per kind, reached by time-stretching the motif (a
+#     30 ms blip becomes a 90 ms blip, it does not become a different note);
+#   * a peak target, so the pack is audible at a normal phone volume without
+#     the player having to invent gain.
+#
+# The scan drone is the exception: it loops for seconds, so it is normalised
+# to a lower peak on purpose.
+TARGET_PEAK_DB = -1.5
+DRONE_PEAK_DB = -6.0
 
-def _synth_score(th, cue):
+# Per-theme loudness trim, applied after the peak normalisation.
+#
+# A peak-normalised pack is not an equally *audible* pack. The low-register
+# themes are a sine near G3-A3 with a fast decay: at the same peak they read as
+# far quieter than a bright triangle at E5, because the ear is least sensitive
+# in the low hundreds of hertz and a 100 ms decayed blip spends most of its life
+# near zero. The owner's report was exactly that — "the forest sound is super
+# muted and subtle" — so the quiet-in-the-ear packs get makeup gain and the
+# bright ones are left alone. Soft clipping keeps the peak legal afterwards.
+# Per-theme *harmonic* trim, not a gain trim.
+#
+# The first attempt at this was makeup gain plus a tanh limiter, and the owner's
+# report was exact: the forest cues sounded deep fried. A low sine pushed 7 dB
+# into a limiter is a square wave with the harmonics that implies, which is
+# distortion, not loudness.
+#
+# What actually raises perceived level at an unchanged peak is harmonic content:
+# a tone with an audible octave reads louder than a pure sine at the same peak,
+# and it stays clean. So the quiet-in-the-ear themes get their second harmonic
+# mixed in before the normalisation, and the normalisation does the rest.
+# Phone speakers do not reproduce the low end.
+#
+# A handset speaker rolls off steeply below about 300 Hz, so forest's G3 (196 Hz)
+# fundamental is nearly inaudible however loud the file is: the cue plays, the
+# AudioTrack delivers frames, and the owner hears nothing. Peak-normalising a
+# tone nobody's speaker can make is not loudness.
+#
+# Each theme therefore carries an audible harmonic ladder at frequencies the
+# speaker can produce, mixed from the same waveform so the character holds: the
+# fundamental stays for headphones and decent speakers, and the octave and
+# twelfth carry the cue on a phone. Levels are in dB relative to the fundamental.
+THEME_SPEAKER_LADDER = {
+    # Tuned against a measured handset spectrum: the octave at -3 dB lands the
+    # audible band within 2 dB of studio's (whose fundamental already sits at
+    # 388 Hz), so forest reads as loud as a bright theme on a phone speaker
+    # without changing what it sounds like on headphones.
+    "forest": ((2, -3.0), (3, -6.0)),
+    "umber": ((2, -4.0), (3, -8.0)),
+    "seele": ((2, -4.0), (3, -9.0)),
+    "recon": ((2, -6.0),),
+}
+
+THEME_SUSTAIN = {
+    # Multiplier on the theme's own decay exponent. Below 1 keeps the note alive
+    # for longer, which raises RMS at an unchanged peak with no distortion: this
+    # replaces a harmonic trick that added a discrete click at the attack.
+    "forest": 0.45,
+    "seele": 0.60,
+    "umber": 0.60,
+    "recon": 0.75,
+}
+
+# The shortest a cue may be, in seconds. These are perception floors, not
+# taste: below roughly 80 ms a phone speaker does not resolve a tone as a
+# sound, and below ~300 ms a two-note phrase collapses into one click.
+MIN_DUR = {
+    "navNext": 0.10,
+    "navPrev": 0.10,
+    "send": 0.13,
+    "advert": 0.30,
+    "messageIn": 0.40,
+    "dmIn": 0.45,
+    "discovery": 0.45,
+    "linkUp": 0.32,
+    "linkDown": 0.32,
+    "boot": 0.55,
+    "alert": 0.90,
+    "taskOk": 0.40,
+    "taskError": 0.35,
+    "scanStart": 1.00,
+    "geofenceEnter": 0.50,
+    "geofenceExit": 0.50,
+    "sig1": 0.45,
+    "sig2": 0.45,
+    "sig3": 0.45,
+    "sig4": 0.45,
+    "sig5": 0.45,
+}
+
+
+def _natural_duration(cue):
+    """How long this cue is before any stretch, in seconds."""
+    kind = cue.get("kind", "score")
+    if kind == "sweep":
+        return cue["dur"] * cue.get("repeat", 1)
+    if kind == "hum":
+        return cue["dur"]
+    if kind == "ticks":
+        count = cue["count"]
+        return (sum(_GEIGER_GAPS[:count]) + 0.008 * count)
+    return sum(d for _, d in cue["score"])
+
+
+def _normalize(samples, target_db):
+    """Scale to a peak target. Silence stays silence."""
+    peak = max((abs(s) for s in samples), default=0)
+    if peak == 0:
+        return samples
+    gain = (10 ** (target_db / 20.0)) * 32767.0 / peak
+    return [int(max(-32767, min(32767, s * gain))) for s in samples]
+
+
+def _synth_score(th, cue, scale=1.0):
     """Tonal motif — a sequence of (freq_ratio, dur) notes in the
     theme's timbre. The default cue shape."""
     base, timbre, decay = th["base"], th["timbre"], th["decay"]
     stutter = th.get("stutter", False)
+    ladder = th.get("ladder", ())
     samples = []
     for ratio, dur in cue["score"]:
+        dur = dur * scale
         n = int(SR * dur)
         f = base * ratio
         for i in range(n):
             t = i / SR
             s = timbre(f, t) * _exp_env(t, dur, decay)
+            # The speaker ladder: harmonics of this note, at the same envelope
+            # and phase, so the note is the same note on a phone speaker.
+            for mult, db in ladder:
+                s += (10 ** (db / 20.0)) * _sine(f * mult, t) * \
+                    _exp_env(t, dur, decay)
             if stutter:
                 s *= _stutter(t, dur)
             s = cue["amp"] * s
@@ -470,14 +772,14 @@ def _synth_score(th, cue):
     return samples
 
 
-def _synth_sweep(th, cue):
+def _synth_sweep(th, cue, scale=1.0):
     """A glissando — frequency glides start→end (exponential), with
     phase accumulation so the pitch bends cleanly. `saw=True` uses a
     raw (gritty) sawtooth for the descending-klaxon character; `repeat`
     wails it N times. Used for NERV's alert / link-lost."""
     base, decay = th["base"], th["decay"]
     start, end = base * cue["start"], base * cue["end"]
-    dur, amp = cue["dur"], cue["amp"]
+    dur, amp = cue["dur"] * scale, cue["amp"]
     repeat, use_saw = cue.get("repeat", 1), cue.get("saw", False)
     samples = []
     for _ in range(repeat):
@@ -497,13 +799,13 @@ def _synth_sweep(th, cue):
     return samples
 
 
-def _synth_hum(th, cue):
+def _synth_hum(th, cue, scale=1.0):
     """A sustained hum — a held tone in the theme's timbre with a soft
     linear attack/release (no exp decay, so it actually *sustains*) and a
     slow vibrato. Used for the "scanning…" drone."""
     base = th["base"]
     f = base * cue.get("ratio", 0.5)
-    dur, amp = cue["dur"], cue["amp"]
+    dur, amp = cue["dur"] * scale, cue["amp"]
     depth, vrate = cue.get("vib_depth", 0.012), cue.get("vib_rate", 6.0)
     # Attack/release fade the clip ends to zero so it loops click-free
     # (the player repeats this WAV for the whole scan window). Keep them
@@ -531,7 +833,7 @@ def _synth_hum(th, cue):
     return samples
 
 
-def _synth_ticks(th, cue):
+def _synth_ticks(th, cue, scale=1.0):
     """Geiger-counter ticks — a run of very short, sharp high square
     clicks at irregular (deterministic) spacing. Used for NERV's node
     discovery ("a node decayed into view")."""
@@ -542,7 +844,8 @@ def _synth_ticks(th, cue):
     cn = int(SR * click)
     samples = []
     for c in range(count):
-        samples.extend([0] * int(SR * _GEIGER_GAPS[c % len(_GEIGER_GAPS)]))
+        samples.extend(
+            [0] * int(SR * _GEIGER_GAPS[c % len(_GEIGER_GAPS)] * scale))
         for i in range(cn):
             t = i / SR
             s = _square(f, t, harmonics=8) * math.exp(-40 * t / click)
@@ -552,24 +855,66 @@ def _synth_ticks(th, cue):
 
 def _synth_one(theme_key, cue_key):
     th = THEMES[theme_key]
+    # A quiet-in-the-ear theme keeps its note longer instead of being louder at
+    # the attack: same peak, more of it audible, no distortion.
+    sustain = THEME_SUSTAIN.get(theme_key)
+    if sustain is not None:
+        th = dict(th, decay=th["decay"] * sustain)
+    # The speaker ladder: the same timbre, with the octave and twelfth lifted so
+    # a phone speaker has something above its roll-off to reproduce.
+    ladder = THEME_SPEAKER_LADDER.get(theme_key)
+    if ladder is not None:
+        th = dict(th, ladder=ladder)
     # A theme may override a cue's whole character (NERV's Mission
     # Control set); otherwise the shared motif applies.
     cue = th.get("cues", {}).get(cue_key, CUES[cue_key])
     kind = cue.get("kind", "score")
+    # Stretch the motif to the kind's perception floor. A cue already longer
+    # than the floor is left exactly as written, so a theme's pacing survives.
+    floor = MIN_DUR.get(cue_key, 0.0)
+    natural = _natural_duration(cue)
+    scale = max(1.0, floor / natural) if natural > 0 else 1.0
     if kind == "sweep":
-        samples = _synth_sweep(th, cue)
+        samples = _synth_sweep(th, cue, scale)
     elif kind == "ticks":
-        samples = _synth_ticks(th, cue)
+        samples = _synth_ticks(th, cue, scale)
     elif kind == "hum":
-        samples = _synth_hum(th, cue)
+        samples = _synth_hum(th, cue, scale)
     else:
-        samples = _synth_score(th, cue)
+        samples = _synth_score(th, cue, scale)
     # Small fade-out at the very end (8 ms) to avoid clicks.
     fade_n = int(SR * 0.008)
     for i in range(max(0, len(samples) - fade_n), len(samples)):
         k = (len(samples) - i) / fade_n
         samples[i] = int(samples[i] * k)
-    return samples
+    # Peak-normalise. No clipping, no makeup gain: a limited low sine is the
+    # deep-fried sound the owner reported, and the harmonic enrichment lives in
+    # [_enrich] where it belongs, before this step.
+    target = DRONE_PEAK_DB if kind == "hum" else TARGET_PEAK_DB
+    return _normalize(samples, target)
+
+
+def _enrich(samples, octave_db):
+    """Mixes in an octave of the cue's own waveform.
+
+    A tone with a second harmonic reads louder at the same peak than a pure
+    sine, and it stays clean. The octave is derived from the signal itself by
+    half-wave rectification and smoothing, which is a cheap way to get the
+    second harmonic without re-synthesising the cue.
+    """
+    if octave_db is None:
+        return samples
+    gain = 10 ** (octave_db / 20.0)
+    out = []
+    prev = 0.0
+    for v in samples:
+        x = v / 32767.0
+        # |x| carries a strong second harmonic of a symmetric waveform.
+        h = abs(x)
+        prev = prev * 0.35 + h * 0.65
+        y = x + gain * (prev - 0.4)
+        out.append(int(max(-32767, min(32767, y * 32767))))
+    return out
 
 
 def _write_wav(path, samples):

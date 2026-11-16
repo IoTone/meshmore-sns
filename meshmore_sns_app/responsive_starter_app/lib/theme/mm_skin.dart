@@ -3,6 +3,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
+import '../cue/cue_service.dart';
 import 'mm_tokens.dart';
 import 'theme_controller.dart';
 
@@ -35,12 +36,35 @@ class MmType {
     this.upperHeadings = false,
     this.headingTracking = 1.0,
     this.slashedZero = false,
+    this.sansLabels = false,
+    this.typeScale = 1.0,
   });
 
   final String? displayFamily;
   final String? headingFamily;
   final String monoFamily;
   final String? bodyFamily;
+
+  /// Multiplier over every size below. 1.0 for all seven presets: a skin may
+  /// move the whole scale at once, and the accessibility pass multiplies this
+  /// rather than each call site. The steps are seeded from the sizes the app
+  /// already sets (11 and 12 carry 61 % of the literals they replace), so
+  /// moving a site onto a role does not move a pixel.
+  final double typeScale;
+
+  double get sizeMicro => 10 * typeScale;
+  double get sizeSm => 11 * typeScale;
+  double get sizeBody => 12 * typeScale;
+  double get sizeBodyLg => 13 * typeScale;
+  double get sizeLg => 16 * typeScale;
+  double get sizeXl => 20 * typeScale;
+  double get sizeTitle => 24 * typeScale;
+  double get sizeHero => 34 * typeScale;
+
+  /// A size with no role yet. It still rides [typeScale], so it moves with the
+  /// skin and the accessibility pass like the roles do; the screen waves
+  /// replace each one with a role as they revisit the file.
+  double size(double step) => step * typeScale;
 
   /// Render section labels in UPPER CASE (terminal/HUD concepts).
   final bool upperHeadings;
@@ -52,6 +76,82 @@ class MmType {
   /// Evangelion "SOUND ONLY" motif). Applied by components via
   /// `FontFeature.slashedZero()` when the face supports it.
   final bool slashedZero;
+
+  /// R68 — draw section labels in the platform UI face instead of the
+  /// mono/heading face. Off for the six older presets (their labels are
+  /// mono or Saira by design); Studio turns it on so **words are always
+  /// sans and only machine data is mono** (the Studio type-role rule).
+  final bool sansLabels;
+
+  /// R74 -- the face for *words* that older skins deliberately set in
+  /// mono (docs titles, HUD headings, readout labels, boot lines): null
+  /// (the theme's UI face) when [sansLabels] is on, [monoFamily] otherwise.
+  /// Use it for prose; keep `monoFamily` for machine data.
+  String? get wordsMono => sansLabels ? null : monoFamily;
+}
+
+/// The spacing ladder, in logical px. Seeded from the paddings the app already
+/// uses (12, 16 and 20 are the three most common), so a migrated padding does
+/// not move.
+@immutable
+class MmSpace {
+  const MmSpace({this.scale = 1.0});
+
+  /// Multiplier over every step, for the same reason [MmType.typeScale]
+  /// exists. 1.0 for all seven presets.
+  final double scale;
+
+  /// [step] 1..9 = 2, 4, 6, 8, 12, 16, 20, 24, 32.
+  static const List<double> steps = <double>[2, 4, 6, 8, 12, 16, 20, 24, 32];
+
+  double step(int n) {
+    assert(n >= 1 && n <= steps.length, 'spacing step $n is 1..9');
+    return steps[n - 1] * scale;
+  }
+
+  EdgeInsets pad(int n) => EdgeInsets.all(step(n));
+
+  // The jobs. A screen asks for the job, never for a number, so the rhythm
+  // cannot drift screen by screen: before this existed, ten screens used eight
+  // different top insets and three of them were off the ladder.
+  //
+  // The rule that makes a group visible: the between-gap is always strictly
+  // larger than the within-gap it contains. Rows sit 8 apart, blocks 16,
+  // groups 24. When the between-gap equals the within-gap the eye cannot
+  // group anything, which reads as "thrown on the page".
+
+  /// Inside a text stack: label to value, title to subtitle.
+  double get insideText => step(1); // 2
+
+  /// A label and the control it names, or below a chip row.
+  double get labelToControl => step(2); // 4
+
+  /// Between the rows of one list.
+  double get rowGap => step(4); // 8
+
+  /// The inner padding of a row, and of a compact panel.
+  double get rowInset => step(5); // 12
+
+  /// A screen's one edge inset, and the inner padding of a full panel.
+  double get screenEdge => step(6); // 16
+
+  /// Before a new group: a section title, or a block that starts a subject.
+  double get sectionGap => step(8); // 24
+
+  /// Around an empty state.
+  double get emptyState => step(9); // 32
+
+  /// A row's own padding, horizontal and vertical. Card and flat modes differ
+  /// in paint, never in metrics.
+  EdgeInsets get padRow => EdgeInsets.symmetric(
+        horizontal: rowInset,
+        vertical: rowInset,
+      );
+
+  /// A scrolling screen's padding: the edge inset, and one group gap at the
+  /// bottom so the last row is not flush with the navigation bar.
+  EdgeInsets get padScreen =>
+      EdgeInsets.fromLTRB(screenEdge, screenEdge, screenEdge, sectionGap);
 }
 
 /// Panel/edge treatment.
@@ -61,6 +161,9 @@ class MmShape {
     required this.corner,
     required this.cornerSize,
     required this.borderWidth,
+    this.hairlineWidth = 1.0,
+    this.squareControls = false,
+    this.dimmedBasemap = false,
   });
 
   final MmCorner corner;
@@ -68,6 +171,38 @@ class MmShape {
   /// Radius (rounded) or cut depth (chamfer), in logical px.
   final double cornerSize;
   final double borderWidth;
+
+  /// R63 — width of the region-separating rule (`MmTokens.hairline`)
+  /// drawn by [MmCollapsibleSection] and friends. 1.0 matches the
+  /// Material `Divider` the app already used, so it is neutral.
+  final double hairlineWidth;
+
+  /// R63 — make Material's own controls (chips, cards, segmented
+  /// buttons, dialogs, sheets) square. Off for the six older presets,
+  /// which keep Material's rounding; [corner] only governs `MmPanel`.
+  /// Explicit rather than inferred from `cornerSize == 0`, because
+  /// SEELE/DR Pop/Recon are sharp *panels* yet were never square chips.
+  final bool squareControls;
+
+  /// R70/R79 — draw map raster tiles through a hue-preserving dim (see
+  /// `mmDimTileFilter`) so a pale basemap sits under a dark chrome. It
+  /// dims, it does not de-colour: map imagery is content, and the theme's
+  /// no-accent rule is about chrome, not about the map. Off for the six
+  /// older presets.
+  final bool dimmedBasemap;
+
+  // What a filled area means, so the light and dark grounds answer the same
+  // way: **structure** is a rule plus, at most, a surface one step off the
+  // page ([MmPanel]); a **control** is a filled object with a full-strength
+  // border ([MmAction]); **status** is an outline or a rule, never a fill
+  // ([MmStatusPill], the link chip); and an **interruption** is the only
+  // place a tint earns its fill, because it must interrupt ([DegradedBanner],
+  // with its state bar).
+  //
+  // A collapsible group's header is structure, so on every ground it is a
+  // label under one rule and never a filled band. R77 gave the dark skins a
+  // tinted header closed by a hairline; between two groups that drew the
+  // boundary twice, and a folded group read as a box bounded above and below.
 }
 
 /// Retro-futuristic chrome. All default to "off" so a calm concept
@@ -101,6 +236,7 @@ class MmSkin {
     required this.type,
     required this.shape,
     required this.ornament,
+    this.space = const MmSpace(),
   });
 
   final MmThemePreset preset;
@@ -108,6 +244,7 @@ class MmSkin {
   final MmType type;
   final MmShape shape;
   final MmOrnament ornament;
+  final MmSpace space;
 }
 
 // Shared calm chrome (no scanlines/brackets/stripes) — the loud concepts
@@ -116,8 +253,31 @@ const MmOrnament _calmOrnament = MmOrnament();
 
 /// Build the [MmSkin] bundle for a preset. Colour comes from the shared
 /// [kMmPresets]; type/shape/ornament are spec'd per concept. All six
-/// brief concepts (A–F) are elaborated, so the switch is exhaustive — a
-/// new preset is a compile error until its bundle is defined.
+/// The monospace face each preset is set in.
+///
+/// The face is the preset's own, and it is bundled rather than asked for: a
+/// theme that changes the mono face changes the *advance* of every column, so
+/// the one thing the app may not do is let the device's `monospace` decide how
+/// wide a column is. This is the owner's LDMUX arrangement, ported with the
+/// palettes.
+///
+/// The split is deliberate on both sides. The presets that come from LDMUX
+/// carry their source theme's face — Fira Mono for Dark and Forest, JetBrains
+/// Mono for Air, Source Code Pro for Daybreak, Geist Mono for Umber, Cascadia
+/// Code for NERV — because that is the face each of those looks was designed
+/// against. The five concept skins David drew (SEELE, AG-HUD, Hyperlocal, DR
+/// Pop, Recon) keep JetBrains Mono: they have no LDMUX counterpart, and a face
+/// chosen for them here would be a restyle nobody asked for.
+///
+/// NERV is the one David concept with an exact LDMUX counterpart, so it takes
+/// that theme's face (Cascadia Code), which is the case the rule exists for.
+///
+/// The picker shows each preset by name and swatch, not in its own type, so
+/// nothing needs a face it is not wearing: `mmSkinFor(p)!.type.monoFamily` is
+/// read from the active skin at the call site and nowhere else.
+///
+/// The bundles below elaborate the UX brief's concepts (A–F), so the switch is
+/// exhaustive — a new preset is a compile error until its bundle is defined.
 MmSkin mmSkinFor(MmThemePreset preset) {
   final MmTokens color = kMmPresets[preset]!;
   switch (preset) {
@@ -130,7 +290,7 @@ MmSkin mmSkinFor(MmThemePreset preset) {
         type: const MmType(
           displayFamily: 'Saira',
           headingFamily: 'Saira',
-          monoFamily: 'JetBrains Mono',
+          monoFamily: 'Cascadia Code',
           upperHeadings: true,
           headingTracking: 3.0,
           slashedZero: true,
@@ -220,6 +380,113 @@ MmSkin mmSkinFor(MmThemePreset preset) {
             corner: MmCorner.sharp, cornerSize: 0, borderWidth: 1),
         ornament: _calmOrnament,
       );
+    // G — Studio (R63): clean dark professional tool. Square everything,
+    // a 1px hairline between regions, mixed-case body with small dim
+    // upper-case section labels, platform sans (NO new font — the app
+    // bundles Saira/JetBrains Mono and Studio uses neither for body, so
+    // it reads as the platform UI face, like the tools it echoes),
+    // mono only for telemetry. No ornament.
+    case MmThemePreset.studio:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'Fira Mono',
+          upperHeadings: true,
+          headingTracking: 1.2,
+          sansLabels: true,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.sharp,
+          cornerSize: 0,
+          borderWidth: 1,
+          hairlineWidth: 1,
+          squareControls: true,
+          dimmedBasemap: true,
+        ),
+        ornament: _calmOrnament,
+      );
+    // The four LDMUX looks (2026-11-09). All four set words in the mono face,
+    // which is the LDMUX character (a terminal on a page) and keeps the type
+    // rule this app already enforces: only Studio turns words sans. None of
+    // them squares Material's own controls, so each keeps the framework's
+    // rounding and only the panel corner changes.
+    //
+    // Forest: dark pine, soft corners, and a dimmed basemap for the same
+    // reason Studio dims one — a pale basemap under dark chrome reads as a
+    // hole. Air and Daybreak are light grounds, so neither dims: dimming
+    // exists to push a bright map under dark chrome, and on a light page the
+    // map belongs to the page.
+    case MmThemePreset.forest:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'Fira Mono',
+          upperHeadings: true,
+          headingTracking: 1.6,
+          slashedZero: true,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.rounded,
+          cornerSize: 8,
+          borderWidth: 1,
+          dimmedBasemap: true,
+        ),
+        ornament: _calmOrnament,
+      );
+    case MmThemePreset.air:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'JetBrains Mono',
+          upperHeadings: true,
+          headingTracking: 1.4,
+          slashedZero: true,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.rounded,
+          cornerSize: 6,
+          borderWidth: 1,
+        ),
+        ornament: _calmOrnament,
+      );
+    case MmThemePreset.daybreak:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'Source Code Pro',
+          upperHeadings: true,
+          headingTracking: 1.4,
+          slashedZero: true,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.rounded,
+          cornerSize: 10,
+          borderWidth: 1,
+        ),
+        ornament: _calmOrnament,
+      );
+    case MmThemePreset.umber:
+      return MmSkin(
+        preset: preset,
+        color: color,
+        type: const MmType(
+          monoFamily: 'Geist Mono',
+          upperHeadings: true,
+          headingTracking: 1.6,
+          slashedZero: true,
+        ),
+        shape: const MmShape(
+          corner: MmCorner.rounded,
+          cornerSize: 8,
+          borderWidth: 1,
+          dimmedBasemap: true,
+        ),
+        ornament: _calmOrnament,
+      );
     // F — Tactical Recon: night-ops codec. OLED-black, single amber
     // phosphor hue, all-mono (Departure-Mono-class) terminal type, sharp
     // edges, glare-/battery-aware (no scanline overdraw on the black).
@@ -261,5 +528,57 @@ extension MmSkinContext on BuildContext {
       // No ThemeController above us — default skin.
     }
     return mmSkinFor(preset);
+  }
+
+  /// R104 — the skin for code that runs OUTSIDE a build (an `onTap`, a
+  /// `showDialog` builder before it mounts). Reads the controller without
+  /// subscribing, which [skin] cannot do: `watch` asserts outside build.
+  MmSkin get skinRead {
+    MmThemePreset preset = MmThemePreset.seele;
+    try {
+      final ThemeController tc =
+          Provider.of<ThemeController>(this, listen: false);
+      preset = tc.highContrast ? MmThemePreset.seele : tc.preset;
+    } on ProviderNotFoundException {
+      // No ThemeController above us — default skin.
+    }
+    return mmSkinFor(preset);
+  }
+}
+
+/// The app's cue service, or null where one is not provided.
+///
+/// A control that makes a sound must not be a control that cannot be built:
+/// every harness, every reduced app and every test would need the provider
+/// before the widget rendered. A nullable `read` still throws when nothing is
+/// registered — the trap `MediaInbox` fell into — so the lookup is tolerant here,
+/// once, and callers just call `play`.
+extension MmCueContext on BuildContext {
+  CueService? get cue {
+    try {
+      return Provider.of<CueService?>(this, listen: false);
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+}
+
+/// Motion, from the one place that knows: the app's switch OR the platform's.
+///
+/// Views that animate on their own timer ask this rather than reading the
+/// controller field, so "Remove animations" in Android settings and the app's own
+/// toggle cannot disagree. Falls back to false above no provider (isolated
+/// tests), where motion is fine.
+///
+/// Without subscribing, for a `build` that already listens. A subscribing
+/// variant existed and had no caller: a view that animates on its own timer is
+/// not rebuilding on a theme change, so it wants the read.
+bool reduceMotionRead(BuildContext context) {
+  try {
+    return context.read<ThemeController>().reduceMotion;
+  } on ProviderNotFoundException {
+    return false;
+  } on StateError {
+    return false;
   }
 }

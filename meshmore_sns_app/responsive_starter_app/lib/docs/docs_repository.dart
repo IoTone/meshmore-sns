@@ -8,6 +8,7 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'doc_section.dart';
+import '../util/prefs.dart';
 
 /// Fetches the text at [url], or null on any failure (offline, 404,
 /// timeout). Injectable so the repository is testable without network.
@@ -85,9 +86,9 @@ class DocsRepository {
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final DateTime stamp = now ?? DateTime.now();
-    await prefs.setString('${spec.prefsKey}.text', fetched);
-    await prefs.setString('${spec.prefsKey}.at', stamp.toIso8601String());
-    await prefs.setString('${spec.prefsKey}.url', from.toString());
+    await Prefs.setString(prefs, '${spec.prefsKey}.text', fetched);
+    await Prefs.setString(prefs, '${spec.prefsKey}.at', stamp.toIso8601String());
+    await Prefs.setString(prefs, '${spec.prefsKey}.url', from.toString());
     return DocContent(
       section: section,
       markdown: fetched,

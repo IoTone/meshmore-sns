@@ -1,9 +1,11 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
+import '../util/mm_format.dart';
 import '../meshcore/chat_message.dart';
 import '../meshcore/discovered_node.dart';
 import '../meshcore/meshcore_controller.dart';
@@ -11,7 +13,12 @@ import '../meshcore/node_telemetry.dart';
 import '../sns/weather_inference.dart';
 import '../sns/weather_lexicon.dart';
 import '../util/geo.dart' as geo;
+import 'grid_notice.dart';
 import 'node_detail_sheet.dart';
+import '../theme/viz_palette.dart';
+import '../theme/mm_skin.dart';
+import '../ui/mm_shape.dart';
+import '../util/relative_time.dart';
 
 /// Mesh weather — a glanceable view of the environment telemetry
 /// reported across the fabric: a summary band (how many nodes are
@@ -31,12 +38,29 @@ class WeatherView extends StatefulWidget {
 }
 
 class _WeatherViewState extends State<WeatherView> {
+  /// Held so dispose can release it: a `dispose` has no context to read.
+  MeshcoreController? _controller;
+  /// The poller asks peers for readings only while somebody is looking at
+  /// readings. Stated here rather than at app level: the app being open is not
+  /// interest, and asking the mesh for telemetry on the chat tab is airtime
+  /// nobody asked for.
+  /// Released in dispose, after the frame: the widget is going away and its
+  /// context must not be used to look the controller up.
+  @override
+  void dispose() {
+    _controller?.releaseTelemetryInterest();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
+    // Somebody is looking at readings, so the poller may ask for them.
+    _controller = context.read<MeshcoreController>();
+    _controller!.holdTelemetryInterest();
     // Refetch our own telemetry on open so self environment (if the
     // device reports it) is current. Peer readings come from the
-    // background poller.
+    // background poller, which runs only while this interest is held.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final MeshcoreController mc = context.read<MeshcoreController>();
@@ -82,19 +106,27 @@ class _WeatherViewState extends State<WeatherView> {
     final AmbientWx? lastHour = aggregateAmbient(scanned.where(
         (WxObservation o) => now.difference(o.at) <= const Duration(hours: 1)));
     final AmbientWx? last24h = aggregateAmbient(scanned);
+    // The newest mention in the window, so the strip can say how old the
+    // reading is. A rollup that states no age is the kind of number a reader
+    // trusts for a week after it stopped being true.
+    DateTime? newest;
+    for (final WxObservation o in scanned) {
+      if (newest == null || o.at.isAfter(newest)) newest = o.at;
+    }
     final Widget micro = _MicroclimateStrip(
       lastHour: lastHour,
       last24h: last24h,
-      channelLabel: 'CH${mc.activeChannel}',
+      // The channel's own name, not its slot number: "CH0" is an index the
+      // firmware uses, and the user picked a name.
+      channelLabel: mc.activeChannelName,
+      newestAt: newest,
       l: l,
       cs: cs,
     );
 
     // Measured (sensor) telemetry section.
-    final List<double> temps = <double>[
-      for (final _Reading r in readings)
-        if (r.t.temperatureC != null) r.t.temperatureC!,
-    ];
+    final WeatherTemperatureSummary? summary = WeatherTemperatureSummary.from(
+        <NodeTelemetry>[for (final _Reading r in readings) r.t]);
     readings.sort((_Reading a, _Reading b) =>
         (b.t.temperatureC ?? -999).compareTo(a.t.temperatureC ?? -999));
 
@@ -110,42 +142,39 @@ class _WeatherViewState extends State<WeatherView> {
               : selfT.entries
                   .map((e) => '0x${e.type.toRadixString(16)}')
                   .join(', '));
-      measured.add(Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          children: <Widget>[
-            Icon(Icons.thermostat, size: 36, color: cs.onSurfaceVariant),
-            const SizedBox(height: 10),
-            Text(l.weatherEmpty,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: cs.onSurfaceVariant, height: 1.4)),
-            const SizedBox(height: 10),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest.withValues(alpha: .35),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: cs.outline.withValues(alpha: .3)),
-              ),
-              child: Text(selfDiag,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: cs.onSurfaceVariant, fontSize: 13, height: 1.45)),
-            ),
-          ],
-        ),
+      measured.add(GridNotice(
+        message: l.weatherEmpty,
+        icon: Icons.thermostat,
+        // Which of two causes this is, in one line rather than a panel: the
+        // radio has not answered yet, or this firmware has no sensor.
+        detail: selfDiag,
+        actionLabel: l.weatherOpenTelemetrySettings,
+        onAction: () => context.push('/settings/app'),
       ));
     } else {
-      if (temps.isNotEmpty) {
+      if (summary != null) {
+        // The count is the set the three numbers are computed over, not the set
+        // of nodes that reported anything. Whatever reports something else is
+        // named on the line below instead of being folded into this count.
         measured.add(_SummaryCard(
-          count: readings.length,
-          minC: temps.reduce((double a, double b) => a < b ? a : b),
-          maxC: temps.reduce((double a, double b) => a > b ? a : b),
-          avgC: temps.reduce((double a, double b) => a + b) / temps.length,
+          count: summary.count,
+          minC: summary.minC,
+          maxC: summary.maxC,
+          avgC: summary.avgC,
           cs: cs,
           l: l,
         ));
+        if (summary.other > 0) {
+          measured.add(Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Text(
+              l.weatherReportingOther(summary.other),
+              style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: context.skin.type.sizeMicro),
+            ),
+          ));
+        }
       }
       measured.add(const SizedBox(height: 8));
       for (final _Reading r in readings) {
@@ -164,7 +193,7 @@ class _WeatherViewState extends State<WeatherView> {
           const SizedBox(height: 12),
           Text(l.wxMicroclimatesHeader,
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11, letterSpacing: 2)),
+                  color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm, letterSpacing: 2)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -175,11 +204,11 @@ class _WeatherViewState extends State<WeatherView> {
             ],
           ),
         ],
-        const SizedBox(height: 14),
+        SizedBox(height: context.skin.space.sectionGap),
         Text(l.weatherMeasuredHeader,
             style: TextStyle(
                 color: cs.onSurfaceVariant,
-                fontSize: 11,
+                fontSize: context.skin.type.sizeSm,
                 letterSpacing: 2)),
         const SizedBox(height: 8),
         ...measured,
@@ -224,18 +253,66 @@ class _Reading {
   final NodeTelemetry t;
 }
 
+/// The temperature band: the three numbers and the set they are computed over.
+///
+/// It is a separate value rather than three locals in `build` because the count
+/// and the figures used to be taken from different sets. A node that reported
+/// humidity and no temperature was counted in "N reporting" and left out of
+/// min, average and max, so the card stated a number none of its own figures
+/// came from. The count here is exactly the set the three numbers come from,
+/// and [other] says how many reported something else so they are named instead
+/// of silently missing.
+class WeatherTemperatureSummary {
+  const WeatherTemperatureSummary._({
+    required this.count,
+    required this.other,
+    required this.minC,
+    required this.maxC,
+    required this.avgC,
+  });
+
+  /// What [telemetries] says, or null when none of them carries a temperature.
+  static WeatherTemperatureSummary? from(List<NodeTelemetry> telemetries) {
+    final List<double> temps = <double>[
+      for (final NodeTelemetry t in telemetries)
+        if (t.temperatureC != null) t.temperatureC!,
+    ];
+    if (temps.isEmpty) return null;
+    int other = 0;
+    for (final NodeTelemetry t in telemetries) {
+      if (t.temperatureC == null && t.hasEnvironment) other++;
+    }
+    return WeatherTemperatureSummary._(
+      count: temps.length,
+      other: other,
+      minC: temps.reduce((double a, double b) => a < b ? a : b),
+      maxC: temps.reduce((double a, double b) => a > b ? a : b),
+      avgC: temps.reduce((double a, double b) => a + b) / temps.length,
+    );
+  }
+
+  /// How many nodes the three figures below are computed over.
+  final int count;
+
+  /// How many more reported environment data but no temperature.
+  final int other;
+
+  final double minC;
+  final double maxC;
+  final double avgC;
+}
+
 /// Map a temperature to a cold→hot colour ramp (blue → teal → amber →
 /// red), clamped to a comfortable everyday range.
 Color temperatureColor(double c) {
   const double lo = -10, hi = 40;
   final double f = ((c - lo) / (hi - lo)).clamp(0.0, 1.0);
-  // Three-stop gradient: blue (cold) → amber (mild) → red (hot).
+  // Three-stop gradient: cold → mild → hot (the ramp lives in the palette so a
+  // screen holds no colour literal and the encoding is declared once).
   if (f < 0.5) {
-    return Color.lerp(
-        const Color(0xFF2E7DEF), const Color(0xFFE0A02E), f / 0.5)!;
+    return Color.lerp(kThermalCold, kThermalMild, f / 0.5)!;
   }
-  return Color.lerp(
-      const Color(0xFFE0A02E), const Color(0xFFE0402E), (f - 0.5) / 0.5)!;
+  return Color.lerp(kThermalMild, kThermalHot, (f - 0.5) / 0.5)!;
 }
 
 class _SummaryCard extends StatelessWidget {
@@ -256,23 +333,30 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The reader's scale, through the one spelling the app has for it. These
+    // three numbers and the tile below were hard-coded `toStringAsFixed(1)°`
+    // with no unit at all, while the microclimate bubble two sections up
+    // already used `MmFormat.temperature` — so a reader on Fahrenheit saw °F
+    // in one place and an unlabelled Celsius number in the other.
     Widget stat(String label, double c) => Column(
           children: <Widget>[
-            Text('${c.toStringAsFixed(1)}°',
+            Text(MmFormat.temperature(c, prefs: context.formatPrefs),
                 style: TextStyle(
                     color: temperatureColor(c),
-                    fontSize: 22,
+                    fontSize: context.skin.type.size(22),
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'JetBrains Mono')),
+                    fontFamily: context.skin.type.monoFamily)),
             Text(label,
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 10)),
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeMicro)),
           ],
         );
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: EdgeInsets.symmetric(
+          horizontal: context.skin.space.screenEdge,
+          vertical: context.skin.space.rowInset),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .4),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: mmRadius(context, 14),
         border: Border.all(color: cs.outline.withValues(alpha: .3)),
       ),
       child: Column(
@@ -280,15 +364,35 @@ class _SummaryCard extends StatelessWidget {
         children: <Widget>[
           Text(l.weatherReporting(count),
               style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 11, letterSpacing: 2)),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              stat(l.weatherMin, minC),
-              stat(l.weatherAvg, avgC),
-              stat(l.weatherMax, maxC),
-            ],
+                  color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeSm, letterSpacing: 2)),
+          SizedBox(height: context.skin.space.rowGap),
+          // Three numbers side by side at 200 % text are wider than a
+          // 320 dp screen (measured: 402 px of overflow), and there is no
+          // useful truncation for a temperature. They wrap instead, and each
+          // column takes an equal share of the line when they fit.
+          LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints box) {
+              final bool oneLine = box.maxWidth >= 300;
+              final List<Widget> stats = <Widget>[
+                stat(l.weatherMin, minC),
+                stat(l.weatherAvg, avgC),
+                stat(l.weatherMax, maxC),
+              ];
+              if (!oneLine) {
+                return Wrap(
+                  alignment: WrapAlignment.spaceAround,
+                  spacing: 16,
+                  runSpacing: 8,
+                  children: stats,
+                );
+              }
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: <Widget>[
+                  for (final Widget w in stats) Flexible(child: w)
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -322,14 +426,14 @@ class _ReadingTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: (c != null ? temperatureColor(c) : cs.onSurfaceVariant)
               .withValues(alpha: .18),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: mmRadius(context, 10),
         ),
         child: Text(
-          c != null ? '${c.toStringAsFixed(1)}°' : '—',
+          MmFormat.temperature(c, prefs: context.formatPrefs),
           style: TextStyle(
               color: c != null ? temperatureColor(c) : cs.onSurfaceVariant,
               fontWeight: FontWeight.w700,
-              fontFamily: 'JetBrains Mono'),
+              fontFamily: context.skin.type.monoFamily),
         ),
       ),
       title: Row(
@@ -347,8 +451,11 @@ class _ReadingTile extends StatelessWidget {
         <String>[if (extra.isNotEmpty) extra.join(' · '), _ago(r.t.receivedAt, l)]
             .where((String s) => s.isNotEmpty)
             .join('  ·  '),
-        style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+        style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody),
       ),
+      trailing: r.pubKeyHex == null
+          ? null
+          : const Icon(Icons.chevron_right),
       onTap: r.pubKeyHex == null
           ? null
           : () {
@@ -388,12 +495,6 @@ class _ReadingTile extends StatelessWidget {
     );
   }
 
-  static String _ago(DateTime at, AppLocalizations l) {
-    final int s = DateTime.now().difference(at).inSeconds;
-    if (s < 60) return l.weatherAgoSeconds(s);
-    if (s < 3600) return l.weatherAgoMinutes(s ~/ 60);
-    return l.weatherAgoHours(s ~/ 3600);
-  }
 }
 
 /// Localized one-word label for a weather condition.
@@ -418,6 +519,7 @@ class _MicroclimateStrip extends StatelessWidget {
     required this.lastHour,
     required this.last24h,
     required this.channelLabel,
+    required this.newestAt,
     required this.l,
     required this.cs,
   });
@@ -425,6 +527,9 @@ class _MicroclimateStrip extends StatelessWidget {
   final AmbientWx? lastHour;
   final AmbientWx? last24h;
   final String channelLabel;
+
+  /// The most recent message this rollup read, or null when there is none.
+  final DateTime? newestAt;
   final AppLocalizations l;
   final ColorScheme cs;
 
@@ -432,10 +537,14 @@ class _MicroclimateStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: EdgeInsets.fromLTRB(
+          context.skin.space.rowInset,
+          context.skin.space.step(3),
+          context.skin.space.rowInset,
+          context.skin.space.step(3)),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .35),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: mmRadius(context, 14),
         border: Border.all(color: cs.outline.withValues(alpha: .3)),
       ),
       child: Column(
@@ -445,21 +554,43 @@ class _MicroclimateStrip extends StatelessWidget {
             children: <Widget>[
               Icon(Icons.cloud_queue, size: 14, color: cs.primary),
               const SizedBox(width: 6),
-              Text('${l.wxMicroclimateTitle} · $channelLabel',
-                  style: TextStyle(
-                      color: cs.primary,
-                      fontSize: 11,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.w600)),
+              // The title and the channel name together are wider than a
+              // 320 dp screen at 200 % text, and an unconstrained Text in a
+              // Row overflows rather than wrapping. It takes the rest of the
+              // line and wraps inside it.
+              Expanded(
+                child: Text('${l.wxMicroclimateTitle} · $channelLabel',
+                    softWrap: true,
+                    style: TextStyle(
+                        color: cs.primary,
+                        fontSize: context.skin.type.sizeSm,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.w600)),
+              ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
+          // What this block is made of. It is inferred from what people wrote
+          // in the channel, not measured by a sensor, and the header alone
+          // does not say so — a reader would take it for telemetry.
+          Text(
+            newestAt == null
+                ? l.wxMicroclimateFromChatNoMessages
+                : l.wxMicroclimateFromChat(_ago(newestAt!, l)),
+            style: TextStyle(
+                color: cs.onSurfaceVariant,
+                fontSize: context.skin.type.sizeSm,
+                height: 1.3),
+          ),
+          SizedBox(height: context.skin.space.rowGap),
           if (last24h == null)
             Text(l.wxAmbientEmpty,
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13))
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBodyLg))
           else ...<Widget>[
             _WindowRow(label: l.wxLastHour, ambient: lastHour, l: l, cs: cs),
-            Divider(height: 18, color: cs.outline.withValues(alpha: .25)),
+            Divider(
+                height: context.skin.space.screenEdge,
+                color: cs.outline.withValues(alpha: .25)),
             _WindowRow(label: l.wxLast24h, ambient: last24h, l: l, cs: cs),
           ],
         ],
@@ -467,6 +598,10 @@ class _MicroclimateStrip extends StatelessWidget {
     );
   }
 }
+
+/// "3 min ago", "2 h ago" — the reading tiles' side of the app's one ladder.
+String _ago(DateTime at, AppLocalizations l) =>
+    weatherAgo(l, DateTime.now().difference(at));
 
 /// One window's ambient rollup (e.g. "1H" or "24H"): a window pill, the
 /// dominant glyph + condition + temp, and a mention count — or a muted "—"
@@ -484,11 +619,9 @@ class _WindowRow extends StatelessWidget {
   final AppLocalizations l;
   final ColorScheme cs;
 
-  String _tempLabel(AmbientWx a) {
+  String _tempLabel(AmbientWx a, FormatPrefs? prefs) {
     if (!a.hasTemp) return '';
-    final int lo = a.tempMinC!.round();
-    final int hi = a.tempMaxC!.round();
-    return lo == hi ? '$lo°C' : '$lo–$hi°C';
+    return MmFormat.range(a.tempMinC!, a.tempMaxC!, prefs: prefs);
   }
 
   List<WxCondition> _others(AmbientWx a) {
@@ -503,28 +636,29 @@ class _WindowRow extends StatelessWidget {
     final AmbientWx? a = ambient;
     final Widget pill = Container(
       width: 40,
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: EdgeInsets.symmetric(
+          vertical: context.skin.space.insideText + 1),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: cs.primary.withValues(alpha: a == null ? .08 : .16),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: mmRadius(context, 6),
       ),
       child: Text(label,
           style: TextStyle(
               color: a == null ? cs.onSurfaceVariant : cs.primary,
-              fontSize: 10,
+              fontSize: context.skin.type.sizeMicro,
               letterSpacing: 1,
               fontWeight: FontWeight.w700,
-              fontFamily: 'JetBrains Mono')),
+              fontFamily: context.skin.type.monoFamily)),
     );
 
     if (a == null) {
       return Row(
         children: <Widget>[
           pill,
-          const SizedBox(width: 12),
+          SizedBox(width: context.skin.space.rowInset),
           Text('—',
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16)),
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeLg)),
         ],
       );
     }
@@ -533,10 +667,10 @@ class _WindowRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         pill,
-        const SizedBox(width: 10),
+        SizedBox(width: context.skin.space.rowGap),
         Text(a.dominant != null ? wxGlyph(a.dominant!) : '🌡',
-            style: const TextStyle(fontSize: 26)),
-        const SizedBox(width: 10),
+            style: TextStyle(fontSize: context.skin.type.size(26))),
+        SizedBox(width: context.skin.space.rowGap),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,29 +681,56 @@ class _WindowRow extends StatelessWidget {
                     Text(wxConditionLabel(a.dominant!, l),
                         style: TextStyle(
                             color: cs.onSurface,
-                            fontSize: 17,
+                            fontSize: context.skin.type.size(17),
                             fontWeight: FontWeight.w600)),
                   if (a.hasTemp) ...<Widget>[
                     if (a.dominant != null) const SizedBox(width: 8),
-                    Text(_tempLabel(a),
+                    Text(_tempLabel(a, context.formatPrefs),
                         style: TextStyle(
                             color: cs.onSurface,
-                            fontFamily: 'JetBrains Mono',
-                            fontSize: 15)),
+                            fontFamily: context.skin.type.monoFamily,
+                            fontSize: context.skin.type.size(15))),
                   ],
                 ],
               ),
               const SizedBox(height: 2),
+              // The measured quantities, when any message carried them: a
+              // pressure or a humidity that was parsed and never shown is the
+              // same as one that was never parsed.
+              if (a.hasMeasurement)
+                Wrap(
+                  spacing: 10,
+                  children: <Widget>[
+                    if (a.humidityAvgPct != null)
+                      Text('RH ${a.humidityAvgPct!.round()}%',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontFamily: context.skin.type.monoFamily,
+                              fontSize: context.skin.type.sizeBody)),
+                    if (a.pressureAvgHpa != null)
+                      Text('${a.pressureAvgHpa!.round()} hPa',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontFamily: context.skin.type.monoFamily,
+                              fontSize: context.skin.type.sizeBody)),
+                    if (a.windMaxMps != null)
+                      Text('${a.windMaxMps!.toStringAsFixed(1)} m/s',
+                          style: TextStyle(
+                              color: cs.onSurfaceVariant,
+                              fontFamily: context.skin.type.monoFamily,
+                              fontSize: context.skin.type.sizeBody)),
+                  ],
+                ),
               Text(l.wxMentionsShort(a.mentions),
                   style:
-                      TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                      TextStyle(color: cs.onSurfaceVariant, fontSize: context.skin.type.sizeBody)),
             ],
           ),
         ),
         ..._others(a).map((WxCondition c) => Padding(
               padding: const EdgeInsets.only(left: 4),
               child:
-                  Text(wxGlyph(c), style: const TextStyle(fontSize: 15)),
+                  Text(wxGlyph(c), style: TextStyle(fontSize: context.skin.type.size(15))),
             )),
       ],
     );
@@ -591,49 +752,50 @@ class _MicroclimateBubble extends StatelessWidget {
   final ColorScheme cs;
   final AppLocalizations l;
 
-  String _label() {
+  String _label(FormatPrefs? prefs) {
     if (climate.placeName != null && climate.placeName!.isNotEmpty) {
       return climate.placeName!;
     }
     final double? d = mc.distanceMetersTo(climate.lat, climate.lon);
-    final String? fd = d == null ? null : geo.formatDistance(d);
+    final String? fd = d == null ? null : geo.formatDistance(d, prefs: prefs);
     return fd ?? l.wxMicroclimateNearby;
   }
 
-  String? _temp() {
+  String? _temp(FormatPrefs? prefs) {
     if (climate.measuredTempC != null) {
-      return '${climate.measuredTempC!.round()}°C';
+      return MmFormat.temperature(climate.measuredTempC!, prefs: prefs);
     }
     if (climate.tempAvgC == null) return null;
-    final int lo = climate.tempMinC!.round();
-    final int hi = climate.tempMaxC!.round();
-    return lo == hi ? '$lo°C' : '$lo–$hi°C';
+    return MmFormat.range(climate.tempMinC!, climate.tempMaxC!, prefs: prefs);
   }
 
   @override
   Widget build(BuildContext context) {
-    final String? t = _temp();
+    final FormatPrefs? prefs = context.formatPrefs;
+    final String? t = _temp(prefs);
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 7, 12, 7),
+      padding: EdgeInsets.fromLTRB(context.skin.space.rowGap,
+          context.skin.space.step(3), context.skin.space.rowInset,
+          context.skin.space.step(3)),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: .4),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: mmRadius(context, 20),
         border: Border.all(color: cs.outline.withValues(alpha: .35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(climate.dominant != null ? wxGlyph(climate.dominant!) : '🌡',
-              style: const TextStyle(fontSize: 20)),
+              style: TextStyle(fontSize: context.skin.type.sizeXl)),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(_label(),
+              Text(_label(prefs),
                   style: TextStyle(
                       color: cs.onSurface,
-                      fontSize: 13,
+                      fontSize: context.skin.type.sizeBodyLg,
                       fontWeight: FontWeight.w600)),
               Text(
                   <String>[
@@ -644,7 +806,7 @@ class _MicroclimateBubble extends StatelessWidget {
                   ].join(' · '),
                   style: TextStyle(
                       color: climate.measured ? cs.tertiary : cs.onSurfaceVariant,
-                      fontSize: 11)),
+                      fontSize: context.skin.type.sizeSm)),
             ],
           ),
         ],

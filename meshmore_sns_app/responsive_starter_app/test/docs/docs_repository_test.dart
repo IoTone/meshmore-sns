@@ -57,6 +57,16 @@ void main() {
     test('app section has no remote source', () {
       expect(DocSpec.of(DocSection.app).remoteUrls(), isEmpty);
     });
+
+    test('devices section has no remote source', () {
+      expect(DocSpec.of(DocSection.devices).remoteUrls(), isEmpty);
+    });
+
+    test('every section has a bundled asset', () {
+      for (final DocSection s in DocSection.values) {
+        expect(DocSpec.of(s).assetPath, isNotEmpty, reason: s.name);
+      }
+    });
   });
 
   group('load', () {
@@ -124,6 +134,18 @@ void main() {
             return '# App\nremote';
           });
       expect(await repo.refresh(DocSection.app), isNull);
+      expect(fetched, isFalse);
+    });
+
+    test('devices section never hits the network', () async {
+      bool fetched = false;
+      final DocsRepository repo = DocsRepository(
+          bundle: bundle,
+          fetcher: (_) async {
+            fetched = true;
+            return '# Devices\nremote';
+          });
+      expect(await repo.refresh(DocSection.devices), isNull);
       expect(fetched, isFalse);
     });
 

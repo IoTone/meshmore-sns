@@ -11,7 +11,6 @@ import 'package:provider/provider.dart';
 
 import 'package:meshmore_sns_app/gen/app_localizations.dart';
 import 'package:meshmore_sns_app/l10n/locale_controller.dart';
-import 'package:meshmore_sns_app/meshcore/meshcore_connection.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 import 'package:meshmore_sns_app/screens/nodes_screen.dart';
 
@@ -106,7 +105,7 @@ void main() {
     expect(find.text('NodeZ'), findsOneWidget);
     expect(find.text('RfNode'), findsOneWidget);
     expect(find.textContaining('SNR 6.0'), findsOneWidget);
-    expect(find.textContaining('in fabric'), findsOneWidget);
+    expect(find.textContaining('shown'), findsOneWidget);
     expect(ctrl.nodes.length, 3);
 
     // Scan action solicits adverts + syncs contacts.
@@ -143,14 +142,14 @@ void main() {
     await t.pumpAndSettle();
 
     // Empty state sets the right expectation (advert-driven).
-    expect(find.textContaining('Discovery is advert-driven'),
+    expect(find.textContaining('A node appears once it announces itself'),
         findsOneWidget);
 
     // Advertise opens a routing chooser.
     await t.tap(find.text('Advertise'));
     await t.pumpAndSettle();
     expect(find.text('Flood advert'), findsOneWidget);
-    expect(find.text('Zero-hop advert'), findsOneWidget);
+    expect(find.text('Direct advert'), findsOneWidget);
 
     // Flood → SEND_SELF_ADVERT (0x07) with flood flag 1.
     await t.tap(find.text('Flood advert'));
@@ -164,13 +163,13 @@ void main() {
     // Zero-hop → flood flag 0.
     await t.tap(find.text('Advertise'));
     await t.pumpAndSettle();
-    await t.tap(find.text('Zero-hop advert'));
+    await t.tap(find.text('Direct advert'));
     await t.pumpAndSettle();
     expect(
       fake.sent.any((f) => f.length >= 2 && f[0] == 0x07 && f[1] == 0),
       isTrue,
     );
-    expect(find.textContaining('Zero-hop advert sent'), findsOneWidget);
+    expect(find.textContaining('Sent to radios in direct range only'), findsOneWidget);
     ctrl.dispose();
   });
 
@@ -209,7 +208,7 @@ void main() {
     expect(find.byIcon(Icons.star), findsOneWidget);
     expect(find.byIcon(Icons.star_border), findsNothing);
     expect(ctrl.favorites, hasLength(1));
-    expect(find.textContaining('1 contact'), findsOneWidget);
+    expect(find.textContaining('1 favourite'), findsOneWidget);
 
     // Untoggle.
     await t.tap(find.byIcon(Icons.star));
@@ -217,4 +216,50 @@ void main() {
     expect(ctrl.favorites, isEmpty);
     ctrl.dispose();
   });
+  testWidgets('R91 filters live in one sheet with a count badge',
+      (WidgetTester t) async {
+    final FakeMeshcoreTransport fake =
+        FakeMeshcoreTransport(connected: true);
+    final MeshcoreController ctrl = MeshcoreController(
+      transportFactory: () async => fake,
+      connection:
+          MeshcoreConnection(handshakeTimeout: const Duration(seconds: 5)),
+    );
+    await t.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: LocaleController.supported,
+        localizationsDelegates: _kLocaleDelegates,
+        home: ChangeNotifierProvider<MeshcoreController>.value(
+          value: ctrl,
+          child: const Scaffold(body: NodesScreen()),
+        ),
+      ),
+    );
+    await ctrl.connect();
+    fake.emit(selfInfoFrame());
+    await t.pumpAndSettle();
+
+    // One button, no 44 dp scroller of seven chips.
+    expect(find.text('Last seen'), findsNothing,
+        reason: 'the filters are not a chip scroller any more');
+    await t.tap(find.byTooltip('Filters'));
+    await t.pumpAndSettle();
+    expect(find.text('Starred'), findsOneWidget);
+    expect(find.text('In range'), findsOneWidget);
+    expect(find.text('Last seen'), findsOneWidget);
+    expect(find.text('Within'), findsOneWidget);
+
+    await t.tap(find.text('Starred'));
+    await t.pumpAndSettle();
+    // The sheet stays open so several filters can be set in one go.
+    expect(find.text('Within'), findsOneWidget);
+    await t.tap(find.text('Done'));
+    await t.pumpAndSettle();
+    expect(find.byTooltip('Filters'), findsOneWidget);
+    expect(find.text('1'), findsWidgets,
+        reason: 'the badge counts the active filters');
+    ctrl.dispose();
+  });
+
 }

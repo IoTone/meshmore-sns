@@ -6,13 +6,16 @@ import 'package:provider/provider.dart';
 
 import '../gen/app_localizations.dart';
 import '../meshcore/discovered_node.dart';
-import '../meshcore/meshcore_connection.dart';
 import '../meshcore/meshcore_controller.dart';
 import '../theme/mm_skin.dart';
 import '../ui/mm_components.dart';
 import '../ui/mm_scaffold.dart';
 import '../util/geo.dart' as geo;
+import '../util/mm_format.dart';
+import '../util/relative_time.dart';
 import 'node_detail_sheet.dart';
+import '../ui/mm_shape.dart';
+import 'package:meshcore/meshcore.dart';
 
 /// Nodes "in the area" — the hyperlocal-discovery view (R6/R8).
 ///
@@ -50,15 +53,11 @@ class _NodesScreenState extends State<NodesScreen> {
     super.dispose();
   }
 
-  String _ago(int unix) {
-    if (unix <= 0) return '—';
-    final int s = DateTime.now().millisecondsSinceEpoch ~/ 1000 - unix;
-    if (s < 0) return 'now';
-    if (s < 60) return '${s}s';
-    if (s < 3600) return '${s ~/ 60}m';
-    if (s < 86400) return '${s ~/ 3600}h';
-    return '${s ~/ 86400}d';
-  }
+  /// The compact age the row carries. The boundaries are
+  /// `util/relative_time.dart`'s; the em dash is this screen's own "never
+  /// heard", which is not an age.
+  String _ago(AppLocalizations l, int unix) =>
+      nodeHeardAgo(l, unix, compact: true);
 
   bool _passesFilters(
       DiscoveredNode n, MeshcoreController mc, Set<String> favs) {
@@ -102,18 +101,13 @@ class _NodesScreenState extends State<NodesScreen> {
     return true;
   }
 
-  String _ageLabel(AppLocalizations l) {
-    if (_maxAge == null) return l.nodesAgeAny;
-    if (_maxAge!.inHours < 24) return '${_maxAge!.inHours}h';
-    return '${_maxAge!.inDays}d';
-  }
-
-  String _distLabel(AppLocalizations l) {
-    if (_maxDistanceMeters == null) return l.nodesDistAny;
-    final double m = _maxDistanceMeters!;
-    if (m < 1000) return '${m.round()}m';
-    return '${(m / 1000).toStringAsFixed(0)}km';
-  }
+  /// How many filters are on, for the badge on the Filters button.
+  int get _activeFilterCount =>
+      (_starredOnly ? 1 : 0) +
+      (_inRangeOnly ? 1 : 0) +
+      _selectedTags.length +
+      (_maxAge != null ? 1 : 0) +
+      (_maxDistanceMeters != null ? 1 : 0);
 
   bool get _anyFilterActive =>
       _query.isNotEmpty ||
@@ -123,45 +117,133 @@ class _NodesScreenState extends State<NodesScreen> {
       _maxAge != null ||
       _maxDistanceMeters != null;
 
-  /// A bottom sheet of every tag in use; tap to toggle it in the filter.
-  Future<void> _pickTags(MeshcoreController mc, AppLocalizations l) async {
-    final List<String> all = mc.allTags;
+  /// Every list filter in one sheet: starred, in range, last seen, within a
+  /// distance, and the tags in use (AND). Changes apply live; the sheet
+  /// stays open so several can be set in one go.
+  Future<void> _openFilters(MeshcoreController mc, AppLocalizations l) async {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (BuildContext _) => StatefulBuilder(
         builder: (BuildContext _, void Function(void Function()) setSheet) {
+          void both(VoidCallback f) {
+            setSheet(f);
+            // The sheet can outlive the screen for a frame after a dismissal,
+            // and this is the screen's own setState, not the sheet's.
+            if (mounted) setState(f);
+          }
+
+          Widget label(String t) => Padding(
+                padding: EdgeInsets.only(
+                    top: context.skin.space.rowInset,
+                    bottom: context.skin.space.step(3)),
+                child: Text(t,
+                    style: TextStyle(
+                        color: cs.onSurfaceVariant,
+                        fontSize: context.skin.type.sizeSm,
+                        letterSpacing: 1,
+                        fontWeight: FontWeight.w600)),
+              );
+
           return SafeArea(
             top: false,
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(l.nodesTagFilter,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: <Widget>[
-                      for (final String t in all)
-                        FilterChip(
-                          avatar: const Icon(Icons.label_outline, size: 16),
-                          label: Text(t),
-                          selected: _selectedTags.contains(t),
-                          onSelected: (bool sel) {
-                            setSheet(() {});
-                            setState(() {
-                              if (sel) {
+                      MmFilterChip(
+                        label: Text(l.nodesFilterStarred),
+                        selected: _starredOnly,
+                        onSelected: (bool v) => both(() => _starredOnly = v),
+                      ),
+                      MmFilterChip(
+                        label: Text(l.nodesFilterInRange),
+                        selected: _inRangeOnly,
+                        onSelected: (bool v) => both(() => _inRangeOnly = v),
+                      ),
+                    ],
+                  ),
+                  label(l.nodesFilterLastSeenTitle),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      for (final (Duration?, String) opt in <(Duration?, String)>[
+                        (null, l.nodesAgeAny),
+                        (const Duration(hours: 1), l.nodesAgeHour),
+                        (const Duration(hours: 24), l.nodesAge24h),
+                        (const Duration(days: 7), l.nodesAge7d),
+                      ])
+                        MmChoiceChip(
+                          label: Text(opt.$2),
+                          selected: _maxAge == opt.$1,
+                          onSelected: (_) => both(() => _maxAge = opt.$1),
+                        ),
+                    ],
+                  ),
+                  label(l.nodesFilterWithinTitle),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      for (final (double?, String) opt in <(double?, String)>[
+                        (null, l.nodesDistAny),
+                        (100, l.nodesDist100m),
+                        (500, l.nodesDist500m),
+                        (5000, l.nodesDist5km),
+                        (25000, l.nodesDist25km),
+                      ])
+                        MmChoiceChip(
+                          label: Text(opt.$2),
+                          selected: _maxDistanceMeters == opt.$1,
+                          onSelected: (_) =>
+                              both(() => _maxDistanceMeters = opt.$1),
+                        ),
+                    ],
+                  ),
+                  if (mc.allTags.isNotEmpty) ...<Widget>[
+                    label(l.nodesTagFilter),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: <Widget>[
+                        for (final String t in mc.allTags)
+                          MmFilterChip(
+                            label: Text(t),
+                            selected: _selectedTags.contains(t),
+                            onSelected: (bool v) => both(() {
+                              if (v) {
                                 _selectedTags.add(t);
                               } else {
                                 _selectedTags.remove(t);
                               }
-                            });
-                          },
-                        ),
+                            }),
+                          ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: <Widget>[
+                      MmAction(
+                        label: l.nodesFilterClear,
+                        onPressed: _anyFilterActive
+                            ? () => both(_clearFilters)
+                            : null,
+                      ),
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(l.nodesFiltersDone),
+                      ),
                     ],
                   ),
                 ],
@@ -230,7 +312,11 @@ class _NodesScreenState extends State<NodesScreen> {
         final bool af = favs.contains(a.pubKeyHex);
         final bool bf = favs.contains(b.pubKeyHex);
         if (af != bf) return af ? -1 : 1;
-        return 0;
+        // Favourites first, and the controller's own most-recently-heard order
+        // kept inside each group. `List.sort` is not stable, and returning 0
+        // for almost every pair let it permute the rest: the list jumped around
+        // between rebuilds.
+        return b.lastHeardUnix.compareTo(a.lastHeardUnix);
       });
 
     // Spatial-aware: counts nodes the user would actually see as
@@ -257,11 +343,19 @@ class _NodesScreenState extends State<NodesScreen> {
     return MmScaffold(
       child: Column(
       children: <Widget>[
+        // R91 — three radio actions that used to sit in a Row with one
+        // Expanded child, so at 320 dp the other two squeezed it until the
+        // row overflowed. A Wrap lays them out at their natural width and
+        // drops to a second line when the row is too narrow.
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Row(
+          padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.screenEdge, context.skin.space.rowGap),
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: <Widget>[
-              Expanded(
+              SizedBox(
                 child: FilledButton.icon(
                   icon: mc.isScanning
                       ? const SizedBox(
@@ -274,7 +368,6 @@ class _NodesScreenState extends State<NodesScreen> {
                   onPressed: ready && !mc.isScanning ? mc.scan : null,
                 ),
               ),
-              const SizedBox(width: 8),
               OutlinedButton.icon(
                 icon: const Icon(Icons.podcasts),
                 label: Text(l.nodesAdvertise),
@@ -293,6 +386,8 @@ class _NodesScreenState extends State<NodesScreen> {
                                       const Icon(Icons.travel_explore),
                                   title: Text(l.nodesFloodAdvert),
                                   subtitle: Text(l.nodesFloodAdvertBody),
+                                  trailing:
+                                      const Icon(Icons.chevron_right),
                                   onTap: () =>
                                       Navigator.pop(context, true),
                                 ),
@@ -300,6 +395,8 @@ class _NodesScreenState extends State<NodesScreen> {
                                   leading: const Icon(Icons.podcasts),
                                   title: Text(l.nodesZeroHopAdvert),
                                   subtitle: Text(l.nodesZeroHopAdvertBody),
+                                  trailing:
+                                      const Icon(Icons.chevron_right),
                                   onTap: () =>
                                       Navigator.pop(context, false),
                                 ),
@@ -316,179 +413,88 @@ class _NodesScreenState extends State<NodesScreen> {
                 icon: const Icon(Icons.sync),
                 onPressed: ready ? () => mc.requestContacts() : null,
               ),
-              IconButton(
-                tooltip: l.nodesHyperlocalGridTooltip,
-                icon: const Icon(Icons.radar),
-                onPressed: () => context.push('/grid'),
-              ),
             ],
           ),
         ),
-        // Filter bar — search by name / shortId / pubkey prefix +
-        // chip toggles for Starred / In range + popup menus for
-        // last-seen and max-distance cutoffs. Compose with the
-        // sort-favourites-to-top behaviour below.
+        // R91 — one row of chrome: search plus a Filters button. The
+        // seven-chip horizontal scroller that used to sit here (with two
+        // menus positioned by a hard-coded RelativeRect) needed 44 dp and
+        // hid both the active filters and the Clear action past the right
+        // edge. Same controls, one sheet, laid out where they can breathe.
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-          child: TextField(
-            controller: _searchCtrl,
-            onChanged: (String v) => setState(() => _query = v),
-            decoration: InputDecoration(
-              isDense: true,
-              prefixIcon: const Icon(Icons.search, size: 18),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'Clear search',
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        setState(() => _query = '');
-                      },
-                    ),
-              hintText: l.nodesSearchHint,
-              border: const OutlineInputBorder(),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+          children: <Widget>[
+            Expanded(
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: (String v) => setState(() => _query = v),
+                decoration: InputDecoration(
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: l.nodesClearSearch,
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _query = '');
+                          },
+                        ),
+                  hintText: l.nodesSearchHint,
+                  // **The hint names the fields, not the action.** The search icon in the box
+                  // already says what the field is for, so "Search by" was a word spent on
+                  // something the reader can see; what they cannot see is what may be typed.
+                  // Two lines still, because at 200 % text the three field names wrap.
+                  hintMaxLines: 2,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
             ),
-          ),
-        ),
-        SizedBox(
-          height: 44,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                // No avatar icon: the chip's selected/unselected state
-                // colours the label clearly enough, and skipping the
-                // star/sensors avatars keeps the row's icon lookup
-                // unambiguous (the per-row trailing star icon stays
-                // the only star_border / star instance on screen).
-                child: FilterChip(
-                  label: Text(l.nodesFilterStarred),
-                  selected: _starredOnly,
-                  onSelected: (bool v) =>
-                      setState(() => _starredOnly = v),
-                ),
+            const SizedBox(width: 8),
+            Badge(
+              isLabelVisible: _activeFilterCount > 0,
+              label: Text('$_activeFilterCount'),
+              child: IconButton.filledTonal(
+                tooltip: l.nodesFiltersTitle,
+                icon: const Icon(Icons.tune),
+                onPressed: () => _openFilters(mc, l),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: FilterChip(
-                  label: Text(l.nodesFilterInRange),
-                  selected: _inRangeOnly,
-                  onSelected: (bool v) =>
-                      setState(() => _inRangeOnly = v),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ActionChip(
-                  avatar: const Icon(Icons.schedule, size: 16),
-                  label: Text(l.nodesFilterLastSeen(_ageLabel(l))),
-                  onPressed: () async {
-                    final Duration? picked = await showMenu<Duration?>(
-                      context: context,
-                      position: const RelativeRect.fromLTRB(
-                          16, 200, 16, 100),
-                      items: <PopupMenuEntry<Duration?>>[
-                        PopupMenuItem<Duration?>(
-                            value: null, child: Text(l.nodesAgeAny)),
-                        PopupMenuItem<Duration?>(
-                            value: const Duration(hours: 1),
-                            child: Text(l.nodesAgeHour)),
-                        PopupMenuItem<Duration?>(
-                            value: const Duration(hours: 24),
-                            child: Text(l.nodesAge24h)),
-                        PopupMenuItem<Duration?>(
-                            value: const Duration(days: 7),
-                            child: Text(l.nodesAge7d)),
-                      ],
-                    );
-                    if (!mounted) return;
-                    setState(() => _maxAge = picked);
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: ActionChip(
-                  avatar: const Icon(Icons.straighten, size: 16),
-                  label: Text(l.nodesFilterWithin(_distLabel(l))),
-                  onPressed: () async {
-                    final double? picked = await showMenu<double?>(
-                      context: context,
-                      position: const RelativeRect.fromLTRB(
-                          16, 200, 16, 100),
-                      items: <PopupMenuEntry<double?>>[
-                        PopupMenuItem<double?>(
-                            value: null, child: Text(l.nodesDistAny)),
-                        PopupMenuItem<double?>(
-                            value: 100, child: Text(l.nodesDist100m)),
-                        PopupMenuItem<double?>(
-                            value: 500, child: Text(l.nodesDist500m)),
-                        PopupMenuItem<double?>(
-                            value: 5000, child: Text(l.nodesDist5km)),
-                        PopupMenuItem<double?>(
-                            value: 25000, child: Text(l.nodesDist25km)),
-                      ],
-                    );
-                    if (!mounted) return;
-                    setState(() => _maxDistanceMeters = picked);
-                  },
-                ),
-              ),
-              // Tag filter — pick from the tags in use; a node must carry
-              // every selected tag (AND).
-              if (mc.allTags.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ActionChip(
-                    avatar: Icon(Icons.label_outline,
-                        size: 16,
-                        color: _selectedTags.isNotEmpty ? cs.primary : null),
-                    label: Text(_selectedTags.isEmpty
-                        ? l.nodesTagFilter
-                        : l.nodesTagFilterN(_selectedTags.length)),
-                    onPressed: () => _pickTags(mc, l),
-                  ),
-                ),
-              for (final String t in _selectedTags)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: InputChip(
-                    avatar: const Icon(Icons.label, size: 16),
-                    label: Text(t),
-                    onDeleted: () => setState(() => _selectedTags.remove(t)),
-                  ),
-                ),
-              if (_anyFilterActive)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: ActionChip(
-                    avatar: const Icon(Icons.clear_all, size: 16),
-                    label: Text(l.nodesFilterClear),
-                    onPressed: _clearFilters,
-                  ),
-                ),
-            ],
+            ),
+          ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 6),
-          child: Text(
-            ready
-                ? l.nodesStatusReady(
-                    nodes.length, totalFabric, inRange, favs.length)
-                : l.nodesStatusOffline,
-            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-          ),
+          padding: EdgeInsets.fromLTRB(context.skin.space.screenEdge, context.skin.space.labelToControl, context.skin.space.screenEdge, context.skin.space.rowGap),
+          // A line that says "not connected" and does nothing about it is the
+          // dead end a reader meets most often: this is the first tab they open
+          // and it is useless without a radio. The line is the way out now.
+          child: ready
+              ? Text(
+                  l.nodesStatusReady(
+                      nodes.length, totalFabric, inRange, favs.length),
+                  style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontSize: context.skin.type.sizeBody),
+                )
+              : Align(
+                  alignment: Alignment.centerLeft,
+                  child: MmAction(
+                    key: const ValueKey<String>('nodes-status-connect'),
+                    onPressed: () => context.push('/connect'),
+                    icon: Icons.bluetooth_searching,
+                    label: l.nodesStatusOffline,
+                    dense: true,
+                  ),
+                ),
         ),
         const Divider(height: 1),
         Expanded(
           child: nodes.isEmpty
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(28),
+                    padding: EdgeInsets.all(context.skin.space.emptyState),
                     child: Text(
                       _anyFilterActive
                           ? l.nodesEmptyFiltered
@@ -509,6 +515,7 @@ class _NodesScreenState extends State<NodesScreen> {
                   itemBuilder: (BuildContext c, int i) {
                     final DiscoveredNode n = nodes[i];
                     return MmListRow(
+                      alignTop: true,
                       onTap: () => _showDetail(mc, n),
                       leading: Builder(builder: (BuildContext _) {
                         final NodeProximity p = mc.proximityFor(n);
@@ -534,44 +541,15 @@ class _NodesScreenState extends State<NodesScreen> {
                         // have new traffic since they last opened them.
                         final Color badgeFg =
                             unread > 0 ? cs.tertiary : cs.primary;
+                        // R108 — start-aligned: on a two-line name the
+                        // badge used to float against the middle of the
+                        // wrapped title, reading as a separate column.
                         return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Flexible(
                                 child: Text(
                                     n.name.isEmpty ? n.shortId : n.name)),
-                            Builder(builder: (BuildContext _) {
-                              // Spatial-aware badge: IN RANGE for
-                              // <10 km / recently heard; FAR for
-                              // >50 km. Middle ground (10-50 km) has
-                              // no badge — distance text already
-                              // communicates it.
-                              final NodeProximity p =
-                                  mc.proximityFor(n);
-                              if (p == NodeProximity.near ||
-                                  p == NodeProximity.recent) {
-                                return Padding(
-                                  padding:
-                                      const EdgeInsets.only(left: 8),
-                                  child: Text(l.nodesInRangeBadge,
-                                      style: TextStyle(
-                                          fontSize: 10,
-                                          letterSpacing: 1,
-                                          color: cs.primary)),
-                                );
-                              }
-                              if (p == NodeProximity.far) {
-                                return Padding(
-                                  padding:
-                                      const EdgeInsets.only(left: 8),
-                                  child: Text(l.nodesFarBadge,
-                                      style: TextStyle(
-                                          fontSize: 10,
-                                          letterSpacing: 1,
-                                          color: cs.onSurfaceVariant)),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            }),
                             if (dmN > 0)
                               Padding(
                                 padding: const EdgeInsets.only(left: 8),
@@ -584,13 +562,14 @@ class _NodesScreenState extends State<NodesScreen> {
                                             : Icons.chat_bubble,
                                         size: 12,
                                         color: badgeFg),
-                                    const SizedBox(width: 3),
+                                    SizedBox(
+                                        width: context.skin.space.insideText + 1),
                                     Text(
                                       unread > 0
                                           ? '$unread / $dmN'
                                           : '$dmN',
                                       style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: context.skin.type.sizeSm,
                                           color: badgeFg,
                                           fontWeight: FontWeight.w600),
                                     ),
@@ -613,20 +592,37 @@ class _NodesScreenState extends State<NodesScreen> {
                         final List<String> tags =
                             mc.tagsFor(n.pubKeyHex);
                         final telem = mc.telemetryFor(n.pubKeyHex);
+                        // R102 — what the row is for: who, what kind, how
+                        // far, how strong. The old line joined six facts with
+                        // `·` (including a bare 12-hex pubkey prefix and a
+                        // 4-decimal coordinate pair) and wrapped to three
+                        // lines on a 387 dp phone at 1.3x text. Coordinates
+                        // and the full id live in the detail sheet; the list
+                        // keeps the two facts that change a decision.
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Text(<String>[
-                              n.typeLabel,
-                              if (n.signalLabel.isNotEmpty) n.signalLabel,
-                              if (distance != null) distance,
-                              if (n.hasLocation)
-                                '${n.latitude!.toStringAsFixed(4)},'
-                                    '${n.longitude!.toStringAsFixed(4)}',
-                              n.shortId,
-                            ].join(' · '),
-                                style: TextStyle(
-                                    color: cs.onSurfaceVariant)),
+                            // Two facts, so they break between themselves
+                            // rather than wherever the width runs out: at
+                            // 200 % text the old single string wrapped after
+                            // "Repeater ·" and left the distance alone on a
+                            // second line, which reads as a second row.
+                            MmValueFields(
+                              fields: <String>[
+                                n.typeLabel,
+                                if (distance != null) distance,
+                              ],
+                              separator: '  ·  ',
+                              mono: false,
+                              color: cs.onSurfaceVariant,
+                            ),
+                            if (n.signalLabel.isNotEmpty)
+                              Text(n.signalLabel,
+                                  style: TextStyle(
+                                      color: cs.onSurfaceVariant,
+                                      fontFamily: context.skin.type.monoFamily,
+                                      fontSize: context.skin.type.sizeSm,
+                                      height: 1.4)),
                             if (telem?.temperatureC != null) ...<Widget>[
                               const SizedBox(height: 4),
                               Container(
@@ -634,7 +630,7 @@ class _NodesScreenState extends State<NodesScreen> {
                                     horizontal: 6, vertical: 1),
                                 decoration: BoxDecoration(
                                   color: cs.tertiaryContainer,
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: mmRadius(context, 8),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -642,15 +638,18 @@ class _NodesScreenState extends State<NodesScreen> {
                                     Icon(Icons.thermostat,
                                         size: 11,
                                         color: cs.onTertiaryContainer),
-                                    const SizedBox(width: 3),
+                                    SizedBox(
+                                        width: context.skin.space.insideText + 1),
                                     Text(
                                       <String>[
-                                        '${telem!.temperatureC!.toStringAsFixed(1)}°C',
+                                        MmFormat.temperature(
+                                            telem!.temperatureC!,
+                                            prefs: context.formatPrefs),
                                         if (telem.humidityPct != null)
                                           '${telem.humidityPct!.toStringAsFixed(0)}%',
                                       ].join(' · '),
                                       style: TextStyle(
-                                          fontSize: 10,
+                                          fontSize: context.skin.type.sizeMicro,
                                           color: cs.onTertiaryContainer),
                                     ),
                                   ],
@@ -671,11 +670,11 @@ class _NodesScreenState extends State<NodesScreen> {
                                       decoration: BoxDecoration(
                                         color: cs.secondaryContainer,
                                         borderRadius:
-                                            BorderRadius.circular(8),
+                                            mmRadius(context, 8),
                                       ),
                                       child: Text(t,
                                           style: TextStyle(
-                                              fontSize: 10,
+                                              fontSize: context.skin.type.sizeMicro,
                                               color: cs
                                                   .onSecondaryContainer)),
                                     ),
@@ -685,17 +684,26 @@ class _NodesScreenState extends State<NodesScreen> {
                           ],
                         );
                       }),
+                      // R108 — the 48 dp star button centred the age
+                      // against itself, so "8m" sat on the second line of
+                      // the name instead of the first.
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(_ago(n.lastHeardUnix),
-                              style:
-                                  TextStyle(color: cs.onSurfaceVariant)),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(_ago(l, n.lastHeardUnix),
+                                style: TextStyle(
+                                    color: cs.onSurfaceVariant)),
+                          ),
                           IconButton(
                             tooltip: mc.isFavorite(n.pubKeyHex)
                                 ? l.nodesUnfavTooltip
                                 : l.nodesFavTooltip,
                             iconSize: 20,
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
                             icon: Icon(
                               mc.isFavorite(n.pubKeyHex)
                                   ? Icons.star

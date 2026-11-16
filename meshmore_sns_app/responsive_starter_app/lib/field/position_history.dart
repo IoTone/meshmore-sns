@@ -1,0 +1,315 @@
+// Copyright (c) 2026 IoTone, Inc.
+// SPDX-License-Identifier: MIT
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+
+import '../meshcore/meshcore_controller.dart';
+import '../meshcore/secure/sealed_document.dart';
+import '../meshcore/own_location.dart';
+import '../util/geo.dart';
+
+/// One recorded position: where we were, when, and what said so.
+///
+/// Only *our own* fixes are recorded. A peer's advertised position is used
+/// while it is live and is never written to disk: a third party's whereabout
+/// is not ours to keep, and the privacy page promises that what stays on the
+/// device is what the user made (`lib/screens/terms_screen.dart`).
+final class PositionSample {
+  const PositionSample({
+    required this.latitude,
+    required this.longitude,
+    required this.at,
+    required this.source,
+    this.altitudeMeters,
+  });
+
+  final double latitude;
+  final double longitude;
+  final DateTime at;
+  final OwnLocationSource source;
+  final double? altitudeMeters;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+        'lat': latitude,
+        'lon': longitude,
+        'at': at.millisecondsSinceEpoch,
+        if (altitudeMeters != null) 'alt': altitudeMeters,
+        'src': source.name,
+      };
+
+  static PositionSample? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final Object? lat = raw['lat'];
+    final Object? lon = raw['lon'];
+    final Object? at = raw['at'];
+    if (lat is! num || lon is! num || at is! num) return null;
+    final double la = lat.toDouble();
+    final double lo = lon.toDouble();
+    // A stored row outside the coordinate ranges is corruption, not a fix at
+    // the pole: drop it rather than plot it.
+    if (!la.isFinite || !lo.isFinite || la.abs() > 90 || lo.abs() > 180) {
+      return null;
+    }
+    if (la.abs() < 1e-9 && lo.abs() < 1e-9) return null;
+    final Object? alt = raw['alt'];
+    return PositionSample(
+      latitude: la,
+      longitude: lo,
+      at: DateTime.fromMillisecondsSinceEpoch(at.toInt()),
+      source: OwnLocationSource.values.firstWhere(
+        (OwnLocationSource s) => s.name == raw['src'],
+        orElse: () => OwnLocationSource.deviceReported,
+      ),
+      altitudeMeters: alt is num ? alt.toDouble() : null,
+    );
+  }
+}
+
+/// The recorded trail, bounded in both age and count.
+///
+/// Retention is seven days *and* 2000 points, whichever binds first: a day of
+/// walking is a few hundred points, so the count only bites for someone who
+/// records continuously, and the age only bites for someone who records
+/// occasionally. A trail older than a week is not worth the disk, and a trail
+/// unbounded in count is a way to fill a phone by leaving the app open.
+final class PositionHistoryStore {
+  PositionHistoryStore._();
+
+  static const String _kKey = 'mm.trail.v1';
+
+  /// Newest-first eviction past this many points.
+  static const int capacity = 2000;
+
+  /// Points older than this are dropped on load and on append.
+  static const Duration retention = Duration(days: 7);
+
+  /// Movement below this is GPS jitter, not travel: a stationary phone would
+  /// otherwise log a point every sample and make the trail a cloud.
+  static const double minMoveMeters = 10.0;
+
+  /// Record name in the app's sealed store. A trail is where the user has been,
+  /// so it does not belong in a plain preferences file next to a sealed history.
+  static const String recordName = 'trail';
+
+  /// Set when the sealed store could not be opened, so the trail is
+  /// session-only. Diagnostics says so rather than losing it silently.
+  static final ValueNotifier<bool> sealedUnreadable = ValueNotifier<bool>(false);
+
+  static Future<List<PositionSample>> load({DateTime Function()? clock}) async {
+    final String? raw = await SealedDocument.read(recordName,
+        legacyKey: _kKey, sealedUnreadable: sealedUnreadable);
+    return decode(raw, clock: clock);
+  }
+
+  /// Parses a stored document. Split out so the retention and corruption rules
+  /// are testable without a platform store.
+  static List<PositionSample> decode(String? raw,
+      {DateTime Function()? clock}) {
+    if (raw == null || raw.isEmpty) return <PositionSample>[];
+    final DateTime now = (clock ?? DateTime.now)();
+    final List<PositionSample> rows = <PositionSample>[];
+    try {
+      final Object? doc = jsonDecode(raw);
+      if (doc is! List) return <PositionSample>[];
+      for (final Object? entry in doc) {
+        final PositionSample? s = PositionSample.fromJson(entry);
+        if (s == null) continue;
+        rows.add(s);
+      }
+    } on FormatException {
+      return <PositionSample>[];
+    }
+    rows.sort((PositionSample a, PositionSample b) => a.at.compareTo(b.at));
+    return prune(rows, now: now);
+  }
+
+  /// Drops expired points and any point dated in the future by more than a
+  /// minute — a clock that jumped backwards would otherwise keep a future row
+  /// at the front of the trail for a week.
+  static List<PositionSample> prune(List<PositionSample> rows,
+      {required DateTime now}) {
+    final DateTime floor = now.subtract(retention);
+    final DateTime ceiling = now.add(const Duration(minutes: 1));
+    final List<PositionSample> kept = <PositionSample>[
+      for (final PositionSample s in rows)
+        if (!s.at.isBefore(floor) && !s.at.isAfter(ceiling)) s,
+    ]..sort((PositionSample a, PositionSample b) => a.at.compareTo(b.at));
+    if (kept.length <= capacity) return kept;
+    return kept.sublist(kept.length - capacity);
+  }
+
+  /// Appends [own] when it is worth a point: a real fix, at least
+  /// [minMoveMeters] from the last one, and not a duplicate timestamp.
+  ///
+  /// Returns the new list; the caller persists it. A no-move sample returns
+  /// the same list unchanged, so a stationary phone costs nothing.
+  static List<PositionSample> append(
+    List<PositionSample> rows,
+    OwnLocation own, {
+    required DateTime now,
+  }) {
+    if (rows.isNotEmpty) {
+      final PositionSample last = rows.last;
+      if (!now.isAfter(last.at)) return rows;
+      if (haversineMeters(last.latitude, last.longitude, own.latitude,
+              own.longitude) <
+          minMoveMeters) {
+        return rows;
+      }
+    }
+    final List<PositionSample> next = <PositionSample>[
+      ...rows,
+      PositionSample(
+        latitude: own.latitude,
+        longitude: own.longitude,
+        at: now,
+        source: own.source,
+        altitudeMeters: own.altitudeMeters,
+      ),
+    ];
+    return prune(next, now: now);
+  }
+
+  static String encode(List<PositionSample> rows) => jsonEncode(
+      <Object?>[for (final PositionSample s in rows) s.toJson()]);
+
+  static Future<void> save(List<PositionSample> rows) async {
+    final bool ok = await SealedDocument.write(recordName, encode(rows));
+    sealedUnreadable.value = !ok;
+  }
+
+  static Future<void> clear() =>
+      SealedDocument.clear(recordName, legacyKey: _kKey);
+}
+
+/// Records the trail as fixes arrive, and keeps it in memory for the map and
+/// an export.
+///
+/// Driven by the app's one-second tick rather than a location stream: the
+/// controller owns the fix (radio GPS first, phone fallback) and already
+/// notifies listeners when it changes, so sampling [MeshcoreController
+/// .ownLocation] costs nothing extra and needs no new platform permission.
+final class PositionRecorder extends ChangeNotifier {
+  PositionRecorder({
+    MeshcoreController? mc,
+    DateTime Function()? clock,
+    this.persist = true,
+    this.autoTick = true,
+  })  : _mc = mc,
+        _clock = clock ?? DateTime.now;
+
+  final MeshcoreController? _mc;
+  final DateTime Function() _clock;
+  final bool persist;
+
+  /// False in tests that record by hand; a real one-second timer would race
+  /// the assertions.
+  final bool autoTick;
+
+  Timer? _ticker;
+
+  /// How many times the timer fired. A test with fake time reads it to prove
+  /// the cadence and the pause, which no assertion on the rows can show when
+  /// there is no radio to sample.
+  @visibleForTesting
+  int ticks = 0;
+
+  List<PositionSample> _rows = <PositionSample>[];
+  bool _loaded = false;
+  DateTime? _lastPersist;
+  static const Duration _persistEvery = Duration(seconds: 30);
+
+  List<PositionSample> get rows => List<PositionSample>.unmodifiable(_rows);
+
+  bool get isEmpty => _rows.isEmpty;
+
+  /// How often the live fix is sampled.
+  ///
+  /// One second was the original cadence, but the fix only moves at a ten-metre
+  /// granularity and the recorder persists at most every thirty seconds, so the
+  /// extra wake-ups bought nothing on a device whose job is to sit in a pocket.
+  static const Duration sampleEvery = Duration(seconds: 5);
+
+  /// Samples the live fix until disposed or paused.
+  void start() {
+    if (!autoTick || _mc == null || _ticker != null) return;
+    _ticker = Timer.periodic(sampleEvery, (_) {
+      ticks++;
+      tick();
+    });
+  }
+
+  /// Stops sampling while the app is not on screen. A resumed app restarts it.
+  void setVisible(bool visible) {
+    if (visible) {
+      start();
+      return;
+    }
+    _ticker?.cancel();
+    _ticker = null;
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    _ticker = null;
+    super.dispose();
+  }
+
+  /// One sampling pass against the live fix. Public so a test can move the
+  /// clock and call it without a timer.
+  bool tick() {
+    final bool changed = record(_mc?.ownLocation);
+    if (changed) notifyListeners();
+    return changed;
+  }
+
+  Future<void> load() async {
+    _rows = persist
+        ? await PositionHistoryStore.load(clock: _clock)
+        : <PositionSample>[];
+    _loaded = true;
+  }
+
+  bool get loaded => _loaded;
+
+  /// Samples [own] if it is new enough to be a point. Returns true when the
+  /// trail changed, so a caller can repaint only then.
+  bool record(OwnLocation? own) {
+    if (own == null) return false;
+    final DateTime now = _clock();
+    final List<PositionSample> next =
+        PositionHistoryStore.append(_rows, own, now: now);
+    // `append` returns the same list when the fix did not move us; the last
+    // sample's time is the cheap way to tell, and a pruned tail cannot hide a
+    // new point because the new one is always last.
+    if (next.isEmpty ||
+        (_rows.isNotEmpty && next.last.at == _rows.last.at)) {
+      return false;
+    }
+    _rows = next;
+    _maybePersist(now);
+    return true;
+  }
+
+  /// Writes at most every thirty seconds: a per-sample write would put a
+  /// flash write behind every GPS tick, and a lost thirty seconds of trail is
+  /// not worth that.
+  void _maybePersist(DateTime now) {
+    if (!persist) return;
+    final DateTime? last = _lastPersist;
+    if (last != null && now.difference(last) < _persistEvery) return;
+    _lastPersist = now;
+    // Fire and forget: the trail is not worth blocking a fix on, and a failed
+    // write leaves the in-memory rows intact for the next attempt.
+    PositionHistoryStore.save(_rows);
+  }
+
+  Future<void> clear() async {
+    _rows = <PositionSample>[];
+    _lastPersist = null;
+    if (persist) await PositionHistoryStore.clear();
+  }
+}

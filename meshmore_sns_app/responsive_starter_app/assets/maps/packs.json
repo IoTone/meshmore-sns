@@ -1,0 +1,4 @@
+{
+  "note": "Offline map pack list shipped with the build. Add entries here, or point a build at a published list with --dart-define=MESHMORE_PACK_CATALOG=<https URL>. An entry needs id, name, url, bbox ([west, south, east, north]), minZoom, maxZoom, licence and attribution; bytes and sha256 are optional and make the download verifiable.",
+  "packs": []
+}

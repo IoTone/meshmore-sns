@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// R4 — picks the active locale for the app. `null` = follow the OS
 /// (Flutter's default `Localizations.localeOf` resolution); otherwise
@@ -40,7 +41,7 @@ class LocaleController extends ChangeNotifier {
     if (v == null) {
       await p.remove(_key);
     } else {
-      await p.setString(_key, v.languageCode);
+      await Prefs.setString(p, _key, v.languageCode);
     }
   }
 }

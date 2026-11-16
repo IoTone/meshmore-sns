@@ -72,6 +72,15 @@ void main() {
             expect(m.text, e['text']);
             expect(m.isV3, e['isV3']);
             expect(m.snrDb, e['snrDb']);
+          case 'ChannelDataFrame':
+            expect(got, isA<ChannelDataFrame>());
+            final ChannelDataFrame d = got as ChannelDataFrame;
+            expect(d.snrDb, e['snrDb']);
+            expect(d.channelIndex, e['channelIndex']);
+            expect(d.pathLen, e['pathLen']);
+            expect(d.dataType, e['dataType']);
+            expect(d.data, e['data']);
+            expect(d.via.name, e['via']);
           default:
             fail('unhandled expected type ${e['type']}');
         }
@@ -110,16 +119,20 @@ void main() {
   });
 
   group('CHANNEL_INFO (0x12) decode — programmatic golden', () {
-    test('idx + name + 16-byte psk', () {
-      final List<int> psk = List<int>.generate(16, (int i) => i + 1);
+    Uint8List infoFrame(int secretBytes) {
       final BytesBuilder b = BytesBuilder()
         ..addByte(0x12)
         ..addByte(7);
       final Uint8List name = Uint8List(32);
       name.setRange(0, 6, utf8.encode('public'));
       b.add(name);
-      b.add(Uint8List.fromList(psk));
-      final Uint8List frame = b.toBytes();
+      b.add(Uint8List.fromList(
+          List<int>.generate(secretBytes, (int i) => i + 1)));
+      return b.toBytes();
+    }
+
+    test('idx + name + 16-byte psk', () {
+      final Uint8List frame = infoFrame(16);
       expect(frame.length, 50);
 
       final MeshcoreInbound got = MeshcoreFrameCodec.decode(frame);
@@ -127,7 +140,28 @@ void main() {
       final ChannelInfo ci = (got as ChannelInfoFrame).info;
       expect(ci.channelIdx, 7);
       expect(ci.name, 'public');
-      expect(ci.psk, psk);
+      expect(ci.psk, List<int>.generate(16, (int i) => i + 1));
+    });
+
+    test('a 32-byte secret is read whole, not truncated to 16', () {
+      // The full-secret request (`1F <idx> 20`) makes the reply carry the
+      // channel's whole 32-byte secret; only the length says which.
+      final Uint8List frame = infoFrame(32);
+      expect(frame.length, 66);
+
+      final ChannelInfo ci = (MeshcoreFrameCodec.decode(frame)
+              as ChannelInfoFrame)
+          .info;
+      expect(ci.name, 'public');
+      expect(ci.psk, hasLength(kChannelPskSizeFull));
+      expect(ci.psk.last, 32);
+    });
+
+    test('a width the firmware never sends is a failure, not a guess', () {
+      for (final int w in <int>[0, 8, 20, 31, 33]) {
+        expect(MeshcoreFrameCodec.decode(infoFrame(w)), isA<DecodeFailure>(),
+            reason: 'secret width $w');
+      }
     });
   });
 

@@ -1,3 +1,6 @@
+> **Historical. This is research into Android XR glasses development, not a project document.**
+> The record for the XR client is `meshmore-xr/MeshmoreXR-design-brief.md`. See `docs/INDEX.md` for the role of every document.
+
 # Android XR Glasses — Developer Starter Guide (LLM-ready)
 
 A bootstrap guide for standing up a **new Android XR app** for optical

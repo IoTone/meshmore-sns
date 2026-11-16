@@ -5,7 +5,10 @@ import 'dart:math' as math;
 /// R54 sub-task (a) — the **ballpark placement engine**.
 ///
 /// Scans a chat message for references to real places and resolves each
-/// to an approximate point for the SNS grid. This is an *informational*
+/// to an approximate point. The points have one remaining consumer — locating
+/// a weather observation so the microclimate view has somewhere to put it —
+/// and [placeNames] is the name-only half a chat row uses. This is an
+/// *informational*
 /// representation, not survey geography: a sub-city reference like
 /// "West Seattle" anchors on the city centre we *do* have (Seattle, from
 /// the gazetteer) and is pushed a ballpark offset in the named direction
@@ -58,7 +61,7 @@ enum PlaceCueKind {
   bareName, //  a standalone proper name
 }
 
-/// One inferred place ready to plot on the SNS grid.
+/// One inferred place, placed at a ballpark point.
 class InferredPlace {
   const InferredPlace({
     required this.displayName,
@@ -170,9 +173,19 @@ class PlaceInferenceEngine {
       }
     }
 
-    // 4. Bare proper-name runs not already consumed.
+    // 4. Bare proper-name runs, under a much narrower gate than "capitalised".
+    //
+    // The owner reported a channel message containing the ordinary word "can"
+    // producing a "looks like a place" offer, because a gazetteer of every
+    // settlement on Earth contains a village called Can. Any capitalised English
+    // word is a place name somewhere, so capitalisation alone is not evidence
+    // that a *place* was meant. A bare run now has to be either a name of more
+    // than one word ("Salt Lake City") or a city big enough that people name it
+    // in ordinary speech ([bareNameMinPopulation]) — which keeps "downtown
+    // Seattle" and drops "Can".
     for (final RegExpMatch m in _properRe.allMatches(message)) {
       if (_overlaps(m.start, m.end, consumed)) continue;
+      if (!_bareNameWorthPlacing(m.group(0)!)) continue;
       final InferredPlace? p = _resolvePhrase(
           m.group(0)!, PlaceCueKind.bareName, m.group(0)!,
           originLat, originLon);
@@ -197,6 +210,69 @@ class PlaceInferenceEngine {
     kept.sort((InferredPlace a, InferredPlace b) =>
         b.confidence.compareTo(a.confidence));
     return kept;
+  }
+
+  /// The place names [message] mentions, in cue order and without
+  /// duplicates.
+  ///
+  /// This is the same cue ladder [infer] walks, with the two steps that only
+  /// exist to *place* a point removed: the region filter and the confidence
+  /// score both measure a distance from an origin, and there is no origin
+  /// here because nothing is being placed. What comes back is the name a row
+  /// can offer to report; the position is the user's to give, so a mention
+  /// that turns out to be idle chatter costs nothing but one line that can be
+  /// dismissed.
+  List<String> placeNames(String message) {
+    final List<String> out = <String>[];
+    final List<_Match> consumed = <_Match>[];
+
+    void consider(String phrase, {required bool allowLowercase}) {
+      final _Parsed? parsed =
+          _parsePhrase(phrase, allowLowercase: allowLowercase);
+      if (parsed == null) return;
+      final bool known = <String?>[parsed.surface, parsed.stripped]
+          .whereType<String>()
+          .any((String name) => gazetteer.lookup(name).isNotEmpty);
+      if (!known) return;
+      final String name = parsed.display.trim();
+      if (name.isEmpty || out.contains(name)) return;
+      out.add(name);
+    }
+
+    for (final _Cue cue in _cues) {
+      for (final RegExpMatch m in cue.re.allMatches(message)) {
+        if (_overlaps(m.start, m.end, consumed)) continue;
+        consider(m.group(1)!, allowLowercase: true);
+        consumed.add(_Match(m.start, m.end));
+      }
+    }
+    // A bare capitalised run, under the same gate `infer` applies: a village
+    // called "Can" is not something a channel message is talking about.
+    for (final RegExpMatch m in _properRe.allMatches(message)) {
+      if (_overlaps(m.start, m.end, consumed)) continue;
+      if (!_bareNameWorthPlacing(m.group(0)!)) continue;
+      consider(m.group(0)!, allowLowercase: false);
+    }
+    return out;
+  }
+
+  /// Whether a bare capitalised run is worth *asking* about as a place.
+  ///
+  /// Two things make a word a name rather than a word: it is longer than one
+  /// token, or it belongs to a city big enough to be named in ordinary speech.
+  /// The bar is deliberately high, because this rung exists for "downtown
+  /// Seattle" and a false offer costs a row under every message on a busy
+  /// channel.
+  static const int bareNameMinPopulation = 200000;
+
+  bool _bareNameWorthPlacing(String run) {
+    final String trimmed = run.trim();
+    if (trimmed.isEmpty) return false;
+    if (trimmed.contains(RegExp(r'\s'))) return true;
+    for (final GazPlace p in gazetteer.lookup(trimmed)) {
+      if (p.population >= bareNameMinPopulation) return true;
+    }
+    return false;
   }
 
   // --- Resolution -----------------------------------------------------
@@ -310,6 +386,15 @@ class PlaceInferenceEngine {
     if (uniqueInRegion) c += 0.05;
     return c.clamp(0.0, 1.0);
   }
+
+  /// The explicit coordinates and grid locators in [message], strongest first.
+  ///
+  /// Public because a coordinate is not a guess: a message that carries one has
+  /// already said where it is, and the reader should be able to put it on the
+  /// map without the app inventing anything. The gazetteer-based [infer] needs
+  /// an origin and a region, which a direct message from a stranger has neither
+  /// of.
+  List<InferredPlace> coordinatesIn(String message) => _coordinates(message);
 
   List<InferredPlace> _coordinates(String message) {
     final List<InferredPlace> out = <InferredPlace>[];
@@ -658,13 +743,22 @@ final RegExp _pairRe = RegExp(
     r'([A-Z][A-Za-z.\-]+(?:\s+[A-Z][A-Za-z.\-]+)?)');
 
 // Bare capitalised run (1–3 words).
+
+/// A capitalised run of up to three words — the *candidate* shape for a bare
+/// place name. It is matched only so the gate below can reject most of it.
 final RegExp _properRe =
     RegExp(r'\b[A-Z][A-Za-z.\-]+(?:\s+[A-Z][A-Za-z.\-]+){0,2}\b');
 
 // Decimal "lat, lon" — both with a fractional part to avoid matching
 // plain integers.
-final RegExp _decimalRe =
-    RegExp(r'(-?\d{1,2}\.\d{2,}),?\s+(-?\d{1,3}\.\d{2,})');
+/// A decimal coordinate pair, however it was written.
+///
+/// The separator is a comma, whitespace, or both. It used to require whitespace
+/// after the comma, so the form people actually type and paste — `38.91993,-104.77313`,
+/// with no space — matched nothing, and a message that carried a position was
+/// read as prose.
+final RegExp _decimalRe = RegExp(
+    r'(-?\d{1,2}\.\d{2,})(?:\s*,\s*|\s+)(-?\d{1,3}\.\d{2,})');
 
 // Maidenhead grid locator (4 or 6 char), as a standalone token.
 final RegExp _gridRe =

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../util/prefs.dart';
 
 /// R28 — persistent free-text tags attached to discovered nodes.
 ///
@@ -50,7 +51,7 @@ abstract final class NodeTagsStore {
       for (final MapEntry<String, List<String>> e in tags.entries)
         if (e.value.isNotEmpty) e.key: e.value,
     };
-    await p.setString(_kKey, jsonEncode(trimmed));
+    await Prefs.setString(p, _kKey, jsonEncode(trimmed));
   }
 
   static Future<void> clear() async {
