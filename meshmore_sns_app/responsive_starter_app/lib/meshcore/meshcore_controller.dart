@@ -4056,6 +4056,15 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// Returns false when nothing in this channel matches the hash, which is the
   /// common case for a client that did not hold the original message: the line
   /// is then kept as an ordinary message rather than swallowed.
+  /// Whether two peer handles name the same node, by the prefix a DM carries.
+  static bool _samePeer(String? a, String? b) {
+    if (a == null || b == null) return a == b;
+    final int n = a.length < b.length ? a.length : b.length;
+    final int take = n < 12 ? n : 12;
+    return a.substring(0, take).toLowerCase() ==
+        b.substring(0, take).toLowerCase();
+  }
+
   bool _applyReaction(
     int channelIdx,
     String? peerHex,
@@ -4064,7 +4073,13 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     for (int i = _messages.length - 1; i >= 0; i--) {
       final ChatMessage m = _messages[i];
       if (m.channelIdx != channelIdx) continue;
-      if ((m.peerPubKeyHex ?? '') != (peerHex ?? '')) continue;
+      // Compare on the six-byte prefix, not the whole key. A row is stored with
+      // the full key when the prefix resolved to exactly one node and with the
+      // bare prefix when it did not, and the reaction line resolves the same
+      // prefix against whatever the node list holds at that moment. Requiring
+      // the two spellings to be identical meant a reaction silently found no
+      // target whenever the two resolutions disagreed.
+      if (!_samePeer(m.peerPubKeyHex, peerHex)) continue;
       final String hash = Reactions.hashFor(
         timestampSeconds: m.at.millisecondsSinceEpoch ~/ 1000,
         text: m.text,
