@@ -1408,9 +1408,9 @@
   "channelCreateCreated": "チャンネルを作成しました。",
   "channelCreateTitle": "新しいチャンネル",
 
-  "channelRemoveSection": "チャンネルを削除",
-  "channelRemoveBody": "チャンネルを削除するとスロットが空き、無線機はそのチャンネルを聞かなくなります。この端末に残っているメッセージは消えません。",
-  "channelRemoveAction": "削除",  "channelCreateIntro": "名前を決めて、誰が読めるかを選びます。",
+  "channelRemoveSection": "チャンネルをリセット",
+  "channelRemoveBody": "スロットには必ずチャンネルが入るため、ここでは共有の Public チャンネルに戻します。この端末に残っているメッセージは消えません。",
+  "channelRemoveAction": "リセット",  "channelCreateIntro": "名前を決めて、誰が読めるかを選びます。",
   "channelCreateNameHint": "例: basecamp",
   "channelCreateNameKeyedTitle": "名前を知っている人",
   "channelCreateNameKeyedBody": "名前から鍵を作るので、同じ名前を入力したMeshCore 無線機だけが参加できます。それ以外は読めません。",

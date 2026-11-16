@@ -2278,14 +2278,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get channelCreateTitle => '新しいチャンネル';
 
   @override
-  String get channelRemoveSection => 'チャンネルを削除';
+  String get channelRemoveSection => 'チャンネルをリセット';
 
   @override
   String get channelRemoveBody =>
-      'チャンネルを削除するとスロットが空き、無線機はそのチャンネルを聞かなくなります。この端末に残っているメッセージは消えません。';
+      'スロットには必ずチャンネルが入るため、ここでは共有の Public チャンネルに戻します。この端末に残っているメッセージは消えません。';
 
   @override
-  String get channelRemoveAction => '削除';
+  String get channelRemoveAction => 'リセット';
 
   @override
   String get channelCreateIntro => '名前を決めて、誰が読めるかを選びます。';

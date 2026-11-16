@@ -4019,19 +4019,19 @@ abstract class AppLocalizations {
   /// Section in the add-a-channel sheet that lists the channels already configured, so removing one is in the same menu as adding one.
   ///
   /// In en, this message translates to:
-  /// **'Remove a channel'**
+  /// **'Reset a channel'**
   String get channelRemoveSection;
 
   /// Explains what removing a channel does and does not do.
   ///
   /// In en, this message translates to:
-  /// **'Removing a channel frees its slot and the MeshCore radio stops hearing it. The messages already on this phone stay.'**
+  /// **'A slot always holds a channel, so this puts the slot back to the shared Public channel. The messages already on this phone stay.'**
   String get channelRemoveBody;
 
   /// The action on a configured channel row in the remove section.
   ///
   /// In en, this message translates to:
-  /// **'Remove'**
+  /// **'Reset'**
   String get channelRemoveAction;
 
   /// No description provided for @channelCreateIntro.

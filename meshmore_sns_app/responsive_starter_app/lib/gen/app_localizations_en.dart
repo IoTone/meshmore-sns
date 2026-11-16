@@ -2361,14 +2361,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get channelCreateTitle => 'New channel';
 
   @override
-  String get channelRemoveSection => 'Remove a channel';
+  String get channelRemoveSection => 'Reset a channel';
 
   @override
   String get channelRemoveBody =>
-      'Removing a channel frees its slot and the MeshCore radio stops hearing it. The messages already on this phone stay.';
+      'A slot always holds a channel, so this puts the slot back to the shared Public channel. The messages already on this phone stay.';
 
   @override
-  String get channelRemoveAction => 'Remove';
+  String get channelRemoveAction => 'Reset';
 
   @override
   String get channelCreateIntro =>

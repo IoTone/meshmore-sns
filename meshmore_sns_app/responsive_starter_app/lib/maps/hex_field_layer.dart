@@ -80,12 +80,12 @@ class _HexFieldPainter extends CustomPainter {
   ///
   /// Pointy-top is the lattice's own orientation: a cell is `√3·R` wide and
   /// `1.5·R` from row to row, which is a hexagon with a corner at the top.
-  Path _hexagon() {
+  Path _hexagon(double r) {
     final Path p = Path();
     for (int i = 0; i < 6; i++) {
       final double a = -math.pi / 2 + i * math.pi / 3;
-      final double x = math.cos(a) * radiusPx;
-      final double y = math.sin(a) * radiusPx;
+      final double x = math.cos(a) * r;
+      final double y = math.sin(a) * r;
       if (i == 0) {
         p.moveTo(x, y);
       } else {
@@ -95,15 +95,34 @@ class _HexFieldPainter extends CustomPainter {
     return p..close();
   }
 
+  /// The hexagon's radius in pixels, measured from a cell's own corners.
+  ///
+  /// The lattice is uniform, so one cell gives the size for all of them, and
+  /// measuring it is what makes the cells tile. A radius derived from the zoom
+  /// is only right while the camera is at the zoom the field was built for: a
+  /// pinch that settles a fraction of a level away, or a camera moved by
+  /// anything other than the app's own zoom buttons, left the hexagons a few
+  /// per cent smaller than their pitch — a lattice of separated cells with a
+  /// gap between them, which is what the owner saw.
+  double _measuredRadius() {
+    final HexCell c = cells.first;
+    if (c.corners.length < 4) return radiusPx;
+    final Offset a = camera.getOffsetFromOrigin(c.corners[0]);
+    final Offset b = camera.getOffsetFromOrigin(c.corners[3]);
+    final double r = (a - b).distance / 2;
+    return r.isFinite && r > 0 ? r : radiusPx;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     if (cells.isEmpty || radiusPx <= 0) return;
-    final Path hex = _hexagon();
+    final double r = _measuredRadius();
+    final Path hex = _hexagon(r);
     final Paint fill = Paint()..style = PaintingStyle.fill;
     final Paint stroke = Paint()..style = PaintingStyle.stroke;
     // A cell whose centre is this far outside the viewport cannot show any of
     // itself, so it is not drawn. The margin is the hexagon's own reach.
-    final double margin = radiusPx * 2;
+    final double margin = r * 2;
     for (final HexCell c in cells) {
       final Offset o = camera.getOffsetFromOrigin(c.centre);
       if (o.dx < -margin ||

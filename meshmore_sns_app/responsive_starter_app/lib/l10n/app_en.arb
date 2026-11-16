@@ -1515,15 +1515,15 @@
   "channelCreateCreated": "Channel created.",
   "channelCreateTitle": "New channel",
 
-  "channelRemoveSection": "Remove a channel",
+  "channelRemoveSection": "Reset a channel",
   "@channelRemoveSection": {
     "description": "Section in the add-a-channel sheet that lists the channels already configured, so removing one is in the same menu as adding one."
   },
-  "channelRemoveBody": "Removing a channel frees its slot and the MeshCore radio stops hearing it. The messages already on this phone stay.",
+  "channelRemoveBody": "A slot always holds a channel, so this puts the slot back to the shared Public channel. The messages already on this phone stay.",
   "@channelRemoveBody": {
     "description": "Explains what removing a channel does and does not do."
   },
-  "channelRemoveAction": "Remove",
+  "channelRemoveAction": "Reset",
   "@channelRemoveAction": {
     "description": "The action on a configured channel row in the remove section."
   },  "channelCreateIntro": "Name it, then say who should be able to read it.",
