@@ -41,6 +41,7 @@ import 'radio_config_transaction.dart';
 import 'radio_identity_store.dart';
 import 'chat_store.dart';
 import 'discovered_node.dart';
+import 'dm_thread.dart';
 import 'topology_hop.dart';
 import 'dm_read_store.dart';
 import 'favorite_store.dart';
@@ -3426,26 +3427,80 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// is worse than a refused send the caller can see.
   static const int kMaxInFlightMessages = 4;
 
+  /// Messages the **current link** still owes an answer for.
+  ///
+  /// `unknown` is deliberately not counted. It means the app cannot vouch for
+  /// the send — the link went before the answer arrived — and a late ack may
+  /// still resolve it. Counting it made a replaced or disconnected radio block
+  /// every later DM and every radio switch forever: nothing can ever settle a
+  /// row whose link is gone.
   int get unsettledOutgoingCount {
     int n = 0;
     for (final ChatMessage m in _messages) {
       if (!m.outgoing) continue;
       if (m.delivery == MessageDelivery.sending ||
-          m.delivery == MessageDelivery.sent ||
-          m.delivery == MessageDelivery.unknown) {
+          m.delivery == MessageDelivery.sent) {
         n++;
       }
     }
     return n;
   }
 
+  /// Every DM conversation, newest first, as the chat strip lists it.
+  ///
+  /// A DM is stored with `channelIdx: -1` and the peer's key, so the strip had
+  /// no way to name one: an inbound DM from a peer the reader had never written
+  /// to was stored, notified, and then unreachable, because the only routes to
+  /// a thread were a node's own sheet and a search hit. This is the list that
+  /// makes a new conversation appear where conversations appear.
+  List<DmThread> get dmThreads {
+    final Map<String, DmThread> byPeer = <String, DmThread>{};
+    for (final ChatMessage m in _messages) {
+      final String? peer = m.peerPubKeyHex;
+      if (peer == null || peer.isEmpty) continue;
+      final String key = peer.toLowerCase();
+      final bool unread = !m.outgoing &&
+          m.at.millisecondsSinceEpoch > _dmReadStore.lastReadAtMs(key);
+      final DmThread? cur = byPeer[key];
+      if (cur == null) {
+        byPeer[key] = DmThread(
+          peerPubKeyHex: key,
+          name: dmPeerName(key),
+          lastAt: m.at,
+          unread: unread ? 1 : 0,
+        );
+      } else {
+        byPeer[key] = DmThread(
+          peerPubKeyHex: key,
+          name: cur.name,
+          lastAt: m.at.isAfter(cur.lastAt) ? m.at : cur.lastAt,
+          unread: cur.unread + (unread ? 1 : 0),
+        );
+      }
+    }
+    return byPeer.values.toList()
+      ..sort((DmThread a, DmThread b) => b.lastAt.compareTo(a.lastAt));
+  }
+
+  /// What to call a peer: the node's own name when it has been heard, else the
+  /// key prefix, which is the only handle a DM carries.
+  String dmPeerName(String pubKeyHex) {
+    final String key = pubKeyHex.toLowerCase();
+    final DiscoveredNode? exact = _nodes[key];
+    if (exact != null && exact.name.isNotEmpty) return exact.name;
+    for (final DiscoveredNode n in _nodes.values) {
+      if (n.pubKeyHex.startsWith(key) && n.name.isNotEmpty) return n.name;
+    }
+    return key.length >= 12 ? key.substring(0, 12) : key;
+  }
+
   bool hasUnsettledDmTo(String peerPubKeyHex) {
     final String peer = peerPubKeyHex.toLowerCase();
     for (final ChatMessage m in _messages) {
       if (!m.outgoing || m.peerPubKeyHex?.toLowerCase() != peer) continue;
+      // In flight on this link, not `unknown`: see [unsettledOutgoingCount].
       if (m.delivery == MessageDelivery.sending ||
-          m.delivery == MessageDelivery.sent ||
-          m.delivery == MessageDelivery.unknown) {
+          m.delivery == MessageDelivery.sent) {
         return true;
       }
     }
@@ -7017,9 +7072,8 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   bool get hasPairedDevice => _pairedName != null;
 
   /// Saved remote ID for the currently-paired device, or null when
-  /// nothing is paired. Hydrated alongside [_pairedName]; used by
-  /// the device-manager UI to highlight which history row is
-  /// "current".
+  /// nothing is paired. Hydrated alongside [_pairedName]; it is what
+  /// [forgetDevice] clears and what the OS bond is forgotten under.
   String? get pairedRemoteId => _pairedRemoteId;
   String? _pairedRemoteId;
 
@@ -7068,9 +7122,9 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       notifyListeners();
       return;
     }
-    // Eagerly hydrate the history alongside the active pair so the
-    // device-manager sheet has its "Recently paired" list ready on
-    // first open — no second roundtrip needed.
+    // Eagerly hydrate the history alongside the active pair: it is the list of
+    // bonds this app owns, which is what `adoptableBond` may adopt and what
+    // forgetting a radio removes from.
     PairedDevice? p = await PairedDeviceStore.read();
     _pairedHistory = await PairedDeviceHistoryStore.load();
     // **A bond is a pairing, whichever menu made it.** Pairing a radio from

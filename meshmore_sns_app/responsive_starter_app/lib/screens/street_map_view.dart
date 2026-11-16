@@ -2137,6 +2137,7 @@ class _StreetMapViewState extends State<StreetMapView> {
             if (n.latitude != null && n.longitude != null)
               MessageBubbleMark(
                 node: n,
+                arrivedAt: e.value,
                 remaining: 1 -
                     now.difference(e.value).inMilliseconds /
                         MeshcoreController.recentSpeakerWindow.inMilliseconds,
@@ -2578,20 +2579,36 @@ class _StreetMapViewState extends State<StreetMapView> {
                   ..._nodePins(context, mc, withLoc, l),
                   // A bubble over whoever just spoke, under the self marker so
                   // the reader's own position is never covered.
-                  for (final MessageBubbleMark b in bubbles)
+                  for (final (int i, MessageBubbleMark b)
+                      in (bubbles.toList()
+                            ..sort((MessageBubbleMark a, MessageBubbleMark c) =>
+                                (a.arrivedAt ?? DateTime.now()).compareTo(
+                                    c.arrivedAt ?? DateTime.now())))
+                          .indexed)
                     Marker(
                       point: LatLng(b.node.latitude!, b.node.longitude!),
                       width: MessageBubble.size,
                       height: MessageBubble.size,
                       alignment: Alignment.center,
                       child: IgnorePointer(
-                        child: MessageBubble(
+                        // Two nodes a few metres apart would stack their
+                        // numbers on one glyph, and a burst of traffic would
+                        // appear all at once. Each bubble is nudged off the
+                        // node by a stable per-key offset and starts its rise a
+                        // moment after the one before it.
+                        child: Transform.translate(
+                          offset:
+                              MessageBubble.offsetFor(b.node.pubKeyHex),
+                          child: MessageBubble(
+                          arrivedAt: b.arrivedAt,
+                          delay: MessageBubble.stagger * i,
                           key: ValueKey<String>(
                               'map-msg-bubble-${b.node.pubKeyHex}'),
                           remaining: b.remaining,
                           color: VizPalette.companion,
                           label: l.mapMessageBubble(
                               b.node.name.isEmpty ? b.node.shortId : b.node.name),
+                        ),
                         ),
                       ),
                     ),

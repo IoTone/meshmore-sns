@@ -24,6 +24,7 @@ import '../chat/report_flow.dart';
 import '../chat/place_suggestion_line.dart';
 import '../chat/studio_message_row.dart';
 import '../chat/history_unreadable_notice.dart';
+import '../meshcore/dm_thread.dart';
 import '../chat/export_passphrase_dialog.dart';
 import '../cue/cue_service.dart';
 import '../gen/app_localizations.dart';
@@ -665,9 +666,10 @@ class _ChatScreenState extends State<ChatScreen>
     // said "not sent" with no reason.
     if (!mc.isReady) {
       context.cue?.play(CueKind.taskError);
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).chatSendNotSent)),
-      );
+      ScaffoldMessenger.maybeOf(context)
+        ?..clearSnackBars()
+        ..showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).chatSendNotSent)));
       return;
     }
     final ComposerBudget budget = _budget;
@@ -846,6 +848,22 @@ class _ChatScreenState extends State<ChatScreen>
     final List<ChatMessage> msgs =
         context.select<MeshcoreController, List<ChatMessage>>(
             (MeshcoreController mc) => mc.messagesFor(active));
+    // DM conversations, as a signature rather than the list: `dmThreads` builds
+    // a fresh list on every read, so selecting it directly would rebuild this
+    // screen on every notification. The signature moves only when a thread
+    // appears, gains an unread, or takes a newer message.
+    context.select<MeshcoreController, String>((MeshcoreController mc) {
+      final StringBuffer b = StringBuffer();
+      for (final DmThread t in mc.dmThreads) {
+        b.write(t.peerPubKeyHex);
+        b.write(':');
+        b.write(t.unread);
+        b.write(':');
+        b.write(t.lastAt.millisecondsSinceEpoch);
+        b.write('|');
+      }
+      return b.toString();
+    });
     // Delivery glyphs change inside the same message objects, which the
     // list selector above cannot see (it deep-compares identical
     // elements); this counter is what repaints them.
@@ -972,6 +990,41 @@ class _ChatScreenState extends State<ChatScreen>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                     children: <Widget>[
+                // Direct messages come first, before the channels. They are the
+                // most personal thing in the strip and the only one that can
+                // arrive unasked, so a new conversation has to be visible without
+                // scrolling: appended after the channels it sat off the right edge
+                // of a three-channel strip. Before this an inbound DM from a peer
+                // the reader had never written to was stored and notified and then
+                // had no way in at all.
+                for (final DmThread t in mc.dmThreads)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Semantics(
+                      label: t.unread > 0
+                          ? '${t.name}, ${l.chatUnread(t.unread)}'
+                          : t.name,
+                      button: true,
+                      excludeSemantics: true,
+                      child: ActionChip(
+                        key: ValueKey<String>('chat-dm-chip-${t.peerPubKeyHex}'),
+                        avatar: Icon(
+                          t.unread > 0
+                              ? Icons.mark_chat_unread_outlined
+                              : Icons.person_outline,
+                          size: 16,
+                        ),
+                        label: _ChannelChipLabel(
+                          name: t.name,
+                          unread: t.unread,
+                          badgeKey:
+                              ValueKey<String>('dm-unread-${t.peerPubKeyHex}'),
+                        ),
+                        onPressed: () =>
+                            context.push('/dm/${t.peerPubKeyHex}'),
+                      ),
+                    ),
+                  ),
                 for (final MapEntry<int, String> ch in channels)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),

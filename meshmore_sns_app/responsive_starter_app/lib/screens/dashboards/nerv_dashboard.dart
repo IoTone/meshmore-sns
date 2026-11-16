@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../gen/app_localizations.dart';
@@ -9,7 +10,6 @@ import '../../theme/mm_skin.dart';
 import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_components.dart';
 import '../../ui/mm_scaffold.dart';
-import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
 import 'my_pubkey_line.dart';
 
@@ -77,7 +77,7 @@ class NervDashboard extends StatelessWidget {
                             minWidth: 48, minHeight: 48),
                         icon: Icon(Icons.bluetooth,
                             size: 18, color: skin.color.accent),
-                        onPressed: () => DeviceManagerSheet.show(context),
+                        onPressed: () => context.push('/settings/connection'),
                       ),
                     ],
                   ),

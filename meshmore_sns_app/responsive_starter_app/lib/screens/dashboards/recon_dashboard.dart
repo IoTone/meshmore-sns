@@ -3,6 +3,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../gen/app_localizations.dart';
@@ -15,7 +16,6 @@ import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_scaffold.dart';
 import '../../util/geo.dart';
 
-import '../device_manager_sheet.dart';
 import '../node_detail_sheet.dart';
 import 'dashboard_model.dart';
 import 'my_pubkey_line.dart';
@@ -131,7 +131,7 @@ class _ReconDashboardState extends State<ReconDashboard>
                   icon: Icon(Icons.bluetooth,
                       size: 20,
                       color: m.alert ? skin.color.alert : amber),
-                  onPressed: () => DeviceManagerSheet.show(context),
+                  onPressed: () => context.push('/settings/connection'),
                 ),
               ],
             ),

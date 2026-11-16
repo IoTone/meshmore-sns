@@ -13,7 +13,6 @@ import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_collapse_controller.dart';
 import '../../ui/mm_collapsible.dart';
 import '../../ui/mm_components.dart';
-import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
 import 'my_pubkey_line.dart';
 import '../../util/mm_format.dart';
@@ -358,7 +357,7 @@ class _StatusRow extends StatelessWidget {
       IconButton(
         tooltip: l.dashboardDevice,
         icon: Icon(Icons.bluetooth, size: 20, color: muted),
-        onPressed: () => DeviceManagerSheet.show(context),
+        onPressed: () => context.push('/settings/connection'),
       ),
       MmAudioToggle(color: muted),
     ];

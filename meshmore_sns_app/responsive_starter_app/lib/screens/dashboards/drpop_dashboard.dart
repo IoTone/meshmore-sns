@@ -1,6 +1,7 @@
 // Copyright (c) 2026 IoTone, Inc.
 // SPDX-License-Identifier: MIT
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../gen/app_localizations.dart';
@@ -8,7 +9,6 @@ import '../../meshcore/meshcore_controller.dart';
 import '../../theme/mm_skin.dart';
 import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_scaffold.dart';
-import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
 import 'my_pubkey_line.dart';
 
@@ -80,7 +80,7 @@ class DrPopDashboard extends StatelessWidget {
                 icon: Icon(Icons.bluetooth,
                     size: 20,
                     color: m.alert ? skin.color.alert : magenta),
-                onPressed: () => DeviceManagerSheet.show(context),
+                onPressed: () => context.push('/settings/connection'),
               ),
             ],
           ),

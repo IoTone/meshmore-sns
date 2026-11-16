@@ -35,7 +35,6 @@ void main() {
     // Save / reset / generate / copy / share, most of them inside dialogs.
     'lib/screens/channels_screen.dart': 3,
     // Disconnect / reconnect / forget in one row.
-    'lib/screens/device_manager_sheet.dart': 3,
     // Copy fixture and export fixtures: file-shaped verbs.
     'lib/screens/diagnostics_screen.dart': 2,
     // The first-run intro's Grant / Continue / Skip steps.

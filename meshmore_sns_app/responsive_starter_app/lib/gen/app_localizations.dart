@@ -638,108 +638,6 @@ abstract class AppLocalizations {
   /// **'Device'**
   String get dashboardDevice;
 
-  /// No description provided for @deviceMgrTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'DEVICE'**
-  String get deviceMgrTitle;
-
-  /// No description provided for @deviceMgrNoPair.
-  ///
-  /// In en, this message translates to:
-  /// **'No device paired'**
-  String get deviceMgrNoPair;
-
-  /// No description provided for @deviceMgrStateConnected.
-  ///
-  /// In en, this message translates to:
-  /// **'CONNECTED'**
-  String get deviceMgrStateConnected;
-
-  /// No description provided for @deviceMgrStateConnecting.
-  ///
-  /// In en, this message translates to:
-  /// **'CONNECTING…'**
-  String get deviceMgrStateConnecting;
-
-  /// No description provided for @deviceMgrStateReconnecting.
-  ///
-  /// In en, this message translates to:
-  /// **'RECONNECTING…'**
-  String get deviceMgrStateReconnecting;
-
-  /// No description provided for @deviceMgrStateDisconnected.
-  ///
-  /// In en, this message translates to:
-  /// **'DISCONNECTED'**
-  String get deviceMgrStateDisconnected;
-
-  /// No description provided for @deviceMgrStateFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'FAILED'**
-  String get deviceMgrStateFailed;
-
-  /// No description provided for @deviceMgrDisconnect.
-  ///
-  /// In en, this message translates to:
-  /// **'Disconnect'**
-  String get deviceMgrDisconnect;
-
-  /// No description provided for @deviceMgrReconnect.
-  ///
-  /// In en, this message translates to:
-  /// **'Reconnect'**
-  String get deviceMgrReconnect;
-
-  /// No description provided for @deviceMgrForget.
-  ///
-  /// In en, this message translates to:
-  /// **'Forget'**
-  String get deviceMgrForget;
-
-  /// No description provided for @deviceMgrPick.
-  ///
-  /// In en, this message translates to:
-  /// **'PICK A DEVICE'**
-  String get deviceMgrPick;
-
-  /// No description provided for @deviceMgrScan.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan'**
-  String get deviceMgrScan;
-
-  /// No description provided for @deviceMgrStopScan.
-  ///
-  /// In en, this message translates to:
-  /// **'Stop'**
-  String get deviceMgrStopScan;
-
-  /// No description provided for @deviceMgrScanHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap Scan to look for nearby MeshCore devices. When two are in range, pick the one you want.'**
-  String get deviceMgrScanHint;
-
-  /// No description provided for @deviceMgrScanFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan failed: {message}'**
-  String deviceMgrScanFailed(String message);
-
-  /// No description provided for @deviceMgrRecent.
-  ///
-  /// In en, this message translates to:
-  /// **'RECENTLY PAIRED'**
-  String get deviceMgrRecent;
-
-  /// No description provided for @deviceMgrAgoNever.
-  ///
-  /// In en, this message translates to:
-  /// **'never'**
-  String get deviceMgrAgoNever;
-
   /// No description provided for @deviceMgrAgoNow.
   ///
   /// In en, this message translates to:
@@ -763,12 +661,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} d ago'**
   String deviceMgrAgoDays(int n);
-
-  /// No description provided for @deviceMgrPairNew.
-  ///
-  /// In en, this message translates to:
-  /// **'Pair a new MeshCore radio'**
-  String get deviceMgrPairNew;
 
   /// No description provided for @pairTitle.
   ///
@@ -11577,42 +11469,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connect a MeshCore radio'**
   String get connectTitle;
-
-  /// Heading over the list of radios this phone has paired, on the connect screen.
-  ///
-  /// In en, this message translates to:
-  /// **'Paired radios'**
-  String get radioSwitchTitle;
-
-  /// Marks the radio the app is paired with now, in place of a switch action.
-  ///
-  /// In en, this message translates to:
-  /// **'In use'**
-  String get radioSwitchCurrent;
-
-  /// Moves the one session to this radio.
-  ///
-  /// In en, this message translates to:
-  /// **'Switch'**
-  String get radioSwitchAction;
-
-  /// Confirmation after the link was torn down and the new radio is connecting.
-  ///
-  /// In en, this message translates to:
-  /// **'Switching to {name}.'**
-  String radioSwitchDone(String name);
-
-  /// The row was for the radio already paired, so nothing was touched.
-  ///
-  /// In en, this message translates to:
-  /// **'That MeshCore radio is already the one in use.'**
-  String get radioSwitchSame;
-
-  /// The switch was refused because a send is unsettled. Names why waiting is the honest answer rather than a rule for its own sake.
-  ///
-  /// In en, this message translates to:
-  /// **'Not switched. A message is still waiting for an answer, and that answer belongs to the MeshCore radio it was sent on.'**
-  String get radioSwitchWaiting;
 
   /// No description provided for @mapKeyTitle.
   ///

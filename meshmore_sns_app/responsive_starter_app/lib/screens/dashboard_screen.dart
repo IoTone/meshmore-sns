@@ -17,7 +17,6 @@ import '../meshcore/region_presets.dart';
 import '../ui/mm_audio_toggle.dart';
 import '../ui/mm_collapse_controller.dart';
 import '../ui/mm_collapsible.dart';
-import 'device_manager_sheet.dart';
 import '../ui/mm_shape.dart';
 import '../util/mm_format.dart';
 
@@ -451,7 +450,7 @@ Widget _statusSlab(
         IconButton(
           tooltip: l.dashboardDevice,
           icon: Icon(Icons.bluetooth, color: statusColor, size: 20),
-          onPressed: () => DeviceManagerSheet.show(context),
+          onPressed: () => context.push('/settings/connection'),
         ),
       ],
     ),

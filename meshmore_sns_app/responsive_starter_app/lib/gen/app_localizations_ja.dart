@@ -299,60 +299,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dashboardDevice => 'デバイス';
 
   @override
-  String get deviceMgrTitle => 'デバイス';
-
-  @override
-  String get deviceMgrNoPair => 'デバイス未ペアリング';
-
-  @override
-  String get deviceMgrStateConnected => '接続済み';
-
-  @override
-  String get deviceMgrStateConnecting => '接続中…';
-
-  @override
-  String get deviceMgrStateReconnecting => '再接続中…';
-
-  @override
-  String get deviceMgrStateDisconnected => '切断';
-
-  @override
-  String get deviceMgrStateFailed => '失敗';
-
-  @override
-  String get deviceMgrDisconnect => '切断';
-
-  @override
-  String get deviceMgrReconnect => '再接続';
-
-  @override
-  String get deviceMgrForget => 'ペアリング解除';
-
-  @override
-  String get deviceMgrPick => 'デバイスを選択';
-
-  @override
-  String get deviceMgrScan => 'スキャン';
-
-  @override
-  String get deviceMgrStopScan => '停止';
-
-  @override
-  String get deviceMgrScanHint =>
-      '「スキャン」をタップして近くの MeshCore デバイスを探します。2 台以上ある場合はリストから選んでください。';
-
-  @override
-  String deviceMgrScanFailed(String message) {
-    return 'スキャン失敗: $message';
-  }
-
-  @override
-  String get deviceMgrRecent => '最近のペアリング';
-
-  @override
-  String get deviceMgrAgoNever => '未使用';
-
-  @override
   String get deviceMgrAgoNow => 'たった今';
 
   @override
@@ -369,9 +315,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String deviceMgrAgoDays(int n) {
     return '$n 日前';
   }
-
-  @override
-  String get deviceMgrPairNew => '新しい MeshCore 無線機をペアリング';
 
   @override
   String get pairTitle => 'MeshCore 無線機をペアリング';
@@ -6632,27 +6575,6 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get connectTitle => 'MeshCore 無線機に接続';
-
-  @override
-  String get radioSwitchTitle => 'ペアリング済みの無線機';
-
-  @override
-  String get radioSwitchCurrent => '使用中';
-
-  @override
-  String get radioSwitchAction => '切り替え';
-
-  @override
-  String radioSwitchDone(String name) {
-    return '$name に切り替えています。';
-  }
-
-  @override
-  String get radioSwitchSame => 'その無線機はすでに使用中です。';
-
-  @override
-  String get radioSwitchWaiting =>
-      '切り替えませんでした。応答待ちのメッセージがあり、その応答は送信した無線機に属します。';
 
   @override
   String get mapKeyTitle => '地図の凡例';

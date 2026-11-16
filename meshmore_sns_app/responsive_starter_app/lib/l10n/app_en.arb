@@ -163,30 +163,6 @@
   "actionRetry": "Retry",
   "actionRetrySend": "Retry",
   "dashboardDevice": "Device",
-  "deviceMgrTitle": "DEVICE",
-  "deviceMgrNoPair": "No device paired",
-  "deviceMgrStateConnected": "CONNECTED",
-  "deviceMgrStateConnecting": "CONNECTING…",
-  "deviceMgrStateReconnecting": "RECONNECTING…",
-  "deviceMgrStateDisconnected": "DISCONNECTED",
-  "deviceMgrStateFailed": "FAILED",
-  "deviceMgrDisconnect": "Disconnect",
-  "deviceMgrReconnect": "Reconnect",
-  "deviceMgrForget": "Forget",
-  "deviceMgrPick": "PICK A DEVICE",
-  "deviceMgrScan": "Scan",
-  "deviceMgrStopScan": "Stop",
-  "deviceMgrScanHint": "Tap Scan to look for nearby MeshCore devices. When two are in range, pick the one you want.",
-  "deviceMgrScanFailed": "Scan failed: {message}",
-  "@deviceMgrScanFailed": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      }
-    }
-  },
-  "deviceMgrRecent": "RECENTLY PAIRED",
-  "deviceMgrAgoNever": "never",
   "deviceMgrAgoNow": "just now",
   "deviceMgrAgoMinutes": "{n} min ago",
   "@deviceMgrAgoMinutes": {
@@ -212,7 +188,6 @@
       }
     }
   },
-  "deviceMgrPairNew": "Pair a new MeshCore radio",
   "pairTitle": "Pair a MeshCore radio",
   "pairStepOf": "Step {step} of {total}",
   "@pairStepOf": {
@@ -4716,35 +4691,6 @@
   "elevationEmpty": "Nobody has reported an altitude yet. Ask a peer that carries a sensor, or wait for one to advertise.",
   "mapOverlaysTitle": "Layers",
   "connectTitle": "Connect a MeshCore radio",
-  "radioSwitchTitle": "Paired radios",
-  "@radioSwitchTitle": {
-    "description": "Heading over the list of radios this phone has paired, on the connect screen."
-  },
-  "radioSwitchCurrent": "In use",
-  "@radioSwitchCurrent": {
-    "description": "Marks the radio the app is paired with now, in place of a switch action."
-  },
-  "radioSwitchAction": "Switch",
-  "@radioSwitchAction": {
-    "description": "Moves the one session to this radio."
-  },
-  "radioSwitchDone": "Switching to {name}.",
-  "@radioSwitchDone": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    },
-    "description": "Confirmation after the link was torn down and the new radio is connecting."
-  },
-  "radioSwitchSame": "That MeshCore radio is already the one in use.",
-  "@radioSwitchSame": {
-    "description": "The row was for the radio already paired, so nothing was touched."
-  },
-  "radioSwitchWaiting": "Not switched. A message is still waiting for an answer, and that answer belongs to the MeshCore radio it was sent on.",
-  "@radioSwitchWaiting": {
-    "description": "The switch was refused because a send is unsettled. Names why waiting is the honest answer rather than a rule for its own sake."
-  },
   "mapKeyTitle": "Map key",
   "mapKeyRepeater": "Repeater",
   "mapKeyClient": "Client radio",

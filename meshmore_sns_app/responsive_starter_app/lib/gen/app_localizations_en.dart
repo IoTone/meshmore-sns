@@ -319,60 +319,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardDevice => 'Device';
 
   @override
-  String get deviceMgrTitle => 'DEVICE';
-
-  @override
-  String get deviceMgrNoPair => 'No device paired';
-
-  @override
-  String get deviceMgrStateConnected => 'CONNECTED';
-
-  @override
-  String get deviceMgrStateConnecting => 'CONNECTING…';
-
-  @override
-  String get deviceMgrStateReconnecting => 'RECONNECTING…';
-
-  @override
-  String get deviceMgrStateDisconnected => 'DISCONNECTED';
-
-  @override
-  String get deviceMgrStateFailed => 'FAILED';
-
-  @override
-  String get deviceMgrDisconnect => 'Disconnect';
-
-  @override
-  String get deviceMgrReconnect => 'Reconnect';
-
-  @override
-  String get deviceMgrForget => 'Forget';
-
-  @override
-  String get deviceMgrPick => 'PICK A DEVICE';
-
-  @override
-  String get deviceMgrScan => 'Scan';
-
-  @override
-  String get deviceMgrStopScan => 'Stop';
-
-  @override
-  String get deviceMgrScanHint =>
-      'Tap Scan to look for nearby MeshCore devices. When two are in range, pick the one you want.';
-
-  @override
-  String deviceMgrScanFailed(String message) {
-    return 'Scan failed: $message';
-  }
-
-  @override
-  String get deviceMgrRecent => 'RECENTLY PAIRED';
-
-  @override
-  String get deviceMgrAgoNever => 'never';
-
-  @override
   String get deviceMgrAgoNow => 'just now';
 
   @override
@@ -389,9 +335,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String deviceMgrAgoDays(int n) {
     return '$n d ago';
   }
-
-  @override
-  String get deviceMgrPairNew => 'Pair a new MeshCore radio';
 
   @override
   String get pairTitle => 'Pair a MeshCore radio';
@@ -6908,28 +6851,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectTitle => 'Connect a MeshCore radio';
-
-  @override
-  String get radioSwitchTitle => 'Paired radios';
-
-  @override
-  String get radioSwitchCurrent => 'In use';
-
-  @override
-  String get radioSwitchAction => 'Switch';
-
-  @override
-  String radioSwitchDone(String name) {
-    return 'Switching to $name.';
-  }
-
-  @override
-  String get radioSwitchSame =>
-      'That MeshCore radio is already the one in use.';
-
-  @override
-  String get radioSwitchWaiting =>
-      'Not switched. A message is still waiting for an answer, and that answer belongs to the MeshCore radio it was sent on.';
 
   @override
   String get mapKeyTitle => 'Map key';

@@ -338,16 +338,16 @@ class _DmScreenState extends State<DmScreen> {
     final AppLocalizations l = AppLocalizations.of(context);
     if (!mc.isReady) {
       context.cue?.play(CueKind.taskError);
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(l.dmSendNotSent)),
-      );
+      ScaffoldMessenger.maybeOf(context)
+        ?..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l.dmSendNotSent)));
       return;
     }
     if (mc.hasUnsettledDmTo(widget.peerPubKeyHex)) {
       context.cue?.play(CueKind.taskError);
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(l.dmWaitingForAck)),
-      );
+      ScaffoldMessenger.maybeOf(context)
+        ?..clearSnackBars()
+        ..showSnackBar(SnackBar(content: Text(l.dmWaitingForAck)));
       return;
     }
     if (mc.isPeerBlocked(widget.peerPubKeyHex)) {

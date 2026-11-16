@@ -3,6 +3,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../gen/app_localizations.dart';
@@ -13,7 +14,6 @@ import '../../ui/mm_components.dart';
 import '../../theme/theme_controller.dart';
 import '../../ui/mm_audio_toggle.dart';
 import '../../ui/mm_scaffold.dart';
-import '../device_manager_sheet.dart';
 import 'dashboard_model.dart';
 import 'my_pubkey_line.dart';
 import '../../ui/mm_shape.dart';
@@ -233,7 +233,7 @@ class _BrandBar extends StatelessWidget {
           icon: Icon(Icons.bluetooth,
               size: 20,
               color: model.alert ? skin.color.alert : skin.color.accent),
-          onPressed: () => DeviceManagerSheet.show(context),
+          onPressed: () => context.push('/settings/connection'),
         ),
       ],
     );
