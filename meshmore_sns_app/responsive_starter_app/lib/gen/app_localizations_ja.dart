@@ -48,7 +48,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String dashboardKnownAndContacts(int n, String contacts) {
-    return '$n件 既知 · 連絡先 $contacts';
+    return '$n件 既知 · MeshCore 無線機の表 $contacts';
   }
 
   @override
@@ -832,7 +832,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String nodesStatusReady(int shown, int total, int inRange, int favs) {
-    return '$shown/$total件 表示 · $inRange件 範囲内 · $favs件 連絡先';
+    return '$shown/$total件 表示 · $inRange件 範囲内 · $favs件 お気に入り';
   }
 
   @override
@@ -6112,6 +6112,10 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get autoAddIntro =>
       'どのノードを保持するかはMeshCore 無線機が決めます。これはアプリではなく無線機の設定です。';
+
+  @override
+  String get autoAddFullDropsDms =>
+      '表がいっぱいで、MeshCore 無線機は最も古い項目を上書きしていません。まだ会っていない無線機は追加できないため、その相手からのダイレクトメッセージはアプリに届く前に破棄されます。';
 
   @override
   String get autoAddOverwriteOldest => '満杯なら最も古いものを置き換える';

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 import 'radio_lease.dart';
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:collection';
 
 import '../chat/composer_budget.dart';
@@ -1862,6 +1863,15 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   static const String _configMarker = '\u0000cfg';
   static const String _contactAddMarker = '\u0000cadd';
 
+  /// The key an add is about, so a refusal can take back the row it added.
+  ///
+  /// The add is reflected locally before the radio answers, which is right for
+  /// the common case and wrong for the one that matters: a full table refuses
+  /// the add, and the app kept listing a contact the radio does not have. A DM
+  /// to that peer is then dropped by the firmware, which only delivers from
+  /// senders in its own table, and nothing in the app said so.
+  String? _contactAddPending;
+
   /// How long a config write waits for the radio's answer.
   static const Duration _configAnswerTimeout = Duration(seconds: 5);
   final Duration? _radioConfigTimeoutOverride;
@@ -2977,6 +2987,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         return;
       }
       if (p.id == _contactAddMarker) {
+        _contactAddPending = null;
         _clearContactsFull();
         notifyListeners();
         return;
@@ -3016,6 +3027,14 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
         // The radio refused the add. `ERR_CODE_TABLE_FULL` is the one that a
         // user can act on, so it becomes state rather than a silent refusal.
         if (f.code == kErrTableFull) _contactsFull = true;
+        // Take back the row the optimistic add wrote. Leaving it there claimed
+        // a contact the radio does not have, and a DM to that peer is dropped
+        // by the firmware without a word.
+        final String? pending = _contactAddPending;
+        _contactAddPending = null;
+        if (pending != null && _contacts.remove(pending) != null) {
+          _saveContactsSoon();
+        }
         _emitTaskError('addContact');
         notifyListeners();
         return;
@@ -5928,7 +5947,18 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   /// True while the radio has told us its contact table is full and it is not
   /// overwriting the oldest entry, so every new advert is being dropped.
   bool _contactsFull = false;
-  bool get contactsFull => _contactsFull;
+  /// True when the radio's table has no room for another contact.
+  ///
+  /// The refusal flag alone is not enough: a radio that filled its table before
+  /// this app ever tried to add anything never sets it, and that is exactly the
+  /// state that silently drops direct messages. The count the radio reports is
+  /// the other half of the answer.
+  bool get contactsFull {
+    if (_contactsFull) return true;
+    final int? n = _deviceContactCount;
+    final int? max = maxContacts;
+    return n != null && max != null && max > 0 && n >= max;
+  }
 
   void _clearContactsFull() {
     if (!_contactsFull) return;
@@ -6010,9 +6040,17 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       // not carry is preserved from the previous entry, exactly as the rest of
       // this method does with RSSI, SNR and altitude; failing that it stays
       // unknown and the list says so.
+      // A contact sync is not a hearing, so it must never make a node look
+      // *less* recently heard than a live advert already did. The radio's
+      // `last_advert_timestamp` is the sender's own clock, and a freshly
+      // flashed radio has no RTC: measured on the handset, a node one metre
+      // away read "260 d ago" and counted as out of range, because its advert
+      // carried a date from months earlier. The later of the two is the honest
+      // answer, and a node that really has gone quiet still ages out, because
+      // nothing refreshes the live value.
       lastHeardUnix: adv == 0
           ? (prev?.lastHeardUnix ?? 0)
-          : adv + _deviceClockOffsetSec,
+          : math.max(adv + _deviceClockOffsetSec, prev?.lastHeardUnix ?? 0),
       deviceAdvertUnix: adv == 0 ? null : adv,
       latitude:
           c.latitudeMicros == 0 ? prev?.latitude : c.latitudeMicros / 1e6,
@@ -6100,6 +6138,9 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   final List<Contact> _probedContacts = <Contact>[];
   bool _probing = false;
   int? _deviceContactCount;
+
+  /// One full re-sync per session when the radio's count outruns ours.
+  bool _fullResyncTried = false;
   Completer<void>? _contactSyncDone;
 
   /// The radio's reported total contact count (from `CONTACTS_START`).
@@ -6672,6 +6713,25 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
       // The radio finished the table, so whatever an earlier stalled attempt
       // missed is now supplied.
       _contactsIncomplete = false;
+      // An incremental sync asks only for contacts modified since the last one,
+      // and that watermark is persisted. When the radio's table is rebuilt
+      // underneath it — a reflash, a factory reset, a clock that moved — the
+      // watermark is newer than every row, the radio answers with nothing, and
+      // the app holds an empty table while the radio holds hundreds. Every DM
+      // from a peer then fails, because the firmware only delivers from senders
+      // in its own table, and the app cannot see that it is the one that is
+      // wrong. The count in CONTACTS_START is the check: if the radio says it
+      // has more than we hold, ask for the whole table once.
+      final int? claimed = _deviceContactCount;
+      if (!_fullResyncTried &&
+          claimed != null &&
+          claimed > _contacts.length &&
+          _contactsSince > 0) {
+        _fullResyncTried = true;
+        _contactsSince = 0;
+        unawaited(_persistContactsSince(0));
+        unawaited(requestContacts());
+      }
       _completeContactSync();
       // The radio states the newest `lastmod` it sent, so the next request can
       // be incremental. Persisted, because a reconnect after a restart is the
@@ -6753,6 +6813,7 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
     // (3) becomes state the device page can show instead of a silent refusal,
     // and a caller is not blocked waiting for a reply that is normally immediate.
     _registerMarker(_contactAddMarker, CommandAnswer.ok);
+    _contactAddPending = hex;
     try {
       await send(MeshcoreFrameCodec.addUpdateContact(c));
       _contacts[hex] = c; // reflect locally; device confirms on next sync

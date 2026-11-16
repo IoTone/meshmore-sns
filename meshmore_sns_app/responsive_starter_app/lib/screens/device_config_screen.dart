@@ -1193,6 +1193,29 @@ class _ContactTableEditorState extends State<_ContactTableEditor> {
                 color: mc.contactsFull ? cs.error : cs.onSurface,
                 fontFamily: context.skin.type.monoFamily),
           ),
+        // A full table with overwrite off is the one setting that silently
+        // breaks DM reception. The firmware only delivers a direct message from
+        // a sender in its own table (`BaseChatMesh.cpp:220-226`), and a full
+        // table refuses every new advert (`allocateContactSlot` returns null),
+        // so a radio the app has never met can never become a contact and its
+        // messages are dropped before the app is told anything. Overwriting the
+        // oldest entry is what keeps that from happening, and it is one switch.
+        if (cfg != null && mc.contactsFull && !cfg.overwriteOldest) ...<Widget>[
+          const SizedBox(height: 8),
+          Text(
+            l.autoAddFullDropsDms,
+            style: TextStyle(color: cs.error, fontSize: context.skin.type.sizeBody),
+          ),
+          const SizedBox(height: 6),
+          MmAction(
+            key: const ValueKey<String>('auto-add-overwrite-fix'),
+            icon: Icons.swap_horiz,
+            label: l.autoAddOverwriteOldest,
+            onPressed: allow
+                ? () => _write(() => mc.setAutoAddConfig(overwriteOldest: true))
+                : null,
+          ),
+        ],
         if (cfg == null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),

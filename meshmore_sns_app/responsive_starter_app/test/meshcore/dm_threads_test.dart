@@ -3,7 +3,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:meshmore_sns_app/meshcore/chat_message.dart';
 import 'package:meshmore_sns_app/meshcore/dm_thread.dart';
 import 'package:meshmore_sns_app/meshcore/meshcore_controller.dart';
 

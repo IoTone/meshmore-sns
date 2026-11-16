@@ -173,7 +173,7 @@ abstract class AppLocalizations {
   /// One line on the dashboard: how many nodes the app knows, and the radio's own contact table. One localised sentence rather than fragments joined with literal separators.
   ///
   /// In en, this message translates to:
-  /// **'{n, plural, =0{0 known} =1{1 known} other{{n} known}} · contacts {contacts}'**
+  /// **'{n, plural, =0{0 known} =1{1 known} other{{n} known}} · MeshCore radio\'s table {contacts}'**
   String dashboardKnownAndContacts(int n, String contacts);
 
   /// No description provided for @dashboardMyPubkey.
@@ -1601,7 +1601,7 @@ abstract class AppLocalizations {
   /// No description provided for @nodesStatusReady.
   ///
   /// In en, this message translates to:
-  /// **'{shown} of {total} shown · {inRange} in range · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}'**
+  /// **'{shown} of {total} shown · {inRange} in range · {favs, plural, =0{0 favourites} =1{1 favourite} other{{favs} favourites}}'**
   String nodesStatusReady(int shown, int total, int inRange, int favs);
 
   /// No description provided for @nodesStatusOffline.
@@ -10653,6 +10653,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The MeshCore radio decides which nodes it keeps. These are its settings, not the app\'s.'**
   String get autoAddIntro;
+
+  /// No description provided for @autoAddFullDropsDms.
+  ///
+  /// In en, this message translates to:
+  /// **'The table is full and the MeshCore radio is not overwriting the oldest entry, so a radio it has not met cannot be added. A direct message from one is dropped before the app sees it.'**
+  String get autoAddFullDropsDms;
 
   /// No description provided for @autoAddOverwriteOldest.
   ///

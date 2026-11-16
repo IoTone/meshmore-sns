@@ -19,7 +19,7 @@
       }
     }
   },
-  "dashboardKnownAndContacts": "{n}件 既知 · 連絡先 {contacts}",
+  "dashboardKnownAndContacts": "{n}件 既知 · MeshCore 無線機の表 {contacts}",
   "@dashboardKnownAndContacts": {
     "placeholders": {
       "n": {
@@ -398,7 +398,7 @@
   "nodesDist500m": "500 m 以内",
   "nodesDist5km": "5 km 以内",
   "nodesDist25km": "25 km 以内",
-  "nodesStatusReady": "{shown}/{total}件 表示 · {inRange}件 範囲内 · {favs}件 連絡先",
+  "nodesStatusReady": "{shown}/{total}件 表示 · {inRange}件 範囲内 · {favs}件 お気に入り",
   "@nodesStatusReady": {
     "placeholders": {
       "shown": {
@@ -2765,6 +2765,7 @@
   "mediaReachUnknown": "到達範囲はMeshCore 無線機のスコープ次第で、まだ報告されていません。写真は受信確認されません。",
   "deviceContactsSection": "連絡先テーブル",
   "autoAddIntro": "どのノードを保持するかはMeshCore 無線機が決めます。これはアプリではなく無線機の設定です。",
+  "autoAddFullDropsDms": "表がいっぱいで、MeshCore 無線機は最も古い項目を上書きしていません。まだ会っていない無線機は追加できないため、その相手からのダイレクトメッセージはアプリに届く前に破棄されます。",
   "autoAddOverwriteOldest": "満杯なら最も古いものを置き換える",
   "autoAddOverwriteOldestHint": "お気に入りは置き換えられません。",
   "autoAddChat": "チャットノード",

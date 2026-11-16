@@ -19,7 +19,7 @@
       }
     }
   },
-  "dashboardKnownAndContacts": "{n, plural, =0{0 known} =1{1 known} other{{n} known}} · contacts {contacts}",
+  "dashboardKnownAndContacts": "{n, plural, =0{0 known} =1{1 known} other{{n} known}} · MeshCore radio's table {contacts}",
   "@dashboardKnownAndContacts": {
     "description": "One line on the dashboard: how many nodes the app knows, and the radio's own contact table. One localised sentence rather than fragments joined with literal separators.",
     "placeholders": {
@@ -434,7 +434,7 @@
   "nodesDist500m": "≤ 500 m",
   "nodesDist5km": "≤ 5 km",
   "nodesDist25km": "≤ 25 km",
-  "nodesStatusReady": "{shown} of {total} shown · {inRange} in range · {favs, plural, =0{0 contacts} =1{1 contact} other{{favs} contacts}}",
+  "nodesStatusReady": "{shown} of {total} shown · {inRange} in range · {favs, plural, =0{0 favourites} =1{1 favourite} other{{favs} favourites}}",
   "@nodesStatusReady": {
     "placeholders": {
       "shown": {
@@ -4399,6 +4399,7 @@
   },
   "deviceContactsSection": "Contact table",
   "autoAddIntro": "The MeshCore radio decides which nodes it keeps. These are its settings, not the app's.",
+  "autoAddFullDropsDms": "The table is full and the MeshCore radio is not overwriting the oldest entry, so a radio it has not met cannot be added. A direct message from one is dropped before the app sees it.",
   "autoAddOverwriteOldest": "Replace the oldest when full",
   "autoAddOverwriteOldestHint": "Favourites are never replaced.",
   "autoAddChat": "Chat nodes",

@@ -62,7 +62,7 @@ class AppLocalizationsEn extends AppLocalizations {
       one: '1 known',
       zero: '0 known',
     );
-    return '$_temp0 · contacts $contacts';
+    return '$_temp0 · MeshCore radio\'s table $contacts';
   }
 
   @override
@@ -870,9 +870,9 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       favs,
       locale: localeName,
-      other: '$favs contacts',
-      one: '1 contact',
-      zero: '0 contacts',
+      other: '$favs favourites',
+      one: '1 favourite',
+      zero: '0 favourites',
     );
     return '$shown of $total shown · $inRange in range · $_temp0';
   }
@@ -6373,6 +6373,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get autoAddIntro =>
       'The MeshCore radio decides which nodes it keeps. These are its settings, not the app\'s.';
+
+  @override
+  String get autoAddFullDropsDms =>
+      'The table is full and the MeshCore radio is not overwriting the oldest entry, so a radio it has not met cannot be added. A direct message from one is dropped before the app sees it.';
 
   @override
   String get autoAddOverwriteOldest => 'Replace the oldest when full';
