@@ -371,10 +371,55 @@ class MeshcoreController extends ChangeNotifier with SafeNotifier {
   bool isFavorite(String pubKeyHex) => _favorites.contains(pubKeyHex);
 
   /// Toggle, persist, notify.
+  ///
+  /// A star is also the radio's own favourite flag when the node is a device
+  /// contact. The firmware's overwrite-oldest rule skips contacts whose
+  /// `flags & 0x01` is set (`BaseChatMesh.cpp:88-95`), so a star that lived only
+  /// in this app protected nothing: the radio would evict a node the reader had
+  /// marked, and the DM thread with it. The local set stays the source of truth
+  /// for the UI, and the flag is written through on a best-effort basis.
   Future<void> toggleFavorite(String pubKeyHex) async {
-    if (!_favorites.add(pubKeyHex)) _favorites.remove(pubKeyHex);
+    final bool nowFavourite = _favorites.add(pubKeyHex);
+    if (!nowFavourite) _favorites.remove(pubKeyHex);
     notifyListeners();
     await FavoriteStore.save(_favorites);
+    if (isSyncedContact(pubKeyHex)) {
+      unawaited(setDeviceContactFavourite(pubKeyHex, nowFavourite));
+    }
+  }
+
+  /// Write the radio's favourite bit for a contact it already holds.
+  ///
+  /// `CMD_ADD_UPDATE_CONTACT` is the only way to change a contact's flags, so
+  /// the whole record is re-sent with the one bit changed. A node that is not a
+  /// device contact has no record to change and is left alone.
+  Future<bool> setDeviceContactFavourite(String pubKeyHex, bool favourite) async {
+    final Contact? cur = _contacts[pubKeyHex];
+    if (!isReady || cur == null) return false;
+    final int flags = favourite ? (cur.flags | 0x01) : (cur.flags & ~0x01);
+    if (flags == cur.flags) return true;
+    final Contact updated = Contact(
+      publicKey: cur.publicKey,
+      type: cur.type,
+      flags: flags,
+      outPathLen: cur.outPathLen,
+      outPath: cur.outPath,
+      name: cur.name,
+      lastAdvertTimestamp: cur.lastAdvertTimestamp,
+      latitudeMicros: cur.latitudeMicros,
+      longitudeMicros: cur.longitudeMicros,
+      lastMod: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    );
+    try {
+      await send(MeshcoreFrameCodec.addUpdateContact(updated));
+      _contacts[pubKeyHex] = updated;
+      _saveContactsSoon();
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _emitTaskError('addContact');
+      return false;
+    }
   }
 
   Future<void> _loadFavorites() async {
