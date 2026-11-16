@@ -2585,7 +2585,7 @@ abstract class AppLocalizations {
   /// Shown when the keyboard send action is used while an earlier direct message to the same contact is unsettled.
   ///
   /// In en, this message translates to:
-  /// **'Not sent. The last message to this contact is still waiting for its answer, and the radio can only hold one at a time.'**
+  /// **'Not sent. The last message to this contact is still waiting for its answer, and the MeshCore radio can only hold one at a time.'**
   String get dmWaitingForAck;
 
   /// No description provided for @chatSend.
@@ -2761,6 +2761,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This removes the row from your local history. MeshCore has no recall. The recipient still has it.'**
   String get actionDeleteConfirmBody;
+
+  /// No description provided for @chatLinkOpenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open this link?'**
+  String get chatLinkOpenTitle;
+
+  /// The confirmation before a link in a message opens in the browser. The URL is shown in full so the reader can see where it goes.
+  ///
+  /// In en, this message translates to:
+  /// **'{url}\n\nIt opens in your browser, outside the app.'**
+  String chatLinkOpenBody(String url);
+
+  /// No description provided for @chatLinkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get chatLinkOpen;
 
   /// No description provided for @actionCancel.
   ///

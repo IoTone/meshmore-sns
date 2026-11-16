@@ -1528,6 +1528,17 @@ class AppLocalizationsJa extends AppLocalizations {
       'ローカル履歴からこの行を削除します。MeshCore に取り消しはなく、受信者側には残ります。';
 
   @override
+  String get chatLinkOpenTitle => 'このリンクを開きますか？';
+
+  @override
+  String chatLinkOpenBody(String url) {
+    return '$url\n\nブラウザで開きます。アプリの外に出ます。';
+  }
+
+  @override
+  String get chatLinkOpen => '開く';
+
+  @override
   String get actionCancel => 'キャンセル';
 
   @override

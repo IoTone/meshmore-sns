@@ -14,6 +14,7 @@ import '../chat/composer_counter.dart';
 import '../chat/composer_field.dart';
 import '../chat/composer_offline.dart';
 import '../chat/draft_store.dart';
+import '../chat/linkified_text.dart';
 import '../chat/place_suggestion_line.dart';
 import '../chat/studio_message_row.dart';
 import '../cue/cue_service.dart';
@@ -714,7 +715,8 @@ class _DmRow extends StatelessWidget {
                       padding: EdgeInsets.only(bottom: 2),
                       child: BotTag(),
                     ),
-                  Text(stripBotMarker(m.text),
+                  LinkifiedText(
+                      text: stripBotMarker(m.text),
                       style: TextStyle(color: skin.color.fg, fontFamily: mono)),
                   if (m.outgoing && m.delivery != null)
                     Row(

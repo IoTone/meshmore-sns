@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../bot/bot_guards.dart';
 import '../bot/bot_tag.dart';
+import 'linkified_text.dart';
 import '../gen/app_localizations.dart';
 import '../meshcore/chat_message.dart';
 import '../screens/delivery_status_icon.dart';
@@ -109,8 +110,9 @@ class _StudioMessageRowState extends State<StudioMessageRow> {
                       padding: EdgeInsets.only(bottom: 2),
                       child: BotTag(),
                     ),
-                  Text(stripBotMarker(body),
+                  LinkifiedText(
                       key: const ValueKey<String>('studio-msg-body'),
+                      text: stripBotMarker(body),
                       style: TextStyle(
                           color: skin.color.fg, fontSize: skin.type.size(15), height: 1.35)),
                   if (echo != null) echo!,

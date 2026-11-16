@@ -24,6 +24,7 @@ import '../chat/report_flow.dart';
 import '../chat/place_suggestion_line.dart';
 import '../chat/studio_message_row.dart';
 import '../chat/history_unreadable_notice.dart';
+import '../chat/linkified_text.dart';
 import '../meshcore/dm_thread.dart';
 import '../sns/place_inference.dart';
 import '../chat/export_passphrase_dialog.dart';
@@ -1754,7 +1755,8 @@ class _MessageRowState extends State<_MessageRow> {
                         child: BotTag(),
                       ),
                     if (m.text.isNotEmpty)
-                      Text(stripBotMarker(m.text),
+                      LinkifiedText(
+                          text: stripBotMarker(m.text),
                           style: TextStyle(
                               color: skin.color.fg, fontFamily: mono)),
                     if (_picture(skin) case final Widget picture) picture,

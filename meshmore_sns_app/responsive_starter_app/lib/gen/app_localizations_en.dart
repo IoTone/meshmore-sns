@@ -1501,7 +1501,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dmWaitingForAck =>
-      'Not sent. The last message to this contact is still waiting for its answer, and the radio can only hold one at a time.';
+      'Not sent. The last message to this contact is still waiting for its answer, and the MeshCore radio can only hold one at a time.';
 
   @override
   String get chatSend => 'Send';
@@ -1608,6 +1608,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get actionDeleteConfirmBody =>
       'This removes the row from your local history. MeshCore has no recall. The recipient still has it.';
+
+  @override
+  String get chatLinkOpenTitle => 'Open this link?';
+
+  @override
+  String chatLinkOpenBody(String url) {
+    return '$url\n\nIt opens in your browser, outside the app.';
+  }
+
+  @override
+  String get chatLinkOpen => 'Open';
 
   @override
   String get actionCancel => 'Cancel';

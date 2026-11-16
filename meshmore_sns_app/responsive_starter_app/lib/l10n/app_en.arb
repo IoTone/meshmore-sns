@@ -890,7 +890,7 @@
 
   "dmSendNotSent": "Not sent. The MeshCore radio is not connected.",
 
-  "dmWaitingForAck": "Not sent. The last message to this contact is still waiting for its answer, and the radio can only hold one at a time.",
+  "dmWaitingForAck": "Not sent. The last message to this contact is still waiting for its answer, and the MeshCore radio can only hold one at a time.",
   "@dmWaitingForAck": {
     "description": "Shown when the keyboard send action is used while an earlier direct message to the same contact is unsettled."
   },  "@dmSendNotSent": {
@@ -973,6 +973,17 @@
   "actionCopied": "Copied to clipboard",
   "actionDeleteConfirmTitle": "Delete this message locally?",
   "actionDeleteConfirmBody": "This removes the row from your local history. MeshCore has no recall. The recipient still has it.",
+  "chatLinkOpenTitle": "Open this link?",
+  "chatLinkOpenBody": "{url}\n\nIt opens in your browser, outside the app.",
+  "@chatLinkOpenBody": {
+    "description": "The confirmation before a link in a message opens in the browser. The URL is shown in full so the reader can see where it goes.",
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "chatLinkOpen": "Open",
   "actionCancel": "Cancel",
   "actionDelete": "Delete",
   "nodeDetailSelf": "Your own node.",
